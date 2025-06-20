@@ -1,0 +1,178 @@
+from sqlalchemy import Column, String, String, Float, Boolean, Text, Date, TIMESTAMP
+from sqlalchemy.orm import declarative_base
+from datetime import datetime
+
+Base = declarative_base()
+
+
+class User(Base):
+    __tablename__ = "Users"
+    id = Column(String, primary_key=True)
+    username = Column(String)
+    email = Column(String, unique=True)
+    team = Column(String)
+    role = Column(String)
+    location = Column(String)
+
+
+
+class Vehicle(Base):
+    __tablename__ = "Vehicles"
+    id = Column(String, primary_key=True)
+    project_id = Column(String)
+    vehicle_serial_number = Column(String)
+    vehicle_body_number = Column(String)
+    vehicle_model = Column(String)
+    vehicle_number = Column(String)
+    vehicle_build_level = Column(String)
+    transmission_type = Column(String)
+    final_drive_axle_ratio = Column(String)
+    domain = Column(String)
+    coast_down_reference = Column(String)
+    tyre_make = Column(String)
+    tyre_size = Column(String)
+    tyre_pressure_front = Column(Float)
+    tyre_pressure_rear = Column(Float)
+    tyre_run_in_kms = Column(Float)
+    engine_run_in_kms = Column(Float)
+    gearbox_run_in_kms = Column(Float)
+    axle_run_in_kms = Column(Float)
+    engine_oil_spec = Column(String)
+    axle_oil_spec = Column(String)
+    transmission_oil_spec = Column(String)
+    drive_type = Column(String)
+    driven_wheel = Column(String)
+    intercooler_location = Column(String)
+    gear_ratio = Column(String)
+    id_of_creator = Column(String)  
+    created_on = Column(TIMESTAMP, default=datetime.utcnow)
+    id_of_updater = Column(String)  
+    updated_on = Column(TIMESTAMP, default=datetime.utcnow)
+
+
+class Engine(Base):
+    __tablename__ = "Engines"
+    id = Column(String, primary_key=True)
+    project_id = Column(String)
+    engine_serial_number = Column(String)
+    engine_build_level = Column(String)
+    engine_capacity = Column(Float)
+    engine_type = Column(String)
+    number_of_cylinders = Column(String)
+    compression_ratio = Column(Float)
+    bore_mm = Column(Float)
+    stroke_mm = Column(Float)
+    vacuum_modulator_make = Column(String)
+    vacuum_modulator_details = Column(String)
+    ecu_make = Column(String)
+    ecu_id_number = Column(String)
+    ecu_dataset_number = Column(String)
+    ecu_dataset_details = Column(String)
+    injector_type = Column(String)
+    turbo_charger_type = Column(String)
+    blow_by_recirculation = Column(Boolean)
+    nozzle_hole_count = Column(String)
+    nozzle_through_flow = Column(Float)
+    egr_valve_make = Column(String)
+    egr_valve_type = Column(String)
+    egr_valve_diameter_mm = Column(Float)
+    egr_cooler_make = Column(String)
+    egr_cooler_capacity_kw = Column(Float)
+    catcon_make = Column(String)
+    catcon_type = Column(String)
+    catcon_loading = Column(String)
+    dpf_make = Column(String)
+    dpf_capacity = Column(String)
+    scr_make = Column(String)
+    scr_capacity = Column(String)
+    acc_compressor = Column(Boolean)
+    acc_compressor_details = Column(String)
+    ps_pump_location = Column(String)
+    ps_details = Column(String)
+    water_bypass = Column(String)
+    kerb_weight_faw_kg = Column(Float)
+    kerb_weight_raw_kg = Column(Float)
+    emission_status = Column(String)
+    thermostat_details = Column(String)
+    vehicle_id = Column(String)  # removed ForeignKey
+    engine_family = Column(String)
+    hv_battery_make = Column(String)
+    hv_battery_capacity = Column(Float)
+    hv_battery_voltage = Column(Float)
+    hv_battery_current = Column(Float)
+    ev_motor_power_kw = Column(Float)
+    id_of_creator = Column(String)  
+    created_on = Column(TIMESTAMP, default=datetime.utcnow)
+    id_of_updater = Column(String)  
+    updated_on = Column(TIMESTAMP, default=datetime.utcnow)
+
+
+class CoastDownData(Base):
+    __tablename__ = "CoastDownData"
+    id = Column(String, primary_key=True)
+    coast_down_reference = Column(String)
+    vehicle_reference_mass = Column(Float)
+    a_value = Column(Float)
+    b_value = Column(Float)
+    c_value = Column(Float)
+    f0_value = Column(Float)
+    f1_value = Column(Float)
+    f2_value = Column(Float)
+    id_of_creator = Column(String)  
+    created_on = Column(TIMESTAMP, default=datetime.utcnow)
+    id_of_updater = Column(String)  
+    updated_on = Column(TIMESTAMP, default=datetime.utcnow)
+
+
+class JobOrder(Base):
+    __tablename__ = "JobOrders"
+    id = Column(String, primary_key=True)
+    project_id = Column(String)
+    vehicle_id = Column(String)  # removed ForeignKey
+    engine_id = Column(String)   # removed ForeignKey
+    cd_id = Column(String)       # removed ForeignKey
+    job_order_number = Column(String)
+    type_of_engine = Column(String)
+    department = Column(String)
+    domain = Column(String)
+    status = Column(String)
+    remarks = Column(String)
+    rejection_remarks = Column(String)
+    mail_remarks = Column(String)
+    id_of_creator = Column(String)  
+    name_of_creator = Column(String)
+    created_on = Column(TIMESTAMP, default=datetime.utcnow)
+    id_of_updater = Column(String)  
+    name_of_updater = Column(String)
+    updated_on = Column(TIMESTAMP, default=datetime.utcnow)
+
+
+class TestOrder(Base):
+    __tablename__ = "TestOrders"
+    id = Column(String, primary_key=True)
+    job_order_id = Column(String)  # removed ForeignKey
+    cd_id = Column(String)         # removed ForeignKey
+    test_type = Column(String)
+    test_objective = Column(Text)
+    vehicle_location = Column(String)
+    cycle_gear_shift = Column(String)
+    inertia_class = Column(String)
+    dataset_name = Column(String)
+    dpf = Column(String)
+    dataset_flashed = Column(Boolean)
+    ess = Column(String)
+    mode = Column(String)
+    hardware_change = Column(Text)
+    equipment_required = Column(Text)
+    shift = Column(String)
+    preferred_date = Column(Date)
+    emission_check_date = Column(Date)
+    emission_check_attachment = Column(Text)
+    specific_instruction = Column(Text)
+    status = Column(String)
+    id_of_creator = Column(String)  
+    name_of_creator = Column(String)
+    created_on = Column(TIMESTAMP, default=datetime.utcnow)
+    id_of_updater = Column(String)  
+    name_of_updater = Column(String)
+    updated_on = Column(TIMESTAMP, default=datetime.utcnow)
