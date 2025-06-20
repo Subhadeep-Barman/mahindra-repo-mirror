@@ -3,9 +3,6 @@
 import { ArrowBack, Add } from "@mui/icons-material";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-import { useNavigate } from "react-router-dom";
-
 import {
   Table,
   TableBody,
@@ -56,12 +53,10 @@ const vehicles = [
     lastUpdatedOn: "09-12-2021 09:13 AM",
   },
 ];
-    
 
 export default function VTCVehiclePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
-
   
   // Calculate pagination values
   const totalItems = vehicles.length;
@@ -79,6 +74,9 @@ export default function VTCVehiclePage() {
     console.log("Navigate back");
   };
 
+  const handleAddNewVehicle = () => {
+    console.log("Add new vehicle");
+  };
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
@@ -87,10 +85,7 @@ export default function VTCVehiclePage() {
       console.log("Navigate to job order page");
     }
   };
-  const navigate = useNavigate();
-  const handleAddNewVehicle = () => {
-  navigate("/vtcvehicle/new");
-};
+
   return (
     <>
       <Navbar2 />
@@ -136,13 +131,13 @@ export default function VTCVehiclePage() {
           <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
             Current Job Orders
           </Badge>
-           <Button
-             onClick={handleAddNewVehicle}
-             className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
->
+          <Button
+            onClick={handleAddNewVehicle}
+            className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
+          >
             <Add className="h-4 w-4 mr-1" />
-            ADD NEW Vehicle 
-           </Button>
+            CREATE JOB ORDER
+          </Button>
         </div>
 
       {/* Main Content */}

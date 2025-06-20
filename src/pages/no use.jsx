@@ -3,7 +3,6 @@
 import { ArrowBack, Add } from "@mui/icons-material";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -158,7 +157,7 @@ const jobOrders = [
   },
 ];
 
-export default function VTCNashikPage() {
+export default function VTCChennaiPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("Job Order");
   const rowsPerPage = 8;
@@ -180,13 +179,10 @@ export default function VTCNashikPage() {
   const handleCreateJobOrder = () => {
     console.log("Create new job order");
   };
-   const navigate = useNavigate(); 
+
   const handleTabClick = (tab) => {
-  setActiveTab(tab);
-  if (tab === "Job Order") navigate("/nashik/joborder");
-  else if (tab === "Vehicle") navigate("/nashik/vehicle");
-  else if (tab === "Engine") navigate("/nashik/engine");
-};
+    setActiveTab(tab);
+  };
 
   return (
     <>
@@ -207,7 +203,7 @@ export default function VTCNashikPage() {
                 </Button>
                 <div>
                   <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
-                    VTC NASHIK
+                    VTC CHENNAI
                   </h1>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
                     NEW JOB ORDER

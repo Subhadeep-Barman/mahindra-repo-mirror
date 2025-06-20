@@ -158,7 +158,7 @@ const jobOrders = [
   },
 ];
 
-export default function VTCNashikPage() {
+export default function VTCChennaiPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("Job Order");
   const rowsPerPage = 8;
@@ -180,12 +180,14 @@ export default function VTCNashikPage() {
   const handleCreateJobOrder = () => {
     console.log("Create new job order");
   };
-   const navigate = useNavigate(); 
-  const handleTabClick = (tab) => {
+
+  const navigate = useNavigate();
+
+const handleTabClick = (tab) => {
   setActiveTab(tab);
-  if (tab === "Job Order") navigate("/nashik/joborder");
-  else if (tab === "Vehicle") navigate("/nashik/vehicle");
-  else if (tab === "Engine") navigate("/nashik/engine");
+  if (tab === "Job Order") navigate("/rde/joborder");
+  else if (tab === "Vehicle") navigate("/rde/vehicle");
+  else if (tab === "Engine") navigate("/rde/engine");
 };
 
   return (
@@ -207,7 +209,7 @@ export default function VTCNashikPage() {
                 </Button>
                 <div>
                   <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
-                    VTC NASHIK
+                    VTC CHENNAI
                   </h1>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
                     NEW JOB ORDER

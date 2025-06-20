@@ -3,6 +3,8 @@ import { Switch } from "@/components/ui/switch";
 import { Sun, Moon } from "lucide-react";
 import darkLogo from "../assets/mai_dark.png";
 import lightLogo from "../assets/mai_light.png";
+import { useNavigate } from "react-router-dom";
+
 
 function login() {
   const [isDark, setIsDark] = useState(false);
@@ -19,11 +21,16 @@ function login() {
     setIsDark(!isDark);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Handle form submission here
-    console.log("Form submitted");
-  };
+const navigate = useNavigate(); 
+
+const handleSubmit = (e) => {
+  e.preventDefault();
+
+  
+  console.log("Form submitted successfully");
+  navigate("/home"); 
+};
+
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const slides = [

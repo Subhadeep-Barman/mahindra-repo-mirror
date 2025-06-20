@@ -1,5 +1,6 @@
 import Navbar from "@/components/ui/navbar"
 import * as React from "react"
+import { Link } from "react-router-dom";
 import {
   Code,
   MessageSquare,
@@ -74,7 +75,7 @@ export default function HomePage() {
                     variant="ghost" 
                     className="bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 px-4 py-2 text-sm font-medium"
                   >
-                    <a href={service.href}>Explore →</a>
+                    <Link to={service.href}>Explore →</Link>
                   </Button>
                 </CardFooter>
               </Card>

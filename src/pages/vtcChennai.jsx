@@ -3,6 +3,7 @@
 import { ArrowBack, Add } from "@mui/icons-material";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -180,9 +181,14 @@ export default function VTCChennaiPage() {
     console.log("Create new job order");
   };
 
-  const handleTabClick = (tab) => {
-    setActiveTab(tab);
-  };
+  const navigate = useNavigate();
+
+const handleTabClick = (tab) => {
+  setActiveTab(tab);
+  if (tab === "Job Order") navigate("/cJobOrder");
+  else if (tab === "Vehicle") navigate("/vtccvehicle");
+  else if (tab === "Engine") navigate("/vtcChennaiEngine");
+}
 
   return (
     <>

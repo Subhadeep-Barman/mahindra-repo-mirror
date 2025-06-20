@@ -28,24 +28,12 @@ import { format } from "date-fns"
 import Navbar2 from "@/components/ui/navbar2"
 
 export default function CJobOrder() {
-  const projectCodes = ["PCODE1", "PCODE2"];
-  const vehicleBodyNumbers = ["VBN123", "VBN456"];
-  const engineTypes = ["Gasoline", "Diesel", "CNG", "HYBRID", "ePT"];
-  const domains = ["OBD", "BOE", "SCR", "GENERAL"];
-  const departments = ["VTC JO", "RDE JO", "VTC_JO Nashik"];
   const [showFiles, setShowFiles] = useState(false)
   const [showCFTModal, setShowCFTModal] = useState(false)
   const [cftMode, setCftMode] = useState("SINGLE") // "SINGLE" or "GROUP"
   const [cftMembers, setCftMembers] = useState([{ id: 1, value: '' }])
   const [newCftMember, setNewCftMember] = useState("")
   const [formData, setFormData] = useState({
-    projectCode: "",
-    vehicleBodyNumber: "",
-    vehicleNumber: "",
-    engineNumber: "",
-    engineType: "",
-    domain: "",
-    department: "",
     testType: "HOT BOLT CYCLE (Dilute Only)",
     objective: "TEST 1",
     vehicleLocation: "",
