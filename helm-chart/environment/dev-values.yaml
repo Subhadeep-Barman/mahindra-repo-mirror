@@ -1,0 +1,106 @@
+# Default values for new-model.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: asia-south1-docker.pkg.dev/gto-projects-dev-993026/gto-artifacts/gto-dbmrs-vtc-backend-test
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations:
+    iam.gke.io/gcp-service-account: gto-nodepool1-sa@gto-projects-dev-993026.iam.gserviceaccount.com
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "default-sa"
+
+podAnnotations:
+  seccomp.security.alpha.kubernetes.io/pod: "runtime/default"
+
+podSecurityContext: {}
+# fsGroup: 2000
+
+securityContext:
+  privileged: true
+  capabilities:
+    add:
+      - SYS_ADMIN
+  # capabilities:
+  #   drop:
+#   - ALL
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8000
+  targetPort: 8000
+
+seccomp:
+  enabled: true
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 750Mi
+  requests:
+    cpu: 500m
+    memory: 700Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations:
+  - key: "kubernetes.azure.com/scalesetpriority"
+    operator: "Equal"
+    value: "spot"
+    effect: "NoSchedule"
+  - key: "n2dnode"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+
+virtualservice:
+  host: "dbmrs-vtc-backend-test.m-devsecops.com"
+  gateway: "istio-system/default-internal-gateway"
+  port: 8000
+  prefix: /
+
+ingress:
+  enabled: false
+  name: gto-projects
+  ingressClassName: nginx
+  host: dbmrs-vtc-backend-test.m-devsecops.com
+  tls:
+    host: dbmrs-vtc-backend-test.m-devsecops.com
+    secretName: tlssecret
+  service:
+    name: gto-projects
+    port: 80
+
+affinity: {}
+
+podEnv:
+
+persistence:
+  size: 5Gi # Default storage size
+  accessModes: ["ReadWriteOnce"] # Default access mode
+  storageClassName: "standard-rwo"

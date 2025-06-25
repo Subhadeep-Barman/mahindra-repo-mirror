@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "gto-projects.fullname" . }}  # Use Helm's fullname template
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi  # Adjust storage size as needed
+  storageClassName: {{ .Values.persistence.storageClassName }}  # Reference storage class from dev-values.yaml
