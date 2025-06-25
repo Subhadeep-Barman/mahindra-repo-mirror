@@ -35,3 +35,7 @@ app.include_router(test_orders_api.router)
 app.include_router(vehicles_api.router)
 app.include_router(engines_api.router)
 app.include_router(job_orders_api.router)
+
+
+# Create database tables
+# changeing the order of imports to ensure Base is defined before engine
