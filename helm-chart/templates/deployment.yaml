@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gto-projects.fullname" . }}
+  labels:
+    {{- include "gto-projects.selectorLabels" . | nindent 8 }}
+    {{- with .Values.extraLabels }}
+    {{- toYaml . | nindent 8 }}
+    {{- end }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "gto-projects.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "gto-projects.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccount : {{ include "gto-projects.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - "sh"
+                  - "-c"
+                  - >
+                    {{- with .Values.cloudStorage }}
+                    {{- range . }}
+                    mkdir {{ .mountPath }} &&
+                    gcsfuse --implicit-dirs -o allow_other {{ .bucket }} {{ .mountPath }};
+                    {{- end }}
+                    {{- end }}
+            preStop:
+              exec:
+                command:
+                  - "sh"
+                  - "-c"
+                  - >
+                    {{- with .Values.cloudStorage }}
+                    {{- range . }}
+                    fusermount -u {{ .mountPath }};
+                    {{- end }}
+                    {{- end }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.podEnv }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+#          volumeMounts:
+#          - name: test-app-data
+#            mountPath: app/data  # Adjust mount path if needed
+#      volumes:
+#      - name: test-app-data
+#        persistentVolumeClaim:
+#          claimName: {{ include "gto-projects.fullname" . }}
+      imagePullSecrets:
+        - name: regcred
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

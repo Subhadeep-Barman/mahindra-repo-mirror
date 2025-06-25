@@ -1,0 +1,24 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ include "gto-projects.fullname" . }}
+  labels:
+    {{- include "gto-projects.labels" . | nindent 4 }}
+spec:
+  hosts:
+    - '{{- .Values.virtualservice.host }}'
+  gateways:
+    - {{ .Values.virtualservice.gateway }}
+  http:
+    - route:
+        - destination:
+            host: {{ include "gto-projects.fullname" . }}
+            port:
+              number: {{ .Values.virtualservice.port }}
+          headers:
+            response:
+              set:
+                Strict-Transport-Security: max-age=31536000; includeSubDomains
+      match:
+        - uri:
+            prefix: {{ .Values.virtualservice.prefix }}
