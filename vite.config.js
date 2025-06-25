@@ -9,6 +9,9 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  preview: {
+    allowedHosts: ["dbmrs-vtc-test.m-devsecops.com"],
+  },
 })
 
 // https://vitejs.dev/config/
