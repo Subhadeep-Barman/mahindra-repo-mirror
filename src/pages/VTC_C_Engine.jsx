@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
 import {
   Select,
   SelectContent,
@@ -66,6 +66,8 @@ export default function EngineForm() {
     engineFamily: "",
   });
 
+  const navigate = useNavigate();
+
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
@@ -75,10 +77,9 @@ export default function EngineForm() {
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
-  };
-
-  const handleAddEngine = () => {
-    console.log("Add Engine:", formData);
+    if (tab === "Job Order") navigate("/cjoborder");
+    else if (tab === "Vehicle") navigate("/vtccvehicle");
+    else if (tab === "Engine") navigate("/engineform");
   };
 
   const handleClear = () => {
@@ -130,7 +131,12 @@ export default function EngineForm() {
   };
 
   const handleBack = () => {
-    console.log("Navigate back");
+    navigate(-1);
+  };
+
+  const handleAddEngine = () => {
+    localStorage.setItem("engineFormData", JSON.stringify(formData));
+    console.log("Add Engine:", formData);
   };
 
   return (
@@ -702,7 +708,9 @@ export default function EngineForm() {
 
               {/* Kerb Weight EMW */}
               <div className="space-y-2">
-                <Label htmlFor="kerbWeightEmw">Kerb Weight EMW (Kg) <span className="text-red-500">*</span></Label>
+                <Label htmlFor="kerbWeightEmw">
+                  Kerb Weight EMW (Kg) <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="kerbWeightEmw"
                   value={formData.kerbWeightEmw}
@@ -715,7 +723,9 @@ export default function EngineForm() {
 
               {/* Kerb Weight RMW */}
               <div className="space-y-2">
-                <Label htmlFor="kerbWeightRmw">Kerb Weight RMW (Kg) <span className="text-red-500">*</span></Label>
+                <Label htmlFor="kerbWeightRmw">
+                  Kerb Weight RMW (Kg) <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="kerbWeightRmw"
                   value={formData.kerbWeightRmw}
@@ -800,7 +810,9 @@ export default function EngineForm() {
 
             {/* Required Field Note */}
             <div className="mt-6">
-              <p className="text-sm text-red-500 dark:text-red-500"><span className="text-red-500">*</span>required field</p>
+              <p className="text-sm text-red-500 dark:text-red-500">
+                <span className="text-red-500">*</span>required field
+              </p>
             </div>
 
             {/* Action Buttons */}

@@ -5,9 +5,10 @@ import darkLogo from "../assets/mai_dark.png";
 import lightLogo from "../assets/mai_light.png";
 import { useNavigate } from "react-router-dom";
 
-
-function login() {
+function Login() {
   const [isDark, setIsDark] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isDark) {
@@ -21,38 +22,31 @@ function login() {
     setIsDark(!isDark);
   };
 
-const navigate = useNavigate(); 
+  const handleSubmit = (e) => {
+    window.location.href = import.meta.env.VITE_AUTH_SUCCESS_URL;
+    // No need for navigate("/home") here
+  };
 
-const handleSubmit = (e) => {
-  e.preventDefault();
-
-  
-  console.log("Form submitted successfully");
-  navigate("/home"); 
-};
-
-
-  const [currentSlide, setCurrentSlide] = useState(0);
   const slides = [
     {
       image:
         "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-26%20111445-o8mr9bS8sM0idBARzUcNQIQ47mYDk9.png",
-        title: "TESTING AUTOMATION",
-        description:
+      title: "TESTING AUTOMATION",
+      description:
         "These visuals are used to analyze and understand various aspects of payment activity, trends, and patterns.",
-      },
+    },
     {
       image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71",
       title: "DATA ANALYTICS",
       description:
         "Advanced analytics tools to help visualize and understand complex data patterns and trends.",
-      },
+    },
     {
       image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f",
       title: "PERFORMANCE METRICS",
       description:
         "Real-time monitoring and analysis of key performance indicators and business metrics.",
-      },
+    },
     {
       image: "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3",
       title: "BUSINESS INTELLIGENCE",
@@ -76,8 +70,8 @@ const handleSubmit = (e) => {
 
     return () => clearInterval(interval);
   }, []);
-  return (
 
+  return (
     <div className="min-h-screen bg-gray-50 dark:bg-black transition-colors duration-300">
       <div className="min-h-screen lg:grid lg:grid-cols-2">
         {/* Left Column - Login Form */}
@@ -218,7 +212,7 @@ const handleSubmit = (e) => {
         </div>
       </div>
     </div>
-            )
+  );
 }
 
-export default login;
+export default Login;

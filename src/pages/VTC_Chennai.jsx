@@ -3,7 +3,7 @@
 import { ArrowBack, Add } from "@mui/icons-material";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -16,151 +16,11 @@ import { Card } from "@/components/ui/card";
 import { useState } from "react";
 import Navbar2 from "@/components/ui/navbar2";
 const jobOrders = [
-  {
-    weekNo: 51,
-    jobOrderNumber: "VTC-21-6615",
-    project: "U952",
-    vehicleNumber: "VEHICLE NO-123",
-    bodyNo: "VEHICLE NO-123",
-    engineNumber: "ENGINE NO-123",
-    domain: "BOE",
-    testStatus: "1/2",
-    createdBy: "SANKAR SURESH (SANKSU-CONT)",
-    createdOn: "13-12-2021 11:50 AM",
-    lastUpdatedBy: "SANKAR SURESH (SANKSU-CONT)",
-    lastUpdatedOn: "13-12-2021 04:39 PM",
-  },
-  {
-    weekNo: 50,
-    jobOrderNumber: "VTC-21-6615",
-    project: "U952",
-    vehicleNumber: "VEHICLE NO-123",
-    bodyNo: "VEHICLE NO-123",
-    engineNumber: "ENGINE NO-123",
-    domain: "BOE",
-    testStatus: "1/2",
-    createdBy: "SANKAR SURESH (SANKSU-CONT)",
-    createdOn: "10-12-2021 11:50 AM",
-    lastUpdatedBy: "SANKAR SURESH (SANKSU-CONT)",
-    lastUpdatedOn: "13-12-2021 04:39 PM",
-  },
-  {
-    weekNo: 50,
-    jobOrderNumber: "VTC-21-6634",
-    project: "U952",
-    vehicleNumber: "V.S.NO-123456",
-    bodyNo: "V.B.NO-123456",
-    engineNumber: "E.S.NO-123456",
-    domain: "OBD",
-    testStatus: "0/1",
-    createdBy: "SANKAR SURESH (SANKSU-CONT)",
-    createdOn: "13-12-2021 09:33 PM",
-    lastUpdatedBy: "SANKAR SURESH (SANKSU-CONT)",
-    lastUpdatedOn: "13-12-2021 04:40 PM",
-  },
-  {
-    weekNo: 50,
-    jobOrderNumber: "VTC-21-6633",
-    project: "U952",
-    vehicleNumber: "VEHICLE NO-123",
-    bodyNo: "VEHICLE NO-123",
-    engineNumber: "ENGINE NO-123",
-    domain: "OBD",
-    testStatus: "1/7",
-    createdBy: "SANKAR SURESH (SANKSU-CONT)",
-    createdOn: "13-12-2021 09:31 AM",
-    lastUpdatedBy: "SANKAR SURESH (SANKSU-CONT)",
-    lastUpdatedOn: "13-12-2021 04:40 PM",
-  },
-  {
-    weekNo: 50,
-    jobOrderNumber: "VTC-21-6632",
-    project: "U952",
-    vehicleNumber: "11111111",
-    bodyNo: "23423654",
-    engineNumber: "242343545",
-    domain: "OBD",
-    testStatus: "2/3",
-    createdBy: "SANKAR SURESH (SANKSU-CONT)",
-    createdOn: "06-12-2021",
-    lastUpdatedBy: "SANKAR SURESH (SANKSU-CONT)",
-    lastUpdatedOn: "13-12-2021 04:41 PM",
-  },
-  {
-    weekNo: 48,
-    jobOrderNumber: "VTC-21-6631",
-    project: "U952",
-    vehicleNumber: "11111111",
-    bodyNo: "23423654",
-    engineNumber: "242343545",
-    domain: "AIR SYSTEM",
-    testStatus: "0/2",
-    createdBy: "SANKAR SURESH(SANKSU-CONT)",
-    createdOn: "29-11-2021",
-    lastUpdatedBy: "SANKAR SURESH(SANKSU-CONT)",
-    lastUpdatedOn: "29-11-2021",
-  },
-  {
-    weekNo: 47,
-    jobOrderNumber: "VTC-21-6630",
-    project: "U952",
-    vehicleNumber: "11111111",
-    bodyNo: "23423654",
-    engineNumber: "242343545",
-    domain: "SCR",
-    testStatus: "0/1",
-    createdBy: "SANKAR SURESH(SANKSU-CONT)",
-    createdOn: "26-11-2021",
-    lastUpdatedBy: "SANKAR SURESH(SANKSU-CONT)",
-    lastUpdatedOn: "26-11-2021",
-  },
-  {
-    weekNo: 47,
-    jobOrderNumber: "VTC-21-6629",
-    project: "U952",
-    vehicleNumber: "11111111",
-    bodyNo: "23423654",
-    engineNumber: "242343545",
-    domain: "ENGINE TEAM",
-    testStatus: "0/1",
-    createdBy: "",
-    createdOn: "22-11-2021",
-    lastUpdatedBy: "SANKAR SURESH(SANKSU-CONT)",
-    lastUpdatedOn: "26-11-2021",
-  },
-  {
-    weekNo: 47,
-    jobOrderNumber: "VTC-21-6628",
-    project: "U952",
-    vehicleNumber: "11111111",
-    bodyNo: "23423654",
-    engineNumber: "242343545",
-    domain: "GENERAL",
-    testStatus: "1/1",
-    createdBy: "",
-    createdOn: "22-11-2021",
-    lastUpdatedBy: "",
-    lastUpdatedOn: "22-11-2021",
-  },
-  {
-    weekNo: "",
-    jobOrderNumber: "VTC-21-6627",
-    project: "U952",
-    vehicleNumber: "11111111",
-    bodyNo: "23423654",
-    engineNumber: "242343545",
-    domain: "DPF",
-    testStatus: "0/1",
-    createdBy: "SANKAR SURESH(SANKSU-CONT)",
-    createdOn: "22-11-2021",
-    lastUpdatedBy: "",
-    lastUpdatedOn: "",
-  },
+  // ...your jobOrders data...
 ];
 
-export default function VTCNashikPage() {
+export default function VTCChennaiPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState("Job Order");
   const rowsPerPage = 8;
 
   // Calculate pagination values
@@ -169,29 +29,36 @@ export default function VTCNashikPage() {
   const endIndex = startIndex + rowsPerPage;
   const currentRows = jobOrders.slice(startIndex, endIndex);
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Determine active tab from the current route
+  let activeTab = "Job Order";
+  if (location.pathname.toLowerCase().includes("vehicle")) activeTab = "Vehicle";
+  else if (location.pathname.toLowerCase().includes("engine")) activeTab = "Engine";
+
+  const handleTabClick = (tab) => {
+    if (tab === "Job Order") navigate("/cJobOrder");
+    else if (tab === "Vehicle") navigate("/vtccvehicle");
+    else if (tab === "Engine") navigate("/vtcChennaiEngine");
+  };
+
+  const handleBack = () => {
+    navigate(-1);
+  };
+
+  const handleCreateJobOrder = () => {
+    navigate("/createJobOrder");
+  };
+
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
 
-  const handleBack = () => {
-    console.log("Navigate back");
-  };
-
-  const handleCreateJobOrder = () => {
-    console.log("Create new job order");
-  };
-   const navigate = useNavigate(); 
-  const handleTabClick = (tab) => {
-  setActiveTab(tab);
-  if (tab === "Job Order") navigate("/nashik/joborder");
-  else if (tab === "Vehicle") navigate("/nashik/vehicle");
-  else if (tab === "Engine") navigate("/nashik/engine");
-};
-
   return (
     <>
       <Navbar2 />
-      <div className=" dark:bg-gray-900">
+      <div className="dark:bg-gray-900">
         {/* Header */}
         <div className="bg-white dark:bg-black">
           <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -207,7 +74,7 @@ export default function VTCNashikPage() {
                 </Button>
                 <div>
                   <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
-                    VTC NASHIK
+                    VTC CHENNAI
                   </h1>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
                     NEW JOB ORDER
@@ -219,14 +86,12 @@ export default function VTCNashikPage() {
                 {["Job Order", "Vehicle", "Engine"].map((tab) => (
                   <Button
                     key={tab}
-                    variant={activeTab === tab ? "default" : "outline"}
                     onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${tab === "Job Order"
-                      ? "bg-red-500 text-white hover:bg-red-600"
-                      : tab === "Vehicle" || tab === "Engine"
-                      ? "bg-red-500 text-white hover:bg-red-600"
-                      : "text-red-500 border-red-500 hover:bg-red-50"
-                    }`}
+                    className={`rounded-xl px-4 py-2 font-semibold border
+                      ${activeTab === tab
+                        ? "bg-red-500 text-white border-red-500"
+                        : "bg-white text-red-500 border-red-500 hover:bg-red-50"}
+                    `}
                   >
                     {tab}
                   </Button>
@@ -256,7 +121,7 @@ export default function VTCNashikPage() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className>
+                  <TableRow>
                     <TableHead className="font-semibold text-gray-700 text-xs">Week No</TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">Job Order Number</TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">Project</TableHead>
@@ -359,6 +224,6 @@ export default function VTCNashikPage() {
           </div>
         </div>
       </div>
-    </>
+    </> 
   );
 }

@@ -3,6 +3,7 @@
 import { ArrowBack, Add } from "@mui/icons-material";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -157,7 +158,7 @@ const jobOrders = [
   },
 ];
 
-export default function VTCChennaiPage() {
+export default function VTCNashikPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("Job Order");
   const rowsPerPage = 8;
@@ -180,10 +181,14 @@ export default function VTCChennaiPage() {
     console.log("Create new job order");
   };
 
-  const handleTabClick = (tab) => {
-    setActiveTab(tab);
-  };
+  const navigate = useNavigate();
 
+const handleTabClick = (tab) => {
+  setActiveTab(tab);
+  if (tab === "Job Order") navigate("/nashik/joborder");
+  else if (tab === "Vehicle") navigate("/nashik/vehicle");
+  else if (tab === "Engine") navigate("/nashik/engine");
+};
   return (
     <>
       <Navbar2 />
@@ -203,7 +208,7 @@ export default function VTCChennaiPage() {
                 </Button>
                 <div>
                   <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
-                    VTC CHENNAI
+                    VTC NASHIK
                   </h1>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
                     NEW JOB ORDER
@@ -238,7 +243,7 @@ export default function VTCChennaiPage() {
             Current Job Orders
           </Badge>
           <Button
-            onClick={handleCreateJobOrder}
+            onClick={() => navigate("/createJobOrder")}
             className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
           >
             <Add className="h-4 w-4 mr-1" />

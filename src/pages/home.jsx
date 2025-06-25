@@ -22,28 +22,28 @@ const services = [
   {
     id: 1,
     title: "RDE Chennai",
-    description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
+    //description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
     icon: Code,
     href: "/rde-chennai",
   },
   {
     id: 2,
     title: "VTC Chennai",
-    description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
+   // description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
     icon:  MessageSquare,
     href: "/vtc-chennai",
   },
   {
     id: 3,
     title: "VTC Nashik",
-    description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
+   // description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
     icon: Flag,
     href: "/vtc-nashik",
   },
   {
     id: 4,
     title: "ADMIN Portal",
-    description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
+    //description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
     icon: Dashboard,
     href: "/admin-portal",
   },
@@ -59,8 +59,8 @@ export default function HomePage() {
           {services.map((service) => {
             const Icon = service.icon
             return (
-              <Card key={service.id} className="w-full max-w-[280px] min-h-[380px] flex flex-col justify-between mx-auto  shadow-xl hover:shadow-2xl transition-shadow ">
-                <CardHeader className="flex flex-col items-center text-center space-y-4 pt-10 ">
+              <Card key={service.id} className="bg-red-50 w-full max-w-[280px] min-h-[380px] flex flex-col justify-center mx-auto  shadow-xl hover:shadow-2xl transition-shadow ">
+                <CardHeader className="flex flex-col items-center text-center space-y-4  ">
                   <div className="h-14 w-14 rounded-full  bg-red-500 flex items-center justify-center">
                     <Icon className="h-7 w-7 text-white" />
                   </div>

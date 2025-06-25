@@ -26,6 +26,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import Navbar2 from "@/components/ui/navbar2"
+import { useNavigate } from "react-router-dom"; 
 
 export default function CJobOrder() {
   const projectCodes = ["PCODE1", "PCODE2"];
@@ -81,8 +82,11 @@ export default function CJobOrder() {
   }
 
   const handleTabClick = (tab) => {
-    setActiveTab(tab)
-  }
+  setActiveTab(tab);
+  if (tab === "Job Order") navigate("/nashik/joborder");
+  else if (tab === "Vehicle") navigate("/nashik/vehicle");
+  else if (tab === "Engine") navigate("/nashik/engine");
+};
 
   const handleAddTest = () => {
     console.log("Add Test:", formData)
@@ -126,6 +130,8 @@ export default function CJobOrder() {
     console.log("Create Job Order:", formData)
   }
 
+  
+
   const handleClear = () => {
     setFormData({
       testType: "",
@@ -146,8 +152,8 @@ export default function CJobOrder() {
   }
 
   const handleBack = () => {
-    console.log("Navigate back")
-  }
+  navigate(-1); // Go back to previous page
+};
   const handleUploadDocument = () => {
     console.log("Upload Document")
   }
@@ -174,7 +180,7 @@ export default function CJobOrder() {
                   <ArrowBack className="h-5 w-5" />
                 </Button>
                 <div>
-                  <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">VTC CHENNAI</h1>
+                  <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">VTC Nashik</h1>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">NEW JOB ORDER</h2>
                 </div>
               </div>

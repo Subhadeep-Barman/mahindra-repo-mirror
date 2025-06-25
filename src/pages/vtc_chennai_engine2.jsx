@@ -86,8 +86,8 @@ export default function VTCEnginePage() {
   const [activeTab, setActiveTab] = useState("Engine")
  
   const handleBack = () => {
-    console.log("Navigate back")
-  }
+  navigate(-1); // Go back to previous page
+};
  
   const handleAddNewEngine = () => {
     console.log("Add new engine")

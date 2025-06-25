@@ -87,27 +87,23 @@ export default function VTCEnginePage() {
   const [activeTab, setActiveTab] = useState("Engine")
  
   const handleBack = () => {
-    console.log("Navigate back")
-  }
+  navigate(-1); // Go back to previous page
+};
  
    const navigate = useNavigate();
 
    const handleAddNewEngine = () => {
-    navigate("/engineform"); // This matches your App.jsx route for cEngine.jsx
-  };
+  navigate("/nashik/engine/new"); // Nashik engine form route
+};
  
   //const navigate = useNavigate();
 
   const handleTabClick = (tab) => {
-    setActiveTab(tab);
-    if (tab === "Job Order") {
-      navigate("/cjoborder");
-    } else if (tab === "Vehicle") {
-      navigate("/vtccvehicle");
-    } else if (tab === "Engine") {
-      navigate("/vtcchennaiengine");
-    }
-  };
+  setActiveTab(tab);
+  if (tab === "Job Order") navigate("/nashik/joborder");
+  else if (tab === "Vehicle") navigate("/nashik/vehicle");
+  else if (tab === "Engine") navigate("/nashik/engine");
+};
   return (
     <>
     <Navbar2 />
@@ -127,7 +123,7 @@ export default function VTCEnginePage() {
                 </Button>
                 <div>
                   <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
-                    VTC CHENNAI
+                    VTC Nashik
                   </h1>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
                     NEW JOB ORDER

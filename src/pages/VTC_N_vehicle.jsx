@@ -3,6 +3,7 @@
 import { ArrowBack, Add } from "@mui/icons-material";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -54,11 +55,13 @@ const vehicles = [
   },
 ];
 
-export default function VTCVehiclePage() {
+export default function VTCNashikVehicle() {
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
-  
-  // Calculate pagination values
+  const [activeTab, setActiveTab] = useState("Vehicle");
+
+  // Pagination calculations
   const totalItems = vehicles.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -68,22 +71,20 @@ export default function VTCVehiclePage() {
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
-  const [activeTab, setActiveTab] = useState("Vehicle");
 
   const handleBack = () => {
-    console.log("Navigate back");
-  };
-
-  const handleAddNewVehicle = () => {
-    console.log("Add new vehicle");
+    navigate(-1);
   };
 
   const handleTabClick = (tab) => {
-    setActiveTab(tab);
-    // Navigate to different pages based on tab
-    if (tab === "Job Order") {
-      console.log("Navigate to job order page");
-    }
+  setActiveTab(tab);
+  if (tab === "Job Order") navigate("/nashik/joborder");
+  else if (tab === "Vehicle") navigate("/nashik/vehicle");
+  else if (tab === "Engine") navigate("/nashik/engine");
+};
+
+  const handleAddNewVehicle = () => {
+    navigate("/nashik/vehicle/new");
   };
 
   return (
@@ -104,7 +105,7 @@ export default function VTCVehiclePage() {
               </Button>
               <div>
                 <h1 className="text-sm font-medium text-gray-600 dark:text-red-500">
-                  VTC CHENNAI
+                  VTC Nashik
                 </h1>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">NEW VEHICLE</h2>
               </div>
@@ -128,17 +129,17 @@ export default function VTCVehiclePage() {
 
       {/* Vehicle List Badge */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center bg-white dark:bg-black">
-          <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
-            Current Job Orders
-          </Badge>
-          <Button
-            onClick={handleAddNewVehicle}
-            className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
-          >
-            <Add className="h-4 w-4 mr-1" />
-            CREATE JOB ORDER
-          </Button>
-        </div>
+        <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
+          Current Job Orders
+        </Badge>
+        <Button
+          onClick={handleAddNewVehicle}
+          className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
+        >
+          <Add className="h-4 w-4 mr-1" />
+          ADD NEW Vehicle
+        </Button>
+      </div>
 
       {/* Main Content */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
@@ -214,7 +215,7 @@ export default function VTCVehiclePage() {
             >
               {"<"}
             </Button>
-            {/* Add page numbers here */}
+            {/* Add page numbers here if needed */}
             <Button
               variant="outline"
               size="sm"

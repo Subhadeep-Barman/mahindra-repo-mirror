@@ -20,6 +20,10 @@ export default function ChennaiJobOrderForm() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleBack = () => {
+  navigate(-1); // Go back to previous page
+};
+
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log(form);

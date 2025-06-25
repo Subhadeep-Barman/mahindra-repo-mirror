@@ -3,9 +3,7 @@
 import { ArrowBack, Add } from "@mui/icons-material";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-import { useNavigate } from "react-router-dom";
-
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -56,41 +54,43 @@ const vehicles = [
     lastUpdatedOn: "09-12-2021 09:13 AM",
   },
 ];
-    
 
 export default function VTCVehiclePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
 
-  
-  // Calculate pagination values
   const totalItems = vehicles.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = vehicles.slice(indexOfFirstItem, indexOfLastItem);
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Determine active tab from the current route
+  let activeTab = "Job Order";
+  if (location.pathname.toLowerCase().includes("vehicle")) activeTab = "Vehicle";
+  else if (location.pathname.toLowerCase().includes("engine")) activeTab = "Engine";
+
+  const handleTabClick = (tab) => {
+    if (tab === "Job Order") navigate("/cJobOrder");
+    else if (tab === "Vehicle") navigate("/vtccvehicle");
+    else if (tab === "Engine") navigate("/vtcChennaiEngine");
+  };
+
+  const handleBack = () => {
+    navigate(-1);
+  };
+
+  const handleAddNewVehicle = () => {
+    navigate("/vtcvehicle/new");
+  };
+
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
-  const [activeTab, setActiveTab] = useState("Vehicle");
 
-  const handleBack = () => {
-    console.log("Navigate back");
-  };
-
-
-  const handleTabClick = (tab) => {
-    setActiveTab(tab);
-    // Navigate to different pages based on tab
-    if (tab === "Job Order") {
-      console.log("Navigate to job order page");
-    }
-  };
-  const navigate = useNavigate();
-  const handleAddNewVehicle = () => {
-  navigate("/vtcvehicle/new");
-};
   return (
     <>
       <Navbar2 />
@@ -119,9 +119,12 @@ export default function VTCVehiclePage() {
               {["Job Order", "Vehicle", "Engine"].map((tab) => (
                 <Button
                   key={tab}
-                  variant="default"
                   onClick={() => handleTabClick(tab)}
-                  className={`bg-red-500 hover:bg-red-600 text-white ${activeTab === tab ? "ring-2 ring-red-300" : ""}`}
+                  className={`rounded-xl px-4 py-2 font-semibold border
+                    ${activeTab === tab
+                      ? "bg-red-500 text-white border-red-500"
+                      : "bg-white text-red-500 border-red-500 hover:bg-red-50"}
+                  `}
                 >
                   {tab}
                 </Button>
@@ -133,17 +136,17 @@ export default function VTCVehiclePage() {
 
       {/* Vehicle List Badge */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center bg-white dark:bg-black">
-          <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
-            Current Job Orders
-          </Badge>
-           <Button
-             onClick={handleAddNewVehicle}
-             className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
->
-            <Add className="h-4 w-4 mr-1" />
-            ADD NEW Vehicle 
-           </Button>
-        </div>
+        <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
+          Current Job Orders
+        </Badge>
+        <Button
+          onClick={handleAddNewVehicle}
+          className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
+        >
+          <Add className="h-4 w-4 mr-1" />
+          ADD NEW Vehicle
+        </Button>
+      </div>
 
       {/* Main Content */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
@@ -219,7 +222,6 @@ export default function VTCVehiclePage() {
             >
               {"<"}
             </Button>
-            {/* Add page numbers here */}
             <Button
               variant="outline"
               size="sm"
