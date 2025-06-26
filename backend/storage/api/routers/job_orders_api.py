@@ -6,7 +6,7 @@ router = APIRouter()
 
 @router.get("/domains")
 def get_domains():
-    base_path = Path(__file__).parent.parent.parent / "json_Data"
+    base_path = Path(__file__).parent.parent.parent / "json_data"
     try:
         with open(base_path / "domain.json", encoding="utf-8") as f:
             domains = json.load(f)
@@ -19,7 +19,7 @@ def get_body_numbers(project_code: str):
     """
     Returns body numbers for the given project_code from body_number.json.
     """
-    base_path = Path(__file__).parent.parent.parent / "json_Data"
+    base_path = Path(__file__).parent.parent.parent / "json_data"
     try:
         with open(base_path / "body_number.json", encoding="utf-8") as f:
             body_numbers = json.load(f)

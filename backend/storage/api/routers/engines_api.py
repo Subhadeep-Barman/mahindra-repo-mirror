@@ -69,7 +69,7 @@ class EngineSchema(BaseModel):
 
 @router.get("/engine-families")
 def get_engine_families():
-    base_path = Path(__file__).parent.parent.parent / "json_Data"
+    base_path = Path(__file__).parent.parent.parent / "json_data"
     try:
         with open(base_path / "engine_family.json", encoding="utf-8") as f:
             engine_families = json.load(f)

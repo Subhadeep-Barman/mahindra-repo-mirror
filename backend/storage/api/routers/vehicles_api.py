@@ -46,7 +46,7 @@ class VehicleSchema(BaseModel):
 
 @router.get("/project-codes")
 def get_project_codes():
-    base_path = Path(__file__).parent.parent.parent / "json_Data"
+    base_path = Path(__file__).parent.parent.parent / "json_data"
     try:
         with open(base_path / "project_code.json", encoding="utf-8") as f:
             project_codes = json.load(f)
@@ -56,7 +56,7 @@ def get_project_codes():
 
 @router.get("/vehicle-models")
 def get_vehicle_models():
-    base_path = Path(__file__).parent.parent.parent / "json_Data"
+    base_path = Path(__file__).parent.parent.parent / "json_data"
     try:
         with open(base_path / "vehicle_models.json", encoding="utf-8") as f:
             vehicle_models = json.load(f)
