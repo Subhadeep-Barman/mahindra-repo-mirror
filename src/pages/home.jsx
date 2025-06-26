@@ -1,4 +1,4 @@
-import Navbar from "@/components/ui/navbar"
+import Navbar from "@/components/UI/navbar"
 import * as React from "react"
 import { Link } from "react-router-dom";
 import {
@@ -8,7 +8,7 @@ import {
   LayoutDashboard as Dashboard, // assuming using lucide-react
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/UI/button"
 import {
   Card,
   CardContent,
@@ -16,7 +16,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/UI/card"
 
 const services = [
   {

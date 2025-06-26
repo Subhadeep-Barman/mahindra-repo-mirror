@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/UI/button";
 import { ArrowBack } from "@mui/icons-material";
-import Navbar2 from "@/components/ui/navbar2";
+import Navbar2 from "@/components/UI/navbar2";
 import { useNavigate } from "react-router-dom";
 
 export default function VTCNashikVehicleForm({ onSubmit, onClear }) {

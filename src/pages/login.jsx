@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "@/components/UI/switch";
 import { Sun, Moon } from "lucide-react";
 import darkLogo from "../assets/mai_dark.png";
 import lightLogo from "../assets/mai_light.png";
@@ -23,7 +23,8 @@ function Login() {
   };
 
   const handleSubmit = (e) => {
-    window.location.href = import.meta.env.VITE_AUTH_SUCCESS_URL;
+    window.location.href =
+      "https://ccservices.mahindra.com/auth/redirect?id=d57d1358-38fc-4850-8bdd-e469ee1e2eaf&env=DEV";
     // No need for navigate("/home") here
   };
 

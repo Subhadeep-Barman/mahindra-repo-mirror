@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import jwtDecode from "jwt-decode";
 import Spinner from '../components/UI/Spinner';
 import Cookies from 'js-cookie';
 import showSnackbar from '../utils/showSnackbar';
@@ -12,7 +11,7 @@ import DOMPurify from 'dompurify';
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function DefaultLogin() {
-  const [username, setUsername] = useState('');
+  const [role, setRole] = useState('');
   const [password, setPassword] = useState('');
   const [teamType, setTeamType] = useState('');
   const [teamLocation, setTeamLocation] = useState('');
@@ -20,8 +19,21 @@ export default function DefaultLogin() {
   const [shakeForm, setShakeForm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
+  const auth = useAuth();
+  const login = auth?.login;
   const navigate = useNavigate();
+
+  // Show error if AuthContext is not available
+  if (!auth) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-800">
+        <div className="bg-gray-900 p-8 rounded-lg shadow-lg w-full max-w-md mt-8 text-center">
+          <h1 className="text-2xl text-white mb-6">Authentication Error</h1>
+          <p className="text-red-500">AuthContext is not available. Please ensure the AuthProvider wraps this component.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -29,15 +41,26 @@ export default function DefaultLogin() {
       setLoading(true);
       try {
         const params = new URLSearchParams();
-        params.append('username', username);
+        params.append('username', role); // Use role as username for backend
         params.append('password', password);
 
         const response = await axios.post(`${apiURL}/token`, params);
         let { access_token } = response.data;
+
+        // Check if access_token exists, otherwise show error
+        if (!access_token) {
+          showSnackbar('Incorrect role or password', 'warning');
+          setMessage('Incorrect role or password');
+          setShakeForm(true);
+          setTimeout(() => setShakeForm(false), 600);
+          setLoading(false);
+          return;
+        }
+
         access_token = DOMPurify.sanitize(access_token);
         const decodedToken = jwtDecode(access_token);
 
-        // Generate employee code based on username
+        // Generate employee code based on role
         const employeecode = generateEmployeeCode(decodedToken.username);
         const email = `${decodedToken.username}test@mahindra.com`;
 
@@ -45,12 +68,11 @@ export default function DefaultLogin() {
         login(decodedToken.role, decodedToken.username, email, employeecode, teamType, teamLocation, access_token);
 
         setMessage('Login successful. Redirecting...');
-        setTimeout(() => {
-          navigate('/home?tab=viewjoborders');
-        }, 1000);
+        navigate('/home?tab=viewjoborders'); // Redirect immediately
       } catch (error) {
-        showSnackbar('Incorrect username or password', 'warning');
-        setMessage('Incorrect username or password');
+        // Show a generic error if something else went wrong
+        showSnackbar('An error occurred during login', 'warning');
+        setMessage('An error occurred during login');
         setShakeForm(true);
         setTimeout(() => setShakeForm(false), 600);
       } finally {
@@ -61,7 +83,7 @@ export default function DefaultLogin() {
 
   function validateForm() {
     return (
-      username.trim().length > 0 &&
+      role.trim().length > 0 &&
       password.trim().length > 0 &&
       teamType !== '' &&
       teamLocation !== ''
@@ -81,11 +103,11 @@ export default function DefaultLogin() {
             <h1 className="text-2xl text-white mb-6 text-center">Log In</h1>
             <form onSubmit={handleSubmit} className="space-y-4">
               <label className="block">
-                <p className="text-white mb-2">User ID</p>
+                <p className="text-white mb-2">Role</p>
                 <input
                   type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
                   className="w-full px-3 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   required
                 />

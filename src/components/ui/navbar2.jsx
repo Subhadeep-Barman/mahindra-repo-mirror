@@ -1,7 +1,7 @@
 "use client"
 import { Mail, Notifications, Menu, LightMode, DarkMode } from "@mui/icons-material"
 import { useState, useEffect } from "react"
-import { Switch } from "@/components/ui/switch"
+import { Switch } from "@/components/UI/switch"
 import darkLogo from "../../assets/mai_dark.png"
 import lightLogo from "../../assets/mai_light.png"
 

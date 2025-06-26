@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import useStore from '../store/useStore';
 
-const AuthContext = createContext();
+const AuthContext = createContext({}); // Default to empty object
 const salt = import.meta.env.VITE_COOKIE_SALT || 'default-salt-value';
 
 export const AuthProvider = ({ children }) => {
@@ -104,4 +104,8 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  // Always return the context, even if it's empty
+  return context;
+};

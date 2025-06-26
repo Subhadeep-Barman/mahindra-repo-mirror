@@ -2,21 +2,21 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/UI/button";
+import { Input } from "@/components/UI/input";
+import { Label } from "@/components/UI/label";
+import { Textarea } from "@/components/UI/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Card, CardContent } from "@/components/ui/card";
+} from "@/components/UI/select";
+import { RadioGroup, RadioGroupItem } from "@/components/UI/radio-group";
+import { Card, CardContent } from "@/components/UI/card";
 import { ArrowBack } from "@mui/icons-material";
-import Navbar2 from "@/components/ui/navbar2";
+import Navbar2 from "@/components/UI/navbar2";
 
 export default function EngineForm() {
   const [activeTab, setActiveTab] = useState("Engine");

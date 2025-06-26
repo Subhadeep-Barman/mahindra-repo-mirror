@@ -1,12 +1,12 @@
 "use client"
  
 import { ArrowBack, Add } from "@mui/icons-material"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Card } from "@/components/ui/card"
+import { Button } from "@/components/UI/button"
+import { Badge } from "@/components/UI/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/UI/table"
+import { Card } from "@/components/UI/card"
 import { useState } from "react"
-import Navbar2 from "@/components/ui/navbar2"
+import Navbar2 from "@/components/UI/navbar2"
  
 const engines = [
   {

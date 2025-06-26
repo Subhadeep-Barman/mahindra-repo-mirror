@@ -30,6 +30,7 @@ import RDEEngine from "./pages/RDE_Engine";
 // Misc
 import CreateJobOrder from "./pages/Chennai_create_joborder";
 import AuthSuccess from "./pages/AuthSuccess";
+import DefaultLogin from "./pages/DefaultLogin";
 
 function App() {
   return (
@@ -39,6 +40,8 @@ function App() {
           {/* Auth & Home */}
           <Route path="/" element={<Login />} />
           <Route path="/home" element={<HomePage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/default-login" element={<DefaultLogin />} />
 
           {/* Admin */}
           <Route path="/admin-portal" element={<AdminPortal />} />
