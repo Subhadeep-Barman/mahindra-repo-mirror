@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/UI/button";
 import { Input } from "@/components/UI/input";
@@ -17,6 +17,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/UI/radio-group";
 import { Card, CardContent } from "@/components/UI/card";
 import { ArrowBack } from "@mui/icons-material";
 import Navbar2 from "@/components/UI/navbar2";
+import axios from "axios";
 
 export default function EngineForm() {
   const [activeTab, setActiveTab] = useState("Engine");
@@ -65,6 +66,8 @@ export default function EngineForm() {
     vehicleSerialNumber: "",
     engineFamily: "",
   });
+  const [engineFamilies, setEngineFamilies] = useState([]);
+  const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
   const navigate = useNavigate();
 
@@ -138,6 +141,18 @@ export default function EngineForm() {
     localStorage.setItem("engineFormData", JSON.stringify(formData));
     console.log("Add Engine:", formData);
   };
+
+  useEffect(() => {
+    // Replace 'apiUrl' with your actual API base URL if needed
+    axios
+      .get(`${apiUrl}/engine-families`)
+      .then((res) => {
+        setEngineFamilies(res.data);
+      })
+      .catch(() => {
+        setEngineFamilies([]);
+      });
+  }, []);
 
   return (
     <>
@@ -800,9 +815,20 @@ export default function EngineForm() {
                     <SelectValue placeholder="Select Engine Family" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Family1">Engine Family 1</SelectItem>
-                    <SelectItem value="Family2">Engine Family 2</SelectItem>
-                    <SelectItem value="Family3">Engine Family 3</SelectItem>
+                    {engineFamilies.length > 0 ? (
+                      engineFamilies.map((family) => (
+                        <SelectItem
+                          key={family.value || family.id || family}
+                          value={family}
+                        >
+                          {family}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem disabled>
+                        No Engine Families Available
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

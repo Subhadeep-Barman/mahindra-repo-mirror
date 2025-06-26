@@ -1,14 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/UI/button";
 import { ArrowBack } from "@mui/icons-material";
 import Navbar2 from "@/components/UI/navbar2";
 import { useNavigate } from "react-router-dom";
+import useStore from "@/store/useStore";
 
 export default function VehicleEngineForm({ onSubmit, onClear }) {
-  // Replace these with your actual lists
-  const projectOptions = ["Project A", "Project B"];
-  const vehicleModelOptions = ["Bolero", "Scorpio", "XUV700"];
-  const domainOptions = ["OBD", "BOE", "SCR", "GENERAL"];
+  // Use global store for dropdowns
+  const projectOptions = useStore((state) => state.projectOptions);
+  const setProjectOptions = useStore((state) => state.setProjectOptions);
+  const vehicleModelOptions = useStore((state) => state.vehicleModelOptions);
+  const setVehicleModelOptions = useStore(
+    (state) => state.setVehicleModelOptions
+  );
+  const domainOptions = useStore((state) => state.domainOptions);
+  const setDomainOptions = useStore((state) => state.setDomainOptions);
+  const fetchProjects = useStore((state) => state.fetchProjects);
+  const fetchVehicleModels = useStore((state) => state.fetchVehicleModels);
+  const fetchDomains = useStore((state) => state.fetchDomains);
 
   const [form, setForm] = useState({
     project: "",
@@ -63,26 +72,9 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     driveType: "2WD",
     drivenWheel: "Rear",
     intercoolerLocation: "Front",
-    gearRatio: "4.10"
+    gearRatio: "4.10",
   };
 
-  const handleVehicleBodyChange = (value) => {
-  // Get all saved vehicle forms (if you want to support multiple, otherwise just get the single one)
-  const vehicleFormData = JSON.parse(localStorage.getItem("vehicleFormData") || "{}");
-  if (vehicleFormData.vehicleBodyNumber === value) {
-    setForm({ ...vehicleFormData });
-    setVehicleFormData(vehicleFormData); // <-- update the summary section
-  } else {
-    setForm((prev) => ({
-      ...prev,
-      vehicleBodyNumber: value,
-      vehicleNumber: "",
-      engineNumber: "",
-      engineType: "",
-    }));
-    setVehicleFormData(null); // clear summary if not found
-  }
-};
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -154,6 +146,25 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     navigate(-1);
   };
 
+  useEffect(() => {
+    const getDropdownData = async () => {
+      const projects = await fetchProjects();
+      const vehicleModels = await fetchVehicleModels();
+      const domains = await fetchDomains();
+      setProjectOptions(projects);
+      setVehicleModelOptions(vehicleModels);
+      setDomainOptions(domains);
+    };
+    getDropdownData();
+  }, [
+    fetchProjects,
+    fetchVehicleModels,
+    fetchDomains,
+    setProjectOptions,
+    setVehicleModelOptions,
+    setDomainOptions,
+  ]);
+
   return (
     <>
       <Navbar2 />
@@ -217,7 +228,9 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
             >
               <option value="">Select Project</option>
               {projectOptions.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
               ))}
             </select>
           </div>
@@ -249,7 +262,9 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
             >
               <option value="">Select Model</option>
               {vehicleModelOptions.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
               ))}
             </select>
           </div>
@@ -365,14 +380,17 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
             >
               <option value="">Select Domain</option>
               {domainOptions.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
               ))}
             </select>
           </div>
           {/* Coast Down Test Report Reference */}
           <div>
             <label className="block text-xs font-semibold mb-1">
-              Coast Down Test Report Reference <span className="text-red-500">*</span>
+              Coast Down Test Report Reference{" "}
+              <span className="text-red-500">*</span>
             </label>
             <input
               name="coastDownTestReportReference"
@@ -532,7 +550,8 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           {/* Transmission Oil Specification */}
           <div>
             <label className="block text-xs font-semibold mb-1">
-              Transmission Oil Specification <span className="text-red-500">*</span>
+              Transmission Oil Specification{" "}
+              <span className="text-red-500">*</span>
             </label>
             <input
               name="transmissionOilSpecification"
@@ -685,6 +704,5 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         <div className="text-xs text-red-500 mt-2">*required field</div>
       </form>
     </>
-  ) ;
+  );
 }
-  

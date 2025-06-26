@@ -1,14 +1,15 @@
-import Navbar from "@/components/UI/navbar"
-import * as React from "react"
+import Navbar from "@/components/UI/navbar";
+import * as React from "react";
 import { Link } from "react-router-dom";
 import {
   Code,
   MessageSquare,
   Flag,
   LayoutDashboard as Dashboard, // assuming using lucide-react
-} from "lucide-react"
+} from "lucide-react";
+import useStore from "@/store/useStore";
 
-import { Button } from "@/components/UI/button"
+import { Button } from "@/components/UI/button";
 import {
   Card,
   CardContent,
@@ -16,7 +17,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/UI/card"
+} from "@/components/UI/card";
 
 const services = [
   {
@@ -29,14 +30,14 @@ const services = [
   {
     id: 2,
     title: "VTC Chennai",
-   // description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
-    icon:  MessageSquare,
+    // description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
+    icon: MessageSquare,
     href: "/vtc-chennai",
   },
   {
     id: 3,
     title: "VTC Nashik",
-   // description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
+    // description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
     icon: Flag,
     href: "/vtc-nashik",
   },
@@ -47,43 +48,59 @@ const services = [
     icon: Dashboard,
     href: "/admin-portal",
   },
-]
+];
 
 // Change the export to default and rename the component
 export default function HomePage() {
+  // Fetch dropdown options globally on home page mount
+  const fetchProjects = useStore((state) => state.fetchProjects);
+  const fetchDomains = useStore((state) => state.fetchDomains);
+  const fetchVehicleModels = useStore((state) => state.fetchVehicleModels);
+  React.useEffect(() => {
+    fetchProjects();
+    fetchDomains();
+    fetchVehicleModels();
+  }, [fetchProjects, fetchDomains, fetchVehicleModels]);
+
   return (
-    <>  
+    <>
       <Navbar />
       <div className="flex justify-center mt-40 ">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 w-full max-w-7xl mx-auto ">
           {services.map((service) => {
-            const Icon = service.icon
+            const Icon = service.icon;
             return (
-              <Card key={service.id} className="bg-red-50 w-full max-w-[280px] min-h-[380px] flex flex-col justify-center mx-auto  shadow-xl hover:shadow-2xl transition-shadow ">
+              <Card
+                key={service.id}
+                className="bg-red-50 w-full max-w-[280px] min-h-[380px] flex flex-col justify-center mx-auto  shadow-xl hover:shadow-2xl transition-shadow "
+              >
                 <CardHeader className="flex flex-col items-center text-center space-y-4  ">
                   <div className="h-14 w-14 rounded-full  bg-red-500 flex items-center justify-center">
                     <Icon className="h-7 w-7 text-white" />
                   </div>
                   <div className="space-y-2">
-                    <CardTitle className="text-lg font-semibold dark:text-red-500 text-black">{service.title}</CardTitle>
-                    <CardDescription className="text-sm text-gray-400">{service.description}</CardDescription>
+                    <CardTitle className="text-lg font-semibold dark:text-red-500 text-black">
+                      {service.title}
+                    </CardTitle>
+                    <CardDescription className="text-sm text-gray-400">
+                      {service.description}
+                    </CardDescription>
                   </div>
                 </CardHeader>
                 <CardFooter className="flex justify-center pb-6">
-                  <Button 
-                    asChild 
-                    variant="ghost" 
+                  <Button
+                    asChild
+                    variant="ghost"
                     className="bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 px-4 py-2 text-sm font-medium"
                   >
                     <Link to={service.href}>Explore →</Link>
                   </Button>
                 </CardFooter>
               </Card>
-            )
+            );
           })}
         </div>
       </div>
     </>
-  )
+  );
 }
-

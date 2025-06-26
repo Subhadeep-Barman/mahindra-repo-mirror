@@ -1,6 +1,7 @@
 // src/store/useStore.js
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import axios from "axios";
 
 // Define initial default values for jobOrderFormData
 const initialJobOrderFormData = {
@@ -184,7 +185,8 @@ const useStore = create(
       setJobOrderEngineCodes: (codes) => set({ JobOrderEngineCodes: codes }),
       setJobOrderProjectCodes: (codes) => set({ JobOrderProjectCodes: codes }),
       setJobOrderTestTypes: (types) => set({ JobOrderTestTypes: types }),
-      setJobOrderActivityTypes: (types) => set({ JobOrderActivityTypes: types }),
+      setJobOrderActivityTypes: (types) =>
+        set({ JobOrderActivityTypes: types }),
       setJobOrderActivitySubcategories: (subcategories) =>
         set({ JobOrderActivitySubcategories: subcategories }),
       setJobOrderSelectedEngineType: (type) =>
@@ -194,7 +196,8 @@ const useStore = create(
         set({ JobOrderPerfActivityTypes: types }),
       setJobOrderPerfActivitySubcategories: (subcategories) =>
         set({ JobOrderPerfActivitySubcategories: subcategories }),
-      setJobOrderReferenceTestIds: (ids) => set({ JobOrderReferenceTestIds: ids }),
+      setJobOrderReferenceTestIds: (ids) =>
+        set({ JobOrderReferenceTestIds: ids }),
       setJobOrderOriginalEngineCodes: (codes) =>
         set({ JobOrderOriginalEngineCodes: codes }),
       setJobOrderOriginalProjectCodes: (codes) =>
@@ -237,7 +240,8 @@ const useStore = create(
         set({ JobOrderIsMailModalOpen: isOpen }),
 
       JobOrderTriggerSave: false,
-      setJobOrderTriggerSave: (trigger) => set({ JobOrderTriggerSave: trigger }),
+      setJobOrderTriggerSave: (trigger) =>
+        set({ JobOrderTriggerSave: trigger }),
 
       // Generated Form ID state
       JobOrderGeneratedFormId: "",
@@ -302,6 +306,49 @@ const useStore = create(
 
       testOrderFilterModel: { items: [] },
       setTestOrderFilterModel: (model) => set({ testOrderFilterModel: model }),
+
+      // --- Vehicle/Project/Domain Options State ---
+      projectOptions: [],
+      setProjectOptions: (options) => set({ projectOptions: options }),
+      vehicleModelOptions: [],
+      setVehicleModelOptions: (options) =>
+        set({ vehicleModelOptions: options }),
+      domainOptions: [],
+      setDomainOptions: (options) => set({ domainOptions: options }),
+      // --- Async Fetch Functions ---
+      fetchProjects: async () => {
+        try {
+          const apiUrl = import.meta.env.VITE_BACKEND_URL;
+          const response = await axios.get(`${apiUrl}/project-codes`);
+          set({ projectOptions: response.data });
+          return response.data;
+        } catch (error) {
+          set({ projectOptions: [] });
+          return [];
+        }
+      },
+      fetchVehicleModels: async () => {
+        try {
+          const apiUrl = import.meta.env.VITE_BACKEND_URL;
+          const response = await axios.get(`${apiUrl}/vehicle-models`);
+          set({ vehicleModelOptions: response.data });
+          return response.data;
+        } catch (error) {
+          set({ vehicleModelOptions: [] });
+          return [];
+        }
+      },
+      fetchDomains: async () => {
+        try {
+          const apiUrl = import.meta.env.VITE_BACKEND_URL;
+          const response = await axios.get(`${apiUrl}/domains`);
+          set({ domainOptions: response.data });
+          return response.data;
+        } catch (error) {
+          set({ domainOptions: [] });
+          return [];
+        }
+      },
     }),
     {
       name: "user-cookie-storage", // key in localStorage
