@@ -108,7 +108,8 @@ class Engine(Base):
 
 class CoastDownData(Base):
     __tablename__ = "CoastDownData"
-    id = Column(String, primary_key=True)
+    CoastDownData_id = Column(String, primary_key=True)
+    job_order_id = Column(String)
     coast_down_reference = Column(String)
     vehicle_reference_mass = Column(Float)
     a_value = Column(Float)
@@ -125,7 +126,7 @@ class CoastDownData(Base):
 
 class JobOrder(Base):
     __tablename__ = "JobOrders"
-    id = Column(String, primary_key=True)
+    job_order_id = Column(String, primary_key=True)
     project_id = Column(String)
     vehicle_id = Column(String)  # removed ForeignKey
     engine_id = Column(String)   # removed ForeignKey

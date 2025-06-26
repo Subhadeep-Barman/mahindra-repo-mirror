@@ -7,6 +7,7 @@ from backend.storage.api.routers import test_orders_api
 from backend.storage.api.routers import vehicles_api
 from backend.storage.api.routers import engines_api
 from backend.storage.api.routers import job_orders_api
+from backend.storage.api.routers import auth
 
 # Configure logging to show DEBUG messages
 logging.basicConfig(
@@ -35,3 +36,4 @@ app.include_router(test_orders_api.router)
 app.include_router(vehicles_api.router)
 app.include_router(engines_api.router)
 app.include_router(job_orders_api.router)
+app.include_router(auth.router)
