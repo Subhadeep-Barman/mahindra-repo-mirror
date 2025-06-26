@@ -5,6 +5,20 @@ import os
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
+
+# Determine DB environment
+db_env = os.getenv("DB_ENV", "local")  # default is 'local'
+
+# Set DB URL based on environment
+if db_env == "local":
+    db_url = "postgresql+psycopg2://postgres:12345678@localhost:5432/VTC"
+else:
+    db_url = "postgresql://postgres:Root123@10.238.0.207:5432/dbmrs-vtc-test"
+
+
+# Optional: Print which DB is being used (helpful for debugging)
+print(f"[Alembic] Using '{db_env}' environment -> {db_url}")
+
 # Alembic Config object (contains .ini settings)
 config = context.config
 

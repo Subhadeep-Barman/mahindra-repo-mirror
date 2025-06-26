@@ -128,14 +128,14 @@ class JobOrder(Base):
     __tablename__ = "JobOrders"
     job_order_id = Column(String, primary_key=True)
     project_id = Column(String)
-    vehicle_id = Column(String)  # removed ForeignKey
-    engine_id = Column(String)   # removed ForeignKey
-    cd_id = Column(String)       # removed ForeignKey
-    job_order_number = Column(String)
+    vehicle_id = Column(String)
+    vehicle_body_number = Column(String)
+    engine_id = Column(String)
+    CoastDownData_id = Column(String)
     type_of_engine = Column(String)
     department = Column(String)
     domain = Column(String)
-    status = Column(String)
+    job_order_status = Column(String)
     remarks = Column(String)
     rejection_remarks = Column(String)
     mail_remarks = Column(String)
@@ -149,9 +149,9 @@ class JobOrder(Base):
 
 class TestOrder(Base):
     __tablename__ = "TestOrders"
-    id = Column(String, primary_key=True)
+    test_order_id = Column(String, primary_key=True)
     job_order_id = Column(String)  # removed ForeignKey
-    cd_id = Column(String)         # removed ForeignKey
+    CoastDownData_id = Column(String)         # removed ForeignKey
     test_type = Column(String)
     test_objective = Column(Text)
     vehicle_location = Column(String)
