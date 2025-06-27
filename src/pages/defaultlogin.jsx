@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import Spinner from "../components/UI/spinner";
+import Spinner from "../components/UI/Spinner";
 import Cookies from "js-cookie";
 import showSnackbar from "../utils/showSnackbar";
 import generateEmployeeCode from "../utils/employeeToken";

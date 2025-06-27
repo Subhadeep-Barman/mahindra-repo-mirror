@@ -1,7 +1,7 @@
 // frontend/src/components/UI/Spinner.jsx
-import React from 'react';
-import { ClipLoader } from 'react-spinners';
-import '../../styles/Spinner.css';
+import React from "react";
+import { ClipLoader } from "react-spinners";
+import "../../styles/Spinner.css";
 
 const Spinner = ({ loading }) => {
   return (

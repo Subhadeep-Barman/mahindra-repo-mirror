@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
-import Spinner from "../components/UI/spinner";
+import Spinner from "../components/UI/Spinner";
 import showSnackbar from "../utils/showSnackbar";
 import useStore from "../store/useStore";
 import { jwtDecode } from "jwt-decode";
