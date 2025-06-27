@@ -23,8 +23,8 @@ function Login() {
   };
 
   const handleSubmit = (e) => {
-    window.location.href =
-      "https://ccservices.mahindra.com/auth/redirect?id=d57d1358-38fc-4850-8bdd-e469ee1e2eaf&env=DEV";
+    window.location.href = import.meta.env.VITE_AUTH_SUCCESS_URL;
+    // "https://ccservices.mahindra.com/auth/redirect?id=d57d1358-38fc-4850-8bdd-e469ee1e2eaf&env=UAT";
     // No need for navigate("/home") here
   };
 
