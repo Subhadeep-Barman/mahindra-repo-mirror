@@ -28,6 +28,13 @@ def read_user(user_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
+@router.get("/read_all_users")
+def read_all_users(db: Session = Depends(get_db)):
+    users = db.query(User).all()
+    if not users:
+        raise HTTPException(status_code=404, detail="No users found")
+    return users
+
 
 @router.put("/update_user")
 def update_user(user_id: str, user_update: UserCreate, db: Session = Depends(get_db)):

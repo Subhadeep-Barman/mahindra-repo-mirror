@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 from backend.storage.models.models import Vehicle
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel
 from backend.storage.crud.create_vehicle import create_vehicle as crud_create_vehicle, vehicle_to_dict
@@ -39,9 +39,9 @@ class VehicleSchema(BaseModel):
     driven_wheel: str = None
     intercooler_location: str = None
     gear_ratio: str = None
-    id_of_creator: str = None
+    id_of_creator: Optional[str] = None
     created_on: datetime = None
-    id_of_updater: str = None
+    id_of_updater: Optional[str] = None
     updated_on: datetime = None
 
 @router.get("/project-codes")
