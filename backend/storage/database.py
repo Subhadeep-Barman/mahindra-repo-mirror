@@ -10,18 +10,17 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-# Determine environment
-ENV = os.getenv("ENV", "local").lower()
 SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://postgres:12345678@localhost:5432/VTC"
 STAGING_DATABASE_URI = "postgresql://postgres:Root123@10.238.0.207:5432/dbmrs-vtc-test"
 
-if ENV == "local":
+local = os.getenv("LOCAL")
+print(f"LOCAL environment variable: {local}")
+if local == "True":
     URI = os.getenv("SQLALCHEMY_DATABASE_URI", SQLALCHEMY_DATABASE_URI)
-    logger.info(f"Using LOCAL database: {URI}")
 else:
-    URI = STAGING_DATABASE_URI
-    logger.info(f"Using STAGING database: {URI}")
+    URI = os.getenv("STAGING_DATABASE_URI", STAGING_DATABASE_URI)
 
+print(f"Using database URI: {URI}")
 if not URI:
     raise RuntimeError("Database URI is not set for the current environment.")
 
