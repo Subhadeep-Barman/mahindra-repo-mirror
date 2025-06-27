@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import Spinner from '../components/UI/Spinner';
-import Cookies from 'js-cookie';
-import showSnackbar from '../utils/showSnackbar';
+import React, { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import Spinner from "../components/UI/Spinner";
+import Cookies from "js-cookie";
+import showSnackbar from "../utils/showSnackbar";
 import generateEmployeeCode from "../utils/employeeToken";
-import DOMPurify from 'dompurify';
+import DOMPurify from "dompurify";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function DefaultLogin() {
-  const [role, setRole] = useState('');
-  const [password, setPassword] = useState('');
-  const [teamType, setTeamType] = useState('');
-  const [teamLocation, setTeamLocation] = useState('');
-  const [message, setMessage] = useState('');
+  const [role, setRole] = useState("");
+  const [password, setPassword] = useState("");
+  const [teamType, setTeamType] = useState("");
+  const [teamLocation, setTeamLocation] = useState("");
+  const [message, setMessage] = useState("");
   const [shakeForm, setShakeForm] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +29,10 @@ export default function DefaultLogin() {
       <div className="flex items-center justify-center min-h-screen bg-gray-800">
         <div className="bg-gray-900 p-8 rounded-lg shadow-lg w-full max-w-md mt-8 text-center">
           <h1 className="text-2xl text-white mb-6">Authentication Error</h1>
-          <p className="text-red-500">AuthContext is not available. Please ensure the AuthProvider wraps this component.</p>
+          <p className="text-red-500">
+            AuthContext is not available. Please ensure the AuthProvider wraps
+            this component.
+          </p>
         </div>
       </div>
     );
@@ -41,16 +44,16 @@ export default function DefaultLogin() {
       setLoading(true);
       try {
         const params = new URLSearchParams();
-        params.append('username', role); // Use role as username for backend
-        params.append('password', password);
+        params.append("username", role); // Use role as username for backend
+        params.append("password", password);
 
         const response = await axios.post(`${apiURL}/token`, params);
         let { access_token } = response.data;
 
         // Check if access_token exists, otherwise show error
         if (!access_token) {
-          showSnackbar('Incorrect role or password', 'warning');
-          setMessage('Incorrect role or password');
+          showSnackbar("Incorrect role or password", "warning");
+          setMessage("Incorrect role or password");
           setShakeForm(true);
           setTimeout(() => setShakeForm(false), 600);
           setLoading(false);
@@ -65,14 +68,22 @@ export default function DefaultLogin() {
         const email = `${decodedToken.username}test@mahindra.com`;
 
         // Update authentication context with decoded token data
-        login(decodedToken.role, decodedToken.username, email, employeecode, teamType, teamLocation, access_token);
+        login(
+          decodedToken.role,
+          decodedToken.username,
+          email,
+          employeecode,
+          teamType,
+          teamLocation,
+          access_token
+        );
 
-        setMessage('Login successful. Redirecting...');
-        navigate('/home?tab=viewjoborders'); // Redirect immediately
+        setMessage("Login successful. Redirecting...");
+        navigate("/home?tab=viewjoborders"); // Redirect immediately
       } catch (error) {
         // Show a generic error if something else went wrong
-        showSnackbar('An error occurred during login', 'warning');
-        setMessage('An error occurred during login');
+        showSnackbar("An error occurred during login", "warning");
+        setMessage("An error occurred during login");
         setShakeForm(true);
         setTimeout(() => setShakeForm(false), 600);
       } finally {
@@ -85,8 +96,8 @@ export default function DefaultLogin() {
     return (
       role.trim().length > 0 &&
       password.trim().length > 0 &&
-      teamType !== '' &&
-      teamLocation !== ''
+      teamType !== "" &&
+      teamLocation !== ""
     );
   }
 
@@ -97,7 +108,7 @@ export default function DefaultLogin() {
         <div className="flex items-center justify-center my-auto">
           <div
             className={`${
-              shakeForm ? 'animate-shake' : ''
+              shakeForm ? "animate-shake" : ""
             } bg-gray-900 p-8 rounded-lg shadow-lg w-full max-w-md mt-8`}
           >
             <h1 className="text-2xl text-white mb-6 text-center">Log In</h1>
@@ -130,7 +141,9 @@ export default function DefaultLogin() {
                   className="w-full px-3 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   required
                 >
-                  <option value="" disabled>Select Team Type</option>
+                  <option value="" disabled>
+                    Select Team Type
+                  </option>
                   <option value="RDE">RDE</option>
                   <option value="VTC">VTC</option>
                 </select>
@@ -143,7 +156,9 @@ export default function DefaultLogin() {
                   className="w-full px-3 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   required
                 >
-                  <option value="" disabled>Select Team Location</option>
+                  <option value="" disabled>
+                    Select Team Location
+                  </option>
                   <option value="Chennai">Chennai</option>
                   <option value="Nashik">Nashik</option>
                 </select>
@@ -160,9 +175,9 @@ export default function DefaultLogin() {
             {message && (
               <p
                 className={`mt-4 text-center ${
-                  message === 'Login successful. Redirecting...'
-                    ? 'text-green-500'
-                    : 'text-red-500'
+                  message === "Login successful. Redirecting..."
+                    ? "text-green-500"
+                    : "text-red-500"
                 }`}
               >
                 {message}

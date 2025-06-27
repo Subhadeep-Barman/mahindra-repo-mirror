@@ -30,7 +30,7 @@ import RDEEngine from "./pages/RDE_Engine";
 // Misc
 import CreateJobOrder from "./pages/Chennai_create_joborder";
 import AuthSuccess from "./pages/AuthSuccess";
-import DefaultLogin from "./pages/DefaultLogin";
+import DefaultLogin from "./pages/defaultlogin";
 
 function App() {
   return (
@@ -59,8 +59,11 @@ function App() {
           <Route path="/nashik/joborder" element={<NashikJobOrder />} />
           <Route path="/nashik/vehicle" element={<VTCNashikVehicle />} />
           <Route path="/nashik/engine" element={<NEngine />} />
-          <Route path="/nashik/vehicle/new" element={<VTCNashikVehicleForm />} />
-          <Route path="/nashik/engine/new" element={<NEngine />} /> 
+          <Route
+            path="/nashik/vehicle/new"
+            element={<VTCNashikVehicleForm />}
+          />
+          <Route path="/nashik/engine/new" element={<NEngine />} />
 
           {/* RDE */}
           <Route path="/rde-chennai" element={<VTCCVehiclePage />} />
