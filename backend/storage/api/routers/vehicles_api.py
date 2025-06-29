@@ -111,3 +111,19 @@ def delete_vehicle(vehicle_id: str, db: Session = Depends(get_db)):
     db.delete(vehicle)
     db.commit()
     return {"detail": "Vehicle deleted successfully"}
+
+@router.get("/vehicle-body-numbers")
+def get_vehicle_body_numbers(db: Session = Depends(get_db)):
+    results = db.query(Vehicle.vehicle_body_number, Vehicle.vehicle_number).all()
+    # Return list of dicts with both body number and vehicle number
+    return [
+        {"vehicle_body_number": bn, "vehicle_number": vn}
+        for bn, vn in results if bn is not None
+    ]
+
+@router.get("/vehicles/by-body-number/{vehicle_body_number}", response_model=VehicleSchema)
+def get_vehicle_by_body_number(vehicle_body_number: str, db: Session = Depends(get_db)):
+    vehicle = db.query(Vehicle).filter(Vehicle.vehicle_body_number == vehicle_body_number).first()
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found for the given body number")
+    return vehicle_to_dict(vehicle)

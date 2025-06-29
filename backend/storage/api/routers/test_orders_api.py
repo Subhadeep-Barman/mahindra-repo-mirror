@@ -2,6 +2,14 @@ from fastapi import APIRouter, HTTPException
 from pathlib import Path
 import json
 
+from fastapi import APIRouter, HTTPException, Depends, Body
+from typing import List
+from datetime import datetime, date
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from backend.storage.api.api_utils import get_db
+from backend.storage.models.models import TestOrder
+
 router = APIRouter()
 
 @router.get("/test-types")
@@ -43,16 +51,6 @@ def get_fuel_types():
         return fuel_types
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-from fastapi import APIRouter, HTTPException, Depends, Body
-from typing import List
-from datetime import datetime, date
-from pydantic import BaseModel
-from sqlalchemy.orm import Session
-from backend.storage.api.api_utils import get_db
-from backend.storage.models.models import TestOrder
-
-router = APIRouter()
 
 class TestOrderSchema(BaseModel):
     test_order_id: str

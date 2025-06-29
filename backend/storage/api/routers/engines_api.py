@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Body
 from pathlib import Path
 import json
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -62,9 +62,9 @@ class EngineSchema(BaseModel):
     hv_battery_voltage: float = None
     hv_battery_current: float = None
     ev_motor_power_kw: float = None
-    id_of_creator: str = None
+    id_of_creator: Optional[str] = None
     created_on: datetime = None
-    id_of_updater: str = None
+    id_of_updater: Optional[str] = None
     updated_on: datetime = None
 
 @router.get("/engine-families")
@@ -151,3 +151,16 @@ def delete_engine(engine_id: str, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to delete engine: " + str(e))
+
+@router.get("/engine-numbers")
+def get_engine_numbers(db: Session = Depends(get_db)):
+    engine_numbers = db.query(Engine.engine_serial_number).all()
+    # Flatten list of tuples and filter out None values
+    return [en[0] for en in engine_numbers if en[0] is not None]
+
+@router.get("/engines/by-engine-number/{engine_serial_number}", response_model=EngineSchema)
+def get_engine_by_engine_number(engine_serial_number: str, db: Session = Depends(get_db)):
+    engine = db.query(Engine).filter(Engine.engine_serial_number == engine_serial_number).first()
+    if not engine:
+        raise HTTPException(status_code=404, detail="Engine not found for the given engine number")
+    return engine_to_dict(engine)
