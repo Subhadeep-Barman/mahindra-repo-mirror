@@ -13,15 +13,34 @@ import {
   TableRow,
 } from "@/components/UI/table";
 import { Card } from "@/components/UI/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar2 from "@/components/UI/navbar2";
-const jobOrders = [
-  // ...your jobOrders data...
-];
+import axios from "axios";
+const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function VTCChennaiPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 8;
+
+  // Add: State for job orders fetched from backend
+  const [jobOrders, setJobOrders] = useState([]);
+
+  // State for selected job order and modal
+  const [selectedJobOrder, setSelectedJobOrder] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [jobOrderEdit, setJobOrderEdit] = useState(null);
+
+  // Fetch job orders from backend on mount
+  useEffect(() => {
+    fetchJobOrders();
+  }, []);
+
+  const fetchJobOrders = () => {
+    axios
+      .get(`${apiURL}/joborders`)
+      .then((res) => setJobOrders(res.data || []))
+      .catch(() => setJobOrders([]));
+  };
 
   // Calculate pagination values
   const totalPages = Math.ceil(jobOrders.length / rowsPerPage);
@@ -38,7 +57,7 @@ export default function VTCChennaiPage() {
   else if (location.pathname.toLowerCase().includes("engine")) activeTab = "Engine";
 
   const handleTabClick = (tab) => {
-    if (tab === "Job Order") navigate("/cJobOrder");
+    if (tab === "Job Order") navigate("/vtc-chennai");
     else if (tab === "Vehicle") navigate("/vtccvehicle");
     else if (tab === "Engine") navigate("/vtcChennaiEngine");
   };
@@ -53,6 +72,52 @@ export default function VTCChennaiPage() {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
+  };
+
+  // Handler for clicking job order number
+  const handleJobOrderClick = (job_order_id) => {
+    // Fetch job order details from backend and redirect to /createJobOrder with all data
+    axios
+      .get(`${apiURL}/joborders/${job_order_id}`)
+      .then((res) => {
+        // Pass the complete job order data to create job order page
+        // This will allow the form to be pre-filled with existing values
+        navigate("/createJobOrder", { 
+          state: { 
+            jobOrder: res.data,
+            isEdit: true, // Flag to indicate this is for editing/creating test orders
+            originalJobOrderId: job_order_id // Keep reference to original job order
+          } 
+        });
+      })
+      .catch((error) => {
+        console.error("Failed to fetch job order details:", error);
+        // Still navigate but without pre-filled data
+        navigate("/createJobOrder");
+      });
+  };
+
+  // Handler for editing fields in the modal
+  const handleEditChange = (field, value) => {
+    setJobOrderEdit((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // Handler for saving the updated job order
+  const handleSaveJobOrder = async () => {
+    if (!jobOrderEdit?.job_order_id) return;
+    try {
+      await axios.put(
+        `${apiURL}/joborders/${jobOrderEdit.job_order_id}`,
+        jobOrderEdit
+      );
+      setModalOpen(false);
+      fetchJobOrders();
+    } catch (err) {
+      alert("Failed to update job order");
+    }
   };
 
   return (
@@ -122,42 +187,83 @@ export default function VTCChennaiPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Week No</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Job Order Number</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Project</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Vehicle Number</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Body No</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Engine Number</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Domain</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Test Status</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Created By</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Created on</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Last updated By</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Last updated on</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Job Order Number
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Project
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Vehicle Number
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Body No
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Engine Number
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Domain
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Job Order Status
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Created By
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Created on
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Last updated By
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Last updated on
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {currentRows.map((order, index) => (
                     <TableRow
-                      key={index}
+                      key={order.job_order_id || index}
                       className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
                     >
-                      <TableCell className="text-xs text-gray-900">{order.weekNo}</TableCell>
-                      <TableCell className="text-xs">
-                        <span className="text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400">
-                          {order.jobOrderNumber}
-                        </span>
+                      <TableCell
+                        className="text-xs text-blue-600 underline cursor-pointer"
+                        onClick={() => handleJobOrderClick(order.job_order_id)}
+                      >
+                        {order.job_order_id}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-900">{order.project}</TableCell>
-                      <TableCell className="text-xs text-gray-600">{order.vehicleNumber}</TableCell>
-                      <TableCell className="text-xs text-gray-600">{order.bodyNo}</TableCell>
-                      <TableCell className="text-xs text-gray-600">{order.engineNumber}</TableCell>
-                      <TableCell className="text-xs text-gray-900">{order.domain}</TableCell>
-                      <TableCell className="text-xs text-gray-900">{order.testStatus}</TableCell>
-                      <TableCell className="text-xs text-gray-600">{order.createdBy}</TableCell>
-                      <TableCell className="text-xs text-gray-600">{order.createdOn}</TableCell>
-                      <TableCell className="text-xs text-gray-600">{order.lastUpdatedBy}</TableCell>
-                      <TableCell className="text-xs text-gray-600">{order.lastUpdatedOn}</TableCell>
+                      <TableCell className="text-xs text-gray-900">
+                        {order.project_id}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {order.vehicle_id}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {order.vehicle_body_number}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {order.engine_id}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-900">
+                        {order.domain}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-900">
+                        {order.job_order_status}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {order.name_of_creator}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {order.created_on?.slice(0, 10)}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {order.name_of_updater}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {order.updated_on?.slice(0, 10)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -168,7 +274,8 @@ export default function VTCChennaiPage() {
           {/* Pagination Footer */}
           <div className="flex items-center justify-between mt-4">
             <div className="text-sm text-gray-600 dark:text-white">
-              Showing {startIndex + 1} to {Math.min(endIndex, jobOrders.length)} of {jobOrders.length}
+              Showing {startIndex + 1} to{" "}
+              {Math.min(endIndex, jobOrders.length)} of {jobOrders.length}
             </div>
             <div className="flex items-center space-x-2">
               <Button
@@ -195,9 +302,11 @@ export default function VTCChennaiPage() {
                   variant={currentPage === page ? "default" : "outline"}
                   size="sm"
                   onClick={() => handlePageChange(page)}
-                  className={currentPage === page
-                    ? "bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black"
-                    : "text-gray-600 dark:text-white dark:border-gray-600"}
+                  className={
+                    currentPage === page
+                      ? "bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black"
+                      : "text-gray-600 dark:text-white dark:border-gray-600"
+                  }
                 >
                   {page}
                 </Button>
@@ -224,6 +333,54 @@ export default function VTCChennaiPage() {
           </div>
         </div>
       </div>
-    </> 
+
+      {/* Modal for viewing/editing job order */}
+      {modalOpen && jobOrderEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-[90vw] max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">Job Order Details</h2>
+              <Button variant="ghost" onClick={() => setModalOpen(false)}>
+                Close
+              </Button>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSaveJobOrder();
+              }}
+            >
+              <div className="grid grid-cols-2 gap-4">
+                {Object.entries(jobOrderEdit).map(([key, value]) => (
+                  <div key={key} className="flex flex-col mb-2">
+                    <label className="font-semibold text-xs capitalize mb-1">
+                      {key.replace(/_/g, " ")}
+                    </label>
+                    <input
+                      className="border px-2 py-1 rounded text-xs"
+                      value={value ?? ""}
+                      onChange={(e) => handleEditChange(key, e.target.value)}
+                      disabled={key === "job_order_id"}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-red-600 text-white">
+                  Save
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

@@ -7,31 +7,29 @@ import useStore from "../store/useStore";
 import { jwtDecode } from "jwt-decode";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
-// Validation functions for employee API fields
+// Validation functions for userloyee API fields
 function isValidUserRole(role) {
   return typeof role === "string" && /^[A-Za-z0-9_-]{1,50}$/.test(role);
 }
 
-function isValidTeamType(teamType) {
-  return typeof teamType === "string" && /^[A-Za-z0-9_-]{1,50}$/.test(teamType);
+function isValidTeam(team) {
+  return typeof team === "string" && /^[A-Za-z0-9_-]{1,50}$/.test(team);
 }
 
-function isValidEngineType(engineType) {
-  return (
-    typeof engineType === "string" && /^[A-Za-z0-9_-]{1,50}$/.test(engineType)
-  );
+function isValidlocation(location) {
+  return typeof location === "string" &&
+    /^[A-Za-z0-9_-]{1,50}$/.test(location);
 }
 
-// Validate that the employee data from the API conforms to expected types and values
-const validateEmployeeData = (data) => {
+// Validate that the userloyee data from the API conforms to expected types and values
+const validateUserData = (data) => {
   if (!Array.isArray(data)) return false;
-  return data.every(
-    (emp) =>
-      typeof emp === "object" &&
-      typeof emp.id === "string" &&
-      isValidUserRole(emp.role) &&
-      isValidTeamType(emp.team_type) &&
-      isValidEngineType(emp.engine_type)
+  return data.every(user =>
+    typeof user === "object" &&
+    typeof user.id === "string" &&
+    isValidUserRole(user.role) &&
+    isValidTeam(user.team) && // <-- check for team
+    isValidlocation(user.location) // <-- check for location
   );
 };
 
@@ -49,13 +47,21 @@ export default function AuthSuccess() {
         const jwtToken = searchParams.get("jwt_token");
         const userDetails = jwtDecode(jwtToken);
         console.log("Decoded JWT Token:", userDetails);
-        const response = await axios.get(`${apiURL}/employee/all`);
+        const response = await axios.get(`${apiURL}/api/users/read_all_users`);
+        console.log("API response data:", response.data);
 
-        if (!validateEmployeeData(response.data)) {
-          throw new Error("Invalid employee data from API");
+        // Debug: log each user object to see its structure
+        if (Array.isArray(response.data)) {
+          response.data.forEach((user, idx) => {
+            console.log(`User[${idx}]:`, user);
+          });
         }
-        const employees = response.data;
-        const user = employees.find((emp) => emp.id === userDetails.user);
+
+        if (!validateUserData(response.data)) {
+          throw new Error("Invalid userloyee data from API");
+        }
+        const users = response.data;
+        const user = users.find((user) => user.id === userDetails.user);
         if (!user) {
           showSnackbar(
             "You are not registered, send mail to the Admin",
@@ -71,10 +77,10 @@ export default function AuthSuccess() {
           userRole: user.role,
           LoggedIn: "true",
           userEmail: userDetails.emailaddress,
-          userEmployeeId: userDetails.user,
+          userId: userDetails.user,
           userName: userDetails.displayname,
-          teamType: user.team_type,
-          engineType: user.engine_type,
+          teamType: user.team, // <-- use team
+          location: user.location // <-- use location
         });
 
         // If you have a login function, call it here with the new parameters
@@ -88,11 +94,16 @@ export default function AuthSuccess() {
         //   jwtToken
         // );
 
-        navigate("/home?tab=viewjoborders");
+        console.log("User authenticated successfully:", userDetails);
+        showSnackbar("User authenticated successfully", "success");
+        navigate("/home");
+        console.log("User Cookie Data:", useStore.getState().userCookieData);
+
       } catch (error) {
         console.error("Authentication Error:", error);
         showSnackbar("Error processing JWT token", "warning");
         navigate("/");
+        console.error("Error during authentication:", error);
       } finally {
         setLoading(false);
       }

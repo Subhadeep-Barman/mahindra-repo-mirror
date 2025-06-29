@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 import { Button } from "@/components/UI/button";
 import { ArrowBack } from "@mui/icons-material";
 import Navbar2 from "@/components/UI/navbar2";
 import { useNavigate } from "react-router-dom";
 import useStore from "@/store/useStore";
+const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function VehicleEngineForm({ onSubmit, onClear }) {
   // Use global store for dropdowns
@@ -83,7 +85,52 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  // Helper to generate UUID for vehicle_id
+  function generateVehicleId() {
+    if (window.crypto && window.crypto.randomUUID) {
+      return window.crypto.randomUUID();
+    }
+    // fallback for older browsers
+    return 'xxxxxxxxyxxxxyxxxyxxxxyxxxxyxxxxyx'.replace(/[xy]/g, function (c) {
+      const r = (Math.random() * 16) | 0;
+      return r.toString(16);
+    });
+  }
+
+  // Map form state to API schema
+  function mapFormToApi(form) {
+    return {
+      vehicle_id: generateVehicleId(),
+      project_code: form.project,
+      vehicle_serial_number: form.engineNumber, // Assuming engineNumber as serial
+      vehicle_body_number: form.vehicleBodyNumber,
+      vehicle_model: form.vehicleModel,
+      vehicle_number: form.vehicleNumber,
+      vehicle_build_level: form.vehicleBuildLevel,
+      transmission_type: form.transmissionType,
+      final_drive_axle_ratio: form.finalDriveAxleRatio,
+      domain: form.domain,
+      coast_down_test_reference_report: form.coastDownTestReportReference,
+      tyre_make: form.tyreMake,
+      tyre_size: form.tyreSize,
+      tyre_pressure_front: form.tyrePressureFront ? parseFloat(form.tyrePressureFront) : null,
+      tyre_pressure_rear: form.tyrePressureRear ? parseFloat(form.tyrePressureRear) : null,
+      tyre_run_in: form.tyreRunIn ? parseFloat(form.tyreRunIn) : null,
+      engine_run_in: form.engineRunIn ? parseFloat(form.engineRunIn) : null,
+      gearbox_run_in: form.gearBoxRunIn ? parseFloat(form.gearBoxRunIn) : null,
+      axle_run_in: form.axleRunIn ? parseFloat(form.axleRunIn) : null,
+      engine_oil_specification: form.engineOilSpecification,
+      axle_oil_specification: form.axleOilSpecification,
+      transmission_oil_specification: form.transmissionOilSpecification,
+      wd_type: form.driveType,
+      driven_wheel: form.drivenWheel,
+      intercooler_location: form.intercoolerLocation,
+      gear_ratio: form.gearRatio,
+      // id_of_creator, created_on, id_of_updater, updated_on handled by backend
+    };
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     for (let key in form) {
       if (!form[key]) {
@@ -91,10 +138,17 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         return;
       }
     }
-    // Save to localStorage
-    localStorage.setItem("vehicleFormData", JSON.stringify(form));
-    if (onSubmit) onSubmit(form);
-    else console.log(form);
+    const payload = mapFormToApi(form);
+
+    try {
+      const response = await axios.post(`${apiURL}/vehicles`, payload, {
+        headers: { "Content-Type": "application/json" },
+      });
+      if (onSubmit) onSubmit(response.data);
+      else alert("Vehicle added successfully!");
+    } catch (err) {
+      alert("Error adding vehicle: " + (err.response?.data?.detail || err.message));
+    }
   };
 
   const handleClear = () => {
@@ -137,7 +191,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
-    if (tab === "Job Order") navigate("/cjoborder");
+    if (tab === "Job Order") navigate("/vtc-chennai");
     else if (tab === "Vehicle") navigate("/vtcvehicle/new");
     else if (tab === "Engine") navigate("/engineform");
   };

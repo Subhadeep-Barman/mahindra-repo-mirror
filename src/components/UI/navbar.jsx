@@ -2,6 +2,7 @@
 import { Mail, Notifications, Menu, LightMode, DarkMode } from "@mui/icons-material"
 import { useState, useEffect } from "react"
 import { Switch } from "@/components/UI/switch"
+import AccountMenu from "@/components/UI/accountmenu"
 import darkLogo from "../../assets/mai_dark.png"
 import lightLogo from "../../assets/mai_light.png"
 
@@ -55,11 +56,7 @@ export default function Navbar() {
             <DarkMode className="h-4 w-4 text-red-500 dark:text-red-500" />
           </div>
 
-          <div className="relative">
-            <button className="w-8 h-8 bg-red-500 dark:bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
-              <span className="text-sm font-semibold">A</span>
-            </button>
-          </div>
+          <AccountMenu />
         </div>
 
         {/* Mobile Menu Button */}
@@ -97,12 +94,9 @@ export default function Navbar() {
               />
             </div>
 
-            <button className="flex items-center space-x-2 p-2 text-red-500 dark:text-red-500">
-              <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center transition-colors duration-200">
-                <span className="text-white text-sm font-semibold">A</span>
-              </div>
-              <span>Profile</span>
-            </button>
+            <div className="px-2">
+              <AccountMenu />
+            </div>
           </div>
         </div>
       )}

@@ -7,6 +7,7 @@ import Cookies from "js-cookie";
 import showSnackbar from "../utils/showSnackbar";
 import generateEmployeeCode from "../utils/employeeToken";
 import DOMPurify from "dompurify";
+import { jwtDecode } from "jwt-decode";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -47,7 +48,7 @@ export default function DefaultLogin() {
         params.append("username", role); // Use role as username for backend
         params.append("password", password);
 
-        const response = await axios.post(`${apiURL}/token`, params);
+        const response = await axios.post(`${apiURL}/api/token`, params);
         let { access_token } = response.data;
 
         // Check if access_token exists, otherwise show error
@@ -62,24 +63,33 @@ export default function DefaultLogin() {
 
         access_token = DOMPurify.sanitize(access_token);
         const decodedToken = jwtDecode(access_token);
+        console.log("Decoded Token:", decodedToken);
 
-        // Generate employee code based on role
-        const employeecode = generateEmployeeCode(decodedToken.username);
-        const email = `${decodedToken.username}test@mahindra.com`;
+        // Use the role from form input as username since token doesn't contain username field
+        const username = role; // The role input field contains the username
+        console.log("Username from form:", username);
+
+        // Generate employee code based on username (role field)
+        const employeecode = generateEmployeeCode(username);
+        console.log("Generated Employee Code:", employeecode); 
+        const email = `${employeecode}@mahindra.com`;
+        console.log("Generated Email:", email);
 
         // Update authentication context with decoded token data
         login(
           decodedToken.role,
-          decodedToken.username,
+          username,
           email,
           employeecode,
           teamType,
-          teamLocation,
+          teamLocation, // Changed from engineType to teamLocation to match location parameter
           access_token
         );
+        console.log("User logged in successfully:", username);
+        showSnackbar("Login successful", "success");
 
         setMessage("Login successful. Redirecting...");
-        navigate("/home?tab=viewjoborders"); // Redirect immediately
+        navigate("/home"); // Redirect immediately
       } catch (error) {
         // Show a generic error if something else went wrong
         showSnackbar("An error occurred during login", "warning");

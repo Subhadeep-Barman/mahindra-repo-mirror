@@ -65,6 +65,11 @@ export default function EngineForm() {
     thermostatDetails: "",
     vehicleSerialNumber: "",
     engineFamily: "",
+    hvBatteryMake: "",
+    hvBatteryCapacity: "",
+    hvBatteryVoltage: "",
+    hvBatteryCurrent: "",
+    evMotorPower: "",
   });
   const [engineFamilies, setEngineFamilies] = useState([]);
   const apiUrl = import.meta.env.VITE_BACKEND_URL;
@@ -80,7 +85,7 @@ export default function EngineForm() {
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
-    if (tab === "Job Order") navigate("/cjoborder");
+    if (tab === "Job Order") navigate("/vtc-chennai");
     else if (tab === "Vehicle") navigate("/vtccvehicle");
     else if (tab === "Engine") navigate("/engineform");
   };
@@ -130,6 +135,11 @@ export default function EngineForm() {
       thermostatDetails: "",
       vehicleSerialNumber: "",
       engineFamily: "",
+      hvBatteryMake: "",
+      hvBatteryCapacity: "",
+      hvBatteryVoltage: "",
+      hvBatteryCurrent: "",
+      evMotorPower: "",
     });
   };
 
@@ -137,9 +147,107 @@ export default function EngineForm() {
     navigate(-1);
   };
 
-  const handleAddEngine = () => {
-    localStorage.setItem("engineFormData", JSON.stringify(formData));
-    console.log("Add Engine:", formData);
+  const handleAddEngine = async () => {
+    // Generate UUID for engine_id
+    function generateEngineId() {
+      if (window.crypto && window.crypto.randomUUID) {
+        return window.crypto.randomUUID();
+      }
+      return "xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+        const r = (Math.random() * 16) | 0;
+        return r.toString(16);
+      });
+    }
+
+    // Map formData to API schema
+    const now = new Date().toISOString();
+    const payload = {
+      engine_id: generateEngineId(),
+      engine_serial_number: formData.engineSerialNumber,
+      engine_build_level: formData.engineBuildLevel,
+      engine_capacity: formData.engineCapacity
+        ? parseFloat(formData.engineCapacity)
+        : null,
+      engine_type: formData.engineType,
+      number_of_cylinders: formData.numberOfCylinders,
+      compression_ratio: formData.compressionRatio
+        ? parseFloat(formData.compressionRatio)
+        : null,
+      bore_mm: formData.bore ? parseFloat(formData.bore) : null,
+      stroke_mm: formData.stroke ? parseFloat(formData.stroke) : null,
+      vacuum_modulator_make: formData.vacuumModulatorMake,
+      vacuum_modulator_details: formData.vacuumModulatorDetails,
+      ecu_make: formData.ecuMake,
+      ecu_id_number: formData.ecuIdNumber,
+      ecu_dataset_number: formData.ecuDatasetNumber,
+      ecu_dataset_details: formData.ecuDatasetDetails,
+      injector_type: formData.injectorType,
+      turbo_charger_type: formData.turbochargerType,
+      blow_by_recirculation:
+        formData.blowByRecirculation === "Yes"
+          ? true
+          : formData.blowByRecirculation === "No"
+          ? false
+          : null,
+      nozzle_hole_count: formData.nozzleNumberOfHoles,
+      nozzle_through_flow:
+        formData.nozzleThroughFlow ? parseFloat(formData.nozzleThroughFlow) : null,
+      egr_valve_make: formData.egrValveMake,
+      egr_valve_type: formData.egrValveType,
+      egr_valve_diameter_mm: formData.egrValveDiameter
+        ? parseFloat(formData.egrValveDiameter)
+        : null,
+      egr_cooler_make: formData.egrCoolerMake,
+      egr_cooler_capacity_kw: formData.egrCoolerCapacity
+        ? parseFloat(formData.egrCoolerCapacity)
+        : null,
+      catcon_make: formData.cafconMass,
+      catcon_type: formData.cafconType,
+      catcon_loading: formData.cafconLoading,
+      dpf_make: formData.dpfMake,
+      dpf_capacity: formData.dpfCapacity,
+      scr_make: formData.scrMake,
+      scr_capacity: formData.scrCapacity,
+      acc_compressor:
+        formData.acCompressor === "Yes"
+          ? true
+          : formData.acCompressor === "No"
+          ? false
+          : null,
+      acc_compressor_details: formData.acCompressorDetails,
+      ps_pump: formData.powerSteeringPump,
+      ps_details: formData.powerSteeringDetails,
+      water_bypass: formData.waterByPass,
+      kerb_weight_faw_kg: formData.kerbWeightEmw
+        ? parseFloat(formData.kerbWeightEmw)
+        : null,
+      kerb_weight_raw_kg: formData.kerbWeightRmw
+        ? parseFloat(formData.kerbWeightRmw)
+        : null,
+      emission_status: formData.emissionStatus,
+      thermostat_details: formData.thermostatDetails,
+      vehicle_serial_number: formData.vehicleSerialNumber,
+      engine_family: formData.engineFamily,
+      hv_battery_make: formData.hvBatteryMake,
+      hv_battery_capacity: formData.hvBatteryCapacity ? parseFloat(formData.hvBatteryCapacity) : null,
+      hv_battery_voltage: formData.hvBatteryVoltage ? parseFloat(formData.hvBatteryVoltage) : null,
+      hv_battery_current: formData.hvBatteryCurrent ? parseFloat(formData.hvBatteryCurrent) : null,
+      ev_motor_power_kw: formData.evMotorPower ? parseFloat(formData.evMotorPower) : null,
+      created_on: now,
+      updated_on: now,
+      id_of_creator: userId,
+      id_of_updater: userId,
+    };
+
+    try {
+      const response = await axios.post(`${apiUrl}/engines`, payload, {
+        headers: { "Content-Type": "application/json" },
+      });
+      alert("Engine added successfully!");
+      // Optionally clear form or navigate
+    } catch (err) {
+      alert("Error adding engine: " + (err.response?.data?.detail || err.message));
+    }
   };
 
   useEffect(() => {
@@ -831,6 +939,57 @@ export default function EngineForm() {
                     )}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* HV Battery Make */}
+              <div className="space-y-2">
+                <Label htmlFor="hvBatteryMake">HV Battery Make</Label>
+                <Input
+                  id="hvBatteryMake"
+                  value={formData.hvBatteryMake}
+                  onChange={e => handleInputChange("hvBatteryMake", e.target.value)}
+                  placeholder="Enter HV Battery Make"
+                />
+              </div>
+              {/* HV Battery Capacity */}
+              <div className="space-y-2">
+                <Label htmlFor="hvBatteryCapacity">HV Battery Capacity</Label>
+                <Input
+                  id="hvBatteryCapacity"
+                  value={formData.hvBatteryCapacity}
+                  onChange={e => handleInputChange("hvBatteryCapacity", e.target.value)}
+                  placeholder="Enter HV Battery Capacity"
+                />
+              </div>
+              {/* HV Battery Voltage (V) */}
+              <div className="space-y-2">
+                <Label htmlFor="hvBatteryVoltage">HV Battery Voltage (V)</Label>
+                <Input
+                  id="hvBatteryVoltage"
+                  value={formData.hvBatteryVoltage}
+                  onChange={e => handleInputChange("hvBatteryVoltage", e.target.value)}
+                  placeholder="Enter HV Battery Voltage (V)"
+                />
+              </div>
+              {/* HV Battery Current (A) */}
+              <div className="space-y-2">
+                <Label htmlFor="hvBatteryCurrent">HV Battery Current (A)</Label>
+                <Input
+                  id="hvBatteryCurrent"
+                  value={formData.hvBatteryCurrent}
+                  onChange={e => handleInputChange("hvBatteryCurrent", e.target.value)}
+                  placeholder="Enter HV Battery Current (A)"
+                />
+              </div>
+              {/* EV Motor Power (KW) */}
+              <div className="space-y-2">
+                <Label htmlFor="evMotorPower">EV Motor Power (KW)</Label>
+                <Input
+                  id="evMotorPower"
+                  value={formData.evMotorPower}
+                  onChange={e => handleInputChange("evMotorPower", e.target.value)}
+                  placeholder="Enter EV Motor Power (KW)"
+                />
               </div>
             </div>
 

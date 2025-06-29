@@ -8,11 +8,11 @@ export const AuthProvider = ({ children }) => {
   const [userRole, setUserRole] = useState(null);
   const [userName, setUserName] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
-  const [userEmployeeId, setUserEmployeeId] = useState(null);
+  const [userId, setUserId] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [decodedToken, setDecodedToken] = useState(null);
   const [teamType, setTeamType] = useState(null);
-  const [engineType, setEngineType] = useState(null);
+  const [location, setLocation] = useState(null);
 
   useEffect(() => {
     const userCookies = useStore.getState().getUserCookieData();
@@ -21,16 +21,15 @@ export const AuthProvider = ({ children }) => {
     if (userCookies.userRole && 
         userCookies.userName && 
         userCookies.userEmail && 
-        userCookies.userEmployeeId && 
         userCookies.token) {
       
       setUserRole(userCookies.userRole);
       setUserName(userCookies.userName);
       setUserEmail(userCookies.userEmail);
-      setUserEmployeeId(userCookies.userEmployeeId);
+      setUserId(userCookies.userId || null);
       setAccessToken(userCookies.token);
       setTeamType(userCookies.teamType || null);
-      setEngineType(userCookies.engineType || null);
+      setLocation(userCookies.location || null);
       
       try {
         const decoded = JSON.parse(atob(userCookies.token.split('.')[1]));
@@ -42,14 +41,14 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const login = (role, name, email, employeeId, teamTy, engineTy, token) => {
+  const login = (role, name, email, employeeId, teamTy, locationVal, token) => {
     setUserRole(role);
     setUserName(name);
     setUserEmail(email);
-    setUserEmployeeId(employeeId);
+    setUserId(employeeId);
     setAccessToken(token);
     setTeamType(teamTy);
-    setEngineType(engineTy);
+    setLocation(locationVal);
     try {
       const decoded = JSON.parse(atob(token.split('.')[1]));
       setDecodedToken(decoded);
@@ -64,9 +63,9 @@ export const AuthProvider = ({ children }) => {
       userName: name,
       LoggedIn: "true",
       userEmail: email,
-      userEmployeeId: employeeId,
+      userId: employeeId,
       teamType: teamTy,
-      engineType: engineTy,
+      location: locationVal,
     });
   };
 
@@ -75,11 +74,11 @@ export const AuthProvider = ({ children }) => {
     setUserRole(null);
     setUserName(null);
     setUserEmail(null);
-    setUserEmployeeId(null);
+    setUserId(null);
     setAccessToken(null);
     setDecodedToken(null);
     setTeamType(null);
-    setEngineType(null);
+    setLocation(null);
 
     // Clear stored user cookie data in the store
     console.log("Clearing user cookie data...");
@@ -91,10 +90,11 @@ export const AuthProvider = ({ children }) => {
       userRole,
       userName,
       userEmail,
-      userEmployeeId,
+      userId,
       accessToken,
       decodedToken,
       teamType,
+      location,
       login,
       logout,
       isAuthenticated: !!userRole
@@ -106,6 +106,5 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  // Always return the context, even if it's empty
   return context;
 };
