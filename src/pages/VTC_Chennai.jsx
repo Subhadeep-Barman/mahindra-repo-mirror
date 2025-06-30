@@ -14,7 +14,7 @@ import {
 } from "@/components/UI/table";
 import { Card } from "@/components/UI/card";
 import { useState, useEffect } from "react";
-import Navbar2 from "@/components/UI/navbar2";
+import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -53,8 +53,10 @@ export default function VTCChennaiPage() {
 
   // Determine active tab from the current route
   let activeTab = "Job Order";
-  if (location.pathname.toLowerCase().includes("vehicle")) activeTab = "Vehicle";
-  else if (location.pathname.toLowerCase().includes("engine")) activeTab = "Engine";
+  if (location.pathname.toLowerCase().includes("vehicle"))
+    activeTab = "Vehicle";
+  else if (location.pathname.toLowerCase().includes("engine"))
+    activeTab = "Engine";
 
   const handleTabClick = (tab) => {
     if (tab === "Job Order") navigate("/vtc-chennai");
@@ -82,12 +84,12 @@ export default function VTCChennaiPage() {
       .then((res) => {
         // Pass the complete job order data to create job order page
         // This will allow the form to be pre-filled with existing values
-        navigate("/createJobOrder", { 
-          state: { 
+        navigate("/createJobOrder", {
+          state: {
             jobOrder: res.data,
             isEdit: true, // Flag to indicate this is for editing/creating test orders
-            originalJobOrderId: job_order_id // Keep reference to original job order
-          } 
+            originalJobOrderId: job_order_id, // Keep reference to original job order
+          },
         });
       })
       .catch((error) => {
@@ -122,7 +124,7 @@ export default function VTCChennaiPage() {
 
   return (
     <>
-      <Navbar2 />
+      <Navbar1 />
       <div className="dark:bg-gray-900">
         {/* Header */}
         <div className="bg-white dark:bg-black">
@@ -153,9 +155,11 @@ export default function VTCChennaiPage() {
                     key={tab}
                     onClick={() => handleTabClick(tab)}
                     className={`rounded-xl px-4 py-2 font-semibold border
-                      ${activeTab === tab
-                        ? "bg-red-500 text-white border-red-500"
-                        : "bg-white text-red-500 border-red-500 hover:bg-red-50"}
+                      ${
+                        activeTab === tab
+                          ? "bg-red-500 text-white border-red-500"
+                          : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                      }
                     `}
                   >
                     {tab}
@@ -274,8 +278,8 @@ export default function VTCChennaiPage() {
           {/* Pagination Footer */}
           <div className="flex items-center justify-between mt-4">
             <div className="text-sm text-gray-600 dark:text-white">
-              Showing {startIndex + 1} to{" "}
-              {Math.min(endIndex, jobOrders.length)} of {jobOrders.length}
+              Showing {startIndex + 1} to {Math.min(endIndex, jobOrders.length)}{" "}
+              of {jobOrders.length}
             </div>
             <div className="flex items-center space-x-2">
               <Button
@@ -296,21 +300,23 @@ export default function VTCChennaiPage() {
               >
                 {"<"}
               </Button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  variant={currentPage === page ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handlePageChange(page)}
-                  className={
-                    currentPage === page
-                      ? "bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black"
-                      : "text-gray-600 dark:text-white dark:border-gray-600"
-                  }
-                >
-                  {page}
-                </Button>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                    className={
+                      currentPage === page
+                        ? "bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black"
+                        : "text-gray-600 dark:text-white dark:border-gray-600"
+                    }
+                  >
+                    {page}
+                  </Button>
+                )
+              )}
               <Button
                 variant="outline"
                 size="sm"

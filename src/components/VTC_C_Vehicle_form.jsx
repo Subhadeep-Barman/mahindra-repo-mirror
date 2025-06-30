@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { Button } from "@/components/UI/button";
 import { ArrowBack } from "@mui/icons-material";
-import Navbar2 from "@/components/UI/navbar2";
+import Navbar1 from "@/components/UI/navbar";
 import { useNavigate } from "react-router-dom";
 import useStore from "@/store/useStore";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
@@ -91,7 +91,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       return window.crypto.randomUUID();
     }
     // fallback for older browsers
-    return 'xxxxxxxxyxxxxyxxxyxxxxyxxxxyxxxxyx'.replace(/[xy]/g, function (c) {
+    return "xxxxxxxxyxxxxyxxxyxxxxyxxxxyxxxxyx".replace(/[xy]/g, function (c) {
       const r = (Math.random() * 16) | 0;
       return r.toString(16);
     });
@@ -113,8 +113,12 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       coast_down_test_reference_report: form.coastDownTestReportReference,
       tyre_make: form.tyreMake,
       tyre_size: form.tyreSize,
-      tyre_pressure_front: form.tyrePressureFront ? parseFloat(form.tyrePressureFront) : null,
-      tyre_pressure_rear: form.tyrePressureRear ? parseFloat(form.tyrePressureRear) : null,
+      tyre_pressure_front: form.tyrePressureFront
+        ? parseFloat(form.tyrePressureFront)
+        : null,
+      tyre_pressure_rear: form.tyrePressureRear
+        ? parseFloat(form.tyrePressureRear)
+        : null,
       tyre_run_in: form.tyreRunIn ? parseFloat(form.tyreRunIn) : null,
       engine_run_in: form.engineRunIn ? parseFloat(form.engineRunIn) : null,
       gearbox_run_in: form.gearBoxRunIn ? parseFloat(form.gearBoxRunIn) : null,
@@ -147,7 +151,9 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       if (onSubmit) onSubmit(response.data);
       else alert("Vehicle added successfully!");
     } catch (err) {
-      alert("Error adding vehicle: " + (err.response?.data?.detail || err.message));
+      alert(
+        "Error adding vehicle: " + (err.response?.data?.detail || err.message)
+      );
     }
   };
 
@@ -221,7 +227,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
 
   return (
     <>
-      <Navbar2 />
+      <Navbar1 />
       {/* Header */}
       <div className="bg-white dark:bg-black">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">

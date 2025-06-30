@@ -11,12 +11,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/UI/select";
-import Navbar2 from "@/components/UI/navbar2";
+import Navbar1 from "@/components/UI/navbar";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Switch } from "@/components/UI/switch";
 import useStore from "@/store/useStore";
 import axios from "axios";
-const apiURL = import.meta.env.VITE_BACKEND_URL
+const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
 
@@ -175,7 +175,7 @@ export default function RDECreateJobOrder() {
         setTestTypes([]);
       }
     };
-    
+
     fetchTestTypes();
   }, []);
 
@@ -190,7 +190,7 @@ export default function RDECreateJobOrder() {
         setInertiaClasses([]);
       }
     };
-    
+
     fetchInertiaClasses();
   }, []);
 
@@ -205,7 +205,7 @@ export default function RDECreateJobOrder() {
         setModes([]);
       }
     };
-    
+
     fetchModes();
   }, []);
 
@@ -256,7 +256,7 @@ export default function RDECreateJobOrder() {
   const handleVehicleBodyChange = (value) => {
     // Don't interfere if we're currently pre-filling
     if (isPreFilling) return;
-    
+
     const found = vehicleBodyNumbers.find(
       (v) => v.vehicle_body_number === value
     );
@@ -285,7 +285,11 @@ export default function RDECreateJobOrder() {
   useEffect(() => {
     if (form.vehicleBodyNumber && !isPreFilling) {
       axios
-        .get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(form.vehicleBodyNumber)}`)
+        .get(
+          `${apiURL}/vehicles/by-body-number/${encodeURIComponent(
+            form.vehicleBodyNumber
+          )}`
+        )
         .then((res) => setVehicleEditable(res.data))
         .catch(() => setVehicleEditable(null));
     } else if (!form.vehicleBodyNumber && !isPreFilling) {
@@ -312,7 +316,7 @@ export default function RDECreateJobOrder() {
   const handleEngineNumberChange = (value) => {
     // Don't interfere if we're currently pre-filling
     if (isPreFilling) return;
-    
+
     setForm((prev) => ({
       ...prev,
       engineNumber: value,
@@ -339,7 +343,11 @@ export default function RDECreateJobOrder() {
   useEffect(() => {
     if (form.engineNumber && !isPreFilling) {
       axios
-        .get(`${apiURL}/engines/by-engine-number/${encodeURIComponent(form.engineNumber)}`)
+        .get(
+          `${apiURL}/engines/by-engine-number/${encodeURIComponent(
+            form.engineNumber
+          )}`
+        )
         .then((res) => setEngineEditable(res.data))
         .catch(() => setEngineEditable(null));
     } else if (!form.engineNumber && !isPreFilling) {
@@ -365,30 +373,36 @@ export default function RDECreateJobOrder() {
     if (location.state?.jobOrder && !hasPreFilledRef.current) {
       const jobOrder = location.state.jobOrder;
       console.log("Pre-filling form with job order data:", jobOrder);
-      
+
       // Mark that we've started pre-filling to prevent multiple executions
       hasPreFilledRef.current = true;
-      
+
       // Set pre-filling state to prevent other useEffects from interfering
       setIsPreFilling(true);
       setIsLoading(true);
-      
+
       // Show success message if this is for creating test orders
       if (location.state.isEdit) {
-        console.log("Loading job order for creating test orders based on:", location.state.originalJobOrderId);
+        console.log(
+          "Loading job order for creating test orders based on:",
+          location.state.originalJobOrderId
+        );
       }
-      
+
       // Function to fetch and pre-fill coast down data
       const fetchAndFillCoastDownData = async (coastDownDataId) => {
         if (coastDownDataId) {
           try {
-            const response = await axios.get(`${apiURL}/coastdown/${coastDownDataId}`);
+            const response = await axios.get(
+              `${apiURL}/coastdown/${coastDownDataId}`
+            );
             const coastDownData = response.data;
             console.log("Fetched coast down data:", coastDownData);
-            
+
             return {
               cdReportRef: coastDownData.coast_down_reference || "",
-              vehicleRefMass: coastDownData.vehicle_reference_mass?.toString() || "",
+              vehicleRefMass:
+                coastDownData.vehicle_reference_mass?.toString() || "",
               aN: coastDownData.a_value?.toString() || "",
               bNkmph: coastDownData.b_value?.toString() || "",
               cNkmph2: coastDownData.c_value?.toString() || "",
@@ -410,59 +424,110 @@ export default function RDECreateJobOrder() {
         if (jobOrder.CoastDownData_id) {
           setExistingCoastDownId(jobOrder.CoastDownData_id);
         }
-        
+
         // Fetch coast down data if CoastDownData_id is available
-        const coastDownFields = await fetchAndFillCoastDownData(jobOrder.CoastDownData_id);
-        
+        const coastDownFields = await fetchAndFillCoastDownData(
+          jobOrder.CoastDownData_id
+        );
+
         const newFormData = {
           ...form, // Preserve existing form state first
           projectCode: jobOrder.project_id || "",
-          vehicleBuildLevel: jobOrder.vehicle_build_level || jobOrder.vehicleBuildLevel || "",
+          vehicleBuildLevel:
+            jobOrder.vehicle_build_level || jobOrder.vehicleBuildLevel || "",
           vehicleModel: jobOrder.vehicle_model || jobOrder.vehicleModel || "",
           vehicleBodyNumber: jobOrder.vehicle_body_number || "",
           vehicleNumber: jobOrder.vehicle_id || "",
-          transmissionType: jobOrder.transmission_type || jobOrder.transmissionType || "",
-          finalDriveAxleRatio: jobOrder.final_drive_axle_ratio || jobOrder.finalDriveAxleRatio || "",
+          transmissionType:
+            jobOrder.transmission_type || jobOrder.transmissionType || "",
+          finalDriveAxleRatio:
+            jobOrder.final_drive_axle_ratio ||
+            jobOrder.finalDriveAxleRatio ||
+            "",
           engineNumber: jobOrder.engine_id || "",
-          engineType: jobOrder.type_of_engine || jobOrder.engine_type || jobOrder.engineType || "",
+          engineType:
+            jobOrder.type_of_engine ||
+            jobOrder.engine_type ||
+            jobOrder.engineType ||
+            "",
           domain: jobOrder.domain || "",
           department: jobOrder.department || "",
-          coastDownTestReportReference: jobOrder.coast_down_test_report_reference || jobOrder.coastDownTestReportReference || "",
+          coastDownTestReportReference:
+            jobOrder.coast_down_test_report_reference ||
+            jobOrder.coastDownTestReportReference ||
+            "",
           tyreMake: jobOrder.tyre_make || jobOrder.tyreMake || "",
           tyreSize: jobOrder.tyre_size || jobOrder.tyreSize || "",
-          tyrePressureFront: jobOrder.tyre_pressure_front || jobOrder.tyrePressureFront || "",
-          tyrePressureRear: jobOrder.tyre_pressure_rear || jobOrder.tyrePressureRear || "",
+          tyrePressureFront:
+            jobOrder.tyre_pressure_front || jobOrder.tyrePressureFront || "",
+          tyrePressureRear:
+            jobOrder.tyre_pressure_rear || jobOrder.tyrePressureRear || "",
           tyreRunIn: jobOrder.tyre_run_in || jobOrder.tyreRunIn || "",
           engineRunIn: jobOrder.engine_run_in || jobOrder.engineRunIn || "",
           gearBoxRunIn: jobOrder.gearbox_run_in || jobOrder.gearBoxRunIn || "",
           axleRunIn: jobOrder.axle_run_in || jobOrder.axleRunIn || "",
-          engineOilSpecification: jobOrder.engine_oil_specification || jobOrder.engineOilSpecification || "",
-          axleOilSpecification: jobOrder.axle_oil_specification || jobOrder.axleOilSpecification || "",
-          transmissionOilSpecification: jobOrder.transmission_oil_specification || jobOrder.transmissionOilSpecification || "",
+          engineOilSpecification:
+            jobOrder.engine_oil_specification ||
+            jobOrder.engineOilSpecification ||
+            "",
+          axleOilSpecification:
+            jobOrder.axle_oil_specification ||
+            jobOrder.axleOilSpecification ||
+            "",
+          transmissionOilSpecification:
+            jobOrder.transmission_oil_specification ||
+            jobOrder.transmissionOilSpecification ||
+            "",
           driveType: jobOrder.drive_type || jobOrder.driveType || "",
           drivenWheel: jobOrder.driven_wheel || jobOrder.drivenWheel || "",
-          intercoolerLocation: jobOrder.intercooler_location || jobOrder.intercoolerLocation || "",
+          intercoolerLocation:
+            jobOrder.intercooler_location || jobOrder.intercoolerLocation || "",
           gearRatio: jobOrder.gear_ratio || jobOrder.gearRatio || "",
           // Coast down data from API (takes precedence over job order fallback)
           ...coastDownFields,
           // Fallback to job order fields if coast down API didn't return data
-          cdReportRef: coastDownFields.cdReportRef || jobOrder.cd_report_ref || jobOrder.cdReportRef || "",
-          vehicleRefMass: coastDownFields.vehicleRefMass || jobOrder.vehicle_ref_mass || jobOrder.vehicleRefMass || "",
+          cdReportRef:
+            coastDownFields.cdReportRef ||
+            jobOrder.cd_report_ref ||
+            jobOrder.cdReportRef ||
+            "",
+          vehicleRefMass:
+            coastDownFields.vehicleRefMass ||
+            jobOrder.vehicle_ref_mass ||
+            jobOrder.vehicleRefMass ||
+            "",
           aN: coastDownFields.aN || jobOrder.a_n || jobOrder.aN || "",
-          bNkmph: coastDownFields.bNkmph || jobOrder.b_n_kmph || jobOrder.bNkmph || "",
-          cNkmph2: coastDownFields.cNkmph2 || jobOrder.c_n_kmph2 || jobOrder.cNkmph2 || "",
+          bNkmph:
+            coastDownFields.bNkmph ||
+            jobOrder.b_n_kmph ||
+            jobOrder.bNkmph ||
+            "",
+          cNkmph2:
+            coastDownFields.cNkmph2 ||
+            jobOrder.c_n_kmph2 ||
+            jobOrder.cNkmph2 ||
+            "",
           f0N: coastDownFields.f0N || jobOrder.f0_n || jobOrder.f0N || "",
-          f1Nkmph: coastDownFields.f1Nkmph || jobOrder.f1_n_kmph || jobOrder.f1Nkmph || "",
-          f2Nkmph2: coastDownFields.f2Nkmph2 || jobOrder.f2_n_kmph2 || jobOrder.f2Nkmph2 || "",
+          f1Nkmph:
+            coastDownFields.f1Nkmph ||
+            jobOrder.f1_n_kmph ||
+            jobOrder.f1Nkmph ||
+            "",
+          f2Nkmph2:
+            coastDownFields.f2Nkmph2 ||
+            jobOrder.f2_n_kmph2 ||
+            jobOrder.f2Nkmph2 ||
+            "",
         };
-        
+
         console.log("Setting form data to:", newFormData);
         setForm(newFormData);
-        
+
         // Prefill vehicleEditable and engineEditable if present
-        if (jobOrder.vehicleDetails) setVehicleEditable(jobOrder.vehicleDetails);
+        if (jobOrder.vehicleDetails)
+          setVehicleEditable(jobOrder.vehicleDetails);
         if (jobOrder.engineDetails) setEngineEditable(jobOrder.engineDetails);
-        
+
         // Use setTimeout to allow form state to settle before enabling other useEffects
         setTimeout(() => {
           console.log("Pre-filling completed, enabling other useEffects");
@@ -528,7 +593,9 @@ export default function RDECreateJobOrder() {
       CoastDownData_id,
       job_order_id,
       coast_down_reference: form.cdReportRef || null,
-      vehicle_reference_mass: form.vehicleRefMass ? parseFloat(form.vehicleRefMass) : null,
+      vehicle_reference_mass: form.vehicleRefMass
+        ? parseFloat(form.vehicleRefMass)
+        : null,
       a_value: form.aN ? parseFloat(form.aN) : null,
       b_value: form.bNkmph ? parseFloat(form.bNkmph) : null,
       c_value: form.cNkmph2 ? parseFloat(form.cNkmph2) : null,
@@ -543,12 +610,21 @@ export default function RDECreateJobOrder() {
 
     try {
       // Create job order first
-      const jobOrderRes = await axios.post(`${apiURL}/joborders`, jobOrderPayload);
-      
+      const jobOrderRes = await axios.post(
+        `${apiURL}/joborders`,
+        jobOrderPayload
+      );
+
       // Then create coast down data if there's any coast down information
-      const hasCoastDownData = form.cdReportRef || form.vehicleRefMass || form.aN || 
-                              form.bNkmph || form.cNkmph2 || form.f0N || 
-                              form.f1Nkmph || form.f2Nkmph2;
+      const hasCoastDownData =
+        form.cdReportRef ||
+        form.vehicleRefMass ||
+        form.aN ||
+        form.bNkmph ||
+        form.cNkmph2 ||
+        form.f0N ||
+        form.f1Nkmph ||
+        form.f2Nkmph2;
 
       if (hasCoastDownData) {
         await axios.post(`${apiURL}/coastdown`, coastDownPayload);
@@ -558,62 +634,94 @@ export default function RDECreateJobOrder() {
       // Optionally, reset form or navigate
     } catch (err) {
       console.error("Error creating job order:", err);
-      alert("Failed to create job order: " + (err.response?.data?.detail || err.message));
+      alert(
+        "Failed to create job order: " +
+          (err.response?.data?.detail || err.message)
+      );
     }
   };
 
   // Handler for creating test order
   const handleCreateTestOrder = async (testIndex) => {
     const test = tests[testIndex];
-    
+
     // Validate required fields
     if (!test.objective) {
-      alert("Please fill in the objective of the test before creating test order.");
+      alert(
+        "Please fill in the objective of the test before creating test order."
+      );
       return;
     }
 
     // Generate test_order_id based on timestamp
     const test_order_id = "TO" + Date.now();
-    
+
     // Get job_order_id from location state or create a new one if not available
     const job_order_id = location.state?.jobOrder?.job_order_id || null;
-    
+
     // Create or update coast down data for this specific test
-    let CoastDownData_id = location.state?.jobOrder?.CoastDownData_id || existingCoastDownId;
-    
+    let CoastDownData_id =
+      location.state?.jobOrder?.CoastDownData_id || existingCoastDownId;
+
     // If test has its own coast down data, create a new coast down entry
-    const hasTestSpecificCoastDownData = test.cdReportRef || test.vehicleRefMass || test.aN || 
-                                        test.bNkmph || test.cNkmph2 || test.f0N || 
-                                        test.f1Nkmph || test.f2Nkmph2;
-    
+    const hasTestSpecificCoastDownData =
+      test.cdReportRef ||
+      test.vehicleRefMass ||
+      test.aN ||
+      test.bNkmph ||
+      test.cNkmph2 ||
+      test.f0N ||
+      test.f1Nkmph ||
+      test.f2Nkmph2;
+
     if (hasTestSpecificCoastDownData) {
       // Generate new CoastDownData_id for this test
       CoastDownData_id = "CD" + Date.now() + "_T" + testIndex;
-      
+
       // Create coast down data payload for this test
       const testCoastDownPayload = {
         CoastDownData_id,
         job_order_id,
-        coast_down_reference: test.cdReportRef || test.cdReportRef || form.cdReportRef || null,
-        vehicle_reference_mass: (test.vehicleRefMass || form.vehicleRefMass) ? parseFloat(test.vehicleRefMass || form.vehicleRefMass) : null,
-        a_value: (test.aN || form.aN) ? parseFloat(test.aN || form.aN) : null,
-        b_value: (test.bNkmph || form.bNkmph) ? parseFloat(test.bNkmph || form.bNkmph) : null,
-        c_value: (test.cNkmph2 || form.cNkmph2) ? parseFloat(test.cNkmph2 || form.cNkmph2) : null,
-        f0_value: (test.f0N || form.f0N) ? parseFloat(test.f0N || form.f0N) : null,
-        f1_value: (test.f1Nkmph || form.f1Nkmph) ? parseFloat(test.f1Nkmph || form.f1Nkmph) : null,
-        f2_value: (test.f2Nkmph2 || form.f2Nkmph2) ? parseFloat(test.f2Nkmph2 || form.f2Nkmph2) : null,
+        coast_down_reference:
+          test.cdReportRef || test.cdReportRef || form.cdReportRef || null,
+        vehicle_reference_mass:
+          test.vehicleRefMass || form.vehicleRefMass
+            ? parseFloat(test.vehicleRefMass || form.vehicleRefMass)
+            : null,
+        a_value: test.aN || form.aN ? parseFloat(test.aN || form.aN) : null,
+        b_value:
+          test.bNkmph || form.bNkmph
+            ? parseFloat(test.bNkmph || form.bNkmph)
+            : null,
+        c_value:
+          test.cNkmph2 || form.cNkmph2
+            ? parseFloat(test.cNkmph2 || form.cNkmph2)
+            : null,
+        f0_value:
+          test.f0N || form.f0N ? parseFloat(test.f0N || form.f0N) : null,
+        f1_value:
+          test.f1Nkmph || form.f1Nkmph
+            ? parseFloat(test.f1Nkmph || form.f1Nkmph)
+            : null,
+        f2_value:
+          test.f2Nkmph2 || form.f2Nkmph2
+            ? parseFloat(test.f2Nkmph2 || form.f2Nkmph2)
+            : null,
         id_of_creator: "",
         created_on: new Date().toISOString(),
         id_of_updater: "",
         updated_on: new Date().toISOString(),
       };
-      
+
       try {
         await axios.post(`${apiURL}/coastdown`, testCoastDownPayload);
         console.log("Test-specific coast down data created:", CoastDownData_id);
       } catch (err) {
         console.error("Error creating test-specific coast down data:", err);
-        alert("Failed to create coast down data for test: " + (err.response?.data?.detail || err.message));
+        alert(
+          "Failed to create coast down data for test: " +
+            (err.response?.data?.detail || err.message)
+        );
         return;
       }
     }
@@ -630,7 +738,12 @@ export default function RDECreateJobOrder() {
       inertia_class: test.inertiaClass || "",
       dataset_name: test.datasetName || "",
       dpf: test.dpf || "",
-      dataset_flashed: test.datasetRefreshed === "Yes" ? true : test.datasetRefreshed === "No" ? false : null,
+      dataset_flashed:
+        test.datasetRefreshed === "Yes"
+          ? true
+          : test.datasetRefreshed === "No"
+          ? false
+          : null,
       ess: test.ess || "",
       mode: test.mode || "",
       hardware_change: test.hardwareChange || "",
@@ -650,8 +763,11 @@ export default function RDECreateJobOrder() {
     };
 
     try {
-      const response = await axios.post(`${apiURL}/testorders`, testOrderPayload);
-      
+      const response = await axios.post(
+        `${apiURL}/testorders`,
+        testOrderPayload
+      );
+
       // Update the test in state with the created test order ID
       setTests((prev) =>
         prev.map((t, i) =>
@@ -661,11 +777,19 @@ export default function RDECreateJobOrder() {
         )
       );
 
-      alert("Test Order Created! ID: " + response.data.test_order_id + 
-            (hasTestSpecificCoastDownData ? "\nCoast Down Data ID: " + CoastDownData_id : ""));
+      alert(
+        "Test Order Created! ID: " +
+          response.data.test_order_id +
+          (hasTestSpecificCoastDownData
+            ? "\nCoast Down Data ID: " + CoastDownData_id
+            : "")
+      );
     } catch (err) {
       console.error("Error creating test order:", err);
-      alert("Failed to create test order: " + (err.response?.data?.detail || err.message));
+      alert(
+        "Failed to create test order: " +
+          (err.response?.data?.detail || err.message)
+      );
     }
   };
 
@@ -676,7 +800,9 @@ export default function RDECreateJobOrder() {
     const coastDownUpdatePayload = {
       CoastDownData_id: existingCoastDownId,
       coast_down_reference: form.cdReportRef || null,
-      vehicle_reference_mass: form.vehicleRefMass ? parseFloat(form.vehicleRefMass) : null,
+      vehicle_reference_mass: form.vehicleRefMass
+        ? parseFloat(form.vehicleRefMass)
+        : null,
       a_value: form.aN ? parseFloat(form.aN) : null,
       b_value: form.bNkmph ? parseFloat(form.bNkmph) : null,
       c_value: form.cNkmph2 ? parseFloat(form.cNkmph2) : null,
@@ -688,7 +814,10 @@ export default function RDECreateJobOrder() {
     };
 
     try {
-      await axios.put(`${apiURL}/coastdown/${existingCoastDownId}`, coastDownUpdatePayload);
+      await axios.put(
+        `${apiURL}/coastdown/${existingCoastDownId}`,
+        coastDownUpdatePayload
+      );
       console.log("Coast down data updated successfully");
     } catch (err) {
       console.error("Error updating coast down data:", err);
@@ -707,9 +836,9 @@ export default function RDECreateJobOrder() {
     console.log("Pre-filling state:", isPreFilling);
     console.log("Loading state:", isLoading);
     console.log("Has pre-filled:", hasPreFilledRef.current);
-    
+
     // Check if form is being reset unexpectedly
-    const hasValues = Object.values(form).some(value => value !== "");
+    const hasValues = Object.values(form).some((value) => value !== "");
     if (!hasValues && hasPreFilledRef.current && !isPreFilling) {
       console.warn("⚠️ Form was reset unexpectedly after pre-filling!");
     }
@@ -737,7 +866,7 @@ export default function RDECreateJobOrder() {
   const findCoastDownByJobOrderId = async (jobOrderId) => {
     try {
       const allCoastDownData = await fetchAllCoastDownData();
-      return allCoastDownData.find(cd => cd.job_order_id === jobOrderId);
+      return allCoastDownData.find((cd) => cd.job_order_id === jobOrderId);
     } catch (error) {
       console.error("Error finding coast down data by job order ID:", error);
       return null;
@@ -752,9 +881,16 @@ export default function RDECreateJobOrder() {
   const fetchAllTestOrders = async () => {
     try {
       const res = await axios.get(`${apiURL}/testorders`);
-      setAllTestOrders(res.data || []);
+      // Group test orders by job_order_id
+      const grouped = {};
+      (res.data || []).forEach((order) => {
+        if (!grouped[order.job_order_id]) grouped[order.job_order_id] = [];
+        grouped[order.job_order_id].push(order);
+      });
+      setAllTestOrders(grouped);
+      console.log("Fetched all test orders:", grouped);
     } catch (err) {
-      setAllTestOrders([]);
+      setAllTestOrders({});
       console.error("Failed to fetch test orders:", err);
     }
   };
@@ -773,7 +909,10 @@ export default function RDECreateJobOrder() {
   // Update a test order by ID
   const updateTestOrder = async (test_order_id, updatedData) => {
     try {
-      const res = await axios.put(`${apiURL}/testorders/${test_order_id}`, updatedData);
+      const res = await axios.put(
+        `${apiURL}/testorders/${test_order_id}`,
+        updatedData
+      );
       return res.data;
     } catch (err) {
       console.error("Failed to update test order:", err);
@@ -806,7 +945,12 @@ export default function RDECreateJobOrder() {
         datasetName: testOrder.dataset_name || "",
         inertiaClass: testOrder.inertia_class || "",
         dpf: testOrder.dpf || "",
-        datasetRefreshed: testOrder.dataset_flashed === true ? "Yes" : testOrder.dataset_flashed === false ? "No" : "",
+        datasetRefreshed:
+          testOrder.dataset_flashed === true
+            ? "Yes"
+            : testOrder.dataset_flashed === false
+            ? "No"
+            : "",
         ess: testOrder.ess || "",
         mode: testOrder.mode || "",
         hardwareChange: testOrder.hardware_change || "",
@@ -843,7 +987,8 @@ export default function RDECreateJobOrder() {
     const testOrderPayload = {
       test_order_id: test.testOrderId,
       job_order_id: location.state?.jobOrder?.job_order_id || null,
-      CoastDownData_id: location.state?.jobOrder?.CoastDownData_id || existingCoastDownId,
+      CoastDownData_id:
+        location.state?.jobOrder?.CoastDownData_id || existingCoastDownId,
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -851,7 +996,12 @@ export default function RDECreateJobOrder() {
       inertia_class: test.inertiaClass || "",
       dataset_name: test.datasetName || "",
       dpf: test.dpf || "",
-      dataset_flashed: test.datasetRefreshed === "Yes" ? true : test.datasetRefreshed === "No" ? false : null,
+      dataset_flashed:
+        test.datasetRefreshed === "Yes"
+          ? true
+          : test.datasetRefreshed === "No"
+          ? false
+          : null,
       ess: test.ess || "",
       mode: test.mode || "",
       hardware_change: test.hardwareChange || "",
@@ -875,13 +1025,16 @@ export default function RDECreateJobOrder() {
       fetchAllTestOrders();
       setEditingTestOrderIdx(null);
     } catch (err) {
-      alert("Failed to update test order: " + (err.response?.data?.detail || err.message));
+      alert(
+        "Failed to update test order: " +
+          (err.response?.data?.detail || err.message)
+      );
     }
   };
 
   return (
     <>
-      <Navbar2 />
+      <Navbar1 />
       <div className="bg-white dark:bg-black min-h-screen">
         {/* Header Row */}
         <div className="flex items-center justify-between px-8 pt-6">
@@ -896,10 +1049,9 @@ export default function RDECreateJobOrder() {
               <span className="font-semibold text-lg">New Job Order</span>
               {location.state?.isEdit && (
                 <span className="text-sm text-blue-600 font-medium">
-                  {isLoading ? 
-                    "Loading job order data..." : 
-                    `Pre-filled from Job Order: ${location.state.originalJobOrderId}`
-                  }
+                  {isLoading
+                    ? "Loading job order data..."
+                    : `Pre-filled from Job Order: ${location.state.originalJobOrderId}`}
                 </span>
               )}
             </div>
@@ -957,7 +1109,10 @@ export default function RDECreateJobOrder() {
               </SelectTrigger>
               <SelectContent>
                 {vehicleBodyNumbers.map((item, index) => (
-                  <SelectItem key={`${item.vehicle_body_number}-${index}`} value={item.vehicle_body_number}>
+                  <SelectItem
+                    key={`${item.vehicle_body_number}-${index}`}
+                    value={item.vehicle_body_number}
+                  >
                     {item.vehicle_body_number}
                   </SelectItem>
                 ))}
@@ -1083,7 +1238,9 @@ export default function RDECreateJobOrder() {
             <Input
               id="wbsCode"
               value={form.wbsCode}
-              onChange={e => setForm(prev => ({ ...prev, wbsCode: e.target.value }))}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, wbsCode: e.target.value }))
+              }
               className="w-44"
               required
               disabled={formDisabled}
@@ -1098,7 +1255,9 @@ export default function RDECreateJobOrder() {
             <Input
               id="vehicleGVW"
               value={form.vehicleGVW}
-              onChange={e => setForm(prev => ({ ...prev, vehicleGVW: e.target.value }))}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, vehicleGVW: e.target.value }))
+              }
               className="w-44"
               required
               disabled={formDisabled}
@@ -1115,7 +1274,12 @@ export default function RDECreateJobOrder() {
             <Input
               id="vehicleKerbWeight"
               value={form.vehicleKerbWeight}
-              onChange={e => setForm(prev => ({ ...prev, vehicleKerbWeight: e.target.value }))}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  vehicleKerbWeight: e.target.value,
+                }))
+              }
               className="w-44"
               required
               disabled={formDisabled}
@@ -1127,11 +1291,17 @@ export default function RDECreateJobOrder() {
           {/* Vehicle Test Payload criteria */}
           <div className="flex flex-col">
             <Label htmlFor="vehicleTestPayloadCriteria">
-              Vehicle Test Payload criteria (Kg) <span className="text-red-500">*</span>
+              Vehicle Test Payload criteria (Kg){" "}
+              <span className="text-red-500">*</span>
             </Label>
             <Select
               value={form.vehicleTestPayloadCriteria}
-              onValueChange={value => setForm(prev => ({ ...prev, vehicleTestPayloadCriteria: value }))}
+              onValueChange={(value) =>
+                setForm((prev) => ({
+                  ...prev,
+                  vehicleTestPayloadCriteria: value,
+                }))
+              }
               required
               disabled={formDisabled}
             >
@@ -1147,12 +1317,18 @@ export default function RDECreateJobOrder() {
           {/* Idle Exhaust Mass Flow */}
           <div className="flex flex-col">
             <Label htmlFor="idleExhaustMassFlow">
-              Idle Exhaust Mass Flow (Kg/hr) <span className="text-red-500">*</span>
+              Idle Exhaust Mass Flow (Kg/hr){" "}
+              <span className="text-red-500">*</span>
             </Label>
             <Input
               id="idleExhaustMassFlow"
               value={form.idleExhaustMassFlow}
-              onChange={e => setForm(prev => ({ ...prev, idleExhaustMassFlow: e.target.value }))}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  idleExhaustMassFlow: e.target.value,
+                }))
+              }
               className="w-44"
               required
               disabled={formDisabled}
@@ -1180,7 +1356,9 @@ export default function RDECreateJobOrder() {
                 <div className="grid grid-cols-4 gap-4 text-xs">
                   {Object.entries(vehicleEditable).map(([label, value]) => (
                     <div key={label} className="flex flex-col">
-                      <Label className="font-semibold capitalize">{label.replace(/_/g, " ")}</Label>
+                      <Label className="font-semibold capitalize">
+                        {label.replace(/_/g, " ")}
+                      </Label>
                       <Input
                         value={value ?? ""}
                         onChange={(e) =>
@@ -1215,7 +1393,9 @@ export default function RDECreateJobOrder() {
                 <div className="grid grid-cols-4 gap-4 text-xs">
                   {Object.entries(engineEditable).map(([label, value]) => (
                     <div key={label} className="flex flex-col">
-                      <Label className="font-semibold capitalize">{label.replace(/_/g, " ")}</Label>
+                      <Label className="font-semibold capitalize">
+                        {label.replace(/_/g, " ")}
+                      </Label>
                       <Input
                         value={value ?? ""}
                         onChange={(e) =>
@@ -1383,7 +1563,10 @@ export default function RDECreateJobOrder() {
                     await handleUpdateCoastDownData(existingCoastDownId);
                     alert("Coast Down Data updated successfully!");
                   } catch (err) {
-                    alert("Failed to update coast down data: " + (err.response?.data?.detail || err.message));
+                    alert(
+                      "Failed to update coast down data: " +
+                        (err.response?.data?.detail || err.message)
+                    );
                   }
                 }}
               >
@@ -1458,7 +1641,9 @@ export default function RDECreateJobOrder() {
                   </SelectTrigger>
                   <SelectContent>
                     {/* Always show these three at the top */}
-                    <SelectItem value="PEMS Correlation">PEMS Correlation</SelectItem>
+                    <SelectItem value="PEMS Correlation">
+                      PEMS Correlation
+                    </SelectItem>
                     <SelectItem value="COLD IRDE">COLD IRDE</SelectItem>
                     <SelectItem value="HOT IRDE">HOT IRDE</SelectItem>
                     {/* Show all API options (including duplicates) */}
@@ -1536,7 +1721,10 @@ export default function RDECreateJobOrder() {
                   </SelectTrigger>
                   <SelectContent>
                     {inertiaClasses.map((inertiaClass, index) => (
-                      <SelectItem key={`${inertiaClass}-${index}`} value={inertiaClass}>
+                      <SelectItem
+                        key={`${inertiaClass}-${index}`}
+                        value={inertiaClass}
+                      >
                         {inertiaClass}
                       </SelectItem>
                     ))}
@@ -1648,8 +1836,7 @@ export default function RDECreateJobOrder() {
                 <Label>Mode</Label>
                 <Select
                   value={test.mode}
-                  onValueChange={(v) => handleTestChange(idx, "mode", v)
-                  }
+                  onValueChange={(v) => handleTestChange(idx, "mode", v)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -1727,7 +1914,11 @@ export default function RDECreateJobOrder() {
                 <Input
                   value={test.emissionCheckAttachment}
                   onChange={(e) =>
-                    handleTestChange(idx, "emissionCheckAttachment", e.target.value)
+                    handleTestChange(
+                      idx,
+                      "emissionCheckAttachment",
+                      e.target.value
+                    )
                   }
                   placeholder="Enter Attachment Path/URL"
                 />
@@ -1743,7 +1934,7 @@ export default function RDECreateJobOrder() {
                 />
               </div>
             </div>
-            
+
             {/* Coast Down Data Section for Test */}
             <div className="mt-4 border rounded shadow px-4 py-3 bg-blue-50">
               <div className="flex items-center justify-between mb-3">
@@ -1756,18 +1947,21 @@ export default function RDECreateJobOrder() {
                   className="text-xs text-blue-600 px-2 py-1"
                   onClick={() => {
                     const updatedTests = [...tests];
-                    updatedTests[idx].showCoastDownData = !updatedTests[idx].showCoastDownData;
+                    updatedTests[idx].showCoastDownData =
+                      !updatedTests[idx].showCoastDownData;
                     setTests(updatedTests);
                   }}
                 >
                   {test.showCoastDownData ? "Hide" : "Show"} Coast Down Data
                 </Button>
               </div>
-              
+
               {test.showCoastDownData && (
                 <div>
                   <div className="mb-3">
-                    <Label className="text-xs">Coast Down Test Report Reference</Label>
+                    <Label className="text-xs">
+                      Coast Down Test Report Reference
+                    </Label>
                     <Input
                       value={test.cdReportRef || form.cdReportRef}
                       onChange={(e) =>
@@ -1777,15 +1971,21 @@ export default function RDECreateJobOrder() {
                       className="mt-1"
                     />
                   </div>
-                  
+
                   <div className="mb-2 font-semibold text-xs">CD Values</div>
                   <div className="grid grid-cols-4 gap-3 text-xs">
                     <div>
-                      <Label className="text-xs">Vehicle Reference mass (Kg)</Label>
+                      <Label className="text-xs">
+                        Vehicle Reference mass (Kg)
+                      </Label>
                       <Input
                         value={test.vehicleRefMass || form.vehicleRefMass}
                         onChange={(e) =>
-                          handleTestChange(idx, "vehicleRefMass", e.target.value)
+                          handleTestChange(
+                            idx,
+                            "vehicleRefMass",
+                            e.target.value
+                          )
                         }
                         placeholder="Enter Vehicle Reference mass"
                         className="mt-1"
@@ -1825,7 +2025,7 @@ export default function RDECreateJobOrder() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-3 gap-3 text-xs mt-3">
                     <div>
                       <Label className="text-xs">F0 (N)</Label>
@@ -1861,7 +2061,7 @@ export default function RDECreateJobOrder() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-end mt-3">
                     <Button
                       type="button"
@@ -1869,7 +2069,11 @@ export default function RDECreateJobOrder() {
                       onClick={() => {
                         // Copy coast down data from main form to this test
                         handleTestChange(idx, "cdReportRef", form.cdReportRef);
-                        handleTestChange(idx, "vehicleRefMass", form.vehicleRefMass);
+                        handleTestChange(
+                          idx,
+                          "vehicleRefMass",
+                          form.vehicleRefMass
+                        );
                         handleTestChange(idx, "aN", form.aN);
                         handleTestChange(idx, "bNkmph", form.bNkmph);
                         handleTestChange(idx, "cNkmph2", form.cNkmph2);
@@ -1884,9 +2088,9 @@ export default function RDECreateJobOrder() {
                 </div>
               )}
             </div>
-            
+
             <div className="flex justify-end mt-4">
-              <Button 
+              <Button
                 className="bg-red-600 text-white text-xs px-6 py-2 rounded"
                 onClick={() => handleCreateTestOrder(idx)}
                 disabled={editingTestOrderIdx === idx}
@@ -1936,23 +2140,26 @@ export default function RDECreateJobOrder() {
                 </tr>
               </thead>
               <tbody>
-                {allTestOrders.map((to, i) => (
-                  <tr key={to.test_order_id}>
-                    <td className="border px-2 py-1">{to.test_order_id}</td>
-                    <td className="border px-2 py-1">{to.test_type}</td>
-                    <td className="border px-2 py-1">{to.test_objective}</td>
-                    <td className="border px-2 py-1">{to.status}</td>
-                    <td className="border px-2 py-1">
-                      <Button
-                        className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
-                        onClick={() => handleEditTestOrder(to, i)}
-                      >
-                        Edit
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-                {allTestOrders.length === 0 && (
+                {(allTestOrders[location.state?.originalJobOrderId] || []).map(
+                  (to) => (
+                    <tr key={to.test_order_id}>
+                      <td className="border px-2 py-1">{to.test_order_id}</td>
+                      <td className="border px-2 py-1">{to.test_type}</td>
+                      <td className="border px-2 py-1">{to.test_objective}</td>
+                      <td className="border px-2 py-1">{to.status}</td>
+                      <td className="border px-2 py-1">
+                        <Button
+                          className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
+                          onClick={() => handleEditTestOrder(to, 0)}
+                        >
+                          Edit
+                        </Button>
+                      </td>
+                    </tr>
+                  )
+                )}
+                {(allTestOrders[location.state?.originalJobOrderId] || [])
+                  .length === 0 && (
                   <tr>
                     <td colSpan={5} className="text-center py-2 text-gray-500">
                       No test orders found.

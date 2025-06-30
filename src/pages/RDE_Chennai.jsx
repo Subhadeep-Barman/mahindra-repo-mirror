@@ -14,7 +14,7 @@ import {
 } from "@/components/UI/table";
 import { Card } from "@/components/UI/card";
 import { useState } from "react";
-import Navbar2 from "@/components/UI/navbar2";
+import Navbar1 from "@/components/UI/navbar";
 const jobOrders = [
   {
     weekNo: 51,
@@ -183,16 +183,16 @@ export default function VTCChennaiPage() {
 
   const navigate = useNavigate();
 
-const handleTabClick = (tab) => {
-  setActiveTab(tab);
-  if (tab === "Job Order") navigate("/rde/joborder");
-  else if (tab === "Vehicle") navigate("/rde/vehicle");
-  else if (tab === "Engine") navigate("/rde/engine");
-};
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+    if (tab === "Job Order") navigate("/rde/joborder");
+    else if (tab === "Vehicle") navigate("/rde/vehicle");
+    else if (tab === "Engine") navigate("/rde/engine");
+  };
 
   return (
     <>
-      <Navbar2 />
+      <Navbar1 />
       <div className=" dark:bg-gray-900">
         {/* Header */}
         <div className="bg-white dark:bg-black">
@@ -223,11 +223,12 @@ const handleTabClick = (tab) => {
                     key={tab}
                     variant={activeTab === tab ? "default" : "outline"}
                     onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${tab === "Job Order"
-                      ? "bg-red-500 text-white hover:bg-red-600"
-                      : tab === "Vehicle" || tab === "Engine"
-                      ? "bg-red-500 text-white hover:bg-red-600"
-                      : "text-red-500 border-red-500 hover:bg-red-50"
+                    className={`rounded-xl ${
+                      tab === "Job Order"
+                        ? "bg-red-500 text-white hover:bg-red-600"
+                        : tab === "Vehicle" || tab === "Engine"
+                        ? "bg-red-500 text-white hover:bg-red-600"
+                        : "text-red-500 border-red-500 hover:bg-red-50"
                     }`}
                   >
                     {tab}
@@ -259,18 +260,42 @@ const handleTabClick = (tab) => {
               <Table>
                 <TableHeader>
                   <TableRow className>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Week No</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Job Order Number</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Project</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Vehicle Number</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Body No</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Engine Number</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Domain</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Test Status</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Created By</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Created on</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Last updated By</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">Last updated on</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Week No
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Job Order Number
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Project
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Vehicle Number
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Body No
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Engine Number
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Domain
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Test Status
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Created By
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Created on
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Last updated By
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Last updated on
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -279,22 +304,44 @@ const handleTabClick = (tab) => {
                       key={index}
                       className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
                     >
-                      <TableCell className="text-xs text-gray-900">{order.weekNo}</TableCell>
+                      <TableCell className="text-xs text-gray-900">
+                        {order.weekNo}
+                      </TableCell>
                       <TableCell className="text-xs">
                         <span className="text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400">
                           {order.jobOrderNumber}
                         </span>
                       </TableCell>
-                      <TableCell className="text-xs text-gray-900">{order.project}</TableCell>
-                      <TableCell className="text-xs text-gray-600">{order.vehicleNumber}</TableCell>
-                      <TableCell className="text-xs text-gray-600">{order.bodyNo}</TableCell>
-                      <TableCell className="text-xs text-gray-600">{order.engineNumber}</TableCell>
-                      <TableCell className="text-xs text-gray-900">{order.domain}</TableCell>
-                      <TableCell className="text-xs text-gray-900">{order.testStatus}</TableCell>
-                      <TableCell className="text-xs text-gray-600">{order.createdBy}</TableCell>
-                      <TableCell className="text-xs text-gray-600">{order.createdOn}</TableCell>
-                      <TableCell className="text-xs text-gray-600">{order.lastUpdatedBy}</TableCell>
-                      <TableCell className="text-xs text-gray-600">{order.lastUpdatedOn}</TableCell>
+                      <TableCell className="text-xs text-gray-900">
+                        {order.project}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {order.vehicleNumber}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {order.bodyNo}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {order.engineNumber}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-900">
+                        {order.domain}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-900">
+                        {order.testStatus}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {order.createdBy}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {order.createdOn}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {order.lastUpdatedBy}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {order.lastUpdatedOn}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -305,7 +352,8 @@ const handleTabClick = (tab) => {
           {/* Pagination Footer */}
           <div className="flex items-center justify-between mt-4">
             <div className="text-sm text-gray-600 dark:text-white">
-              Showing {startIndex + 1} to {Math.min(endIndex, jobOrders.length)} of {jobOrders.length}
+              Showing {startIndex + 1} to {Math.min(endIndex, jobOrders.length)}{" "}
+              of {jobOrders.length}
             </div>
             <div className="flex items-center space-x-2">
               <Button
@@ -326,19 +374,23 @@ const handleTabClick = (tab) => {
               >
                 {"<"}
               </Button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  variant={currentPage === page ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handlePageChange(page)}
-                  className={currentPage === page
-                    ? "bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black"
-                    : "text-gray-600 dark:text-white dark:border-gray-600"}
-                >
-                  {page}
-                </Button>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                    className={
+                      currentPage === page
+                        ? "bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black"
+                        : "text-gray-600 dark:text-white dark:border-gray-600"
+                    }
+                  >
+                    {page}
+                  </Button>
+                )
+              )}
               <Button
                 variant="outline"
                 size="sm"

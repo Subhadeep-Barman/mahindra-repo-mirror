@@ -1,68 +1,77 @@
-"use client"
+"use client";
 
-import { ArrowBack, Add, Edit as EditIcon } from "@mui/icons-material"
-import { Button } from "@/components/UI/button"
-import { Badge } from "@/components/UI/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/UI/table"
-import { Card } from "@/components/UI/card"
-import { useEffect, useState } from "react"
-import Navbar2 from "@/components/UI/navbar2"
-import { useNavigate, useLocation } from "react-router-dom"
-import axios from "axios"
-import Dialog from "@mui/material/Dialog"
-import DialogTitle from "@mui/material/DialogTitle"
-import DialogContent from "@mui/material/DialogContent"
-import DialogActions from "@mui/material/DialogActions"
-import TextField from "@mui/material/TextField"
-import IconButton from "@mui/material/IconButton"
-import MenuItem from "@mui/material/MenuItem"
-const apiURL = import.meta.env.VITE_BACKEND_URL
+import { ArrowBack, Add, Edit as EditIcon } from "@mui/icons-material";
+import { Button } from "@/components/UI/button";
+import { Badge } from "@/components/UI/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/UI/table";
+import { Card } from "@/components/UI/card";
+import { useEffect, useState } from "react";
+import Navbar1 from "@/components/UI/navbar";
+import { useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import TextField from "@mui/material/TextField";
+import IconButton from "@mui/material/IconButton";
+import MenuItem from "@mui/material/MenuItem";
+const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function VTCEnginePage() {
-  const [currentPage] = useState(1)
-  const [engines, setEngines] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [editOpen, setEditOpen] = useState(false)
-  const [editLoading, setEditLoading] = useState(false)
-  const [editError, setEditError] = useState(null)
-  const [editForm, setEditForm] = useState(null)
-  const [editId, setEditId] = useState(null)
-  const navigate = useNavigate()
-  const location = useLocation()
+  const [currentPage] = useState(1);
+  const [engines, setEngines] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState(null);
+  const [editForm, setEditForm] = useState(null);
+  const [editId, setEditId] = useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Determine active tab from the current route
-  let activeTab = "Job Order"
-  if (location.pathname.toLowerCase().includes("vehicle")) activeTab = "Vehicle"
-  else if (location.pathname.toLowerCase().includes("engine")) activeTab = "Engine"
+  let activeTab = "Job Order";
+  if (location.pathname.toLowerCase().includes("vehicle"))
+    activeTab = "Vehicle";
+  else if (location.pathname.toLowerCase().includes("engine"))
+    activeTab = "Engine";
 
   const handleBack = () => {
-    navigate(-1)
-  }
+    navigate(-1);
+  };
 
   const handleAddNewEngine = () => {
-    navigate("/chennai/engine/new")
-  }
+    navigate("/chennai/engine/new");
+  };
 
   const handleTabClick = (tab) => {
     if (tab === "Job Order") {
-      navigate("/vtc-chennai")
+      navigate("/vtc-chennai");
     } else if (tab === "Vehicle") {
-      navigate("/vtccvehicle")
+      navigate("/vtccvehicle");
     } else if (tab === "Engine") {
-      navigate("/vtcchennaiengine")
+      navigate("/vtcchennaiengine");
     }
-  }
+  };
 
   useEffect(() => {
     const fetchEngines = async () => {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       try {
-        const res = await axios.get(`${apiURL}/engines`)
+        const res = await axios.get(`${apiURL}/engines`);
         // Only pick required fields for table
         setEngines(
-          (res.data || []).map(e => ({
+          (res.data || []).map((e) => ({
             engineSerialNumber: e.engine_serial_number || "",
             engineBuildLevel: e.engine_build_level || "",
             engineCapacity: e.engine_capacity || "",
@@ -71,29 +80,29 @@ export default function VTCEnginePage() {
               ? new Date(e.updated_on).toLocaleDateString()
               : "",
           }))
-        )
+        );
       } catch (err) {
         setError(
           err?.response?.data?.detail ||
-          err?.message ||
-          "Failed to fetch engines"
-        )
+            err?.message ||
+            "Failed to fetch engines"
+        );
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    fetchEngines()
-  }, [])
+    };
+    fetchEngines();
+  }, []);
 
   // Open edit modal and fetch engine details
   const handleEdit = async (engineSerialNumber) => {
-    setEditOpen(true)
-    setEditLoading(true)
-    setEditError(null)
-    setEditForm(null)
-    setEditId(engineSerialNumber)
+    setEditOpen(true);
+    setEditLoading(true);
+    setEditError(null);
+    setEditForm(null);
+    setEditId(engineSerialNumber);
     try {
-      const res = await axios.get(`${apiURL}/engines/${engineSerialNumber}`)
+      const res = await axios.get(`${apiURL}/engines/${engineSerialNumber}`);
       setEditForm({
         engineId: res.data.engine_id || "",
         engineBuildLevel: res.data.engine_build_level || "",
@@ -112,7 +121,12 @@ export default function VTCEnginePage() {
         ecuDatasetDetails: res.data.ecu_dataset_details || "",
         injectorType: res.data.injector_type || "",
         turboChargerType: res.data.turbo_charger_type || "",
-        blowByRecirculation: res.data.blow_by_recirculation === true ? "Yes" : res.data.blow_by_recirculation === false ? "No" : "",
+        blowByRecirculation:
+          res.data.blow_by_recirculation === true
+            ? "Yes"
+            : res.data.blow_by_recirculation === false
+            ? "No"
+            : "",
         nozzleNumberOfHoles: res.data.nozzle_hole_count || "",
         nozzleThroughFlow: res.data.nozzle_through_flow || "",
         egrValveMake: res.data.egr_valve_make || "",
@@ -127,7 +141,12 @@ export default function VTCEnginePage() {
         dpfCapacity: res.data.dpf_capacity || "",
         scrMake: res.data.scr_make || "",
         scrCapacity: res.data.scr_capacity || "",
-        accCompressor: res.data.acc_compressor === true ? "Yes" : res.data.acc_compressor === false ? "No" : "",
+        accCompressor:
+          res.data.acc_compressor === true
+            ? "Yes"
+            : res.data.acc_compressor === false
+            ? "No"
+            : "",
         accCompressorDetails: res.data.acc_compressor_details || "",
         powerSteeringPump: res.data.ps_pump || "",
         powerSteeringDetails: res.data.ps_details || "",
@@ -143,38 +162,42 @@ export default function VTCEnginePage() {
         hvBatteryVoltage: res.data.hv_battery_voltage || "",
         hvBatteryCurrent: res.data.hv_battery_current || "",
         evMotorPower: res.data.ev_motor_power_kw || "",
-      })
+      });
     } catch (err) {
       setEditError(
         err?.response?.data?.detail ||
-        err?.message ||
-        "Failed to fetch engine details"
-      )
+          err?.message ||
+          "Failed to fetch engine details"
+      );
     } finally {
-      setEditLoading(false)
+      setEditLoading(false);
     }
-  }
+  };
 
   // Handle edit form change
   const handleEditChange = (e) => {
-    const { name, value } = e.target
-    setEditForm((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: value }));
+  };
 
   // Save changes (update API)
   const handleEditSave = async () => {
-    setEditLoading(true)
-    setEditError(null)
+    setEditLoading(true);
+    setEditError(null);
     try {
       // Map editForm to API schema and include engine_id for update
       const payload = {
         engine_id: editForm.engineId, // Always include engine_id for update
         engine_serial_number: editForm.engineSerialNumber || null,
         engine_build_level: editForm.engineBuildLevel || null,
-        engine_capacity: editForm.engineCapacity ? parseFloat(editForm.engineCapacity) : null,
+        engine_capacity: editForm.engineCapacity
+          ? parseFloat(editForm.engineCapacity)
+          : null,
         engine_type: editForm.engineType || null,
         number_of_cylinders: editForm.numberOfCylinders || null,
-        compression_ratio: editForm.compressionRatio ? parseFloat(editForm.compressionRatio) : null,
+        compression_ratio: editForm.compressionRatio
+          ? parseFloat(editForm.compressionRatio)
+          : null,
         bore_mm: editForm.bore ? parseFloat(editForm.bore) : null,
         stroke_mm: editForm.stroke ? parseFloat(editForm.stroke) : null,
         vacuum_modulator_make: editForm.vacuumModulatorMake || null,
@@ -185,14 +208,25 @@ export default function VTCEnginePage() {
         ecu_dataset_details: editForm.ecuDatasetDetails || null,
         injector_type: editForm.injectorType || null,
         turbo_charger_type: editForm.turboChargerType || null,
-        blow_by_recirculation: editForm.blowByRecirculation === "Yes" ? true : editForm.blowByRecirculation === "No" ? false : null,
+        blow_by_recirculation:
+          editForm.blowByRecirculation === "Yes"
+            ? true
+            : editForm.blowByRecirculation === "No"
+            ? false
+            : null,
         nozzle_hole_count: editForm.nozzleNumberOfHoles || null,
-        nozzle_through_flow: editForm.nozzleThroughFlow ? parseFloat(editForm.nozzleThroughFlow) : null,
+        nozzle_through_flow: editForm.nozzleThroughFlow
+          ? parseFloat(editForm.nozzleThroughFlow)
+          : null,
         egr_valve_make: editForm.egrValveMake || null,
         egr_valve_type: editForm.egrValveType || null,
-        egr_valve_diameter_mm: editForm.egrValveDiameter ? parseFloat(editForm.egrValveDiameter) : null,
+        egr_valve_diameter_mm: editForm.egrValveDiameter
+          ? parseFloat(editForm.egrValveDiameter)
+          : null,
         egr_cooler_make: editForm.egrCoolerMake || null,
-        egr_cooler_capacity_kw: editForm.egrCoolerCapacity ? parseFloat(editForm.egrCoolerCapacity) : null,
+        egr_cooler_capacity_kw: editForm.egrCoolerCapacity
+          ? parseFloat(editForm.egrCoolerCapacity)
+          : null,
         catcon_make: editForm.catconMake || null,
         catcon_type: editForm.catconType || null,
         catcon_loading: editForm.catconLoading || null,
@@ -200,29 +234,46 @@ export default function VTCEnginePage() {
         dpf_capacity: editForm.dpfCapacity || null,
         scr_make: editForm.scrMake || null,
         scr_capacity: editForm.scrCapacity || null,
-        acc_compressor: editForm.accCompressor === "Yes" ? true : editForm.accCompressor === "No" ? false : null,
+        acc_compressor:
+          editForm.accCompressor === "Yes"
+            ? true
+            : editForm.accCompressor === "No"
+            ? false
+            : null,
         acc_compressor_details: editForm.accCompressorDetails || null,
         ps_pump: editForm.powerSteeringPump || null,
         ps_details: editForm.powerSteeringDetails || null,
         water_bypass: editForm.waterByPass || null,
-        kerb_weight_faw_kg: editForm.kerbWeightFAW ? parseFloat(editForm.kerbWeightFAW) : null,
-        kerb_weight_raw_kg: editForm.kerbWeightRAW ? parseFloat(editForm.kerbWeightRAW) : null,
+        kerb_weight_faw_kg: editForm.kerbWeightFAW
+          ? parseFloat(editForm.kerbWeightFAW)
+          : null,
+        kerb_weight_raw_kg: editForm.kerbWeightRAW
+          ? parseFloat(editForm.kerbWeightRAW)
+          : null,
         emission_status: editForm.emissionStatus || null,
         thermostat_details: editForm.thermostatDetails || null,
         vehicle_serial_number: editForm.vehicleSerialNumber || null,
         engine_family: editForm.engineFamily || null,
         hv_battery_make: editForm.hvBatteryMake || null,
-        hv_battery_capacity: editForm.hvBatteryCapacity ? parseFloat(editForm.hvBatteryCapacity) : null,
-        hv_battery_voltage: editForm.hvBatteryVoltage ? parseFloat(editForm.hvBatteryVoltage) : null,
-        hv_battery_current: editForm.hvBatteryCurrent ? parseFloat(editForm.hvBatteryCurrent) : null,
-        ev_motor_power_kw: editForm.evMotorPower ? parseFloat(editForm.evMotorPower) : null,
-      }
-      await axios.put(`${apiURL}/engines/${editId}`, payload)
-      setEditOpen(false)
+        hv_battery_capacity: editForm.hvBatteryCapacity
+          ? parseFloat(editForm.hvBatteryCapacity)
+          : null,
+        hv_battery_voltage: editForm.hvBatteryVoltage
+          ? parseFloat(editForm.hvBatteryVoltage)
+          : null,
+        hv_battery_current: editForm.hvBatteryCurrent
+          ? parseFloat(editForm.hvBatteryCurrent)
+          : null,
+        ev_motor_power_kw: editForm.evMotorPower
+          ? parseFloat(editForm.evMotorPower)
+          : null,
+      };
+      await axios.put(`${apiURL}/engines/${editId}`, payload);
+      setEditOpen(false);
       // Refresh engine list
-      const res = await axios.get(`${apiURL}/engines`)
+      const res = await axios.get(`${apiURL}/engines`);
       setEngines(
-        (res.data || []).map(e => ({
+        (res.data || []).map((e) => ({
           engineSerialNumber: e.engine_serial_number || "",
           engineBuildLevel: e.engine_build_level || "",
           engineCapacity: e.engine_capacity || "",
@@ -231,32 +282,36 @@ export default function VTCEnginePage() {
             ? new Date(e.updated_on).toLocaleDateString()
             : "",
         }))
-      )
+      );
     } catch (err) {
       // If error is only about engine_id missing, ignore it
       if (
         err?.response?.data?.detail &&
         Array.isArray(err.response.data.detail) &&
         err.response.data.detail.some(
-          d => d.loc && d.loc.includes("engine_id") && d.msg && d.msg.toLowerCase().includes("field required")
+          (d) =>
+            d.loc &&
+            d.loc.includes("engine_id") &&
+            d.msg &&
+            d.msg.toLowerCase().includes("field required")
         )
       ) {
-        setEditOpen(false)
+        setEditOpen(false);
       } else {
         setEditError(
           err?.response?.data?.detail ||
-          err?.message ||
-          "Failed to update engine"
-        )
+            err?.message ||
+            "Failed to update engine"
+        );
       }
     } finally {
-      setEditLoading(false)
+      setEditLoading(false);
     }
-  }
+  };
 
   return (
     <>
-      <Navbar2 />
+      <Navbar1 />
       <div className="min-h-screen bg-gray-50 dark:bg-black">
         {/* Header */}
         <div className="bg-white border-b dark:bg-black">
@@ -287,9 +342,11 @@ export default function VTCEnginePage() {
                     key={tab}
                     onClick={() => handleTabClick(tab)}
                     className={`rounded-xl px-4 py-2 font-semibold border
-                      ${activeTab === tab
-                        ? "bg-red-500 text-white border-red-500"
-                        : "bg-white text-red-500 border-red-500 hover:bg-red-50"}
+                      ${
+                        activeTab === tab
+                          ? "bg-red-500 text-white border-red-500"
+                          : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                      }
                     `}
                   >
                     {tab}
@@ -303,8 +360,13 @@ export default function VTCEnginePage() {
         {/* Engine List Badge */}
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">Engine List</Badge>
-            <Button onClick={handleAddNewEngine} className="bg-red-500 hover:bg-red-600 text-white">
+            <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
+              Engine List
+            </Badge>
+            <Button
+              onClick={handleAddNewEngine}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
               <Add className="h-4 w-4 mr-1" />
               ADD NEW ENGINE
             </Button>
@@ -321,47 +383,82 @@ export default function VTCEnginePage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
-                    <TableHead className="font-semibold text-gray-700 text-sm">Engine Serial Number</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-sm">Engine Build Level</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-sm">Engine Capacity (cc)</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-sm">Engine Type</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-sm">Last Updated on</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-sm">Edit</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-sm">
+                      Engine Serial Number
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-sm">
+                      Engine Build Level
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-sm">
+                      Engine Capacity (cc)
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-sm">
+                      Engine Type
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-sm">
+                      Last Updated on
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-sm">
+                      Edit
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-gray-500">
+                      <TableCell
+                        colSpan={6}
+                        className="text-center text-gray-500"
+                      >
                         Loading...
                       </TableCell>
                     </TableRow>
                   ) : engines.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-gray-500">
+                      <TableCell
+                        colSpan={6}
+                        className="text-center text-gray-500"
+                      >
                         No engines found.
                       </TableCell>
                     </TableRow>
-                  ) : 
+                  ) : (
                     engines.map((engine, index) => (
-                      <TableRow key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
-                        <TableCell className="text-sm text-gray-900 font-medium">{engine.engineSerialNumber}</TableCell>
-                        <TableCell className="text-sm text-gray-900">{engine.engineBuildLevel}</TableCell>
-                        <TableCell className="text-sm text-gray-900">{engine.engineCapacity}</TableCell>
-                        <TableCell className="text-sm text-gray-900">{engine.engineType}</TableCell>
-                        <TableCell className="text-sm text-gray-600">{engine.lastUpdatedOn}</TableCell>
+                      <TableRow
+                        key={index}
+                        className={
+                          index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                        }
+                      >
+                        <TableCell className="text-sm text-gray-900 font-medium">
+                          {engine.engineSerialNumber}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-900">
+                          {engine.engineBuildLevel}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-900">
+                          {engine.engineCapacity}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-900">
+                          {engine.engineType}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-600">
+                          {engine.lastUpdatedOn}
+                        </TableCell>
                         <TableCell>
                           <IconButton
                             aria-label="edit"
                             size="small"
-                            onClick={() => handleEdit(engine.engineSerialNumber)}
+                            onClick={() =>
+                              handleEdit(engine.engineSerialNumber)
+                            }
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </TableCell>
                       </TableRow>
                     ))
-                  }
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -373,19 +470,43 @@ export default function VTCEnginePage() {
               {`Showing ${engines.length} of ${engines.length}`}
             </div>
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" disabled className="text-gray-400">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
+                className="text-gray-400"
+              >
                 {"<<"}
               </Button>
-              <Button variant="outline" size="sm" disabled className="text-gray-400">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
+                className="text-gray-400"
+              >
                 {"<"}
               </Button>
-              <Button variant="default" size="sm" className="bg-black text-white hover:bg-gray-800">
+              <Button
+                variant="default"
+                size="sm"
+                className="bg-black text-white hover:bg-gray-800"
+              >
                 1
               </Button>
-              <Button variant="outline" size="sm" disabled className="text-gray-400">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
+                className="text-gray-400"
+              >
                 {">"}
               </Button>
-              <Button variant="outline" size="sm" disabled className="text-gray-400">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
+                className="text-gray-400"
+              >
                 {">>"}
               </Button>
             </div>
@@ -394,7 +515,12 @@ export default function VTCEnginePage() {
       </div>
 
       {/* Edit Engine Dialog */}
-      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>Edit Engine</DialogTitle>
         <DialogContent dividers>
           {editLoading ? (
@@ -862,14 +988,22 @@ export default function VTCEnginePage() {
           ) : null}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditOpen(false)} variant="outline" disabled={editLoading}>
+          <Button
+            onClick={() => setEditOpen(false)}
+            variant="outline"
+            disabled={editLoading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleEditSave} variant="default" disabled={editLoading || !editForm}>
+          <Button
+            onClick={handleEditSave}
+            variant="default"
+            disabled={editLoading || !editForm}
+          >
             {editLoading ? "Saving..." : "Save"}
           </Button>
         </DialogActions>
       </Dialog>
     </>
-  )
+  );
 }

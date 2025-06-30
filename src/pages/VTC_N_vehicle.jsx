@@ -14,7 +14,7 @@ import {
 } from "@/components/UI/table";
 import { Card } from "@/components/UI/card";
 import { useState } from "react";
-import Navbar2 from "@/components/UI/navbar2";
+import Navbar1 from "@/components/UI/navbar";
 
 const vehicles = [];
 
@@ -40,11 +40,11 @@ export default function VTCNashikVehicle() {
   };
 
   const handleTabClick = (tab) => {
-  setActiveTab(tab);
-  if (tab === "Job Order") navigate("/nashik/joborder");
-  else if (tab === "Vehicle") navigate("/nashik/vehicle");
-  else if (tab === "Engine") navigate("/nashik/engine");
-};
+    setActiveTab(tab);
+    if (tab === "Job Order") navigate("/nashik/joborder");
+    else if (tab === "Vehicle") navigate("/nashik/vehicle");
+    else if (tab === "Engine") navigate("/nashik/engine");
+  };
 
   const handleAddNewVehicle = () => {
     navigate("/nashik/vehicle/new");
@@ -52,7 +52,7 @@ export default function VTCNashikVehicle() {
 
   return (
     <>
-      <Navbar2 />
+      <Navbar1 />
       {/* Header */}
       <div className="bg-white dark:bg-black ">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,7 +70,9 @@ export default function VTCNashikVehicle() {
                 <h1 className="text-sm font-medium text-gray-600 dark:text-red-500">
                   VTC Nashik
                 </h1>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">NEW VEHICLE</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
+                  NEW VEHICLE
+                </h2>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -80,7 +82,9 @@ export default function VTCNashikVehicle() {
                   key={tab}
                   variant="default"
                   onClick={() => handleTabClick(tab)}
-                  className={`bg-red-500 hover:bg-red-600 text-white ${activeTab === tab ? "ring-2 ring-red-300" : ""}`}
+                  className={`bg-red-500 hover:bg-red-600 text-white ${
+                    activeTab === tab ? "ring-2 ring-red-300" : ""
+                  }`}
                 >
                   {tab}
                 </Button>
@@ -111,13 +115,27 @@ export default function VTCNashikVehicle() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="font-semibold text-gray-700 text-sm">Vehicle Serial Number</TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">Vehicle Body Number</TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">Vehicle Model</TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">Created By</TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">Created on</TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">Last Updated By</TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">Last Updated on</TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">
+                    Vehicle Serial Number
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">
+                    Vehicle Body Number
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">
+                    Vehicle Model
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">
+                    Created By
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">
+                    Created on
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">
+                    Last Updated By
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">
+                    Last Updated on
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -157,7 +175,8 @@ export default function VTCNashikVehicle() {
         {/* Pagination Footer */}
         <div className="flex items-center justify-between mt-4">
           <div className="text-sm text-gray-600">
-            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, totalItems)} of {totalItems} Records
+            Showing {indexOfFirstItem + 1} to{" "}
+            {Math.min(indexOfLastItem, totalItems)} of {totalItems} Records
           </div>
           <div className="flex items-center space-x-2">
             <Button
@@ -184,7 +203,9 @@ export default function VTCNashikVehicle() {
               size="sm"
               disabled={currentPage === totalPages}
               onClick={() => handlePageChange(currentPage + 1)}
-              className={currentPage === totalPages ? "text-gray-400" : "text-gray-600"}
+              className={
+                currentPage === totalPages ? "text-gray-400" : "text-gray-600"
+              }
             >
               {">"}
             </Button>
@@ -193,7 +214,9 @@ export default function VTCNashikVehicle() {
               size="sm"
               disabled={currentPage === totalPages}
               onClick={() => handlePageChange(totalPages)}
-              className={currentPage === totalPages ? "text-gray-400" : "text-gray-600"}
+              className={
+                currentPage === totalPages ? "text-gray-400" : "text-gray-600"
+              }
             >
               {">>"}
             </Button>
