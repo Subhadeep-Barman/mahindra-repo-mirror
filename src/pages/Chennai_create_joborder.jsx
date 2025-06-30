@@ -16,6 +16,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Switch } from "@/components/UI/switch";
 import useStore from "@/store/useStore";
 import axios from "axios";
+import DropzoneFileList from "@/components/UI/DropzoneFileList";
 const apiURL = import.meta.env.VITE_BACKEND_URL
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
@@ -110,6 +111,7 @@ export default function CreateJobOrder() {
         specificInstruction: "",
         uploadDocuments: null,
         testOrderId: null, // Track created test order ID
+        job_order_id: null, // Track job order ID for this test
         showCoastDownData: false, // Toggle for coast down data section
         // Coast down data fields for individual test
         cdReportRef: "",
@@ -871,6 +873,10 @@ export default function CreateJobOrder() {
     }
   };
 
+  // Add these two lines to define the modal state for each test row
+  const [uploadDocModals, setUploadDocModals] = useState({});
+  const [emissionCheckModals, setEmissionCheckModals] = useState({});
+
   return (
     <>
       <Navbar2 />
@@ -1390,12 +1396,32 @@ export default function CreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Upload Documents</Label>
-                <Input
-                  type="file"
-                  onChange={(e) =>
-                    handleTestChange(idx, "uploadDocuments", e.target.files[0])
+                {/* Replace Input with DropzoneFileList for Upload Documents */}
+                <DropzoneFileList
+                  buttonText="Upload Document"
+                  name="Upload_document"
+                  maxFiles={5}
+                  formData={{
+                    ...test,
+                    originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                  }}
+                  setFormData={(updatedTest) => {
+                    setTests((prev) =>
+                      prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                    );
+                  }}
+                  id={`test${idx}`}
+                  submitted={false}
+                  setSubmitted={() => {}}
+                  openModal={!!uploadDocModals[idx]}
+                  handleOpenModal={() =>
+                    setUploadDocModals((prev) => ({ ...prev, [idx]: true }))
                   }
+                  handleCloseModal={() =>
+                    setUploadDocModals((prev) => ({ ...prev, [idx]: false }))
+                  }
+                  disabled={false}
+                  originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
                 />
               </div>
             </div>
@@ -1621,12 +1647,32 @@ export default function CreateJobOrder() {
             <div className="grid grid-cols-4 gap-4 mb-2">
               <div>
                 <Label>Emission Check Attachment</Label>
-                <Input
-                  value={test.emissionCheckAttachment}
-                  onChange={(e) =>
-                    handleTestChange(idx, "emissionCheckAttachment", e.target.value)
+                {/* Replace Input with DropzoneFileList for Emission Check Attachment */}
+                <DropzoneFileList
+                  buttonText="Emission Check Attachment"
+                  name="Emission_check"
+                  maxFiles={5}
+                  formData={{
+                    ...test,
+                    originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                  }}
+                  setFormData={(updatedTest) => {
+                    setTests((prev) =>
+                      prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                    );
+                  }}
+                  id={`test${idx}`}
+                  submitted={false}
+                  setSubmitted={() => {}}
+                  openModal={!!emissionCheckModals[idx]}
+                  handleOpenModal={() =>
+                    setEmissionCheckModals((prev) => ({ ...prev, [idx]: true }))
                   }
-                  placeholder="Enter Attachment Path/URL"
+                  handleCloseModal={() =>
+                    setEmissionCheckModals((prev) => ({ ...prev, [idx]: false }))
+                  }
+                  disabled={false}
+                  originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
                 />
               </div>
               <div>
