@@ -1,16 +1,26 @@
+import os
+from fastapi import Request
 from fastapi import APIRouter, HTTPException
 from pathlib import Path
 import json
-
-from fastapi import APIRouter, HTTPException, Depends, Body
+import uuid
+import aiofiles
+from fastapi import APIRouter, HTTPException, Depends, Body, UploadFile, File, Form
 from typing import List
 from datetime import datetime, date
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.storage.api.api_utils import get_db
 from backend.storage.models.models import TestOrder
-
+from google.cloud import storage
 router = APIRouter()
+
+STORAGE = os.getenv("STORAGE")
+if STORAGE == "UAT":
+    UPLOAD_PATH = "DBMRS_VTC/uploads/UAT_ENV_UPLOADS"
+else:
+    UPLOAD_PATH = "DBMRS_VTC/uploads/TEST_ENV_UPLOADS"
+
 
 @router.get("/test-types")
 def get_test_types():
@@ -162,3 +172,231 @@ def delete_testorder(test_order_id: str, db: Session = Depends(get_db)):
     db.delete(testorder)
     db.commit()
     return {"detail": "TestOrder deleted successfully"}
+
+
+MAX_FILE_SIZE = 4 * 1024 * 1024 * 1024  # maximum files size upto 4GB only
+UPLOAD_TIMEOUT = 300
+chunk_storage = {}
+
+STORAGE = os.getenv("STORAGE")
+BUCKET_NAME = "gto_cloud_storage"
+DESTINATION_FOLDER = "logs/dbmrs"
+CREDENTIALS_PATH = os.path.join(
+    os.getcwd(), "gto-projects-dev-993026-153ee6510ab1.json"
+)
+
+@router.post("/upload_chunk")
+async def upload_chunk(
+    chunk: UploadFile = File(...),
+    file_name: str = Form(...),
+    chunk_index: int = Form(...),
+    total_chunks: int = Form(...),
+    sess_idt: str = Form(None),
+    job_order_id: str = Form(...),
+    test_order_id: str = Form(None),
+    attachment_type: str = Form(...),
+    user: str = Form(...),
+    request: Request = None,
+):
+    """
+    Upload a chunk of a file to the server in a resumable upload process.
+
+    Args:
+        chunk (UploadFile): The file chunk to be uploaded.
+        file_name (str): The name of the file being uploaded.
+        chunk_index (int): The index of the chunk being uploaded.
+        total_chunks (int): The total number of chunks expected.
+        sess_idt (str): Unique session identifier for the upload.
+        job_order_id (str): ID to associate with job order.
+        test_order_id (str): ID to associate with test order.
+        attachment_type (str): The type/category of attachment.
+        user (str): The user uploading the file.
+
+    Returns:
+        dict: Upload status, session ID, user, and upload time.
+    """
+    if sess_idt is None:
+        sess_idt = str(uuid.uuid4())
+
+    # Folder path structure
+    if test_order_id is None:
+        folder_path = f"{UPLOAD_PATH}/{job_order_id}/{attachment_type}/"
+    else:
+        folder_path = f"{UPLOAD_PATH}/{job_order_id}/{test_order_id}/{attachment_type}/"
+
+    upload_time = datetime.utcnow().isoformat() + "Z"
+
+    try:
+        os.makedirs(folder_path, exist_ok=True)
+        chunk_path = os.path.join(folder_path, f"{sess_idt}_part_{chunk_index}")
+
+        async with aiofiles.open(chunk_path, "wb") as f:
+            chunk_data = await chunk.read()
+            await f.write(chunk_data)
+
+        if sess_idt not in chunk_storage:
+            chunk_storage[sess_idt] = {
+                "file_name": file_name,
+                "total_chunks": total_chunks,
+                "chunks_received": set(),
+                "total_size": 0,
+                "user": user,
+                "upload_time": upload_time,
+            }
+
+        chunk_storage[sess_idt]["chunks_received"].add(chunk_index)
+        chunk_storage[sess_idt]["total_size"] += os.path.getsize(chunk_path)
+
+        if chunk_storage[sess_idt]["total_size"] > MAX_FILE_SIZE:
+            # Clean up the uploaded chunks
+            for i in range(total_chunks):
+                part_path = os.path.join(folder_path, f"{sess_idt}_part_{i}")
+                if os.path.exists(part_path):
+                    os.remove(part_path)
+            del chunk_storage[sess_idt]
+            return {
+                "sess_idt": sess_idt,
+                "completed": False,
+                "error": "File size is too large to upload.",
+                "user": user,
+                "upload_time": upload_time,
+            }
+
+    except Exception as e:
+        return {
+            "sess_idt": sess_idt,
+            "completed": False,
+            "error": f"Error uploading chunk: {str(e)}",
+            "user": user,
+            "upload_time": upload_time,
+        }
+
+    # Final merge if all chunks are received
+    if len(chunk_storage[sess_idt]["chunks_received"]) == total_chunks:
+        try:
+            upload_results = await merge_chunks(
+                sess_idt, folder_path, file_name, attachment_type, chunk
+            )
+            del chunk_storage[sess_idt]
+            return {
+                "sess_idt": sess_idt,
+                "completed": True,
+                "upload_results": upload_results,
+                "user": user,
+                "upload_time": upload_time,
+            }
+        except Exception as e:
+            # Log the actual error for debugging
+            import traceback
+            error_details = traceback.format_exc()
+            # Optionally print or log error_details here
+            for i in range(total_chunks):
+                part_path = os.path.join(folder_path, f"{sess_idt}_part_{i}")
+                if os.path.exists(part_path):
+                    os.remove(part_path)
+            del chunk_storage[sess_idt]
+            return {
+                "sess_idt": sess_idt,
+                "completed": False,
+                "error": f"File upload failed: {str(e)}",
+                "details": error_details,
+                "user": user,
+                "upload_time": upload_time,
+            }
+
+    return {
+        "sess_idt": sess_idt,
+        "completed": False,
+        "user": user,
+        "upload_time": upload_time,
+    }
+
+
+async def merge_chunks(sess_idt, folder_path, file_name, attachment_type, file):
+    """
+    Merge the uploaded file chunks into a single file and upload it to Google Cloud Storage.
+
+    @param:
+    sess_idt (str): Unique session identifier for the upload.
+    folder_path (str): The path where the file chunks are stored.
+    file_name (str): The name of the final file to be created.
+    attachment_type (str): The type/category of attachment.
+
+    @return:
+    list: A list of dictionaries containing the status of each file upload.
+    """
+    final_file_path = os.path.join(folder_path, file_name)
+    upload_results = []
+
+    try:
+        async with aiofiles.open(final_file_path, "wb") as final_file:
+            total_chunks = chunk_storage.get(sess_idt, {}).get("total_chunks", 0)
+            if total_chunks == 0:
+                raise ValueError(f"No chunks found for session: {sess_idt}")
+
+            for i in range(total_chunks):
+                chunk_path = os.path.join(folder_path, f"{sess_idt}_part_{i}")
+                try:
+                    async with aiofiles.open(chunk_path, "rb") as chunk_file:
+                        content = await chunk_file.read()
+                        await final_file.write(content)
+                except FileNotFoundError:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Chunk {i} not found for session {sess_idt}. Please try again.",
+                    )
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"Error reading chunk {i} for session {sess_idt}: {str(e)}",
+                    )
+
+        storage_client = storage.Client.from_service_account_json(CREDENTIALS_PATH)
+        bucket = storage_client.bucket(BUCKET_NAME)
+        blob_path = f"{folder_path.rstrip('/')}/{file_name}"
+        blob = bucket.blob(blob_path)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Error while preparing file or connecting to Google Cloud Storage. Please try again later.",
+        )
+
+    try:
+        blob.upload_from_filename(final_file_path, timeout=UPLOAD_TIMEOUT)
+        upload_results.append({"filename": file_name, "status": "uploaded"})
+
+        if (
+            attachment_type == "wearAnalysisReportAttachment"
+            and file_name.lower().endswith((".xls", ".xlsx"))
+        ):
+            try:
+                file.file.seek(0)
+                pdf_result = convert_excel_to_pdf(file)
+                if pdf_result is None:
+                    raise ValueError(
+                        "PDF conversion failed: convert_excel_to_pdf returned None."
+                    )
+                pdf_filename, pdf_content = pdf_result
+                pdf_blob = bucket.blob(folder_path + pdf_filename)
+                pdf_blob.upload_from_string(pdf_content, content_type="application/pdf")
+                upload_results.append({"filename": pdf_filename, "status": "uploaded"})
+            except Exception as e:
+                upload_results.append(
+                    {
+                        "filename": os.path.splitext(file_name)[0] + ".pdf",
+                        "status": "failed",
+                        "error": "PDF conversion and upload failed. Please try again later.",
+                    }
+                )
+    except Exception as e:
+        os.remove(final_file_path)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error uploading file {file_name} to GCS. Please try again later.",
+        )
+    finally:
+        if os.path.exists(final_file_path):
+            os.remove(final_file_path)
+    return upload_results
+
