@@ -72,10 +72,10 @@ export default function AccountMenu() {
             {/* Background color converted to secondary.main */}
             <Avatar
               sx={{
-                width: 32,
-                height: 32,
-                color: "primary.main",
-                backgroundColor: "primary.light",
+                width: 31,
+                height: 31,
+                color: "#e5e7eb",
+                backgroundColor: "#f44336",
               }}
             ></Avatar>
           </IconButton>

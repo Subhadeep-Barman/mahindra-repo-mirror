@@ -23,7 +23,7 @@ export default function Navbar() {
   }, [isDarkMode])
 
   return (
-    <nav className="bg-white rounded-2xl dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+    <nav className="bg-black dark:bg-zinc-900/80 shadow-sm border-b border-gray-900 dark:border-zinc-800 transition-colors duration-200 rounded-2xl mt-2 mx-2 md:mx-4">
       <div className="flex items-center justify-between h-16 px-4 md:px-8">
         {/* Logo - Left Corner */}
         <div className="flex-shrink-0">
@@ -38,13 +38,6 @@ export default function Navbar() {
 
         {/* Right Side Icons - Hidden on Mobile */}
         <div className="hidden md:flex items-center space-x-6">
-          <button className="p-2 text-red-500 dark:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700 transition-colors duration-200">
-            <Mail className="h-5 w-5" />
-          </button>
-
-          <button className="p-2 text-red-500 dark:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700 transition-colors duration-200">
-            <Notifications className="h-5 w-5" />
-          </button>
 
           <div className="flex items-center gap-2">
             <LightMode className="h-4 w-4 text-yellow-500" />
@@ -72,16 +65,6 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="md:hidden bg-white dark:bg-gray-800 border-t dark:border-gray-800 py-2 transition-colors duration-200 rounded-xl">
           <div className="flex flex-col space-y-4 px-4">
-            <button className="flex items-center space-x-2 text-red-500 dark:text-red-500 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700 transition-colors duration-200">
-              <Mail className="h-5 w-5" />
-              <span>Messages</span>
-            </button>
-
-            <button className="flex items-center space-x-2 text-red-500 dark:text-red-500 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700 transition-colors duration-200">
-              <Notifications className="h-5 w-5" />
-              <span>Notifications</span>
-            </button>
-
             <div className="flex items-center justify-between p-2">
               <div className="flex items-center space-x-2 text-red-500 dark:text-red-500">
                 <LightMode className="h-4 w-4 text-yellow-500" />

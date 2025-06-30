@@ -17,7 +17,7 @@ import { useState } from "react";
 import Navbar2 from "@/components/UI/navbar2";
 const jobOrders = [];
 
-export default function VTCNashikPage() {
+export default function RDEChennaiPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("Job Order");
   const rowsPerPage = 8;
@@ -44,9 +44,9 @@ export default function VTCNashikPage() {
 
 const handleTabClick = (tab) => {
   setActiveTab(tab);
-  if (tab === "Job Order") navigate("/nashik/joborder");
-  else if (tab === "Vehicle") navigate("/nashik/vehicle");
-  else if (tab === "Engine") navigate("/nashik/engine");
+  if (tab === "Job Order") navigate("/rde-chennai");
+  else if (tab === "Vehicle") navigate("/rde/vehicle");
+  else if (tab === "Engine") navigate("/rde/engine");
 };
   return (
     <>
@@ -102,7 +102,7 @@ const handleTabClick = (tab) => {
             Current Job Orders
           </Badge>
           <Button
-            onClick={() => navigate("/createJobOrder")}
+            onClick={() => navigate("/RDECreateJobOrder")}
             className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
           >
             <Add className="h-4 w-4 mr-1" />

@@ -1,8 +1,9 @@
 "use client";
 
-import { ArrowBack, Add } from "@mui/icons-material";
+import { ArrowBack, Add, Edit as EditIcon } from "@mui/icons-material";
 import { Button } from "@/components/UI/button";
 import { Badge } from "@/components/UI/badge";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -12,77 +13,128 @@ import {
   TableRow,
 } from "@/components/UI/table";
 import { Card } from "@/components/UI/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar2 from "@/components/UI/navbar2";
+import axios from "axios";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import TextField from "@mui/material/TextField";
+import { useRef } from "react";
 
-const vehicles = [
-  {
-    vehicleSerialNumber: "V.S.NO-123456",
-    vehicleBodyNumber: "V.B.NO-123456",
-    vehicleModel: "BOLERO_NEO_D_B56",
-    createdBy: "SANKAR SURESH (SANKSU-CONT)",
-    createdOn: "13-12-2021 01:57 PM",
-    lastUpdatedBy: "SANKAR SURESH (SANKSU-CONT)",
-    lastUpdatedOn: "13-12-2021 02:05 PM",
-  },
-  {
-    vehicleSerialNumber: "7564321",
-    vehicleBodyNumber: "1234567",
-    vehicleModel: "BOLERO_NEO_PLUS_D_B56",
-    createdBy: "SANKAR SURESH (SANKSU-CONT)",
-    createdOn: "09-12-2021 04:33 PM",
-    lastUpdatedBy: "SANKAR SURESH (SANKSU-CONT)",
-    lastUpdatedOn: "13-12-2021 02:16 PM",
-  },
-  {
-    vehicleSerialNumber: "VEHICLE NO-123",
-    vehicleBodyNumber: "VEHICLE NO-123",
-    vehicleModel: "",
-    createdBy: "SANKAR SURESH (SANKSU-CONT)",
-    createdOn: "10-12-2021 11:47 AM",
-    lastUpdatedBy: "",
-    lastUpdatedOn: "",
-  },
-  {
-    vehicleSerialNumber: "VEHICLE NO-2",
-    vehicleBodyNumber: "789",
-    vehicleModel: "Not Listed",
-    createdBy: "RAVIKANTH (RAVIKANTHRAMAN-CONT)",
-    createdOn: "09-12-2021 09:25 PM",
-    lastUpdatedBy: "SANKAR SURESH(SANKSU-CONT)",
-    lastUpdatedOn: "09-12-2021 09:13 AM",
-  },
-];
+const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function VTCVehiclePage() {
+  const [vehicles, setVehicles] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
-  
-  // Calculate pagination values
+  const [editOpen, setEditOpen] = useState(false);
+  const [editVehicle, setEditVehicle] = useState(null);
+  const [editForm, setEditForm] = useState(null);
+
+  // Fetch vehicles from API on mount
+  useEffect(() => {
+    async function fetchVehicles() {
+      try {
+        const response = await axios.get(`${apiURL}/vehicles`);
+        // Only keep necessary fields for each vehicle
+        const minimalVehicles = (response.data || []).map((v) => ({
+          vehicle_id: v.vehicle_id,
+          vehicle_serial_number: v.vehicle_serial_number,
+          vehicle_body_number: v.vehicle_body_number,
+          vehicle_model: v.vehicle_model,
+          id_of_creator: v.id_of_creator,
+          created_on: v.created_on,
+          id_of_updater: v.id_of_updater,
+          updated_on: v.updated_on,
+        }));
+        setVehicles(minimalVehicles);
+      } catch (err) {
+        setVehicles([]);
+        // Optionally show error
+      }
+    }
+    fetchVehicles();
+  }, []);
+
   const totalItems = vehicles.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = vehicles.slice(indexOfFirstItem, indexOfLastItem);
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Determine active tab from the current route
+  let activeTab = "Job Order";
+  if (location.pathname.toLowerCase().includes("vehicle")) activeTab = "Vehicle";
+  else if (location.pathname.toLowerCase().includes("engine")) activeTab = "Engine";
+
+  const handleTabClick = (tab) => {
+    if (tab === "Job Order") navigate("/rde-chennai");
+    else if (tab === "Vehicle") navigate("/rde/vehicle");
+    else if (tab === "Engine") navigate("/rde/engine");
   };
-  const [activeTab, setActiveTab] = useState("Vehicle");
 
   const handleBack = () => {
-    console.log("Navigate back");
+    navigate(-1);
   };
 
   const handleAddNewVehicle = () => {
-    console.log("Add new vehicle");
+    navigate("/vtcvehicle/new");
   };
 
-  const handleTabClick = (tab) => {
-    setActiveTab(tab);
-    // Navigate to different pages based on tab
-    if (tab === "Job Order") {
-      console.log("Navigate to job order page");
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  // Open edit modal and fetch full vehicle details
+  const handleEditClick = async (vehicle) => {
+    try {
+      const response = await axios.get(`${apiURL}/vehicles/${vehicle.vehicle_id}`);
+      setEditVehicle(vehicle);
+      setEditForm(response.data); // full vehicle data
+      setEditOpen(true);
+    } catch (err) {
+      alert("Error fetching vehicle details: " + (err.response?.data?.detail || err.message));
+    }
+  };
+
+  // Handle edit form change (for all fields)
+  const handleEditFormChange = (e) => {
+    const { name, value, type } = e.target;
+    setEditForm({ ...editForm, [name]: type === "number" ? Number(value) : value });
+  };
+
+  // Save updated vehicle (send all fields)
+  const handleEditSave = async () => {
+    if (!editVehicle || !editForm) return;
+    try {
+      await axios.put(
+        `${apiURL}/vehicles/${editVehicle.vehicle_id}`,
+        { ...editForm, vehicle_id: editVehicle.vehicle_id },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      setEditOpen(false);
+      setEditVehicle(null);
+      setEditForm(null);
+      // Refresh list
+      const response = await axios.get(`${apiURL}/vehicles`);
+      const minimalVehicles = (response.data || []).map((v) => ({
+        vehicle_id: v.vehicle_id,
+        vehicle_serial_number: v.vehicle_serial_number,
+        vehicle_body_number: v.vehicle_body_number,
+        vehicle_model: v.vehicle_model,
+        id_of_creator: v.id_of_creator,
+        created_on: v.created_on,
+        id_of_updater: v.id_of_updater,
+        updated_on: v.updated_on,
+      }));
+      setVehicles(minimalVehicles);
+    } catch (err) {
+      alert("Error updating vehicle: " + (err.response?.data?.detail || err.message));
     }
   };
 
@@ -114,9 +166,12 @@ export default function VTCVehiclePage() {
               {["Job Order", "Vehicle", "Engine"].map((tab) => (
                 <Button
                   key={tab}
-                  variant="default"
                   onClick={() => handleTabClick(tab)}
-                  className={`bg-red-500 hover:bg-red-600 text-white ${activeTab === tab ? "ring-2 ring-red-300" : ""}`}
+                  className={`rounded-xl px-4 py-2 font-semibold border
+                    ${activeTab === tab
+                      ? "bg-red-500 text-white border-red-500"
+                      : "bg-white text-red-500 border-red-500 hover:bg-red-50"}
+                  `}
                 >
                   {tab}
                 </Button>
@@ -128,17 +183,17 @@ export default function VTCVehiclePage() {
 
       {/* Vehicle List Badge */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center bg-white dark:bg-black">
-          <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
-            Current Job Orders
-          </Badge>
-          <Button
-            onClick={handleAddNewVehicle}
-            className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
-          >
-            <Add className="h-4 w-4 mr-1" />
-            CREATE JOB ORDER
-          </Button>
-        </div>
+        <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
+          Vehicles List
+        </Badge>
+        <Button
+          onClick={handleAddNewVehicle}
+          className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
+        >
+          <Add className="h-4 w-4 mr-1" />
+          ADD NEW Vehicle
+        </Button>
+      </div>
 
       {/* Main Content */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
@@ -154,34 +209,44 @@ export default function VTCVehiclePage() {
                   <TableHead className="font-semibold text-gray-700 text-sm">Created on</TableHead>
                   <TableHead className="font-semibold text-gray-700 text-sm">Last Updated By</TableHead>
                   <TableHead className="font-semibold text-gray-700 text-sm">Last Updated on</TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">Edit</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {currentItems.map((vehicle, index) => (
                   <TableRow
-                    key={index}
+                    key={vehicle.vehicle_id || index}
                     className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
                   >
                     <TableCell className="text-sm text-gray-900 font-medium">
-                      {vehicle.vehicleSerialNumber}
+                      {vehicle.vehicle_serial_number}
                     </TableCell>
                     <TableCell className="text-sm text-gray-900">
-                      {vehicle.vehicleBodyNumber}
+                      {vehicle.vehicle_body_number}
                     </TableCell>
                     <TableCell className="text-sm text-gray-900">
-                      {vehicle.vehicleModel}
+                      {vehicle.vehicle_model}
                     </TableCell>
                     <TableCell className="text-sm text-gray-600">
-                      {vehicle.createdBy}
+                      {vehicle.id_of_creator}
                     </TableCell>
                     <TableCell className="text-sm text-gray-600">
-                      {vehicle.createdOn}
+                      {vehicle.created_on}
                     </TableCell>
                     <TableCell className="text-sm text-gray-600">
-                      {vehicle.lastUpdatedBy}
+                      {vehicle.id_of_updater}
                     </TableCell>
                     <TableCell className="text-sm text-gray-600">
-                      {vehicle.lastUpdatedOn}
+                      {vehicle.updated_on}
+                    </TableCell>
+                    <TableCell>
+                      <button
+                        onClick={() => handleEditClick(vehicle)}
+                        className="text-gray-500 hover:text-red-500"
+                        title="Edit"
+                      >
+                        <EditIcon fontSize="small" />
+                      </button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -214,7 +279,6 @@ export default function VTCVehiclePage() {
             >
               {"<"}
             </Button>
-            {/* Add page numbers here */}
             <Button
               variant="outline"
               size="sm"
@@ -235,6 +299,63 @@ export default function VTCVehiclePage() {
             </Button>
           </div>
         </div>
+
+        {/* Edit Modal with full form */}
+        <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="md" fullWidth>
+          <DialogTitle>Edit Vehicle</DialogTitle>
+          <DialogContent>
+            {editForm && (
+              <form className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Example for some fields, repeat for all fields in VehicleSchema */}
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Project</label>
+                  <input
+                    name="project_code"
+                    value={editForm.project_code || ""}
+                    onChange={handleEditFormChange}
+                    className="border rounded px-2 py-1 w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Vehicle Build Level</label>
+                  <input
+                    name="vehicle_build_level"
+                    value={editForm.vehicle_build_level || ""}
+                    onChange={handleEditFormChange}
+                    className="border rounded px-2 py-1 w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Vehicle Model</label>
+                  <input
+                    name="vehicle_model"
+                    value={editForm.vehicle_model || ""}
+                    onChange={handleEditFormChange}
+                    className="border rounded px-2 py-1 w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Vehicle Body Number</label>
+                  <input
+                    name="vehicle_body_number"
+                    value={editForm.vehicle_body_number || ""}
+                    onChange={handleEditFormChange}
+                    className="border rounded px-2 py-1 w-full"
+                  />
+                </div>
+                {/* ...repeat for all fields in VehicleSchema... */}
+              </form>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setEditOpen(false)} className="bg-gray-200 text-gray-700">
+              Cancel
+            </Button>
+            <Button onClick={handleEditSave} className="bg-red-500 text-white">
+              Save
+            </Button>
+          </DialogActions>
+        </Dialog>
       </div>
     </>
   );

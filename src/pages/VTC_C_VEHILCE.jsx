@@ -184,7 +184,7 @@ export default function VTCVehiclePage() {
       {/* Vehicle List Badge */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center bg-white dark:bg-black">
         <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
-          Current Job Orders
+          Vehicles List
         </Badge>
         <Button
           onClick={handleAddNewVehicle}

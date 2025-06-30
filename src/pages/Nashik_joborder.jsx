@@ -1,723 +1,1868 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/UI/button"
-import { Input } from "@/components/UI/input"
-import { Label } from "@/components/UI/label"
-import { Textarea } from "@/components/UI/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/UI/select"
-import { RadioGroup, RadioGroupItem } from "@/components/UI/radio-group"
-import { Switch } from "@/components/UI/switch"
-import { Badge } from "@/components/UI/badge"
-import { Card, CardContent } from "@/components/UI/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/UI/dialog"
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
-import UploadIcon from "@mui/icons-material/Upload"
-import EyeIcon from "@mui/icons-material/Visibility"
-import AddIcon from "@mui/icons-material/Add"
-import FileCopyIcon from "@mui/icons-material/FileCopy"
-import GroupIcon from "@mui/icons-material/Group"
-import DeleteIcon from "@mui/icons-material/Delete"
-import CloseIcon from "@mui/icons-material/Close"
-import PersonIcon from "@mui/icons-material/Person"
-import GroupAddIcon from "@mui/icons-material/GroupAdd"
-import { ArrowBack, Add } from "@mui/icons-material"
-import { Calendar } from "@/components/UI/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/UI/popover"
-import { format } from "date-fns"
-import Navbar2 from "@/components/UI/navbar2"
-import { useNavigate } from "react-router-dom"; 
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/UI/button";
+import { Input } from "@/components/UI/input";
+import { Label } from "@/components/UI/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/UI/select";
+import Navbar2 from "@/components/UI/navbar2";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Switch } from "@/components/UI/switch";
+import useStore from "@/store/useStore";
+import axios from "axios";
+const apiURL = import.meta.env.VITE_BACKEND_URL
 
-export default function CJobOrder() {
-  const projectCodes = ["PCODE1", "PCODE2"];
-  const vehicleBodyNumbers = ["VBN123", "VBN456"];
-  const engineTypes = ["Gasoline", "Diesel", "CNG", "HYBRID", "ePT"];
-  const domains = ["OBD", "BOE", "SCR", "GENERAL"];
-  const departments = ["VTC JO", "RDE JO", "VTC_JO Nashik"];
-  const [showFiles, setShowFiles] = useState(false)
-  const [showCFTModal, setShowCFTModal] = useState(false)
-  const [cftMode, setCftMode] = useState("SINGLE") // "SINGLE" or "GROUP"
-  const [cftMembers, setCftMembers] = useState([{ id: 1, value: '' }])
-  const [newCftMember, setNewCftMember] = useState("")
-  const [formData, setFormData] = useState({
+const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
+
+export default function CreateJobOrder() {
+  const [form, setForm] = useState({
     projectCode: "",
+    vehicleBuildLevel: "",
+    vehicleModel: "",
     vehicleBodyNumber: "",
     vehicleNumber: "",
+    transmissionType: "",
+    finalDriveAxleRatio: "",
     engineNumber: "",
     engineType: "",
     domain: "",
     department: "",
-    testType: "HOT BOLT CYCLE (Dilute Only)",
-    objective: "TEST 1",
-    vehicleLocation: "",
-    cycleGearShift: "",
-    inertiaClass: "FA 625 WITHOUT 1.3",
-    datasetName: "",
-    dpf: "Yes",
-    datasetFlashed: "Yes",
-    ess: "On",
-    mode: "",
-    hardwareChange: "",
-    instructions: "",
-    shift: "",
-    coastDownData: false,
-    cdReference: "",
+    coastDownTestReportReference: "",
+    tyreMake: "",
+    tyreSize: "",
+    tyrePressureFront: "",
+    tyrePressureRear: "",
+    tyreRunIn: "",
+    engineRunIn: "",
+    gearBoxRunIn: "",
+    axleRunIn: "",
+    engineOilSpecification: "",
+    axleOilSpecification: "",
+    transmissionOilSpecification: "",
+    driveType: "",
+    drivenWheel: "",
+    intercoolerLocation: "",
+    gearRatio: "",
+    cdReportRef: "",
     vehicleRefMass: "",
     aN: "",
-    bN: "",
-    cN: "",
+    bNkmph: "",
+    cNkmph2: "",
     f0N: "",
-    f1N: "",
-    f2N: "",
-  })
-  const [activeTab, setActiveTab] = useState("Job Order")
-  const [preferredDate, setPreferredDate] = useState(new Date(2021, 11, 10))
-  const [uploadedFiles, setUploadedFiles] = useState(["1.pdf", "2.pdf", "3.pdf", "4.pdf"])
+    f1Nkmph: "",
+    f2Nkmph2: "",
+  });
 
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({
+  const [vehicleFormData, setVehicleFormData] = useState(null);
+  const [engineFormData, setEngineFormData] = useState(null);
+  const [showVehicleDetails, setShowVehicleDetails] = useState(true);
+  const [showEngineDetails, setShowEngineDetails] = useState(true);
+  const [showCoastDown, setShowCoastDown] = useState(true);
+
+  // State to control pre-filling mode to prevent useEffect conflicts
+  const [isPreFilling, setIsPreFilling] = useState(false);
+
+  // State to show loading during pre-fill
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Test state
+  const [tests, setTests] = useState([]);
+
+  // State to track existing CoastDownData_id for updates
+  const [existingCoastDownId, setExistingCoastDownId] = useState(null);
+
+  // State for test types from API
+  const [testTypes, setTestTypes] = useState([]);
+
+  // State for inertia classes from API
+  const [inertiaClasses, setInertiaClasses] = useState([]);
+
+  // State for modes from API
+  const [modes, setModes] = useState([]);
+
+  // Handler to add a new test
+  const handleAddTest = () => {
+    setTests((prev) => [
+      ...prev,
+      {
+        testType: "",
+        objective: "",
+        vehicleLocation: "",
+        cycleGearShift: "",
+        datasetName: "",
+        inertiaClass: "",
+        dpf: "",
+        datasetRefreshed: "",
+        ess: "",
+        mode: "",
+        hardwareChange: "",
+        equipmentRequired: "",
+        shift: "",
+        preferredDate: "",
+        emissionCheckDate: "",
+        emissionCheckAttachment: "",
+        specificInstruction: "",
+        uploadDocuments: null,
+        testOrderId: null, // Track created test order ID
+        showCoastDownData: false, // Toggle for coast down data section
+        // Coast down data fields for individual test
+        cdReportRef: "",
+        vehicleRefMass: "",
+        aN: "",
+        bNkmph: "",
+        cNkmph2: "",
+        f0N: "",
+        f1Nkmph: "",
+        f2Nkmph2: "",
+      },
+    ]);
+  };
+
+  // Handler to update a test
+  const handleTestChange = (idx, field, value) => {
+    setTests((prev) =>
+      prev.map((test, i) => (i === idx ? { ...test, [field]: value } : test))
+    );
+  };
+
+  // Handler to delete a test
+  const handleDeleteTest = (idx) => {
+    setTests((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  // Fetch vehicle and engine form data from localStorage
+  useEffect(() => {
+    const vData = localStorage.getItem("vehicleFormData");
+    if (vData) setVehicleFormData(JSON.parse(vData));
+    const eData = localStorage.getItem("engineFormData");
+    if (eData) setEngineFormData(JSON.parse(eData));
+  }, []);
+
+  // Use global store for project and domain options
+  const projectOptions = useStore((state) => state.projectOptions);
+  const fetchProjects = useStore((state) => state.fetchProjects);
+  const domainOptions = useStore((state) => state.domainOptions);
+  const fetchDomains = useStore((state) => state.fetchDomains);
+
+  // Fetch project and domain options on mount
+  useEffect(() => {
+    fetchProjects();
+    fetchDomains();
+  }, [fetchProjects, fetchDomains]);
+
+  // Fetch test types from API
+  useEffect(() => {
+    const fetchTestTypes = async () => {
+      try {
+        const response = await axios.get(`${apiURL}/test-types`);
+        setTestTypes(response.data || []);
+      } catch (error) {
+        console.error("Error fetching test types:", error);
+        setTestTypes([]);
+      }
+    };
+    
+    fetchTestTypes();
+  }, []);
+
+  // Fetch inertia classes from API
+  useEffect(() => {
+    const fetchInertiaClasses = async () => {
+      try {
+        const response = await axios.get(`${apiURL}/inertia-classes`);
+        setInertiaClasses(response.data || []);
+      } catch (error) {
+        console.error("Error fetching inertia classes:", error);
+        setInertiaClasses([]);
+      }
+    };
+    
+    fetchInertiaClasses();
+  }, []);
+
+  // Fetch modes from API
+  useEffect(() => {
+    const fetchModes = async () => {
+      try {
+        const response = await axios.get(`${apiURL}/modes`);
+        setModes(response.data || []);
+      } catch (error) {
+        console.error("Error fetching modes:", error);
+        setModes([]);
+      }
+    };
+    
+    fetchModes();
+  }, []);
+
+  // New: State for fetched vehicles and engines
+  const [vehicleList, setVehicleList] = useState([]);
+  const [engineList, setEngineList] = useState([]);
+  // New: State for vehicle body numbers
+  const [vehicleBodyNumbers, setVehicleBodyNumbers] = useState([]);
+  // New: State for engine numbers from API
+  const [engineNumbers, setEngineNumbers] = useState([]);
+
+  // Fetch vehicle and engine lists from API on mount
+  useEffect(() => {
+    // Replace with your actual API endpoints
+    fetch("/api/vehicles")
+      .then((res) => res.json())
+      .then((data) => setVehicleList(data || []));
+    fetch("/api/engines")
+      .then((res) => res.json())
+      .then((data) => setEngineList(data || []));
+    // Fetch vehicle body numbers (now returns both body number and vehicle number)
+    (async () => {
+      try {
+        const res = await axios.get(`${apiURL}/vehicle-body-numbers`);
+        setVehicleBodyNumbers(res.data || []);
+      } catch (err) {
+        setVehicleBodyNumbers([]);
+      }
+    })();
+    // Fetch engine numbers from FastAPI endpoint
+    (async () => {
+      try {
+        const res = await axios.get(`${apiURL}/engine-numbers`);
+        setEngineNumbers(res.data || []);
+      } catch (err) {
+        setEngineNumbers([]);
+      }
+    })();
+  }, []);
+
+  // Accordion state for vehicle details
+  const [vehicleAccordionOpen, setVehicleAccordionOpen] = useState(true);
+
+  // Editable vehicle form state
+  const [vehicleEditable, setVehicleEditable] = useState(null);
+
+  // Fetch vehicle details using the new API when body number changes
+  const handleVehicleBodyChange = (value) => {
+    // Don't interfere if we're currently pre-filling
+    if (isPreFilling) return;
+    
+    const found = vehicleBodyNumbers.find(
+      (v) => v.vehicle_body_number === value
+    );
+    setForm((prev) => ({
+      ...prev,
+      vehicleBodyNumber: value,
+      vehicleNumber: found?.vehicle_number || "",
+      engineNumber: "",
+      engineType: "",
+    }));
+    // Use the new API endpoint
+    if (value) {
+      axios
+        .get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(value)}`)
+        .then((res) => {
+          setVehicleEditable(res.data);
+        })
+        .catch((error) => {
+          console.log("Could not fetch vehicle details:", error);
+          setVehicleEditable(null);
+        });
+    }
+  };
+
+  // Keep vehicleEditable in sync with API response
+  useEffect(() => {
+    if (form.vehicleBodyNumber && !isPreFilling) {
+      axios
+        .get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(form.vehicleBodyNumber)}`)
+        .then((res) => setVehicleEditable(res.data))
+        .catch(() => setVehicleEditable(null));
+    } else if (!form.vehicleBodyNumber && !isPreFilling) {
+      setVehicleEditable(null);
+    }
+    // eslint-disable-next-line
+  }, [form.vehicleBodyNumber, isPreFilling]);
+
+  // Handler for editable vehicle form changes
+  const handleVehicleEditableChange = (field, value) => {
+    setVehicleEditable((prev) => ({
       ...prev,
       [field]: value,
-    }))
-  }
+    }));
+  };
 
-  const handleTabClick = (tab) => {
-  setActiveTab(tab);
-  if (tab === "Job Order") navigate("/nashik/joborder");
-  else if (tab === "Vehicle") navigate("/nashik/vehicle");
-  else if (tab === "Engine") navigate("/nashik/engine");
-};
+  // Accordion state for engine details
+  const [engineAccordionOpen, setEngineAccordionOpen] = useState(true);
 
-  const handleAddTest = () => {
-    console.log("Add Test:", formData)
-  }
+  // Editable engine form state
+  const [engineEditable, setEngineEditable] = useState(null);
 
-  const handleCloneTest = () => {
-    console.log("Clone Test:", formData)
-  }
-
-  const handleCFTMembers = () => {
-    setShowCFTModal(true)
-  }
-
-  const handleAddCftMember = () => {
-    setCftMembers([...cftMembers, { id: Date.now(), value: '' }])
-  }
-
-  const handleRemoveCftMember = (id) => {
-    setCftMembers(cftMembers.filter(member => member.id !== id))
-  }
-
-  const handleCftMemberChange = (id, value) => {
-    setCftMembers(cftMembers.map(member => 
-      member.id === id ? { ...member, value } : member
-    ))
-  }
-
-  const handleApplyCFT = () => {
-    console.log("Applied CFT Members:", cftMembers, "Mode:", cftMode)
-    setShowCFTModal(false)
-  }
-
-  const handleCFTModeChange = (mode) => {
-    setCftMode(mode)
-    if (mode === "SINGLE" && cftMembers.length > 1) {
-      setCftMembers([cftMembers[0]])
+  // Fetch engine details using the new API when engine number changes
+  const handleEngineNumberChange = (value) => {
+    // Don't interfere if we're currently pre-filling
+    if (isPreFilling) return;
+    
+    setForm((prev) => ({
+      ...prev,
+      engineNumber: value,
+    }));
+    // Use the new API endpoint
+    if (value) {
+      axios
+        .get(`${apiURL}/engines/by-engine-number/${encodeURIComponent(value)}`)
+        .then((res) => {
+          setEngineEditable(res.data);
+          setForm((prev) => ({
+            ...prev,
+            engineType: res.data?.engineType || prev.engineType,
+          }));
+        })
+        .catch((error) => {
+          console.log("Could not fetch engine details:", error);
+          setEngineEditable(null);
+        });
     }
-  }
+  };
 
-  const handleCreateJobOrder = () => {
-    console.log("Create Job Order:", formData)
-  }
+  // Keep engineEditable in sync with API response
+  useEffect(() => {
+    if (form.engineNumber && !isPreFilling) {
+      axios
+        .get(`${apiURL}/engines/by-engine-number/${encodeURIComponent(form.engineNumber)}`)
+        .then((res) => setEngineEditable(res.data))
+        .catch(() => setEngineEditable(null));
+    } else if (!form.engineNumber && !isPreFilling) {
+      setEngineEditable(null);
+    }
+    // eslint-disable-next-line
+  }, [form.engineNumber, isPreFilling]);
 
-  
+  // Handler for editable engine form changes
+  const handleEngineEditableChange = (field, value) => {
+    setEngineEditable((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
-  const handleClear = () => {
-    setFormData({
-      testType: "",
-      objective: "",
-      vehicleLocation: "",
-      cycleGearShift: "",
-      inertiaClass: "",
-      datasetName: "",
-      dpf: "",
-      datasetFlashed: "",
-      ess: "",
-      mode: "",
-      hardwareChange: "",
-      instructions: "",
-      shift: "",
-      coastDownData: false,
-    })
-  }
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleBack = () => {
-  navigate(-1); // Go back to previous page
-};
-  const handleUploadDocument = () => {
-    console.log("Upload Document")
-  }
+  // Prefill form if jobOrder is passed via navigation state
+  useEffect(() => {
+    // Only run once when component mounts and we have job order data
+    if (location.state?.jobOrder && !hasPreFilledRef.current) {
+      const jobOrder = location.state.jobOrder;
+      console.log("Pre-filling form with job order data:", jobOrder);
+      
+      // Mark that we've started pre-filling to prevent multiple executions
+      hasPreFilledRef.current = true;
+      
+      // Set pre-filling state to prevent other useEffects from interfering
+      setIsPreFilling(true);
+      setIsLoading(true);
+      
+      // Show success message if this is for creating test orders
+      if (location.state.isEdit) {
+        console.log("Loading job order for creating test orders based on:", location.state.originalJobOrderId);
+      }
+      
+      // Function to fetch and pre-fill coast down data
+      const fetchAndFillCoastDownData = async (coastDownDataId) => {
+        if (coastDownDataId) {
+          try {
+            const response = await axios.get(`${apiURL}/coastdown/${coastDownDataId}`);
+            const coastDownData = response.data;
+            console.log("Fetched coast down data:", coastDownData);
+            
+            return {
+              cdReportRef: coastDownData.coast_down_reference || "",
+              vehicleRefMass: coastDownData.vehicle_reference_mass?.toString() || "",
+              aN: coastDownData.a_value?.toString() || "",
+              bNkmph: coastDownData.b_value?.toString() || "",
+              cNkmph2: coastDownData.c_value?.toString() || "",
+              f0N: coastDownData.f0_value?.toString() || "",
+              f1Nkmph: coastDownData.f1_value?.toString() || "",
+              f2Nkmph2: coastDownData.f2_value?.toString() || "",
+            };
+          } catch (error) {
+            console.error("Error fetching coast down data:", error);
+            return {};
+          }
+        }
+        return {};
+      };
 
-  const handleViewFiles = () => {
-    setShowFiles(!showFiles)
-  }
+      // Async function to handle the pre-filling with coast down data
+      const preFillForm = async () => {
+        // Set existing CoastDownData_id for potential updates
+        if (jobOrder.CoastDownData_id) {
+          setExistingCoastDownId(jobOrder.CoastDownData_id);
+        }
+        
+        // Fetch coast down data if CoastDownData_id is available
+        const coastDownFields = await fetchAndFillCoastDownData(jobOrder.CoastDownData_id);
+        
+        const newFormData = {
+          ...form, // Preserve existing form state first
+          projectCode: jobOrder.project_id || "",
+          vehicleBuildLevel: jobOrder.vehicle_build_level || jobOrder.vehicleBuildLevel || "",
+          vehicleModel: jobOrder.vehicle_model || jobOrder.vehicleModel || "",
+          vehicleBodyNumber: jobOrder.vehicle_body_number || "",
+          vehicleNumber: jobOrder.vehicle_id || "",
+          transmissionType: jobOrder.transmission_type || jobOrder.transmissionType || "",
+          finalDriveAxleRatio: jobOrder.final_drive_axle_ratio || jobOrder.finalDriveAxleRatio || "",
+          engineNumber: jobOrder.engine_id || "",
+          engineType: jobOrder.type_of_engine || jobOrder.engine_type || jobOrder.engineType || "",
+          domain: jobOrder.domain || "",
+          department: jobOrder.department || "",
+          coastDownTestReportReference: jobOrder.coast_down_test_report_reference || jobOrder.coastDownTestReportReference || "",
+          tyreMake: jobOrder.tyre_make || jobOrder.tyreMake || "",
+          tyreSize: jobOrder.tyre_size || jobOrder.tyreSize || "",
+          tyrePressureFront: jobOrder.tyre_pressure_front || jobOrder.tyrePressureFront || "",
+          tyrePressureRear: jobOrder.tyre_pressure_rear || jobOrder.tyrePressureRear || "",
+          tyreRunIn: jobOrder.tyre_run_in || jobOrder.tyreRunIn || "",
+          engineRunIn: jobOrder.engine_run_in || jobOrder.engineRunIn || "",
+          gearBoxRunIn: jobOrder.gearbox_run_in || jobOrder.gearBoxRunIn || "",
+          axleRunIn: jobOrder.axle_run_in || jobOrder.axleRunIn || "",
+          engineOilSpecification: jobOrder.engine_oil_specification || jobOrder.engineOilSpecification || "",
+          axleOilSpecification: jobOrder.axle_oil_specification || jobOrder.axleOilSpecification || "",
+          transmissionOilSpecification: jobOrder.transmission_oil_specification || jobOrder.transmissionOilSpecification || "",
+          driveType: jobOrder.drive_type || jobOrder.driveType || "",
+          drivenWheel: jobOrder.driven_wheel || jobOrder.drivenWheel || "",
+          intercoolerLocation: jobOrder.intercooler_location || jobOrder.intercoolerLocation || "",
+          gearRatio: jobOrder.gear_ratio || jobOrder.gearRatio || "",
+          // Coast down data from API (takes precedence over job order fallback)
+          ...coastDownFields,
+          // Fallback to job order fields if coast down API didn't return data
+          cdReportRef: coastDownFields.cdReportRef || jobOrder.cd_report_ref || jobOrder.cdReportRef || "",
+          vehicleRefMass: coastDownFields.vehicleRefMass || jobOrder.vehicle_ref_mass || jobOrder.vehicleRefMass || "",
+          aN: coastDownFields.aN || jobOrder.a_n || jobOrder.aN || "",
+          bNkmph: coastDownFields.bNkmph || jobOrder.b_n_kmph || jobOrder.bNkmph || "",
+          cNkmph2: coastDownFields.cNkmph2 || jobOrder.c_n_kmph2 || jobOrder.cNkmph2 || "",
+          f0N: coastDownFields.f0N || jobOrder.f0_n || jobOrder.f0N || "",
+          f1Nkmph: coastDownFields.f1Nkmph || jobOrder.f1_n_kmph || jobOrder.f1Nkmph || "",
+          f2Nkmph2: coastDownFields.f2Nkmph2 || jobOrder.f2_n_kmph2 || jobOrder.f2Nkmph2 || "",
+        };
+        
+        console.log("Setting form data to:", newFormData);
+        setForm(newFormData);
+        
+        // Prefill vehicleEditable and engineEditable if present
+        if (jobOrder.vehicleDetails) setVehicleEditable(jobOrder.vehicleDetails);
+        if (jobOrder.engineDetails) setEngineEditable(jobOrder.engineDetails);
+        
+        // Use setTimeout to allow form state to settle before enabling other useEffects
+        setTimeout(() => {
+          console.log("Pre-filling completed, enabling other useEffects");
+          setIsPreFilling(false);
+          setIsLoading(false);
+        }, 1000); // Increased timeout to 1 second
+      };
+
+      // Execute the pre-filling
+      preFillForm();
+    }
+  }, []); // Empty dependency array - only run once on mount
+
+  // Add these handlers
+  const handleTabClick = (tab) => {
+    if (tab === "Job Order") navigate("/chennai/joborder");
+    else if (tab === "Vehicle") navigate("/chennai/vehicle");
+    else if (tab === "Engine") navigate("/chennai/engine");
+  };
+
+  // Add this function to handle dropdown changes
+  const handleChange = (field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // Handler for creating job order
+  const handleCreateJobOrder = async (e) => {
+    e.preventDefault();
+
+    // Generate job_order_id and CoastDownData_id based on timestamp
+    const job_order_id = "JO" + Date.now();
+    const CoastDownData_id = "CD" + Date.now();
+
+    // You may need to fetch or map vehicle_id, engine_id, CoastDownData_id from backend if not available in frontend
+    // For now, use null or empty string if not available
+    const jobOrderPayload = {
+      job_order_id,
+      project_id: form.projectCode || null,
+      vehicle_id: vehicleEditable?.vehicle_id || null,
+      vehicle_body_number: form.vehicleBodyNumber || null,
+      engine_id: engineEditable?.engine_id || null,
+      CoastDownData_id, // Now always a string
+      type_of_engine: form.engineType || null,
+      department: form.department || null,
+      domain: form.domain || null,
+      job_order_status: "Created",
+      remarks: "",
+      rejection_remarks: "",
+      mail_remarks: "",
+      id_of_creator: "",
+      name_of_creator: "",
+      created_on: new Date().toISOString(),
+      id_of_updater: "",
+      name_of_updater: "",
+      updated_on: new Date().toISOString(),
+    };
+
+    // Coast Down Data payload
+    const coastDownPayload = {
+      CoastDownData_id,
+      job_order_id,
+      coast_down_reference: form.cdReportRef || null,
+      vehicle_reference_mass: form.vehicleRefMass ? parseFloat(form.vehicleRefMass) : null,
+      a_value: form.aN ? parseFloat(form.aN) : null,
+      b_value: form.bNkmph ? parseFloat(form.bNkmph) : null,
+      c_value: form.cNkmph2 ? parseFloat(form.cNkmph2) : null,
+      f0_value: form.f0N ? parseFloat(form.f0N) : null,
+      f1_value: form.f1Nkmph ? parseFloat(form.f1Nkmph) : null,
+      f2_value: form.f2Nkmph2 ? parseFloat(form.f2Nkmph2) : null,
+      id_of_creator: "",
+      created_on: new Date().toISOString(),
+      id_of_updater: "",
+      updated_on: new Date().toISOString(),
+    };
+
+    try {
+      // Create job order first
+      const jobOrderRes = await axios.post(`${apiURL}/joborders`, jobOrderPayload);
+      
+      // Then create coast down data if there's any coast down information
+      const hasCoastDownData = form.cdReportRef || form.vehicleRefMass || form.aN || 
+                              form.bNkmph || form.cNkmph2 || form.f0N || 
+                              form.f1Nkmph || form.f2Nkmph2;
+
+      if (hasCoastDownData) {
+        await axios.post(`${apiURL}/coastdown`, coastDownPayload);
+      }
+
+      alert("Job Order Created! ID: " + jobOrderRes.data.job_order_id);
+      // Optionally, reset form or navigate
+    } catch (err) {
+      console.error("Error creating job order:", err);
+      alert("Failed to create job order: " + (err.response?.data?.detail || err.message));
+    }
+  };
+
+  // Handler for creating test order
+  const handleCreateTestOrder = async (testIndex) => {
+    const test = tests[testIndex];
+    
+    // Validate required fields
+    if (!test.objective) {
+      alert("Please fill in the objective of the test before creating test order.");
+      return;
+    }
+
+    // Generate test_order_id based on timestamp
+    const test_order_id = "TO" + Date.now();
+    
+    // Get job_order_id from location state or create a new one if not available
+    const job_order_id = location.state?.jobOrder?.job_order_id || null;
+    
+    // Create or update coast down data for this specific test
+    let CoastDownData_id = location.state?.jobOrder?.CoastDownData_id || existingCoastDownId;
+    
+    // If test has its own coast down data, create a new coast down entry
+    const hasTestSpecificCoastDownData = test.cdReportRef || test.vehicleRefMass || test.aN || 
+                                        test.bNkmph || test.cNkmph2 || test.f0N || 
+                                        test.f1Nkmph || test.f2Nkmph2;
+    
+    if (hasTestSpecificCoastDownData) {
+      // Generate new CoastDownData_id for this test
+      CoastDownData_id = "CD" + Date.now() + "_T" + testIndex;
+      
+      // Create coast down data payload for this test
+      const testCoastDownPayload = {
+        CoastDownData_id,
+        job_order_id,
+        coast_down_reference: test.cdReportRef || test.cdReportRef || form.cdReportRef || null,
+        vehicle_reference_mass: (test.vehicleRefMass || form.vehicleRefMass) ? parseFloat(test.vehicleRefMass || form.vehicleRefMass) : null,
+        a_value: (test.aN || form.aN) ? parseFloat(test.aN || form.aN) : null,
+        b_value: (test.bNkmph || form.bNkmph) ? parseFloat(test.bNkmph || form.bNkmph) : null,
+        c_value: (test.cNkmph2 || form.cNkmph2) ? parseFloat(test.cNkmph2 || form.cNkmph2) : null,
+        f0_value: (test.f0N || form.f0N) ? parseFloat(test.f0N || form.f0N) : null,
+        f1_value: (test.f1Nkmph || form.f1Nkmph) ? parseFloat(test.f1Nkmph || form.f1Nkmph) : null,
+        f2_value: (test.f2Nkmph2 || form.f2Nkmph2) ? parseFloat(test.f2Nkmph2 || form.f2Nkmph2) : null,
+        id_of_creator: "",
+        created_on: new Date().toISOString(),
+        id_of_updater: "",
+        updated_on: new Date().toISOString(),
+      };
+      
+      try {
+        await axios.post(`${apiURL}/coastdown`, testCoastDownPayload);
+        console.log("Test-specific coast down data created:", CoastDownData_id);
+      } catch (err) {
+        console.error("Error creating test-specific coast down data:", err);
+        alert("Failed to create coast down data for test: " + (err.response?.data?.detail || err.message));
+        return;
+      }
+    }
+
+    // Create test order payload matching the API schema
+    const testOrderPayload = {
+      test_order_id,
+      job_order_id,
+      CoastDownData_id,
+      test_type: test.testType || "",
+      test_objective: test.objective || "",
+      vehicle_location: test.vehicleLocation || "",
+      cycle_gear_shift: test.cycleGearShift || "",
+      inertia_class: test.inertiaClass || "",
+      dataset_name: test.datasetName || "",
+      dpf: test.dpf || "",
+      dataset_flashed: test.datasetRefreshed === "Yes" ? true : test.datasetRefreshed === "No" ? false : null,
+      ess: test.ess || "",
+      mode: test.mode || "",
+      hardware_change: test.hardwareChange || "",
+      equipment_required: test.equipmentRequired || "",
+      shift: test.shift || "",
+      preferred_date: test.preferredDate || null,
+      emission_check_date: test.emissionCheckDate || null,
+      emission_check_attachment: test.emissionCheckAttachment || "",
+      specific_instruction: test.specificInstruction || "",
+      status: "Created",
+      id_of_creator: "",
+      name_of_creator: "",
+      created_on: new Date().toISOString(),
+      id_of_updater: "",
+      name_of_updater: "",
+      updated_on: new Date().toISOString(),
+    };
+
+    try {
+      const response = await axios.post(`${apiURL}/testorders`, testOrderPayload);
+      
+      // Update the test in state with the created test order ID
+      setTests((prev) =>
+        prev.map((t, i) =>
+          i === testIndex
+            ? { ...t, testOrderId: response.data.test_order_id }
+            : t
+        )
+      );
+
+      alert("Test Order Created! ID: " + response.data.test_order_id + 
+            (hasTestSpecificCoastDownData ? "\nCoast Down Data ID: " + CoastDownData_id : ""));
+    } catch (err) {
+      console.error("Error creating test order:", err);
+      alert("Failed to create test order: " + (err.response?.data?.detail || err.message));
+    }
+  };
+
+  // Handler for updating coast down data when editing existing job order
+  const handleUpdateCoastDownData = async (existingCoastDownId) => {
+    if (!existingCoastDownId) return;
+
+    const coastDownUpdatePayload = {
+      CoastDownData_id: existingCoastDownId,
+      coast_down_reference: form.cdReportRef || null,
+      vehicle_reference_mass: form.vehicleRefMass ? parseFloat(form.vehicleRefMass) : null,
+      a_value: form.aN ? parseFloat(form.aN) : null,
+      b_value: form.bNkmph ? parseFloat(form.bNkmph) : null,
+      c_value: form.cNkmph2 ? parseFloat(form.cNkmph2) : null,
+      f0_value: form.f0N ? parseFloat(form.f0N) : null,
+      f1_value: form.f1Nkmph ? parseFloat(form.f1Nkmph) : null,
+      f2_value: form.f2Nkmph2 ? parseFloat(form.f2Nkmph2) : null,
+      id_of_updater: "",
+      updated_on: new Date().toISOString(),
+    };
+
+    try {
+      await axios.put(`${apiURL}/coastdown/${existingCoastDownId}`, coastDownUpdatePayload);
+      console.log("Coast down data updated successfully");
+    } catch (err) {
+      console.error("Error updating coast down data:", err);
+      throw err; // Re-throw to handle in calling function
+    }
+  };
+
+  const [formDisabled, setFormDisabled] = useState(false);
+
+  // Ref to track if we've already pre-filled to prevent multiple executions
+  const hasPreFilledRef = useRef(false);
+
+  // Debug useEffect to monitor form state changes
+  useEffect(() => {
+    console.log("Form state updated:", form);
+    console.log("Pre-filling state:", isPreFilling);
+    console.log("Loading state:", isLoading);
+    console.log("Has pre-filled:", hasPreFilledRef.current);
+    
+    // Check if form is being reset unexpectedly
+    const hasValues = Object.values(form).some(value => value !== "");
+    if (!hasValues && hasPreFilledRef.current && !isPreFilling) {
+      console.warn("⚠️ Form was reset unexpectedly after pre-filling!");
+    }
+  }, [form, isPreFilling, isLoading]);
+
+  // Cleanup function to reset ref when component unmounts
+  useEffect(() => {
+    return () => {
+      hasPreFilledRef.current = false;
+    };
+  }, []);
+
+  // Utility function to fetch all coastdown data
+  const fetchAllCoastDownData = async () => {
+    try {
+      const response = await axios.get(`${apiURL}/coastdown`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching all coast down data:", error);
+      return [];
+    }
+  };
+
+  // Utility function to find coastdown data by job order ID
+  const findCoastDownByJobOrderId = async (jobOrderId) => {
+    try {
+      const allCoastDownData = await fetchAllCoastDownData();
+      return allCoastDownData.find(cd => cd.job_order_id === jobOrderId);
+    } catch (error) {
+      console.error("Error finding coast down data by job order ID:", error);
+      return null;
+    }
+  };
+
+  // Add state for all test orders and editing
+  const [allTestOrders, setAllTestOrders] = useState([]);
+  const [editingTestOrderIdx, setEditingTestOrderIdx] = useState(null);
+
+  // Fetch all test orders from API
+  const fetchAllTestOrders = async () => {
+    try {
+      const res = await axios.get(`${apiURL}/testorders`);
+      setAllTestOrders(res.data || []);
+    } catch (err) {
+      setAllTestOrders([]);
+      console.error("Failed to fetch test orders:", err);
+    }
+  };
+
+  // Fetch a single test order by ID
+  const fetchTestOrderById = async (test_order_id) => {
+    try {
+      const res = await axios.get(`${apiURL}/testorders/${test_order_id}`);
+      return res.data;
+    } catch (err) {
+      console.error("Failed to fetch test order:", err);
+      return null;
+    }
+  };
+
+  // Update a test order by ID
+  const updateTestOrder = async (test_order_id, updatedData) => {
+    try {
+      const res = await axios.put(`${apiURL}/testorders/${test_order_id}`, updatedData);
+      return res.data;
+    } catch (err) {
+      console.error("Failed to update test order:", err);
+      throw err;
+    }
+  };
+
+  // Fetch all test orders on mount
+  useEffect(() => {
+    fetchAllTestOrders();
+  }, []);
+
+  // Handler to load a test order into the test form for editing
+  const handleEditTestOrder = async (testOrder, idx) => {
+    // Find the test in the tests array or add a new one if not present
+    let testIdx = idx;
+    if (typeof testIdx !== "number" || testIdx >= tests.length) {
+      setTests((prev) => [...prev, {}]);
+      testIdx = tests.length;
+    }
+    // Fill the test form with test order data
+    setTests((prev) => {
+      const updated = [...prev];
+      updated[testIdx] = {
+        ...updated[testIdx],
+        testType: testOrder.test_type || "",
+        objective: testOrder.test_objective || "",
+        vehicleLocation: testOrder.vehicle_location || "",
+        cycleGearShift: testOrder.cycle_gear_shift || "",
+        datasetName: testOrder.dataset_name || "",
+        inertiaClass: testOrder.inertia_class || "",
+        dpf: testOrder.dpf || "",
+        datasetRefreshed: testOrder.dataset_flashed === true ? "Yes" : testOrder.dataset_flashed === false ? "No" : "",
+        ess: testOrder.ess || "",
+        mode: testOrder.mode || "",
+        hardwareChange: testOrder.hardware_change || "",
+        equipmentRequired: testOrder.equipment_required || "",
+        shift: testOrder.shift || "",
+        preferredDate: testOrder.preferred_date || "",
+        emissionCheckDate: testOrder.emission_check_date || "",
+        emissionCheckAttachment: testOrder.emission_check_attachment || "",
+        specificInstruction: testOrder.specific_instruction || "",
+        testOrderId: testOrder.test_order_id,
+        // Coast down fields if present
+        cdReportRef: testOrder.cdReportRef || "",
+        vehicleRefMass: testOrder.vehicleRefMass || "",
+        aN: testOrder.aN || "",
+        bNkmph: testOrder.bNkmph || "",
+        cNkmph2: testOrder.cNkmph2 || "",
+        f0N: testOrder.f0N || "",
+        f1Nkmph: testOrder.f1Nkmph || "",
+        f2Nkmph2: testOrder.f2Nkmph2 || "",
+      };
+      return updated;
+    });
+    setEditingTestOrderIdx(testIdx);
+  };
+
+  // Handler to update the test order from the test form
+  const handleUpdateTestOrder = async (idx) => {
+    const test = tests[idx];
+    if (!test.testOrderId) {
+      alert("No test order selected for update.");
+      return;
+    }
+    // Prepare payload matching API schema
+    const testOrderPayload = {
+      test_order_id: test.testOrderId,
+      job_order_id: location.state?.jobOrder?.job_order_id || null,
+      CoastDownData_id: location.state?.jobOrder?.CoastDownData_id || existingCoastDownId,
+      test_type: test.testType || "",
+      test_objective: test.objective || "",
+      vehicle_location: test.vehicleLocation || "",
+      cycle_gear_shift: test.cycleGearShift || "",
+      inertia_class: test.inertiaClass || "",
+      dataset_name: test.datasetName || "",
+      dpf: test.dpf || "",
+      dataset_flashed: test.datasetRefreshed === "Yes" ? true : test.datasetRefreshed === "No" ? false : null,
+      ess: test.ess || "",
+      mode: test.mode || "",
+      hardware_change: test.hardwareChange || "",
+      equipment_required: test.equipmentRequired || "",
+      shift: test.shift || "",
+      preferred_date: test.preferredDate || null,
+      emission_check_date: test.emissionCheckDate || null,
+      emission_check_attachment: test.emissionCheckAttachment || "",
+      specific_instruction: test.specificInstruction || "",
+      status: "Created",
+      id_of_creator: "",
+      name_of_creator: "",
+      created_on: new Date().toISOString(),
+      id_of_updater: "",
+      name_of_updater: "",
+      updated_on: new Date().toISOString(),
+    };
+    try {
+      await updateTestOrder(test.testOrderId, testOrderPayload);
+      alert("Test Order updated successfully!");
+      fetchAllTestOrders();
+      setEditingTestOrderIdx(null);
+    } catch (err) {
+      alert("Failed to update test order: " + (err.response?.data?.detail || err.message));
+    }
+  };
 
   return (
     <>
       <Navbar2 />
-      <div className=" dark:bg-black">
-        {/* Header */}
-        <div className="bg-white dark:bg-black">
-          <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBack}
-                  className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:border-red-500 dark:hover:bg-red-950 rounded-full border border-red-500"
+      <div className="bg-white dark:bg-black min-h-screen">
+        {/* Header Row */}
+        <div className="flex items-center justify-between px-8 pt-6">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              className="bg-red-600 text-white px-3 py-1 rounded"
+            >
+              Nashik Job Order
+            </Button>
+            <div className="flex flex-col">
+              {location.state?.isEdit && (
+                <span className="text-sm text-blue-600 font-medium">
+                  {isLoading ? 
+                    "Loading job order data..." : 
+                    `Pre-filled from Job Order: ${location.state.originalJobOrderId}`
+                  }
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button className="bg-red-600 text-white px-4 py-1 rounded">
+              Job Order
+            </Button>
+            <Button className="bg-white text-red-600 border border-red-600 px-4 py-1 rounded">
+              Vehicle
+            </Button>
+            <Button className="bg-white text-red-600 border border-red-600 px-4 py-1 rounded">
+              Engine
+            </Button>
+          </div>
+        </div>
+        {/* Form Row */}
+        <form className="flex flex-row gap-6 px-8 py-6 items-end">
+          {/* Project Code */}
+          <div className="flex flex-col">
+            <Label htmlFor="projectCode">
+              Project <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={form.projectCode}
+              onValueChange={(value) => handleChange("projectCode", value)}
+              required
+              disabled={formDisabled}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                {projectOptions.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Vehicle Body Number */}
+          <div className="flex flex-col">
+            <Label htmlFor="vehicleBodyNumber">
+              Vehicle Body Number <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={form.vehicleBodyNumber}
+              onValueChange={handleVehicleBodyChange}
+              required
+              disabled={formDisabled}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                {vehicleBodyNumbers.map((item, index) => (
+                  <SelectItem key={`${item.vehicle_body_number}-${index}`} value={item.vehicle_body_number}>
+                    {item.vehicle_body_number}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Vehicle Number (auto) */}
+          <div className="flex flex-col">
+            <Label htmlFor="vehicleNumber">
+              Vehicle Number <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="vehicleNumber"
+              value={form.vehicleNumber}
+              readOnly
+              className="w-44"
+              placeholder="Auto-fetched"
+              required
+              disabled={formDisabled}
+            />
+          </div>
+          {/* Engine Number (dropdown) */}
+          <div className="flex flex-col">
+            <Label htmlFor="engineNumber">
+              Engine Number <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={form.engineNumber}
+              onValueChange={handleEngineNumberChange}
+              required
+              disabled={formDisabled}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                {engineNumbers.map((engineNumber) => (
+                  <SelectItem key={engineNumber} value={engineNumber}>
+                    {engineNumber}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Type of Engine */}
+          <div className="flex flex-col">
+            <Label htmlFor="engineType">
+              Type of Engine <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={form.engineType}
+              onValueChange={(value) => handleChange("engineType", value)}
+              required
+              disabled={formDisabled}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Gasoline">Gasoline</SelectItem>
+                <SelectItem value="Diesel">Diesel</SelectItem>
+                <SelectItem value="CNG">CNG</SelectItem>
+                <SelectItem value="HYBRID">HYBRID</SelectItem>
+                <SelectItem value="ePT">ePT</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Domain */}
+          <div className="flex flex-col">
+            <Label htmlFor="domain">
+              Domain <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={form.domain}
+              onValueChange={(value) => handleChange("domain", value)}
+              required
+              disabled={formDisabled}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                {domainOptions.map((domain) => (
+                  <SelectItem key={domain} value={domain}>
+                    {domain}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Department */}
+          <div className="flex flex-col">
+            <Label htmlFor="department">
+              Department <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={form.department}
+              onValueChange={(value) => handleChange("department", value)}
+              required
+              disabled={formDisabled}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                {departments.map((dep) => (
+                  <SelectItem key={dep} value={dep}>
+                    {dep}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </form>
+
+        {/* Editable Vehicle Details Accordion */}
+        {vehicleEditable && (
+          <div className="mx-8 mt-2 mb-4 border rounded shadow">
+            <div
+              className="flex items-center justify-between bg-gray-100 border-t-4 border-red-600 px-4 py-2 cursor-pointer"
+              onClick={() => setVehicleAccordionOpen((prev) => !prev)}
+            >
+              <span className="font-semibold text-sm">
+                Vehicle Details (Editable)
+              </span>
+              <span>{vehicleAccordionOpen ? "▲" : "▼"}</span>
+            </div>
+            {vehicleAccordionOpen && (
+              <form className="bg-white px-4 py-4">
+                <div className="grid grid-cols-4 gap-4 text-xs">
+                  {Object.entries(vehicleEditable).map(([label, value]) => (
+                    <div key={label} className="flex flex-col">
+                      <Label className="font-semibold capitalize">{label.replace(/_/g, " ")}</Label>
+                      <Input
+                        value={value ?? ""}
+                        onChange={(e) =>
+                          handleVehicleEditableChange(label, e.target.value)
+                        }
+                        className="mt-1"
+                        disabled={formDisabled}
+                      />
+                    </div>
+                  ))}
+                </div>
+                {/* Optionally, add a Save button here */}
+              </form>
+            )}
+          </div>
+        )}
+
+        {/* Editable Engine Details Accordion */}
+        {engineEditable && (
+          <div className="mx-8 mt-2 mb-4 border rounded shadow">
+            <div
+              className="flex items-center justify-between bg-gray-100 border-t-4 border-blue-600 px-4 py-2 cursor-pointer"
+              onClick={() => setEngineAccordionOpen((prev) => !prev)}
+            >
+              <span className="font-semibold text-sm">
+                Engine Details (Editable)
+              </span>
+              <span>{engineAccordionOpen ? "▲" : "▼"}</span>
+            </div>
+            {engineAccordionOpen && (
+              <form className="bg-white px-4 py-4">
+                <div className="grid grid-cols-4 gap-4 text-xs">
+                  {Object.entries(engineEditable).map(([label, value]) => (
+                    <div key={label} className="flex flex-col">
+                      <Label className="font-semibold capitalize">{label.replace(/_/g, " ")}</Label>
+                      <Input
+                        value={value ?? ""}
+                        onChange={(e) =>
+                          handleEngineEditableChange(label, e.target.value)
+                        }
+                        className="mt-1"
+                        disabled={formDisabled}
+                      />
+                    </div>
+                  ))}
+                </div>
+                {/* Optionally, add a Save button here */}
+              </form>
+            )}
+          </div>
+        )}
+
+        {/* Coast Down Data (CD) Section */}
+        <div className="mx-8 mb-4 border rounded shadow px-6 py-4">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <Label htmlFor="cdReportRef">
+                Coast Down Test Report Reference
+              </Label>
+              {location.state?.isEdit && existingCoastDownId && (
+                <span className="text-sm text-blue-600 ml-2">
+                  (Editing existing data - ID: {existingCoastDownId})
+                </span>
+              )}
+            </div>
+          </div>
+          <Input
+            id="cdReportRef"
+            placeholder="Enter Coast Test Report Ref."
+            className="w-80 mt-1"
+            value={form.cdReportRef}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, cdReportRef: e.target.value }))
+            }
+            disabled={formDisabled}
+          />
+          <div className="mb-2 font-semibold text-xs mt-4">CD Values</div>
+          <div className="grid grid-cols-7 gap-4">
+            <div>
+              <Label htmlFor="vehicleRefMass" className="text-xs">
+                Vehicle Reference mass (Kg)
+              </Label>
+              <Input
+                id="vehicleRefMass"
+                placeholder="Enter Vehicle Reference mass (Kg)"
+                className="mt-1"
+                value={form.vehicleRefMass}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    vehicleRefMass: e.target.value,
+                  }))
+                }
+                disabled={formDisabled}
+              />
+            </div>
+            <div>
+              <Label htmlFor="aN" className="text-xs">
+                A (N)
+              </Label>
+              <Input
+                id="aN"
+                placeholder="Enter A (N)"
+                className="mt-1"
+                value={form.aN}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, aN: e.target.value }))
+                }
+                disabled={formDisabled}
+              />
+            </div>
+            <div>
+              <Label htmlFor="bNkmph" className="text-xs">
+                B (N/kmph)
+              </Label>
+              <Input
+                id="bNkmph"
+                placeholder="Enter B (N/kmph)"
+                className="mt-1"
+                value={form.bNkmph}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, bNkmph: e.target.value }))
+                }
+                disabled={formDisabled}
+              />
+            </div>
+            <div>
+              <Label htmlFor="cNkmph2" className="text-xs">
+                C (N/kmph^2)
+              </Label>
+              <Input
+                id="cNkmph2"
+                placeholder="Enter C (N/kmph^2)"
+                className="mt-1"
+                value={form.cNkmph2}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, cNkmph2: e.target.value }))
+                }
+                disabled={formDisabled}
+              />
+            </div>
+            <div>
+              <Label htmlFor="f0N" className="text-xs">
+                F0 (N)
+              </Label>
+              <Input
+                id="f0N"
+                placeholder="Enter F0 (N)"
+                className="mt-1"
+                value={form.f0N}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, f0N: e.target.value }))
+                }
+                disabled={formDisabled}
+              />
+            </div>
+            <div>
+              <Label htmlFor="f1Nkmph" className="text-xs">
+                F1 (N/kmph)
+              </Label>
+              <Input
+                id="f1Nkmph"
+                placeholder="Enter F1 (N/kmph)"
+                className="mt-1"
+                value={form.f1Nkmph}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, f1Nkmph: e.target.value }))
+                }
+                disabled={formDisabled}
+              />
+            </div>
+            <div>
+              <Label htmlFor="f2Nkmph2" className="text-xs">
+                F2 (N/kmph^2)
+              </Label>
+              <Input
+                id="f2Nkmph2"
+                placeholder="Enter F2 (N/kmph^2)"
+                className="mt-1"
+                value={form.f2Nkmph2}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, f2Nkmph2: e.target.value }))
+                }
+                disabled={formDisabled}
+              />
+            </div>
+          </div>
+          <div className="flex items-center mt-4 gap-6">
+            <Button
+              className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
+              onClick={handleCreateJobOrder}
+            >
+              {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
+            </Button>
+            {location.state?.isEdit && existingCoastDownId && (
+              <Button
+                className="bg-blue-600 text-white text-xs px-6 py-2 rounded"
+                onClick={async () => {
+                  try {
+                    await handleUpdateCoastDownData(existingCoastDownId);
+                    alert("Coast Down Data updated successfully!");
+                  } catch (err) {
+                    alert("Failed to update coast down data: " + (err.response?.data?.detail || err.message));
+                  }
+                }}
+              >
+                UPDATE COAST DOWN DATA
+              </Button>
+            )}
+            <Button
+              className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
+              type="button"
+              onClick={() =>
+                setForm((prev) => ({
+                  ...prev,
+                  cdReportRef: "",
+                  vehicleRefMass: "",
+                  aN: "",
+                  bNkmph: "",
+                  cNkmph2: "",
+                  f0N: "",
+                  f1Nkmph: "",
+                  f2Nkmph2: "",
+                }))
+              }
+            >
+              CLEAR
+            </Button>
+          </div>
+        </div>
+
+        {/* Test Actions */}
+        <div className="flex items-center mt-4 gap-6 px-8">
+          <Button
+            variant="ghost"
+            className="text-xs text-blue-700 px-0"
+            onClick={handleAddTest}
+          >
+            + ADD TEST
+          </Button>
+          <Button variant="ghost" className="text-xs text-blue-700 px-0">
+            + CFT MEMBERS
+          </Button>
+          <div className="flex-1"></div>
+        </div>
+
+        {/* Test Forms */}
+        {tests.map((test, idx) => (
+          <div
+            key={idx}
+            className="mx-8 mb-4 border rounded shadow px-6 py-4 bg-gray-50"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="font-semibold text-sm text-yellow-700">
+                Test {idx + 1}
+              </div>
+              <Button
+                variant="ghost"
+                className="text-xs text-red-600 px-2 py-0"
+                type="button"
+                onClick={() => handleDeleteTest(idx)}
+              >
+                Delete
+              </Button>
+            </div>
+            <div className="grid grid-cols-4 gap-4 mb-2">
+              <div>
+                <Label>Test Type</Label>
+                <Select
+                  value={test.testType}
+                  onValueChange={(v) => handleTestChange(idx, "testType", v)}
                 >
-                  <ArrowBack className="h-5 w-5" />
-                </Button>
-                <div>
-                  <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">VTC Nashik</h1>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">NEW JOB ORDER</h2>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {testTypes.map((testType, index) => (
+                      <SelectItem key={`${testType}-${index}`} value={testType}>
+                        {testType}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>
+                  Objective of the Test <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  value={test.objective}
+                  onChange={(e) =>
+                    handleTestChange(idx, "objective", e.target.value)
+                  }
+                  placeholder="TESTING"
+                />
+              </div>
+              <div>
+                <Label>Vehicle Location</Label>
+                <Input
+                  value={test.vehicleLocation}
+                  onChange={(e) =>
+                    handleTestChange(idx, "vehicleLocation", e.target.value)
+                  }
+                  placeholder="Enter Vehicle Location"
+                />
+              </div>
+              <div>
+                <Label>Upload Documents</Label>
+                <Input
+                  type="file"
+                  onChange={(e) =>
+                    handleTestChange(idx, "uploadDocuments", e.target.files[0])
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-4 mb-2">
+              <div>
+                <Label>Cycle Gear Shift</Label>
+                <Input
+                  value={test.cycleGearShift}
+                  onChange={(e) =>
+                    handleTestChange(idx, "cycleGearShift", e.target.value)
+                  }
+                  placeholder="Enter Cycle Gear Shift"
+                />
+              </div>
+              <div>
+                <Label>Dataset Name</Label>
+                <Input
+                  value={test.datasetName}
+                  onChange={(e) =>
+                    handleTestChange(idx, "datasetName", e.target.value)
+                  }
+                  placeholder="Enter Dataset Name"
+                />
+              </div>
+              <div>
+                <Label>Inertia Class</Label>
+                <Select
+                  value={test.inertiaClass}
+                  onValueChange={(v) =>
+                    handleTestChange(idx, "inertiaClass", v)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {inertiaClasses.map((inertiaClass, index) => (
+                      <SelectItem key={`${inertiaClass}-${index}`} value={inertiaClass}>
+                        {inertiaClass}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>DPF</Label>
+                <div className="flex gap-2 mt-2">
+                  <label>
+                    <input
+                      type="radio"
+                      name={`dpf${idx}`}
+                      value="Yes"
+                      checked={test.dpf === "Yes"}
+                      onChange={() => handleTestChange(idx, "dpf", "Yes")}
+                    />{" "}
+                    Yes
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name={`dpf${idx}`}
+                      value="No"
+                      checked={test.dpf === "No"}
+                      onChange={() => handleTestChange(idx, "dpf", "No")}
+                    />{" "}
+                    No
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name={`dpf${idx}`}
+                      value="NA"
+                      checked={test.dpf === "NA"}
+                      onChange={() => handleTestChange(idx, "dpf", "NA")}
+                    />{" "}
+                    NA
+                  </label>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                {/* Tab Buttons */}
-                {["Job Order", "Vehicle", "Engine"].map((tab) => (
-                  <Button
-                    key={tab}
-                    variant={activeTab === tab ? "default" : "outline"}
-                    onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${
-                      tab === "Job Order"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : tab === "Vehicle" || tab === "Engine"
-                          ? "bg-red-500 text-white hover:bg-red-600"
-                          : "text-red-500 border-red-500 hover:bg-red-50"
-                    }`}
-                  >
-                    {tab}
-                  </Button>
-                ))}
+            </div>
+            <div className="grid grid-cols-4 gap-4 mb-2">
+              <div>
+                <Label>Dataset Refreshed</Label>
+                <div className="flex gap-2 mt-2">
+                  <label>
+                    <input
+                      type="radio"
+                      name={`datasetRefreshed${idx}`}
+                      value="Yes"
+                      checked={test.datasetRefreshed === "Yes"}
+                      onChange={() =>
+                        handleTestChange(idx, "datasetRefreshed", "Yes")
+                      }
+                    />{" "}
+                    Yes
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name={`datasetRefreshed${idx}`}
+                      value="No"
+                      checked={test.datasetRefreshed === "No"}
+                      onChange={() =>
+                        handleTestChange(idx, "datasetRefreshed", "No")
+                      }
+                    />{" "}
+                    No
+                  </label>
+                </div>
+              </div>
+              <div>
+                <Label>ESS</Label>
+                <div className="flex gap-2 mt-2">
+                  <label>
+                    <input
+                      type="radio"
+                      name={`ess${idx}`}
+                      value="On"
+                      checked={test.ess === "On"}
+                      onChange={() => handleTestChange(idx, "ess", "On")}
+                    />{" "}
+                    On
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name={`ess${idx}`}
+                      value="Off"
+                      checked={test.ess === "Off"}
+                      onChange={() => handleTestChange(idx, "ess", "Off")}
+                    />{" "}
+                    Off
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name={`ess${idx}`}
+                      value="NA"
+                      checked={test.ess === "NA"}
+                      onChange={() => handleTestChange(idx, "ess", "NA")}
+                    />{" "}
+                    NA
+                  </label>
+                </div>
+              </div>
+              <div>
+                <Label>Mode</Label>
+                <Select
+                  value={test.mode}
+                  onValueChange={(v) => handleTestChange(idx, "mode", v)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {modes.map((mode, index) => (
+                      <SelectItem key={`${mode}-${index}`} value={mode}>
+                        {mode}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Hardware Change</Label>
+                <Input
+                  value={test.hardwareChange}
+                  onChange={(e) =>
+                    handleTestChange(idx, "hardwareChange", e.target.value)
+                  }
+                  placeholder="Enter Hardware Change"
+                />
               </div>
             </div>
-          </div>
-        </div>
-
-        <div className="max-w-8xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Main Form */}
-            <div className="lg:col-span-3">
-              <Card>
-                <CardContent className="p-6">
-                  {/* Test Header */}
-                  <div className="mb-2">
-                    <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 mb-2">Test 1</Badge>
-                    <div className="text-sm text-gray-600 dark:text-red-500">
-                      <p>Test Created By: SANKAR SURESH (SANKSU-CONT)</p>
-                      <p>Test Created On: 10-12-2021 11:50 AM</p>
-                    </div>
-                  </div>
-
-                  {/* Form Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {/* Test Type */}
-                    <div className="space-y-2">
-                      <Label htmlFor="testType">Test Type</Label>
-                      <Select value={formData.testType} onValueChange={(value) => handleInputChange("testType", value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Test Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="HOT BOLT CYCLE (Dilute Only)">HOT BOLT CYCLE (Dilute Only)</SelectItem>
-                          <SelectItem value="COLD BOLT CYCLE">COLD BOLT CYCLE</SelectItem>
-                          <SelectItem value="WARM BOLT CYCLE">WARM BOLT CYCLE</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Objective */}
-                    <div className="space-y-2">
-                      <Label htmlFor="objective">Objective of the Test *</Label>
-                      <Input
-                        id="objective"
-                        value={formData.objective}
-                        onChange={(e) => handleInputChange("objective", e.target.value)}
-                        placeholder="Enter objective"
-                      />
-                    </div>
-
-                    {/* Vehicle Location */}
-                    <div className="space-y-2">
-                      <Label htmlFor="vehicleLocation">Vehicle Location</Label>
-                      <Textarea
-                        id="vehicleLocation"
-                        value={formData.vehicleLocation}
-                        onChange={(e) => handleInputChange("vehicleLocation", e.target.value)}
-                        placeholder="Enter Vehicle Location"
-                        className="min-h-[20px]"
-                      />
-                    </div>
-
-                    {/* Cycle Gear Shift */}
-                    <div className="space-y-2">
-                      <Label htmlFor="cycleGearShift">Cycle Gear Shift</Label>
-                      <Input
-                        id="cycleGearShift"
-                        value={formData.cycleGearShift}
-                        onChange={(e) => handleInputChange("cycleGearShift", e.target.value)}
-                        placeholder="Enter Cycle Gear Shift"
-                      />
-                    </div>
-
-                    {/* Inertia Class */}
-                    <div className="space-y-2">
-                      <Label htmlFor="inertiaClass">Inertia Class</Label>
-                      <Select
-                        value={formData.inertiaClass}
-                        onValueChange={(value) => handleInputChange("inertiaClass", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Inertia Class" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="FA 625 WITHOUT 1.3">FA 625 WITHOUT 1.3</SelectItem>
-                          <SelectItem value="FA 625 WITH 1.3">FA 625 WITH 1.3</SelectItem>
-                          <SelectItem value="FA 750">FA 750</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Dataset Name */}
-                    <div className="space-y-2">
-                      <Label htmlFor="datasetName">Dataset Name</Label>
-                      <Input
-                        id="datasetName"
-                        value={formData.datasetName}
-                        onChange={(e) => handleInputChange("datasetName", e.target.value)}
-                        placeholder="Enter Dataset Name"
-                      />
-                    </div>
-
-                    {/* DPF */}
-                    <div className="space-y-2">
-                      <Label>DPF</Label>
-                      <RadioGroup value={formData.dpf} onValueChange={(value) => handleInputChange("dpf", value)}>
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="Yes" id="dpf-yes" />
-                            <Label htmlFor="dpf-yes">Yes</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="No" id="dpf-no" />
-                            <Label htmlFor="dpf-no">No</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="NA" id="dpf-na" />
-                            <Label htmlFor="dpf-na">NA</Label>
-                          </div>
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    {/* Data-set Flashed */}
-                    <div className="space-y-2">
-                      <Label>Data-set Flashed</Label>
-                      <RadioGroup
-                        value={formData.datasetFlashed}
-                        onValueChange={(value) => handleInputChange("datasetFlashed", value)}
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="Yes" id="flashed-yes" />
-                            <Label htmlFor="flashed-yes">Yes</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="No" id="flashed-no" />
-                            <Label htmlFor="flashed-no">No</Label>
-                          </div>
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    {/* ESS */}
-                    <div className="space-y-2">
-                      <Label>ESS</Label>
-                      <RadioGroup value={formData.ess} onValueChange={(value) => handleInputChange("ess", value)}>
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="On" id="ess-on" />
-                            <Label htmlFor="ess-on">On</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="Off" id="ess-off" />
-                            <Label htmlFor="ess-off">Off</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="NA" id="ess-na" />
-                            <Label htmlFor="ess-na">NA</Label>
-                          </div>
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    {/* Mode */}
-                    <div className="space-y-2">
-                      <Label htmlFor="mode">Mode</Label>
-                      <Select value={formData.mode} onValueChange={(value) => handleInputChange("mode", value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Mode 1">Mode 1</SelectItem>
-                          <SelectItem value="Mode 2">Mode 2</SelectItem>
-                          <SelectItem value="Mode 3">Mode 3</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Hardware Change */}
-                    <div className="space-y-2">
-                      <Label htmlFor="hardwareChange">Hardware Change</Label>
-                      <Input
-                        id="hardwareChange"
-                        value={formData.hardwareChange}
-                        onChange={(e) => handleInputChange("hardwareChange", e.target.value)}
-                        placeholder="Enter Hardware Change"
-                      />
-                    </div>
-
-                    {/* Shift */}
-                    <div className="space-y-2">
-                      <Label htmlFor="shift">Shift</Label>
-                      <Select value={formData.shift} onValueChange={(value) => handleInputChange("shift", value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Day Shift">Day Shift</SelectItem>
-                          <SelectItem value="Night Shift">Night Shift</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Preferred Date */}
-                    <div className="space-y-2">
-                      <Label>Preferred Date</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full justify-start text-left font-normal">
-                            <CalendarTodayIcon className="mr-2 h-4 w-4" />
-                            {preferredDate ? format(preferredDate, "dd-MM-yyyy") : "Pick a date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={preferredDate}
-                            onSelect={(date) => date && setPreferredDate(date)}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </div>
-
-                  {/* Instructions */}
-                  <div className="mt-2 space-y-2">
-                    <Label htmlFor="instructions">Any Specific Instruction to VTC Team</Label>
-                    <Textarea
-                      id="instructions"
-                      value={formData.instructions}
-                      onChange={(e) => handleInputChange("instructions", e.target.value)}
-                      placeholder="Enter Instructions"
-                      className="min-h-[20px]"
+            <div className="grid grid-cols-4 gap-4 mb-2">
+              <div>
+                <Label>Shift</Label>
+                <Select
+                  value={test.shift}
+                  onValueChange={(v) => handleTestChange(idx, "shift", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Shift1">Shift1</SelectItem>
+                    <SelectItem value="Shift2">Shift2</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Preferred Date</Label>
+                <Input
+                  type="date"
+                  value={test.preferredDate}
+                  onChange={(e) =>
+                    handleTestChange(idx, "preferredDate", e.target.value)
+                  }
+                />
+              </div>
+              <div>
+                <Label>Equipment Required</Label>
+                <Input
+                  value={test.equipmentRequired}
+                  onChange={(e) =>
+                    handleTestChange(idx, "equipmentRequired", e.target.value)
+                  }
+                  placeholder="Enter Equipment Required"
+                />
+              </div>
+              <div>
+                <Label>Emission Check Date</Label>
+                <Input
+                  type="date"
+                  value={test.emissionCheckDate}
+                  onChange={(e) =>
+                    handleTestChange(idx, "emissionCheckDate", e.target.value)
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-4 mb-2">
+              <div>
+                <Label>Emission Check Attachment</Label>
+                <Input
+                  value={test.emissionCheckAttachment}
+                  onChange={(e) =>
+                    handleTestChange(idx, "emissionCheckAttachment", e.target.value)
+                  }
+                  placeholder="Enter Attachment Path/URL"
+                />
+              </div>
+              <div>
+                <Label>Specific Instruction</Label>
+                <Input
+                  value={test.specificInstruction}
+                  onChange={(e) =>
+                    handleTestChange(idx, "specificInstruction", e.target.value)
+                  }
+                  placeholder="Enter Specific Instructions"
+                />
+              </div>
+            </div>
+            
+            {/* Coast Down Data Section for Test */}
+            <div className="mt-4 border rounded shadow px-4 py-3 bg-blue-50">
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-semibold text-sm text-blue-700">
+                  Coast Down Data for Test {idx + 1}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-xs text-blue-600 px-2 py-1"
+                  onClick={() => {
+                    const updatedTests = [...tests];
+                    updatedTests[idx].showCoastDownData = !updatedTests[idx].showCoastDownData;
+                    setTests(updatedTests);
+                  }}
+                >
+                  {test.showCoastDownData ? "Hide" : "Show"} Coast Down Data
+                </Button>
+              </div>
+              
+              {test.showCoastDownData && (
+                <div>
+                  <div className="mb-3">
+                    <Label className="text-xs">Coast Down Test Report Reference</Label>
+                    <Input
+                      value={test.cdReportRef || form.cdReportRef}
+                      onChange={(e) =>
+                        handleTestChange(idx, "cdReportRef", e.target.value)
+                      }
+                      placeholder="Enter Coast Test Report Ref."
+                      className="mt-1"
                     />
                   </div>
-
-                  {/* Coast Down Data Toggle and Form */}
-                  <div className="mt-2 space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="coastDownData"
-                        checked={formData.coastDownData}
-                        onCheckedChange={(checked) => handleInputChange("coastDownData", checked)}
+                  
+                  <div className="mb-2 font-semibold text-xs">CD Values</div>
+                  <div className="grid grid-cols-4 gap-3 text-xs">
+                    <div>
+                      <Label className="text-xs">Vehicle Reference mass (Kg)</Label>
+                      <Input
+                        value={test.vehicleRefMass || form.vehicleRefMass}
+                        onChange={(e) =>
+                          handleTestChange(idx, "vehicleRefMass", e.target.value)
+                        }
+                        placeholder="Enter Vehicle Reference mass"
+                        className="mt-1"
                       />
-                      <Label htmlFor="coastDownData">Coast Down Data(CD)</Label>
                     </div>
-
-                    {formData.coastDownData && (
-                      <div className="space-y-4 p-4 border rounded-lg">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {/* Coast Down Test Report Reference */}
-                          <div className="space-y-2">
-                            <Label htmlFor="cdReference">Coast Down Test Report Reference *</Label>
-                            <Input
-                              id="cdReference"
-                              value={formData.cdReference}
-                              onChange={(e) => handleInputChange("cdReference", e.target.value)}
-                              placeholder="Enter Coast Test Report Ref."
-                            />
-                          </div>
-
-                          {/* Vehicle Reference mass */}
-                          <div className="space-y-2">
-                            <Label htmlFor="vehicleRefMass">Vehicle Reference mass (Kg) *</Label>
-                            <Input
-                              id="vehicleRefMass"
-                              value={formData.vehicleRefMass}
-                              onChange={(e) => handleInputChange("vehicleRefMass", e.target.value)}
-                              placeholder="Enter Vehicle Reference Mass (Kg)"
-                              type="number"
-                            />
-                          </div>
-
-                          {/* A (N) */}
-                          <div className="space-y-2">
-                            <Label htmlFor="aN">A (N) *</Label>
-                            <Input
-                              id="aN"
-                              value={formData.aN}
-                              onChange={(e) => handleInputChange("aN", e.target.value)}
-                              placeholder="Enter A (N)"
-                              type="number"
-                            />
-                          </div>
-
-                          {/* B (N/kmph) */}
-                          <div className="space-y-2">
-                            <Label htmlFor="bN">B (N/kmph) *</Label>
-                            <Input
-                              id="bN"
-                              value={formData.bN}
-                              onChange={(e) => handleInputChange("bN", e.target.value)}
-                              placeholder="Enter B(N/kmph)"
-                              type="number"
-                            />
-                          </div>
-
-                          {/* C (N/kmph^2) */}
-                          <div className="space-y-2">
-                            <Label htmlFor="cN">C (N/kmph^2) *</Label>
-                            <Input
-                              id="cN"
-                              value={formData.cN}
-                              onChange={(e) => handleInputChange("cN", e.target.value)}
-                              placeholder="Enter C (N/kmph^2)"
-                              type="number"
-                            />
-                          </div>
-
-                          {/* F0 (N) */}
-                          <div className="space-y-2">
-                            <Label htmlFor="f0N">F0 (N) *</Label>
-                            <Input
-                              id="f0N"
-                              value={formData.f0N}
-                              onChange={(e) => handleInputChange("f0N", e.target.value)}
-                              placeholder="Enter F0 (N)"
-                              type="number"
-                            />
-                          </div>
-
-                          {/* F1 (N/(km/h)) */}
-                          <div className="space-y-2">
-                            <Label htmlFor="f1N">F1 (N/(km/h)) *</Label>
-                            <Input
-                              id="f1N"
-                              value={formData.f1N}
-                              onChange={(e) => handleInputChange("f1N", e.target.value)}
-                              placeholder="Enter F1 (N/(km/h))"
-                              type="number"
-                            />
-                          </div>
-
-                          {/* F2 (N/(km/h)^2) */}
-                          <div className="space-y-2">
-                            <Label htmlFor="f2N">F2 (N/(km/h)^2) *</Label>
-                            <Input
-                              id="f2N"
-                              value={formData.f2N}
-                              onChange={(e) => handleInputChange("f2N", e.target.value)}
-                              placeholder="Enter F2 (N/(km/h)^2)"
-                              type="number"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Action Buttons - Moved to bottom right */}
-                  <div className="mt-8 flex justify-end gap-3">{/* Removed CREATE JOB ORDER and CLEAR buttons */}</div>
-
-                  {/* Action Buttons */}
-                  <div className="mt-2 flex flex-wrap gap-3">
-                    <Button onClick={handleAddTest} className="bg-red-500 hover:bg-red-600 text-white rounded-xl">
-                      <AddIcon className="mr-2 h-4 w-4" />
-                      ADD TEST
-                    </Button>
-                    <Button onClick={handleCloneTest} className="bg-red-500 hover:bg-red-600 text-white rounded-xl">
-                      <FileCopyIcon className="mr-2 h-4 w-4" />
-                      CLONE TEST
-                    </Button>
-                    <Button onClick={handleCFTMembers} className="bg-red-500 hover:bg-red-600 text-white rounded-xl">
-                      <GroupIcon className="mr-2 h-4 w-4" />
-                      CFT MEMBERS
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right Sidebar */}
-            <div className="lg:col-span-1">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-900 dark:text-red-500">Label</h3>
-
-                    {/* Upload Document */}
-                    <Button onClick={handleUploadDocument} variant="outline" className="w-full justify-start">
-                      <UploadIcon className="mr-2 h-4 w-4" />
-                      Upload Document
-                    </Button>
-
-                    {/* Upload Status */}
-                    <div className="text-sm text-green-600">✓ Files uploaded successfully</div>
-                    {/* View Files */}
-                    <Button variant="link" className="p-0 h-auto text-blue-600" onClick={handleViewFiles}>
-                      <EyeIcon className="mr-1 h-4 w-4" />
-                      View File Uploaded
-                    </Button>
-
-                    {/* File List */}
-                    <div className={`flex flex-wrap gap-2 ${showFiles ? "" : "hidden"}`}>
-                      {uploadedFiles.map((file, index) => (
-                        <Badge key={index} variant="outline" className="text-xs dark:border-white border-gray-200">
-                          {file}
-                        </Badge>
-                      ))}
+                    <div>
+                      <Label className="text-xs">A (N)</Label>
+                      <Input
+                        value={test.aN || form.aN}
+                        onChange={(e) =>
+                          handleTestChange(idx, "aN", e.target.value)
+                        }
+                        placeholder="Enter A (N)"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">B (N/kmph)</Label>
+                      <Input
+                        value={test.bNkmph || form.bNkmph}
+                        onChange={(e) =>
+                          handleTestChange(idx, "bNkmph", e.target.value)
+                        }
+                        placeholder="Enter B (N/kmph)"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">C (N/kmph^2)</Label>
+                      <Input
+                        value={test.cNkmph2 || form.cNkmph2}
+                        onChange={(e) =>
+                          handleTestChange(idx, "cNkmph2", e.target.value)
+                        }
+                        placeholder="Enter C (N/kmph^2)"
+                        className="mt-1"
+                      />
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-              {/* Buttons directly below the card */}
-              <div className="flex justify-between mt-2">
-                <Button
-                  onClick={handleCreateJobOrder}
-                  className="flex-1 bg-red-500 text-white hover:bg-red-500 mr-2 rounded-xl"
-                >
-                  ✓ CREATE JOB ORDER
-                </Button>
-                <Button
-                  onClick={handleClear}
-                  variant="outline"
-                  className="flex-1 bg-red-500 text-white hover:bg-red-500 mr-2 rounded-xl"
-                >
-                  ✕ CLEAR
-                </Button>
-              </div>
+                  
+                  <div className="grid grid-cols-3 gap-3 text-xs mt-3">
+                    <div>
+                      <Label className="text-xs">F0 (N)</Label>
+                      <Input
+                        value={test.f0N || form.f0N}
+                        onChange={(e) =>
+                          handleTestChange(idx, "f0N", e.target.value)
+                        }
+                        placeholder="Enter F0 (N)"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">F1 (N/kmph)</Label>
+                      <Input
+                        value={test.f1Nkmph || form.f1Nkmph}
+                        onChange={(e) =>
+                          handleTestChange(idx, "f1Nkmph", e.target.value)
+                        }
+                        placeholder="Enter F1 (N/kmph)"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">F2 (N/kmph^2)</Label>
+                      <Input
+                        value={test.f2Nkmph2 || form.f2Nkmph2}
+                        onChange={(e) =>
+                          handleTestChange(idx, "f2Nkmph2", e.target.value)
+                        }
+                        placeholder="Enter F2 (N/kmph^2)"
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end mt-3">
+                    <Button
+                      type="button"
+                      className="bg-blue-600 text-white text-xs px-4 py-1 rounded"
+                      onClick={() => {
+                        // Copy coast down data from main form to this test
+                        handleTestChange(idx, "cdReportRef", form.cdReportRef);
+                        handleTestChange(idx, "vehicleRefMass", form.vehicleRefMass);
+                        handleTestChange(idx, "aN", form.aN);
+                        handleTestChange(idx, "bNkmph", form.bNkmph);
+                        handleTestChange(idx, "cNkmph2", form.cNkmph2);
+                        handleTestChange(idx, "f0N", form.f0N);
+                        handleTestChange(idx, "f1Nkmph", form.f1Nkmph);
+                        handleTestChange(idx, "f2Nkmph2", form.f2Nkmph2);
+                      }}
+                    >
+                      Load from Main Form
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
+            
+            <div className="flex justify-end mt-4">
+              <Button 
+                className="bg-red-600 text-white text-xs px-6 py-2 rounded"
+                onClick={() => handleCreateTestOrder(idx)}
+                disabled={editingTestOrderIdx === idx}
+              >
+                ✓ CREATE TEST ORDER
+              </Button>
+              {editingTestOrderIdx === idx && (
+                <Button
+                  className="bg-blue-600 text-white text-xs px-6 py-2 rounded ml-2"
+                  onClick={() => handleUpdateTestOrder(idx)}
+                >
+                  UPDATE TEST ORDER
+                </Button>
+              )}
+              {test.testOrderId && (
+                <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <span className="text-xs text-gray-600">Start</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span className="text-xs text-gray-600">Finish</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span className="text-xs text-gray-600">Close</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {/* Show all test orders in a table */}
+        <div className="mx-8 my-8">
+          <div className="font-semibold mb-2">All Test Orders</div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-xs border">
+              <thead>
+                <tr className="bg-gray-200">
+                  <th className="border px-2 py-1">Test Order ID</th>
+                  <th className="border px-2 py-1">Test Type</th>
+                  <th className="border px-2 py-1">Objective</th>
+                  <th className="border px-2 py-1">Status</th>
+                  <th className="border px-2 py-1">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allTestOrders.map((to, i) => (
+                  <tr key={to.test_order_id}>
+                    <td className="border px-2 py-1">{to.test_order_id}</td>
+                    <td className="border px-2 py-1">{to.test_type}</td>
+                    <td className="border px-2 py-1">{to.test_objective}</td>
+                    <td className="border px-2 py-1">{to.status}</td>
+                    <td className="border px-2 py-1">
+                      <Button
+                        className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
+                        onClick={() => handleEditTestOrder(to, i)}
+                      >
+                        Edit
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {allTestOrders.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="text-center py-2 text-gray-500">
+                      No test orders found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* CFT Members Modal */}
-        <Dialog open={showCFTModal} onOpenChange={setShowCFTModal}>
-          <DialogContent className="max-w-md">
-            <DialogHeader className="flex flex-row items-center justify-between">
-              <DialogTitle className="text-lg font-semibold">ADD CFT MEMBERS</DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              {/* Mode Selection */}
-              <div className="flex gap-2">
-                <Button
-                  variant={cftMode === "SINGLE" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleCFTModeChange("SINGLE")}
-                  className={`flex items-center gap-2 ${
-                    cftMode === "SINGLE"
-                      ? "bg-red-500 text-white hover:bg-red-600"
-                      : "text-red-500 border-red-500 hover:bg-red-50"
-                  }`}
-                >
-                  <PersonIcon className="h-4 w-4" />
-                  SINGLE
-                </Button>
-                <Button
-                  variant={cftMode === "GROUP" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleCFTModeChange("GROUP")}
-                  className={`flex items-center gap-2 ${
-                    cftMode === "GROUP"
-                      ? "bg-red-500 text-white hover:bg-red-600"
-                      : "text-red-500 border-red-500 hover:bg-red-50"
-                  }`}
-                >
-                  <GroupAddIcon className="h-4 w-4" />
-                  GROUP
-                </Button>
-              </div>
-
-              {/* Members List */}
-              <div className="space-y-3">
-                {cftMembers.map((member, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
-                    <span className="text-sm font-medium">PERSON {index + 1}</span>
-                    <span className="text-sm text-gray-600">{member}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveCftMember(index)}
-                      className="h-8 w-8 p-0 text-gray-500 hover:text-red-500"
-                    >
-                      <DeleteIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-
-                {/* Add Member Input */}
-                {(cftMode === "GROUP" || cftMembers.length === 0) && (
-                  <div className="space-y-3">
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Enter member name"
-                        value={newCftMember}
-                        onChange={(e) => setNewCftMember(e.target.value)}
-                        onKeyPress={(e) => {
-                          if (e.key === "Enter") {
-                            handleAddCftMember()
-                          }
-                        }}
-                        className="flex-1"
-                      />
-                      <Button onClick={handleAddCftMember} size="sm" variant="outline" className="px-3">
-                        <Add className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <span>ADD CFT</span>
-                      <Add className="h-4 w-4 text-red-500 border border-red-500 rounded-full p-1" />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Apply Button */}
-              <div className="flex justify-end pt-4">
-                <Button onClick={handleApplyCFT} className="bg-red-500 text-white hover:bg-red-600 rounded-xl">
-                  APPLY
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Red line below */}
+        <div className="border-b-4 border-red-600 mx-8" />
       </div>
     </>
-  )
+  );
 }

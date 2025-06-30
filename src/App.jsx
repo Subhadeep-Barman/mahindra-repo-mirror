@@ -23,6 +23,8 @@ import NEngine from "./pages/VTC_N_Engine";
 import VTCNashikVehicleForm from "./pages/VTC_N_Vehicle_form";
 
 // RDE
+import RDEChennaiPage from "./pages/RDE_Chennai_Page";
+import RDE_JobOrder_Create from "./pages/RDE_JobOrder_Create";
 import RDEJobOrder from "./pages/RDE_JOBORDER";
 import RDEVehicle from "./pages/RDE_C_vehicle";
 import RDEEngine from "./pages/RDE_Engine";
@@ -66,12 +68,13 @@ function App() {
           <Route path="/nashik/engine/new" element={<NEngine />} />
 
           {/* RDE */}
-          <Route path="/rde-chennai" element={<VTCCVehiclePage />} />
+          <Route path="/rde-chennai" element={<RDEChennaiPage />} />
           <Route path="/rde/joborder" element={<RDEJobOrder />} />
           <Route path="/rde/vehicle" element={<RDEVehicle />} />
           <Route path="/rde/engine" element={<RDEEngine />} />
 
           {/* Misc */}
+          <Route path ='/RDECreateJobOrder' element={<RDE_JobOrder_Create />} />
           <Route path="/createJobOrder" element={<CreateJobOrder />} />
           <Route path="/authSuccess" element={<AuthSuccess />} />
         </Routes>

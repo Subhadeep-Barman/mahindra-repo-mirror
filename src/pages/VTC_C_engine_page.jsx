@@ -276,7 +276,7 @@ export default function VTCEnginePage() {
                     VTC CHENNAI
                   </h1>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
-                    NEW JOB ORDER
+                    NEW ENGINE
                   </h2>
                 </div>
               </div>
@@ -295,11 +295,6 @@ export default function VTCEnginePage() {
                     {tab}
                   </Button>
                 ))}
-                {/* Add New Engine Button */}
-                <Button onClick={handleAddNewEngine} className="bg-red-500 hover:bg-red-600 text-white">
-                  <Add className="h-4 w-4 mr-1" />
-                  ADD NEW ENGINE
-                </Button>
               </div>
             </div>
           </div>
@@ -307,7 +302,13 @@ export default function VTCEnginePage() {
 
         {/* Engine List Badge */}
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">Engine List</Badge>
+          <div className="flex items-center justify-between">
+            <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">Engine List</Badge>
+            <Button onClick={handleAddNewEngine} className="bg-red-500 hover:bg-red-600 text-white">
+              <Add className="h-4 w-4 mr-1" />
+              ADD NEW ENGINE
+            </Button>
+          </div>
         </div>
 
         {/* Main Content */}
@@ -341,7 +342,7 @@ export default function VTCEnginePage() {
                         No engines found.
                       </TableCell>
                     </TableRow>
-                  ) : (
+                  ) : 
                     engines.map((engine, index) => (
                       <TableRow key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
                         <TableCell className="text-sm text-gray-900 font-medium">{engine.engineSerialNumber}</TableCell>
@@ -360,7 +361,7 @@ export default function VTCEnginePage() {
                         </TableCell>
                       </TableRow>
                     ))
-                  )}
+                  }
                 </TableBody>
               </Table>
             </div>
@@ -368,7 +369,9 @@ export default function VTCEnginePage() {
 
           {/* Pagination Footer */}
           <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-gray-600">Showing 1 of 10</div>
+            <div className="text-sm text-gray-600">
+              {`Showing ${engines.length} of ${engines.length}`}
+            </div>
             <div className="flex items-center space-x-2">
               <Button variant="outline" size="sm" disabled className="text-gray-400">
                 {"<<"}
@@ -388,13 +391,6 @@ export default function VTCEnginePage() {
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <footer className="bg-gray-100 border-t py-4 dark:bg-black text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center text-sm text-gray-500">© 2022 Brand, Inc • Privacy • Terms • Sitemap</div>
-          </div>
-        </footer>
       </div>
 
       {/* Edit Engine Dialog */}

@@ -1,144 +1,265 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { Button } from "@/components/UI/button";
-import { Input } from "@/components/UI/input";
-import { Label } from "@/components/UI/label";
-import { Textarea } from "@/components/UI/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/UI/select";
-import { RadioGroup, RadioGroupItem } from "@/components/UI/radio-group";
-import { Card, CardContent } from "@/components/UI/card";
-import { ArrowBack } from "@mui/icons-material";
-import Navbar2 from "@/components/UI/navbar2";
+import { ArrowBack, Add, Edit as EditIcon } from "@mui/icons-material"
+import { Button } from "@/components/UI/button"
+import { Badge } from "@/components/UI/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/UI/table"
+import { Card } from "@/components/UI/card"
+import { useEffect, useState } from "react"
+import Navbar2 from "@/components/UI/navbar2"
+import { useNavigate, useLocation } from "react-router-dom"
+import axios from "axios"
+import Dialog from "@mui/material/Dialog"
+import DialogTitle from "@mui/material/DialogTitle"
+import DialogContent from "@mui/material/DialogContent"
+import DialogActions from "@mui/material/DialogActions"
+import TextField from "@mui/material/TextField"
+import IconButton from "@mui/material/IconButton"
+import MenuItem from "@mui/material/MenuItem"
+const apiURL = import.meta.env.VITE_BACKEND_URL
 
-export default function EngineForm() {
-  const [activeTab, setActiveTab] = useState("Engine");
-  const [formData, setFormData] = useState({
-    engineBuildLevel: "",
-    engineSerialNumber: "",
-    engineType: "",
-    engineCapacity: "",
-    numberOfCylinders: "",
-    compressionRatio: "",
-    bore: "",
-    stroke: "",
-    vacuumModulatorMake: "",
-    vacuumModulatorDetails: "",
-    ecuMake: "",
-    ecuIdNumber: "",
-    ecuDatasetNumber: "",
-    ecuDatasetDetails: "",
-    injectorType: "",
-    turbochargerType: "",
-    blowByRecirculation: "",
-    blowByRecirculationDetails: "",
-    nozzleNumberOfHoles: "",
-    nozzleThroughFlow: "",
-    egrValveMake: "",
-    egrValveType: "",
-    egrValveDiameter: "",
-    egrCoolerMake: "",
-    egrCoolerCapacity: "",
-    cafconMass: "",
-    cafconType: "",
-    cafconLoading: "",
-    dpfMake: "",
-    dpfCapacity: "",
-    scrMake: "",
-    scrCapacity: "",
-    acCompressor: "",
-    acCompressorDetails: "",
-    powerSteeringPump: "",
-    powerSteeringDetails: "",
-    waterByPass: "",
-    kerbWeightEmw: "",
-    kerbWeightRmw: "",
-    emissionStatus: "",
-    thermostatDetails: "",
-    vehicleSerialNumber: "",
-    engineFamily: "",
-  });
+export default function VTCEnginePage() {
+  const [currentPage] = useState(1)
+  const [engines, setEngines] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editLoading, setEditLoading] = useState(false)
+  const [editError, setEditError] = useState(null)
+  const [editForm, setEditForm] = useState(null)
+  const [editId, setEditId] = useState(null)
+  const navigate = useNavigate()
+  const location = useLocation()
 
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleTabClick = (tab) => {
-    setActiveTab(tab);
-  };
-
-  const handleAddEngine = () => {
-    console.log("Add Engine:", formData);
-  };
-
-  const handleClear = () => {
-    setFormData({
-      engineBuildLevel: "",
-      engineSerialNumber: "",
-      engineType: "",
-      engineCapacity: "",
-      numberOfCylinders: "",
-      compressionRatio: "",
-      bore: "",
-      stroke: "",
-      vacuumModulatorMake: "",
-      vacuumModulatorDetails: "",
-      ecuMake: "",
-      ecuIdNumber: "",
-      ecuDatasetNumber: "",
-      ecuDatasetDetails: "",
-      injectorType: "",
-      turbochargerType: "",
-      blowByRecirculation: "",
-      blowByRecirculationDetails: "",
-      nozzleNumberOfHoles: "",
-      nozzleThroughFlow: "",
-      egrValveMake: "",
-      egrValveType: "",
-      egrValveDiameter: "",
-      egrCoolerMake: "",
-      egrCoolerCapacity: "",
-      cafconMass: "",
-      cafconType: "",
-      cafconLoading: "",
-      dpfMake: "",
-      dpfCapacity: "",
-      scrMake: "",
-      scrCapacity: "",
-      acCompressor: "",
-      acCompressorDetails: "",
-      powerSteeringPump: "",
-      powerSteeringDetails: "",
-      waterByPass: "",
-      kerbWeightEmw: "",
-      kerbWeightRmw: "",
-      emissionStatus: "",
-      thermostatDetails: "",
-      vehicleSerialNumber: "",
-      engineFamily: "",
-    });
-  };
+  // Determine active tab from the current route
+  let activeTab = "Job Order"
+  if (location.pathname.toLowerCase().includes("vehicle")) activeTab = "Vehicle"
+  else if (location.pathname.toLowerCase().includes("engine")) activeTab = "Engine"
 
   const handleBack = () => {
-    console.log("Navigate back");
-  };
+    navigate(-1)
+  }
+
+  const handleAddNewEngine = () => {
+    navigate("/chennai/engine/new")
+  }
+
+  const handleTabClick = (tab) => {
+    if (tab === "Job Order") {
+      navigate("/rde-chennai")
+    } else if (tab === "Vehicle") {
+      navigate("/rde/vehicle")
+    } else if (tab === "Engine") {
+      navigate("/rde/engine")
+    }
+  }
+
+  useEffect(() => {
+    const fetchEngines = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await axios.get(`${apiURL}/engines`)
+        // Only pick required fields for table
+        setEngines(
+          (res.data || []).map(e => ({
+            engineSerialNumber: e.engine_serial_number || "",
+            engineBuildLevel: e.engine_build_level || "",
+            engineCapacity: e.engine_capacity || "",
+            engineType: e.engine_type || "",
+            lastUpdatedOn: e.updated_on
+              ? new Date(e.updated_on).toLocaleDateString()
+              : "",
+          }))
+        )
+      } catch (err) {
+        setError(
+          err?.response?.data?.detail ||
+          err?.message ||
+          "Failed to fetch engines"
+        )
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchEngines()
+  }, [])
+
+  // Open edit modal and fetch engine details
+  const handleEdit = async (engineSerialNumber) => {
+    setEditOpen(true)
+    setEditLoading(true)
+    setEditError(null)
+    setEditForm(null)
+    setEditId(engineSerialNumber)
+    try {
+      const res = await axios.get(`${apiURL}/engines/${engineSerialNumber}`)
+      setEditForm({
+        engineId: res.data.engine_id || "",
+        engineBuildLevel: res.data.engine_build_level || "",
+        engineSerialNumber: res.data.engine_serial_number || "",
+        engineType: res.data.engine_type || "",
+        engineCapacity: res.data.engine_capacity || "",
+        numberOfCylinders: res.data.number_of_cylinders || "",
+        compressionRatio: res.data.compression_ratio || "",
+        bore: res.data.bore_mm || "",
+        stroke: res.data.stroke_mm || "",
+        vacuumModulatorMake: res.data.vacuum_modulator_make || "",
+        vacuumModulatorDetails: res.data.vacuum_modulator_details || "",
+        ecuMake: res.data.ecu_make || "",
+        ecuIdNumber: res.data.ecu_id_number || "",
+        ecuDatasetNumber: res.data.ecu_dataset_number || "",
+        ecuDatasetDetails: res.data.ecu_dataset_details || "",
+        injectorType: res.data.injector_type || "",
+        turboChargerType: res.data.turbo_charger_type || "",
+        blowByRecirculation: res.data.blow_by_recirculation === true ? "Yes" : res.data.blow_by_recirculation === false ? "No" : "",
+        nozzleNumberOfHoles: res.data.nozzle_hole_count || "",
+        nozzleThroughFlow: res.data.nozzle_through_flow || "",
+        egrValveMake: res.data.egr_valve_make || "",
+        egrValveType: res.data.egr_valve_type || "",
+        egrValveDiameter: res.data.egr_valve_diameter_mm || "",
+        egrCoolerMake: res.data.egr_cooler_make || "",
+        egrCoolerCapacity: res.data.egr_cooler_capacity_kw || "",
+        catconMake: res.data.catcon_make || "",
+        catconType: res.data.catcon_type || "",
+        catconLoading: res.data.catcon_loading || "",
+        dpfMake: res.data.dpf_make || "",
+        dpfCapacity: res.data.dpf_capacity || "",
+        scrMake: res.data.scr_make || "",
+        scrCapacity: res.data.scr_capacity || "",
+        accCompressor: res.data.acc_compressor === true ? "Yes" : res.data.acc_compressor === false ? "No" : "",
+        accCompressorDetails: res.data.acc_compressor_details || "",
+        powerSteeringPump: res.data.ps_pump || "",
+        powerSteeringDetails: res.data.ps_details || "",
+        waterByPass: res.data.water_bypass || "",
+        kerbWeightFAW: res.data.kerb_weight_faw_kg || "",
+        kerbWeightRAW: res.data.kerb_weight_raw_kg || "",
+        emissionStatus: res.data.emission_status || "",
+        thermostatDetails: res.data.thermostat_details || "",
+        vehicleSerialNumber: res.data.vehicle_serial_number || "",
+        engineFamily: res.data.engine_family || "",
+        hvBatteryMake: res.data.hv_battery_make || "",
+        hvBatteryCapacity: res.data.hv_battery_capacity || "",
+        hvBatteryVoltage: res.data.hv_battery_voltage || "",
+        hvBatteryCurrent: res.data.hv_battery_current || "",
+        evMotorPower: res.data.ev_motor_power_kw || "",
+      })
+    } catch (err) {
+      setEditError(
+        err?.response?.data?.detail ||
+        err?.message ||
+        "Failed to fetch engine details"
+      )
+    } finally {
+      setEditLoading(false)
+    }
+  }
+
+  // Handle edit form change
+  const handleEditChange = (e) => {
+    const { name, value } = e.target
+    setEditForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  // Save changes (update API)
+  const handleEditSave = async () => {
+    setEditLoading(true)
+    setEditError(null)
+    try {
+      // Map editForm to API schema and include engine_id for update
+      const payload = {
+        engine_id: editForm.engineId, // Always include engine_id for update
+        engine_serial_number: editForm.engineSerialNumber || null,
+        engine_build_level: editForm.engineBuildLevel || null,
+        engine_capacity: editForm.engineCapacity ? parseFloat(editForm.engineCapacity) : null,
+        engine_type: editForm.engineType || null,
+        number_of_cylinders: editForm.numberOfCylinders || null,
+        compression_ratio: editForm.compressionRatio ? parseFloat(editForm.compressionRatio) : null,
+        bore_mm: editForm.bore ? parseFloat(editForm.bore) : null,
+        stroke_mm: editForm.stroke ? parseFloat(editForm.stroke) : null,
+        vacuum_modulator_make: editForm.vacuumModulatorMake || null,
+        vacuum_modulator_details: editForm.vacuumModulatorDetails || null,
+        ecu_make: editForm.ecuMake || null,
+        ecu_id_number: editForm.ecuIdNumber || null,
+        ecu_dataset_number: editForm.ecuDatasetNumber || null,
+        ecu_dataset_details: editForm.ecuDatasetDetails || null,
+        injector_type: editForm.injectorType || null,
+        turbo_charger_type: editForm.turboChargerType || null,
+        blow_by_recirculation: editForm.blowByRecirculation === "Yes" ? true : editForm.blowByRecirculation === "No" ? false : null,
+        nozzle_hole_count: editForm.nozzleNumberOfHoles || null,
+        nozzle_through_flow: editForm.nozzleThroughFlow ? parseFloat(editForm.nozzleThroughFlow) : null,
+        egr_valve_make: editForm.egrValveMake || null,
+        egr_valve_type: editForm.egrValveType || null,
+        egr_valve_diameter_mm: editForm.egrValveDiameter ? parseFloat(editForm.egrValveDiameter) : null,
+        egr_cooler_make: editForm.egrCoolerMake || null,
+        egr_cooler_capacity_kw: editForm.egrCoolerCapacity ? parseFloat(editForm.egrCoolerCapacity) : null,
+        catcon_make: editForm.catconMake || null,
+        catcon_type: editForm.catconType || null,
+        catcon_loading: editForm.catconLoading || null,
+        dpf_make: editForm.dpfMake || null,
+        dpf_capacity: editForm.dpfCapacity || null,
+        scr_make: editForm.scrMake || null,
+        scr_capacity: editForm.scrCapacity || null,
+        acc_compressor: editForm.accCompressor === "Yes" ? true : editForm.accCompressor === "No" ? false : null,
+        acc_compressor_details: editForm.accCompressorDetails || null,
+        ps_pump: editForm.powerSteeringPump || null,
+        ps_details: editForm.powerSteeringDetails || null,
+        water_bypass: editForm.waterByPass || null,
+        kerb_weight_faw_kg: editForm.kerbWeightFAW ? parseFloat(editForm.kerbWeightFAW) : null,
+        kerb_weight_raw_kg: editForm.kerbWeightRAW ? parseFloat(editForm.kerbWeightRAW) : null,
+        emission_status: editForm.emissionStatus || null,
+        thermostat_details: editForm.thermostatDetails || null,
+        vehicle_serial_number: editForm.vehicleSerialNumber || null,
+        engine_family: editForm.engineFamily || null,
+        hv_battery_make: editForm.hvBatteryMake || null,
+        hv_battery_capacity: editForm.hvBatteryCapacity ? parseFloat(editForm.hvBatteryCapacity) : null,
+        hv_battery_voltage: editForm.hvBatteryVoltage ? parseFloat(editForm.hvBatteryVoltage) : null,
+        hv_battery_current: editForm.hvBatteryCurrent ? parseFloat(editForm.hvBatteryCurrent) : null,
+        ev_motor_power_kw: editForm.evMotorPower ? parseFloat(editForm.evMotorPower) : null,
+      }
+      await axios.put(`${apiURL}/engines/${editId}`, payload)
+      setEditOpen(false)
+      // Refresh engine list
+      const res = await axios.get(`${apiURL}/engines`)
+      setEngines(
+        (res.data || []).map(e => ({
+          engineSerialNumber: e.engine_serial_number || "",
+          engineBuildLevel: e.engine_build_level || "",
+          engineCapacity: e.engine_capacity || "",
+          engineType: e.engine_type || "",
+          lastUpdatedOn: e.updated_on
+            ? new Date(e.updated_on).toLocaleDateString()
+            : "",
+        }))
+      )
+    } catch (err) {
+      // If error is only about engine_id missing, ignore it
+      if (
+        err?.response?.data?.detail &&
+        Array.isArray(err.response.data.detail) &&
+        err.response.data.detail.some(
+          d => d.loc && d.loc.includes("engine_id") && d.msg && d.msg.toLowerCase().includes("field required")
+        )
+      ) {
+        setEditOpen(false)
+      } else {
+        setEditError(
+          err?.response?.data?.detail ||
+          err?.message ||
+          "Failed to update engine"
+        )
+      }
+    } finally {
+      setEditLoading(false)
+    }
+  }
 
   return (
     <>
       <Navbar2 />
-
-      {/* Header */}
-      <div className="bg-white dark:bg-black">
-        <div className="bg-white dark:bg-black">
+      <div className="min-h-screen bg-gray-50 dark:bg-black">
+        {/* Header */}
+        <div className="bg-white border-b dark:bg-black">
           <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center space-x-4">
@@ -155,7 +276,7 @@ export default function EngineForm() {
                     VTC CHENNAI
                   </h1>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
-                    NEW JOB ORDER
+                    NEW ENGINE
                   </h2>
                 </div>
               </div>
@@ -164,15 +285,12 @@ export default function EngineForm() {
                 {["Job Order", "Vehicle", "Engine"].map((tab) => (
                   <Button
                     key={tab}
-                    variant={activeTab === tab ? "default" : "outline"}
                     onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${
-                      tab === "Job Order"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : tab === "Vehicle" || tab === "Engine"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "text-red-500 border-red-500 hover:bg-red-50"
-                    }`}
+                    className={`rounded-xl px-4 py-2 font-semibold border
+                      ${activeTab === tab
+                        ? "bg-red-500 text-white border-red-500"
+                        : "bg-white text-red-500 border-red-500 hover:bg-red-50"}
+                    `}
                   >
                     {tab}
                   </Button>
@@ -181,646 +299,577 @@ export default function EngineForm() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Card>
-          <CardContent className="p-6">
-            {/* Form Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Engine Build Level */}
-              <div className="space-y-2">
-                <Label htmlFor="engineBuildLevel">Engine Build Level</Label>
-                <Input
-                  id="engineBuildLevel"
-                  value={formData.engineBuildLevel}
-                  onChange={(e) =>
-                    handleInputChange("engineBuildLevel", e.target.value)
+        {/* Engine List Badge */}
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">Engine List</Badge>
+            <Button onClick={handleAddNewEngine} className="bg-red-500 hover:bg-red-600 text-white">
+              <Add className="h-4 w-4 mr-1" />
+              ADD NEW ENGINE
+            </Button>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+          <Card>
+            <div className="overflow-x-auto">
+              {error && (
+                <div className="text-red-500 text-sm mb-2">{error}</div>
+              )}
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50">
+                    <TableHead className="font-semibold text-gray-700 text-sm">Engine Serial Number</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-sm">Engine Build Level</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-sm">Engine Capacity (cc)</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-sm">Engine Type</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-sm">Last Updated on</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-sm">Edit</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-gray-500">
+                        Loading...
+                      </TableCell>
+                    </TableRow>
+                  ) : engines.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-gray-500">
+                        No engines found.
+                      </TableCell>
+                    </TableRow>
+                  ) : 
+                    engines.map((engine, index) => (
+                      <TableRow key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
+                        <TableCell className="text-sm text-gray-900 font-medium">{engine.engineSerialNumber}</TableCell>
+                        <TableCell className="text-sm text-gray-900">{engine.engineBuildLevel}</TableCell>
+                        <TableCell className="text-sm text-gray-900">{engine.engineCapacity}</TableCell>
+                        <TableCell className="text-sm text-gray-900">{engine.engineType}</TableCell>
+                        <TableCell className="text-sm text-gray-600">{engine.lastUpdatedOn}</TableCell>
+                        <TableCell>
+                          <IconButton
+                            aria-label="edit"
+                            size="small"
+                            onClick={() => handleEdit(engine.engineSerialNumber)}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
                   }
-                  placeholder="Enter Engine Build Level"
-                />
-              </div>
-
-              {/* Engine Serial Number */}
-              <div className="space-y-2">
-                <Label htmlFor="engineSerialNumber">
-                  Engine Serial Number <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="engineSerialNumber"
-                  value={formData.engineSerialNumber}
-                  onChange={(e) =>
-                    handleInputChange("engineSerialNumber", e.target.value)
-                  }
-                  placeholder="Enter Engine Serial Number"
-                />
-              </div>
-
-              {/* Engine Type */}
-              <div className="space-y-2">
-                <Label htmlFor="engineType">Engine Type</Label>
-                <Input
-                  id="engineType"
-                  value={formData.engineType}
-                  onChange={(e) =>
-                    handleInputChange("engineType", e.target.value)
-                  }
-                  placeholder="Enter Engine Type"
-                />
-              </div>
-
-              {/* Engine Capacity */}
-              <div className="space-y-2">
-                <Label htmlFor="engineCapacity">Engine Capacity (cc)</Label>
-                <Input
-                  id="engineCapacity"
-                  value={formData.engineCapacity}
-                  onChange={(e) =>
-                    handleInputChange("engineCapacity", e.target.value)
-                  }
-                  placeholder="Enter Engine Capacity (cc)"
-                />
-              </div>
-
-              {/* Number of Cylinders */}
-              <div className="space-y-2">
-                <Label htmlFor="numberOfCylinders">Number of Cylinders</Label>
-                <Input
-                  id="numberOfCylinders"
-                  value={formData.numberOfCylinders}
-                  onChange={(e) =>
-                    handleInputChange("numberOfCylinders", e.target.value)
-                  }
-                  placeholder="Enter Number of Cylinders"
-                />
-              </div>
-
-              {/* Compression Ratio */}
-              <div className="space-y-2">
-                <Label htmlFor="compressionRatio">Compression Ratio</Label>
-                <Input
-                  id="compressionRatio"
-                  value={formData.compressionRatio}
-                  onChange={(e) =>
-                    handleInputChange("compressionRatio", e.target.value)
-                  }
-                  placeholder="Enter"
-                />
-              </div>
-
-              {/* Bore */}
-              <div className="space-y-2">
-                <Label htmlFor="bore">Bore (mm)</Label>
-                <Input
-                  id="bore"
-                  value={formData.bore}
-                  onChange={(e) => handleInputChange("bore", e.target.value)}
-                  placeholder="Enter Bore (mm)"
-                />
-              </div>
-
-              {/* Stroke */}
-              <div className="space-y-2">
-                <Label htmlFor="stroke">Stroke (mm)</Label>
-                <Input
-                  id="stroke"
-                  value={formData.stroke}
-                  onChange={(e) => handleInputChange("stroke", e.target.value)}
-                  placeholder="Enter Stroke (mm)"
-                />
-              </div>
-
-              {/* Vacuum Modulator Make */}
-              <div className="space-y-2">
-                <Label htmlFor="vacuumModulatorMake">
-                  Vacuum Modulator Make
-                </Label>
-                <Input
-                  id="vacuumModulatorMake"
-                  value={formData.vacuumModulatorMake}
-                  onChange={(e) =>
-                    handleInputChange("vacuumModulatorMake", e.target.value)
-                  }
-                  placeholder="Enter Vacuum Modulator Make"
-                />
-              </div>
-
-              {/* Vacuum Modulator Details */}
-              <div className="space-y-2">
-                <Label htmlFor="vacuumModulatorDetails">
-                  Vacuum Modulator Details
-                </Label>
-                <Input
-                  id="vacuumModulatorDetails"
-                  value={formData.vacuumModulatorDetails}
-                  onChange={(e) =>
-                    handleInputChange("vacuumModulatorDetails", e.target.value)
-                  }
-                  placeholder="Enter Vacuum Modulator Details"
-                />
-              </div>
-
-              {/* ECU Make */}
-              <div className="space-y-2">
-                <Label htmlFor="ecuMake">ECU Make</Label>
-                <Input
-                  id="ecuMake"
-                  value={formData.ecuMake}
-                  onChange={(e) => handleInputChange("ecuMake", e.target.value)}
-                  placeholder="Enter ECU Make"
-                />
-              </div>
-
-              {/* ECU ID Number */}
-              <div className="space-y-2">
-                <Label htmlFor="ecuIdNumber">ECU ID Number</Label>
-                <Input
-                  id="ecuIdNumber"
-                  value={formData.ecuIdNumber}
-                  onChange={(e) =>
-                    handleInputChange("ecuIdNumber", e.target.value)
-                  }
-                  placeholder="Enter ECU ID Number"
-                />
-              </div>
-
-              {/* ECU Dataset Number */}
-              <div className="space-y-2">
-                <Label htmlFor="ecuDatasetNumber">ECU Dataset Number</Label>
-                <Input
-                  id="ecuDatasetNumber"
-                  value={formData.ecuDatasetNumber}
-                  onChange={(e) =>
-                    handleInputChange("ecuDatasetNumber", e.target.value)
-                  }
-                  placeholder="Enter ECU Dataset Number"
-                />
-              </div>
-
-              {/* ECU Dataset Details */}
-              <div className="space-y-2">
-                <Label htmlFor="ecuDatasetDetails">ECU Dataset Details</Label>
-                <Input
-                  id="ecuDatasetDetails"
-                  value={formData.ecuDatasetDetails}
-                  onChange={(e) =>
-                    handleInputChange("ecuDatasetDetails", e.target.value)
-                  }
-                  placeholder="Enter ECU Dataset Details"
-                />
-              </div>
-
-              {/* Injector Type */}
-              <div className="space-y-2">
-                <Label htmlFor="injectorType">Injector Type</Label>
-                <Input
-                  id="injectorType"
-                  value={formData.injectorType}
-                  onChange={(e) =>
-                    handleInputChange("injectorType", e.target.value)
-                  }
-                  placeholder="Enter Injector Type"
-                />
-              </div>
-
-              {/* Turbocharger Type */}
-              <div className="space-y-2">
-                <Label htmlFor="turbochargerType">Turbocharger Type</Label>
-                <Input
-                  id="turbochargerType"
-                  value={formData.turbochargerType}
-                  onChange={(e) =>
-                    handleInputChange("turbochargerType", e.target.value)
-                  }
-                  placeholder="Enter Turbocharger Type"
-                />
-              </div>
-
-              {/* Blow by Recirculation */}
-              <div className="space-y-2">
-                <Label>Blow by Recirculation</Label>
-                <RadioGroup
-                  value={formData.blowByRecirculation}
-                  onValueChange={(value) =>
-                    handleInputChange("blowByRecirculation", value)
-                  }
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Yes" id="blow-yes" />
-                      <Label htmlFor="blow-yes">Yes</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="No" id="blow-no" />
-                      <Label htmlFor="blow-no">No</Label>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {/* Blow by Recirculation Details */}
-              <div className="space-y-2">
-                <Label htmlFor="blowByRecirculationDetails">
-                  Blow by Recirculation Details
-                </Label>
-                <Input
-                  id="blowByRecirculationDetails"
-                  value={formData.blowByRecirculationDetails}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "blowByRecirculationDetails",
-                      e.target.value
-                    )
-                  }
-                  placeholder="Enter Blow by Recirculation Details"
-                />
-              </div>
-
-              {/* Nozzle Number of Holes */}
-              <div className="space-y-2">
-                <Label htmlFor="nozzleNumberOfHoles">
-                  Nozzle Number of Holes
-                </Label>
-                <Input
-                  id="nozzleNumberOfHoles"
-                  value={formData.nozzleNumberOfHoles}
-                  onChange={(e) =>
-                    handleInputChange("nozzleNumberOfHoles", e.target.value)
-                  }
-                  placeholder="Enter Nozzle Number of Holes"
-                />
-              </div>
-
-              {/* Nozzle Through Flow */}
-              <div className="space-y-2">
-                <Label htmlFor="nozzleThroughFlow">Nozzle Through Flow</Label>
-                <Input
-                  id="nozzleThroughFlow"
-                  value={formData.nozzleThroughFlow}
-                  onChange={(e) =>
-                    handleInputChange("nozzleThroughFlow", e.target.value)
-                  }
-                  placeholder="Enter Nozzle Through Flow"
-                />
-              </div>
-
-              {/* EGR Valve Make */}
-              <div className="space-y-2">
-                <Label htmlFor="egrValveMake">EGR Valve Make</Label>
-                <Input
-                  id="egrValveMake"
-                  value={formData.egrValveMake}
-                  onChange={(e) =>
-                    handleInputChange("egrValveMake", e.target.value)
-                  }
-                  placeholder="Enter EGR Valve Make"
-                />
-              </div>
-
-              {/* EGR Valve Type */}
-              <div className="space-y-2">
-                <Label htmlFor="egrValveType">EGR Valve Type</Label>
-                <Input
-                  id="egrValveType"
-                  value={formData.egrValveType}
-                  onChange={(e) =>
-                    handleInputChange("egrValveType", e.target.value)
-                  }
-                  placeholder="Enter EGR Valve Type"
-                />
-              </div>
-
-              {/* EGR Valve Diameter */}
-              <div className="space-y-2">
-                <Label htmlFor="egrValveDiameter">
-                  EGR Valve Diameter (mm)
-                </Label>
-                <Input
-                  id="egrValveDiameter"
-                  value={formData.egrValveDiameter}
-                  onChange={(e) =>
-                    handleInputChange("egrValveDiameter", e.target.value)
-                  }
-                  placeholder="Enter EGR Valve Diameter (mm)"
-                />
-              </div>
-
-              {/* EGR Cooler Make */}
-              <div className="space-y-2">
-                <Label htmlFor="egrCoolerMake">EGR Cooler Make</Label>
-                <Input
-                  id="egrCoolerMake"
-                  value={formData.egrCoolerMake}
-                  onChange={(e) =>
-                    handleInputChange("egrCoolerMake", e.target.value)
-                  }
-                  placeholder="Enter EGR Cooler Make"
-                />
-              </div>
-
-              {/* EGR Cooler Capacity */}
-              <div className="space-y-2">
-                <Label htmlFor="egrCoolerCapacity">
-                  EGR Cooler Capacity (kW)
-                </Label>
-                <Input
-                  id="egrCoolerCapacity"
-                  value={formData.egrCoolerCapacity}
-                  onChange={(e) =>
-                    handleInputChange("egrCoolerCapacity", e.target.value)
-                  }
-                  placeholder="Enter EGR Cooler Capacity (kW)"
-                />
-              </div>
-
-              {/* CAFCON Mass */}
-              <div className="space-y-2">
-                <Label htmlFor="cafconMass">CAFCON Mass</Label>
-                <Input
-                  id="cafconMass"
-                  value={formData.cafconMass}
-                  onChange={(e) =>
-                    handleInputChange("cafconMass", e.target.value)
-                  }
-                  placeholder="Enter CAFCON Mass"
-                />
-              </div>
-
-              {/* CAFCON Type */}
-              <div className="space-y-2">
-                <Label htmlFor="cafconType">CAFCON Type</Label>
-                <Input
-                  id="cafconType"
-                  value={formData.cafconType}
-                  onChange={(e) =>
-                    handleInputChange("cafconType", e.target.value)
-                  }
-                  placeholder="Enter CAFCON Type"
-                />
-              </div>
-
-              {/* CAFCON Loading */}
-              <div className="space-y-2">
-                <Label htmlFor="cafconLoading">CAFCON Loading</Label>
-                <Input
-                  id="cafconLoading"
-                  value={formData.cafconLoading}
-                  onChange={(e) =>
-                    handleInputChange("cafconLoading", e.target.value)
-                  }
-                  placeholder="Enter CAFCON Loading"
-                />
-              </div>
-
-              {/* DPF Make */}
-              <div className="space-y-2">
-                <Label htmlFor="dpfMake">DPF Make</Label>
-                <Input
-                  id="dpfMake"
-                  value={formData.dpfMake}
-                  onChange={(e) => handleInputChange("dpfMake", e.target.value)}
-                  placeholder="Enter DPF Make"
-                />
-              </div>
-
-              {/* DPF Capacity */}
-              <div className="space-y-2">
-                <Label htmlFor="dpfCapacity">DPF Capacity</Label>
-                <Input
-                  id="dpfCapacity"
-                  value={formData.dpfCapacity}
-                  onChange={(e) =>
-                    handleInputChange("dpfCapacity", e.target.value)
-                  }
-                  placeholder="Enter DPF Capacity"
-                />
-              </div>
-
-              {/* SCR Make */}
-              <div className="space-y-2">
-                <Label htmlFor="scrMake">SCR Make</Label>
-                <Input
-                  id="scrMake"
-                  value={formData.scrMake}
-                  onChange={(e) => handleInputChange("scrMake", e.target.value)}
-                  placeholder="Enter SCR Make"
-                />
-              </div>
-
-              {/* SCR Capacity */}
-              <div className="space-y-2">
-                <Label htmlFor="scrCapacity">SCR Capacity</Label>
-                <Input
-                  id="scrCapacity"
-                  value={formData.scrCapacity}
-                  onChange={(e) =>
-                    handleInputChange("scrCapacity", e.target.value)
-                  }
-                  placeholder="Enter SCR Capacity"
-                />
-              </div>
-
-              {/* A/C Compressor */}
-              <div className="space-y-2">
-                <Label>A/C Compressor</Label>
-                <RadioGroup
-                  value={formData.acCompressor}
-                  onValueChange={(value) =>
-                    handleInputChange("acCompressor", value)
-                  }
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Yes" id="ac-yes" />
-                      <Label htmlFor="ac-yes">Yes</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="No" id="ac-no" />
-                      <Label htmlFor="ac-no">No</Label>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {/* A/C Compressor Details */}
-              <div className="space-y-2">
-                <Label htmlFor="acCompressorDetails">
-                  A/C Compressor Details
-                </Label>
-                <Input
-                  id="acCompressorDetails"
-                  value={formData.acCompressorDetails}
-                  onChange={(e) =>
-                    handleInputChange("acCompressorDetails", e.target.value)
-                  }
-                  placeholder="Enter A/C Compressor Details"
-                />
-              </div>
-
-              {/* Power Steering Pump */}
-              <div className="space-y-2">
-                <Label htmlFor="powerSteeringPump">Power Steering Pump</Label>
-                <Input
-                  id="powerSteeringPump"
-                  value={formData.powerSteeringPump}
-                  onChange={(e) =>
-                    handleInputChange("powerSteeringPump", e.target.value)
-                  }
-                  placeholder="Enter Power Steering Pump"
-                />
-              </div>
-
-              {/* Power Steering Details */}
-              <div className="space-y-2">
-                <Label htmlFor="powerSteeringDetails">
-                  Power Steering Details
-                </Label>
-                <Input
-                  id="powerSteeringDetails"
-                  value={formData.powerSteeringDetails}
-                  onChange={(e) =>
-                    handleInputChange("powerSteeringDetails", e.target.value)
-                  }
-                  placeholder="Enter Power Steering Details"
-                />
-              </div>
-
-              {/* Water by pass */}
-              <div className="space-y-2">
-                <Label htmlFor="waterByPass">Water by pass</Label>
-                <Input
-                  id="waterByPass"
-                  value={formData.waterByPass}
-                  onChange={(e) =>
-                    handleInputChange("waterByPass", e.target.value)
-                  }
-                  placeholder="Enter Water by pass"
-                />
-              </div>
-
-              {/* Kerb Weight EMW */}
-              <div className="space-y-2">
-                <Label htmlFor="kerbWeightEmw">Kerb Weight EMW (Kg) <span className="text-red-500">*</span></Label>
-                <Input
-                  id="kerbWeightEmw"
-                  value={formData.kerbWeightEmw}
-                  onChange={(e) =>
-                    handleInputChange("kerbWeightEmw", e.target.value)
-                  }
-                  placeholder="Enter Kerb Weight EMW (Kg)"
-                />
-              </div>
-
-              {/* Kerb Weight RMW */}
-              <div className="space-y-2">
-                <Label htmlFor="kerbWeightRmw">Kerb Weight RMW (Kg) <span className="text-red-500">*</span></Label>
-                <Input
-                  id="kerbWeightRmw"
-                  value={formData.kerbWeightRmw}
-                  onChange={(e) =>
-                    handleInputChange("kerbWeightRmw", e.target.value)
-                  }
-                  placeholder="Enter Kerb Weight RMW (Kg)"
-                />
-              </div>
-
-              {/* Emission Status */}
-              <div className="space-y-2">
-                <Label htmlFor="emissionStatus">
-                  Emission Status of the Vehicle
-                </Label>
-                <Input
-                  id="emissionStatus"
-                  value={formData.emissionStatus}
-                  onChange={(e) =>
-                    handleInputChange("emissionStatus", e.target.value)
-                  }
-                  placeholder="Enter Emission Status of the Vehicle"
-                />
-              </div>
-
-              {/* Thermostat Details */}
-              <div className="space-y-2">
-                <Label htmlFor="thermostatDetails">Thermostat Details</Label>
-                <Textarea
-                  id="thermostatDetails"
-                  value={formData.thermostatDetails}
-                  onChange={(e) =>
-                    handleInputChange("thermostatDetails", e.target.value)
-                  }
-                  placeholder="Enter Thermostat Details"
-                  className="min-h-[80px]"
-                />
-              </div>
-
-              {/* Vehicle Serial Number */}
-              <div className="space-y-2">
-                <Label htmlFor="vehicleSerialNumber">
-                  Vehicle Serial Number <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={formData.vehicleSerialNumber}
-                  onValueChange={(value) =>
-                    handleInputChange("vehicleSerialNumber", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Vehicle Serial No" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="VSN001">VSN001</SelectItem>
-                    <SelectItem value="VSN002">VSN002</SelectItem>
-                    <SelectItem value="VSN003">VSN003</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Engine Family */}
-              <div className="space-y-2">
-                <Label htmlFor="engineFamily">Engine Family</Label>
-                <Select
-                  value={formData.engineFamily}
-                  onValueChange={(value) =>
-                    handleInputChange("engineFamily", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Engine Family" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Family1">Engine Family 1</SelectItem>
-                    <SelectItem value="Family2">Engine Family 2</SelectItem>
-                    <SelectItem value="Family3">Engine Family 3</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                </TableBody>
+              </Table>
             </div>
+          </Card>
 
-            {/* Required Field Note */}
-            <div className="mt-6">
-              <p className="text-sm text-red-500 dark:text-red-500"><span className="text-red-500">*</span>required field</p>
+          {/* Pagination Footer */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-gray-600">
+              {`Showing ${engines.length} of ${engines.length}`}
             </div>
-
-            {/* Action Buttons */}
-            <div className="mt-6 flex justify-end gap-3">
-              <Button
-                onClick={handleAddEngine}
-                className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
-              >
-                ✓ ADD ENGINE
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" disabled className="text-gray-400">
+                {"<<"}
               </Button>
-              <Button
-                onClick={handleClear}
-                variant="outline"
-                className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
-              >
-                ✕ CLEAR
+              <Button variant="outline" size="sm" disabled className="text-gray-400">
+                {"<"}
+              </Button>
+              <Button variant="default" size="sm" className="bg-black text-white hover:bg-gray-800">
+                1
+              </Button>
+              <Button variant="outline" size="sm" disabled className="text-gray-400">
+                {">"}
+              </Button>
+              <Button variant="outline" size="sm" disabled className="text-gray-400">
+                {">>"}
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
+
+      {/* Edit Engine Dialog */}
+      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Edit Engine</DialogTitle>
+        <DialogContent dividers>
+          {editLoading ? (
+            <div style={{ padding: 24 }}>Loading...</div>
+          ) : editError ? (
+            <div className="text-red-500 text-sm mb-2">{editError}</div>
+          ) : editForm ? (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+              {/* Engine ID (read-only) */}
+              <TextField
+                label="Engine ID"
+                name="engineId"
+                value={editForm.engineId}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+                InputProps={{ readOnly: true }}
+              />
+              <TextField
+                label="Engine Serial Number"
+                name="engineSerialNumber"
+                value={editForm.engineSerialNumber}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+                disabled
+              />
+              <TextField
+                label="Engine Build Level"
+                name="engineBuildLevel"
+                value={editForm.engineBuildLevel}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Engine Type"
+                name="engineType"
+                value={editForm.engineType}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Engine Capacity"
+                name="engineCapacity"
+                value={editForm.engineCapacity}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Number of Cylinders"
+                name="numberOfCylinders"
+                value={editForm.numberOfCylinders}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Compression Ratio"
+                name="compressionRatio"
+                value={editForm.compressionRatio}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Bore (mm)"
+                name="bore"
+                value={editForm.bore}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Stroke (mm)"
+                name="stroke"
+                value={editForm.stroke}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Vacuum Modulator Make"
+                name="vacuumModulatorMake"
+                value={editForm.vacuumModulatorMake}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Vacuum Modulator Details"
+                name="vacuumModulatorDetails"
+                value={editForm.vacuumModulatorDetails}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="ECU Make"
+                name="ecuMake"
+                value={editForm.ecuMake}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="ECU ID Number"
+                name="ecuIdNumber"
+                value={editForm.ecuIdNumber}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="ECU Dataset Number"
+                name="ecuDatasetNumber"
+                value={editForm.ecuDatasetNumber}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="ECU Dataset Details"
+                name="ecuDatasetDetails"
+                value={editForm.ecuDatasetDetails}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Injector Type"
+                name="injectorType"
+                value={editForm.injectorType}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Turbo charger Type"
+                name="turboChargerType"
+                value={editForm.turboChargerType}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                select
+                label="Blow by Recirculation"
+                name="blowByRecirculation"
+                value={editForm.blowByRecirculation}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              >
+                <MenuItem value="">Select</MenuItem>
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </TextField>
+              <TextField
+                label="Nozzle Number of Holes"
+                name="nozzleNumberOfHoles"
+                value={editForm.nozzleNumberOfHoles}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Nozzle Through Flow"
+                name="nozzleThroughFlow"
+                value={editForm.nozzleThroughFlow}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="EGR Valve Make"
+                name="egrValveMake"
+                value={editForm.egrValveMake}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="EGR Valve Type"
+                name="egrValveType"
+                value={editForm.egrValveType}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="EGR Valve Diameter (mm)"
+                name="egrValveDiameter"
+                value={editForm.egrValveDiameter}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="EGR Cooler Make"
+                name="egrCoolerMake"
+                value={editForm.egrCoolerMake}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="EGR Cooler Capacity (KW)"
+                name="egrCoolerCapacity"
+                value={editForm.egrCoolerCapacity}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="CATCON Make"
+                name="catconMake"
+                value={editForm.catconMake}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="CATCON Type"
+                name="catconType"
+                value={editForm.catconType}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="CATCON Loading"
+                name="catconLoading"
+                value={editForm.catconLoading}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="DPF Make"
+                name="dpfMake"
+                value={editForm.dpfMake}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="DPF Capacity"
+                name="dpfCapacity"
+                value={editForm.dpfCapacity}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="SCR Make"
+                name="scrMake"
+                value={editForm.scrMake}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="SCR Capacity"
+                name="scrCapacity"
+                value={editForm.scrCapacity}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                select
+                label="ACC.Compressor"
+                name="accCompressor"
+                value={editForm.accCompressor}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              >
+                <MenuItem value="">Select</MenuItem>
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </TextField>
+              <TextField
+                select
+                label="ACC.Compressor Details"
+                name="accCompressorDetails"
+                value={editForm.accCompressorDetails}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              >
+                <MenuItem value="">Select</MenuItem>
+                <MenuItem value="Front">Front</MenuItem>
+                <MenuItem value="Rear">Rear</MenuItem>
+              </TextField>
+              <TextField
+                select
+                label="Power Steering Pump"
+                name="powerSteeringPump"
+                value={editForm.powerSteeringPump}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              >
+                <MenuItem value="">Select</MenuItem>
+                <MenuItem value="Front">Front</MenuItem>
+                <MenuItem value="Rear">Rear</MenuItem>
+                <MenuItem value="Top">Top</MenuItem>
+              </TextField>
+              <TextField
+                label="Power Steering Details"
+                name="powerSteeringDetails"
+                value={editForm.powerSteeringDetails}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Water by pass"
+                name="waterByPass"
+                value={editForm.waterByPass}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Kerb Weight FAW (Kg) *"
+                name="kerbWeightFAW"
+                value={editForm.kerbWeightFAW}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Kerb Weight RAW (Kg) *"
+                name="kerbWeightRAW"
+                value={editForm.kerbWeightRAW}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Emission Status of the Vehicle"
+                name="emissionStatus"
+                value={editForm.emissionStatus}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Thermostat Details"
+                name="thermostatDetails"
+                value={editForm.thermostatDetails}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Vehicle Serial Number"
+                name="vehicleSerialNumber"
+                value={editForm.vehicleSerialNumber}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="Engine Family"
+                name="engineFamily"
+                value={editForm.engineFamily}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="HV Battery Make"
+                name="hvBatteryMake"
+                value={editForm.hvBatteryMake}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="HV Battery Capacity"
+                name="hvBatteryCapacity"
+                value={editForm.hvBatteryCapacity}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="HV Battery Voltage (V)"
+                name="hvBatteryVoltage"
+                value={editForm.hvBatteryVoltage}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="HV Battery Current (A)"
+                name="hvBatteryCurrent"
+                value={editForm.hvBatteryCurrent}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+              <TextField
+                label="EV Motor Power (KW)"
+                name="evMotorPower"
+                value={editForm.evMotorPower}
+                onChange={handleEditChange}
+                fullWidth
+                size="small"
+                sx={{ flex: "1 1 250px" }}
+              />
+            </div>
+          ) : null}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditOpen(false)} variant="outline" disabled={editLoading}>
+            Cancel
+          </Button>
+          <Button onClick={handleEditSave} variant="default" disabled={editLoading || !editForm}>
+            {editLoading ? "Saving..." : "Save"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
-  );
+  )
 }

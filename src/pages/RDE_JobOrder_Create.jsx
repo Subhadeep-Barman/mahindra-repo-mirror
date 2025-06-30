@@ -20,7 +20,7 @@ const apiURL = import.meta.env.VITE_BACKEND_URL
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
 
-export default function CreateJobOrder() {
+export default function RDECreateJobOrder() {
   const [form, setForm] = useState({
     projectCode: "",
     vehicleBuildLevel: "",
@@ -57,6 +57,12 @@ export default function CreateJobOrder() {
     f0N: "",
     f1Nkmph: "",
     f2Nkmph2: "",
+    // New fields
+    wbsCode: "",
+    vehicleGVW: "",
+    vehicleKerbWeight: "",
+    vehicleTestPayloadCriteria: "",
+    idleExhaustMassFlow: "",
   });
 
   const [vehicleFormData, setVehicleFormData] = useState(null);
@@ -120,6 +126,8 @@ export default function CreateJobOrder() {
         f0N: "",
         f1Nkmph: "",
         f2Nkmph2: "",
+        // New field for DPF Regen Occurs (g)
+        dpfRegenOccurs: "",
       },
     ]);
   };
@@ -156,7 +164,7 @@ export default function CreateJobOrder() {
     fetchDomains();
   }, [fetchProjects, fetchDomains]);
 
-  // Fetch test types from API
+  // Fetch test types from API (now using /rde_test_type)
   useEffect(() => {
     const fetchTestTypes = async () => {
       try {
@@ -484,7 +492,7 @@ export default function CreateJobOrder() {
   };
 
   // Handler for creating job order
-  const handleCreateJobOrder = async (e) => {
+  const handleRDECreateJobOrder = async (e) => {
     e.preventDefault();
 
     // Generate job_order_id and CoastDownData_id based on timestamp
@@ -1065,6 +1073,96 @@ export default function CreateJobOrder() {
           </div>
         </form>
 
+        {/* New fields below the main form row */}
+        <div className="flex flex-row gap-6 px-8 pb-4">
+          {/* WBS Code */}
+          <div className="flex flex-col">
+            <Label htmlFor="wbsCode">
+              WBS Code <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="wbsCode"
+              value={form.wbsCode}
+              onChange={e => setForm(prev => ({ ...prev, wbsCode: e.target.value }))}
+              className="w-44"
+              required
+              disabled={formDisabled}
+              placeholder="Enter WBS Code"
+            />
+          </div>
+          {/* Vehicle GVW */}
+          <div className="flex flex-col">
+            <Label htmlFor="vehicleGVW">
+              Vehicle GVW (Kg) <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="vehicleGVW"
+              value={form.vehicleGVW}
+              onChange={e => setForm(prev => ({ ...prev, vehicleGVW: e.target.value }))}
+              className="w-44"
+              required
+              disabled={formDisabled}
+              placeholder="Enter GVW"
+              type="number"
+              min="0"
+            />
+          </div>
+          {/* Vehicle Kerb weight */}
+          <div className="flex flex-col">
+            <Label htmlFor="vehicleKerbWeight">
+              Vehicle Kerb weight (Kg) <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="vehicleKerbWeight"
+              value={form.vehicleKerbWeight}
+              onChange={e => setForm(prev => ({ ...prev, vehicleKerbWeight: e.target.value }))}
+              className="w-44"
+              required
+              disabled={formDisabled}
+              placeholder="Enter Kerb Weight"
+              type="number"
+              min="0"
+            />
+          </div>
+          {/* Vehicle Test Payload criteria */}
+          <div className="flex flex-col">
+            <Label htmlFor="vehicleTestPayloadCriteria">
+              Vehicle Test Payload criteria (Kg) <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={form.vehicleTestPayloadCriteria}
+              onValueChange={value => setForm(prev => ({ ...prev, vehicleTestPayloadCriteria: value }))}
+              required
+              disabled={formDisabled}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Legislation">Legislation</SelectItem>
+                <SelectItem value="Manual entry">Manual entry</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Idle Exhaust Mass Flow */}
+          <div className="flex flex-col">
+            <Label htmlFor="idleExhaustMassFlow">
+              Idle Exhaust Mass Flow (Kg/hr) <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="idleExhaustMassFlow"
+              value={form.idleExhaustMassFlow}
+              onChange={e => setForm(prev => ({ ...prev, idleExhaustMassFlow: e.target.value }))}
+              className="w-44"
+              required
+              disabled={formDisabled}
+              placeholder="Enter Idle Exhaust Mass Flow"
+              type="number"
+              min="0"
+            />
+          </div>
+        </div>
+
         {/* Editable Vehicle Details Accordion */}
         {vehicleEditable && (
           <div className="mx-8 mt-2 mb-4 border rounded shadow">
@@ -1273,7 +1371,7 @@ export default function CreateJobOrder() {
           <div className="flex items-center mt-4 gap-6">
             <Button
               className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
-              onClick={handleCreateJobOrder}
+              onClick={handleRDECreateJobOrder}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
@@ -1359,6 +1457,11 @@ export default function CreateJobOrder() {
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
+                    {/* Always show these three at the top */}
+                    <SelectItem value="PEMS Correlation">PEMS Correlation</SelectItem>
+                    <SelectItem value="COLD IRDE">COLD IRDE</SelectItem>
+                    <SelectItem value="HOT IRDE">HOT IRDE</SelectItem>
+                    {/* Show all API options (including duplicates) */}
                     {testTypes.map((testType, index) => (
                       <SelectItem key={`${testType}-${index}`} value={testType}>
                         {testType}

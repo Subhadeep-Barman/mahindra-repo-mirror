@@ -5,7 +5,7 @@ import {
   Code,
   MessageSquare,
   Flag,
-  LayoutDashboard as Dashboard, // assuming using lucide-react
+  LayoutDashboard as Dashboard,
 } from "lucide-react";
 import useStore from "@/store/useStore";
 
@@ -23,28 +23,24 @@ const services = [
   {
     id: 1,
     title: "RDE Chennai",
-    //description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
     icon: Code,
     href: "/rde-chennai",
   },
   {
     id: 2,
     title: "VTC Chennai",
-    // description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
     icon: MessageSquare,
     href: "/vtc-chennai",
   },
   {
     id: 3,
     title: "VTC Nashik",
-    // description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
     icon: Flag,
     href: "/vtc-nashik",
   },
   {
     id: 4,
     title: "ADMIN Portal",
-    //description: "Commodo qui nulla ipsum ea cupidatat sit aliquip",
     icon: Dashboard,
     href: "/admin-portal",
   },
@@ -65,40 +61,54 @@ export default function HomePage() {
   return (
     <>
       <Navbar />
-      <div className="flex justify-center mt-40 ">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 w-full max-w-7xl mx-auto ">
-          {services.map((service) => {
-            const Icon = service.icon;
-            return (
-              <Card
-                key={service.id}
-                className="bg-red-50 w-full max-w-[280px] min-h-[380px] flex flex-col justify-center mx-auto  shadow-xl hover:shadow-2xl transition-shadow "
-              >
-                <CardHeader className="flex flex-col items-center text-center space-y-4  ">
-                  <div className="h-14 w-14 rounded-full  bg-red-500 flex items-center justify-center">
-                    <Icon className="h-7 w-7 text-white" />
-                  </div>
-                  <div className="space-y-2">
-                    <CardTitle className="text-lg font-semibold dark:text-red-500 text-black">
-                      {service.title}
-                    </CardTitle>
-                    <CardDescription className="text-sm text-gray-400">
-                      {service.description}
-                    </CardDescription>
-                  </div>
-                </CardHeader>
-                <CardFooter className="flex justify-center pb-6">
-                  <Button
-                    asChild
-                    variant="ghost"
-                    className="bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 px-4 py-2 text-sm font-medium"
-                  >
-                    <Link to={service.href}>Explore →</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            );
-          })}
+      <div
+        className="w-full bg-white dark:bg-black flex flex-col"
+      >
+        <div className="flex flex-col items-center mt-10 mb-10">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-red-600 dark:text-red-400 drop-shadow-lg tracking-tight mb-2">
+            DBMRS VTC Portal
+          </h1>
+        </div>
+        <div className="flex justify-center flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 w-full max-w-7xl mx-auto">
+            {services.map((service) => {
+              const Icon = service.icon;
+              return (
+                <Card
+                  key={service.id}
+                  className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-0 dark:border dark:border-zinc-800 w-full max-w-[280px] min-h-[380px] flex flex-col justify-center mx-auto shadow-xl hover:shadow-2xl dark:shadow-black/60 transition-all duration-300 hover:scale-105 group"
+                  style={{
+                    boxShadow:
+                      "0 2px 16px 0 rgba(0,0,0,0.25)", // black shadow only
+                  }}
+                >
+                  <CardHeader className="flex flex-col items-center text-center space-y-4">
+                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-red-500 to-red-400 dark:from-red-700 dark:to-red-500 shadow-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <Icon className="h-8 w-8 text-white drop-shadow" />
+                    </div>
+                    <div className="space-y-2">
+                      <CardTitle className="text-xl font-bold text-red-600 dark:text-red-400 group-hover:text-red-700 dark:group-hover:text-red-300 transition-colors">
+                        {service.title}
+                      </CardTitle>
+                      <CardDescription className="text-sm text-gray-400 dark:text-gray-300">
+                        {service.description ||
+                          "Access the " + service.title + " module"}
+                      </CardDescription>
+                    </div>
+                  </CardHeader>
+                  <CardFooter className="flex justify-center pb-6">
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className="bg-red-500/10 dark:bg-red-500/20 hover:bg-red-500/20 dark:hover:bg-red-500/30 text-red-500 dark:text-red-400 hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-red-400 dark:hover:from-red-700 dark:hover:to-red-500 px-6 py-2 text-base font-semibold rounded-full shadow transition-all duration-300"
+                    >
+                      <Link to={service.href}>Explore &rarr;</Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       </div>
     </>

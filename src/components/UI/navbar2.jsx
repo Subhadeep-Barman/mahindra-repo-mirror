@@ -22,7 +22,7 @@ export default function Navbar2() {
   }, [isDarkMode])
 
   return (
-    <nav className="bg-white rounded-2xl dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+    <nav className="bg-white rounded-2xl dark:bg-zinc-900/80 shadow-sm border-b border-gray-200 dark:border-zinc-800 transition-colors duration-200">
       <div className="flex items-center justify-between h-16 px-4 md:px-8">
         {/* Logo - Left Corner */}
         <div className="flex-shrink-0">
