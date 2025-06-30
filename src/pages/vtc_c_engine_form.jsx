@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import Navbar2 from "@/components/UI/navbar2"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Navbar1 from "@/components/UI/navbar";
 import {
   Typography,
   Grid,
@@ -11,9 +11,9 @@ import {
   MenuItem,
   Paper,
   Box,
-} from "@mui/material"
-import { styled } from "@mui/material/styles"
-import axios from "axios"
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
+import axios from "axios";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 // Custom styled Paper for the form card
@@ -75,46 +75,50 @@ const initialState = {
   hvBatteryVoltage: "",
   hvBatteryCurrent: "",
   evMotorPower: "",
-}
+};
 
 const vehicleOptions = [
   { value: "", label: "Select Vehicle" },
   { value: "VEHICLE1", label: "Vehicle 1" },
   { value: "VEHICLE2", label: "Vehicle 2" },
   // ...add more as needed
-]
+];
 
 const engineFamilyOptions = [
   { value: "", label: "Select Engine Family" },
   { value: "FAMILY1", label: "Family 1" },
   { value: "FAMILY2", label: "Family 2" },
   // ...add more as needed
-]
+];
 
 export default function VTCCEngineForm() {
-  const [form, setForm] = useState(initialState)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const navigate = useNavigate()
+  const [form, setForm] = useState(initialState);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleClear = () => {
-    setForm(initialState)
-  }
+    setForm(initialState);
+  };
 
   // Helper to map frontend form to backend schema
   const mapFormToApi = (form) => ({
     engine_id: form.engineSerialNumber, // Assuming engine_id is same as serial number
     engine_serial_number: form.engineSerialNumber || null,
     engine_build_level: form.engineBuildLevel || null,
-    engine_capacity: form.engineCapacity ? parseFloat(form.engineCapacity) : null,
+    engine_capacity: form.engineCapacity
+      ? parseFloat(form.engineCapacity)
+      : null,
     engine_type: form.engineType || null,
     number_of_cylinders: form.numberOfCylinders || null,
-    compression_ratio: form.compressionRatio ? parseFloat(form.compressionRatio) : null,
+    compression_ratio: form.compressionRatio
+      ? parseFloat(form.compressionRatio)
+      : null,
     bore_mm: form.bore ? parseFloat(form.bore) : null,
     stroke_mm: form.stroke ? parseFloat(form.stroke) : null,
     vacuum_modulator_make: form.vacuumModulatorMake || null,
@@ -125,14 +129,25 @@ export default function VTCCEngineForm() {
     ecu_dataset_details: form.ecuDatasetDetails || null,
     injector_type: form.injectorType || null,
     turbo_charger_type: form.turboChargerType || null,
-    blow_by_recirculation: form.blowByRecirculation === "Yes" ? true : form.blowByRecirculation === "No" ? false : null,
+    blow_by_recirculation:
+      form.blowByRecirculation === "Yes"
+        ? true
+        : form.blowByRecirculation === "No"
+        ? false
+        : null,
     nozzle_hole_count: form.nozzleNumberOfHoles || null,
-    nozzle_through_flow: form.nozzleThroughFlow ? parseFloat(form.nozzleThroughFlow) : null,
+    nozzle_through_flow: form.nozzleThroughFlow
+      ? parseFloat(form.nozzleThroughFlow)
+      : null,
     egr_valve_make: form.egrValveMake || null,
     egr_valve_type: form.egrValveType || null,
-    egr_valve_diameter_mm: form.egrValveDiameter ? parseFloat(form.egrValveDiameter) : null,
+    egr_valve_diameter_mm: form.egrValveDiameter
+      ? parseFloat(form.egrValveDiameter)
+      : null,
     egr_cooler_make: form.egrCoolerMake || null,
-    egr_cooler_capacity_kw: form.egrCoolerCapacity ? parseFloat(form.egrCoolerCapacity) : null,
+    egr_cooler_capacity_kw: form.egrCoolerCapacity
+      ? parseFloat(form.egrCoolerCapacity)
+      : null,
     catcon_make: form.catconMake || null,
     catcon_type: form.catconType || null,
     catcon_loading: form.catconLoading || null,
@@ -140,47 +155,60 @@ export default function VTCCEngineForm() {
     dpf_capacity: form.dpfCapacity || null,
     scr_make: form.scrMake || null,
     scr_capacity: form.scrCapacity || null,
-    acc_compressor: form.accCompressor === "Yes" ? true : form.accCompressor === "No" ? false : null,
+    acc_compressor:
+      form.accCompressor === "Yes"
+        ? true
+        : form.accCompressor === "No"
+        ? false
+        : null,
     acc_compressor_details: form.accCompressorDetails || null,
     ps_pump: form.powerSteeringPump || null,
     ps_details: form.powerSteeringDetails || null,
     water_bypass: form.waterByPass || null,
-    kerb_weight_faw_kg: form.kerbWeightFAW ? parseFloat(form.kerbWeightFAW) : null,
-    kerb_weight_raw_kg: form.kerbWeightRAW ? parseFloat(form.kerbWeightRAW) : null,
+    kerb_weight_faw_kg: form.kerbWeightFAW
+      ? parseFloat(form.kerbWeightFAW)
+      : null,
+    kerb_weight_raw_kg: form.kerbWeightRAW
+      ? parseFloat(form.kerbWeightRAW)
+      : null,
     emission_status: form.emissionStatus || null,
     thermostat_details: form.thermostatDetails || null,
     vehicle_serial_number: form.vehicleSerialNumber || null,
     engine_family: form.engineFamily || null,
     hv_battery_make: form.hvBatteryMake || null,
-    hv_battery_capacity: form.hvBatteryCapacity ? parseFloat(form.hvBatteryCapacity) : null,
-    hv_battery_voltage: form.hvBatteryVoltage ? parseFloat(form.hvBatteryVoltage) : null,
-    hv_battery_current: form.hvBatteryCurrent ? parseFloat(form.hvBatteryCurrent) : null,
+    hv_battery_capacity: form.hvBatteryCapacity
+      ? parseFloat(form.hvBatteryCapacity)
+      : null,
+    hv_battery_voltage: form.hvBatteryVoltage
+      ? parseFloat(form.hvBatteryVoltage)
+      : null,
+    hv_battery_current: form.hvBatteryCurrent
+      ? parseFloat(form.hvBatteryCurrent)
+      : null,
     ev_motor_power_kw: form.evMotorPower ? parseFloat(form.evMotorPower) : null,
     // id_of_creator, created_on, etc. can be set by backend
-  })
+  });
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
     try {
-      const payload = mapFormToApi(form)
-      const response = await axios.post(`${apiURL}/engines`, payload)
-      navigate("/vtcchennaiengine")
+      const payload = mapFormToApi(form);
+      const response = await axios.post(`${apiURL}/engines`, payload);
+      navigate("/vtcchennaiengine");
     } catch (err) {
       setError(
-        err?.response?.data?.detail ||
-        err?.message ||
-        "Failed to create engine"
-      )
+        err?.response?.data?.detail || err?.message || "Failed to create engine"
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <>
-      <Navbar2 />
+      <Navbar1 />
       <Box
         sx={{
           minHeight: "100vh",
@@ -203,10 +231,12 @@ export default function VTCCEngineForm() {
             Add New Engine
           </Typography>
           {error && (
-          <Box sx={{ mb: 2 }}>
-            <Typography color="error" variant="body2">{error}</Typography>
-          </Box>
-        )}
+            <Box sx={{ mb: 2 }}>
+              <Typography color="error" variant="body2">
+                {error}
+              </Typography>
+            </Box>
+          )}
           <form onSubmit={handleSubmit}>
             <Grid container spacing={2}>
               {/* Use 2 columns on md+, 1 column on xs/sm for better label visibility */}
@@ -852,7 +882,14 @@ export default function VTCCEngineForm() {
                 />
               </Grid>
             </Grid>
-            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 4 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 2,
+                mt: 4,
+              }}
+            >
               <Button
                 variant="outlined"
                 color="secondary"
@@ -876,5 +913,5 @@ export default function VTCCEngineForm() {
         </StyledPaper>
       </Box>
     </>
-  )
+  );
 }

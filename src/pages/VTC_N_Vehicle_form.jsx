@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/UI/button";
 import { ArrowBack } from "@mui/icons-material";
-import Navbar2 from "@/components/UI/navbar2";
+import Navbar1 from "@/components/UI/navbar";
 import { useNavigate } from "react-router-dom";
 
 export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
@@ -63,26 +63,28 @@ export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
     driveType: "2WD",
     drivenWheel: "Rear",
     intercoolerLocation: "Front",
-    gearRatio: "4.10"
+    gearRatio: "4.10",
   };
 
   const handleVehicleBodyChange = (value) => {
-  // Get all saved vehicle forms (if you want to support multiple, otherwise just get the single one)
-  const vehicleFormData = JSON.parse(localStorage.getItem("vehicleFormData") || "{}");
-  if (vehicleFormData.vehicleBodyNumber === value) {
-    setForm({ ...vehicleFormData });
-    setVehicleFormData(vehicleFormData); // <-- update the summary section
-  } else {
-    setForm((prev) => ({
-      ...prev,
-      vehicleBodyNumber: value,
-      vehicleNumber: "",
-      engineNumber: "",
-      engineType: "",
-    }));
-    setVehicleFormData(null); // clear summary if not found
-  }
-};
+    // Get all saved vehicle forms (if you want to support multiple, otherwise just get the single one)
+    const vehicleFormData = JSON.parse(
+      localStorage.getItem("vehicleFormData") || "{}"
+    );
+    if (vehicleFormData.vehicleBodyNumber === value) {
+      setForm({ ...vehicleFormData });
+      setVehicleFormData(vehicleFormData); // <-- update the summary section
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        vehicleBodyNumber: value,
+        vehicleNumber: "",
+        engineNumber: "",
+        engineType: "",
+      }));
+      setVehicleFormData(null); // clear summary if not found
+    }
+  };
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -144,11 +146,11 @@ export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
   const navigate = useNavigate();
 
   const handleTabClick = (tab) => {
-  setActiveTab(tab);
-  if (tab === "Job Order") navigate("/nashik/joborder");
-  else if (tab === "Vehicle") navigate("/nashik/vehicle");
-  else if (tab === "Engine") navigate("/nashik/engine");
-};
+    setActiveTab(tab);
+    if (tab === "Job Order") navigate("/nashik/joborder");
+    else if (tab === "Vehicle") navigate("/nashik/vehicle");
+    else if (tab === "Engine") navigate("/nashik/engine");
+  };
 
   const handleBack = () => {
     navigate(-1);
@@ -156,7 +158,7 @@ export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
 
   return (
     <>
-      <Navbar2 />
+      <Navbar1 />
       {/* Header */}
       <div className="bg-white dark:bg-black">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -217,7 +219,9 @@ export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
             >
               <option value="">Select Project</option>
               {projectOptions.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
               ))}
             </select>
           </div>
@@ -249,7 +253,9 @@ export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
             >
               <option value="">Select Model</option>
               {vehicleModelOptions.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
               ))}
             </select>
           </div>
@@ -365,14 +371,17 @@ export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
             >
               <option value="">Select Domain</option>
               {domainOptions.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
               ))}
             </select>
           </div>
           {/* Coast Down Test Report Reference */}
           <div>
             <label className="block text-xs font-semibold mb-1">
-              Coast Down Test Report Reference <span className="text-red-500">*</span>
+              Coast Down Test Report Reference{" "}
+              <span className="text-red-500">*</span>
             </label>
             <input
               name="coastDownTestReportReference"
@@ -532,7 +541,8 @@ export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
           {/* Transmission Oil Specification */}
           <div>
             <label className="block text-xs font-semibold mb-1">
-              Transmission Oil Specification <span className="text-red-500">*</span>
+              Transmission Oil Specification{" "}
+              <span className="text-red-500">*</span>
             </label>
             <input
               name="transmissionOilSpecification"
@@ -685,6 +695,5 @@ export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
         <div className="text-xs text-red-500 mt-2">*required field</div>
       </form>
     </>
-  ) ;
+  );
 }
-  

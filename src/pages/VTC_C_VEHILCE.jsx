@@ -14,7 +14,7 @@ import {
 } from "@/components/UI/table";
 import { Card } from "@/components/UI/card";
 import { useState, useEffect } from "react";
-import Navbar2 from "@/components/UI/navbar2";
+import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -69,8 +69,10 @@ export default function VTCVehiclePage() {
 
   // Determine active tab from the current route
   let activeTab = "Job Order";
-  if (location.pathname.toLowerCase().includes("vehicle")) activeTab = "Vehicle";
-  else if (location.pathname.toLowerCase().includes("engine")) activeTab = "Engine";
+  if (location.pathname.toLowerCase().includes("vehicle"))
+    activeTab = "Vehicle";
+  else if (location.pathname.toLowerCase().includes("engine"))
+    activeTab = "Engine";
 
   const handleTabClick = (tab) => {
     if (tab === "Job Order") navigate("/vtc-chennai");
@@ -93,19 +95,27 @@ export default function VTCVehiclePage() {
   // Open edit modal and fetch full vehicle details
   const handleEditClick = async (vehicle) => {
     try {
-      const response = await axios.get(`${apiURL}/vehicles/${vehicle.vehicle_id}`);
+      const response = await axios.get(
+        `${apiURL}/vehicles/${vehicle.vehicle_id}`
+      );
       setEditVehicle(vehicle);
       setEditForm(response.data); // full vehicle data
       setEditOpen(true);
     } catch (err) {
-      alert("Error fetching vehicle details: " + (err.response?.data?.detail || err.message));
+      alert(
+        "Error fetching vehicle details: " +
+          (err.response?.data?.detail || err.message)
+      );
     }
   };
 
   // Handle edit form change (for all fields)
   const handleEditFormChange = (e) => {
     const { name, value, type } = e.target;
-    setEditForm({ ...editForm, [name]: type === "number" ? Number(value) : value });
+    setEditForm({
+      ...editForm,
+      [name]: type === "number" ? Number(value) : value,
+    });
   };
 
   // Save updated vehicle (send all fields)
@@ -134,13 +144,15 @@ export default function VTCVehiclePage() {
       }));
       setVehicles(minimalVehicles);
     } catch (err) {
-      alert("Error updating vehicle: " + (err.response?.data?.detail || err.message));
+      alert(
+        "Error updating vehicle: " + (err.response?.data?.detail || err.message)
+      );
     }
   };
 
   return (
     <>
-      <Navbar2 />
+      <Navbar1 />
       {/* Header */}
       <div className="bg-white dark:bg-black ">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -158,7 +170,9 @@ export default function VTCVehiclePage() {
                 <h1 className="text-sm font-medium text-gray-600 dark:text-red-500">
                   VTC CHENNAI
                 </h1>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">NEW VEHICLE</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
+                  NEW VEHICLE
+                </h2>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -168,9 +182,11 @@ export default function VTCVehiclePage() {
                   key={tab}
                   onClick={() => handleTabClick(tab)}
                   className={`rounded-xl px-4 py-2 font-semibold border
-                    ${activeTab === tab
-                      ? "bg-red-500 text-white border-red-500"
-                      : "bg-white text-red-500 border-red-500 hover:bg-red-50"}
+                    ${
+                      activeTab === tab
+                        ? "bg-red-500 text-white border-red-500"
+                        : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                    }
                   `}
                 >
                   {tab}
@@ -202,14 +218,30 @@ export default function VTCVehiclePage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="font-semibold text-gray-700 text-sm">Vehicle Serial Number</TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">Vehicle Body Number</TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">Vehicle Model</TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">Created By</TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">Created on</TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">Last Updated By</TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">Last Updated on</TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">Edit</TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">
+                    Vehicle Serial Number
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">
+                    Vehicle Body Number
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">
+                    Vehicle Model
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">
+                    Created By
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">
+                    Created on
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">
+                    Last Updated By
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">
+                    Last Updated on
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-sm">
+                    Edit
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -258,7 +290,8 @@ export default function VTCVehiclePage() {
         {/* Pagination Footer */}
         <div className="flex items-center justify-between mt-4">
           <div className="text-sm text-gray-600">
-            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, totalItems)} of {totalItems} Records
+            Showing {indexOfFirstItem + 1} to{" "}
+            {Math.min(indexOfLastItem, totalItems)} of {totalItems} Records
           </div>
           <div className="flex items-center space-x-2">
             <Button
@@ -284,7 +317,9 @@ export default function VTCVehiclePage() {
               size="sm"
               disabled={currentPage === totalPages}
               onClick={() => handlePageChange(currentPage + 1)}
-              className={currentPage === totalPages ? "text-gray-400" : "text-gray-600"}
+              className={
+                currentPage === totalPages ? "text-gray-400" : "text-gray-600"
+              }
             >
               {">"}
             </Button>
@@ -293,7 +328,9 @@ export default function VTCVehiclePage() {
               size="sm"
               disabled={currentPage === totalPages}
               onClick={() => handlePageChange(totalPages)}
-              className={currentPage === totalPages ? "text-gray-400" : "text-gray-600"}
+              className={
+                currentPage === totalPages ? "text-gray-400" : "text-gray-600"
+              }
             >
               {">>"}
             </Button>
@@ -301,14 +338,21 @@ export default function VTCVehiclePage() {
         </div>
 
         {/* Edit Modal with full form */}
-        <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="md" fullWidth>
+        <Dialog
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
           <DialogTitle>Edit Vehicle</DialogTitle>
           <DialogContent>
             {editForm && (
               <form className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {/* Example for some fields, repeat for all fields in VehicleSchema */}
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Project</label>
+                  <label className="block text-xs font-semibold mb-1">
+                    Project
+                  </label>
                   <input
                     name="project_code"
                     value={editForm.project_code || ""}
@@ -317,7 +361,9 @@ export default function VTCVehiclePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Vehicle Build Level</label>
+                  <label className="block text-xs font-semibold mb-1">
+                    Vehicle Build Level
+                  </label>
                   <input
                     name="vehicle_build_level"
                     value={editForm.vehicle_build_level || ""}
@@ -326,7 +372,9 @@ export default function VTCVehiclePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Vehicle Model</label>
+                  <label className="block text-xs font-semibold mb-1">
+                    Vehicle Model
+                  </label>
                   <input
                     name="vehicle_model"
                     value={editForm.vehicle_model || ""}
@@ -335,7 +383,9 @@ export default function VTCVehiclePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Vehicle Body Number</label>
+                  <label className="block text-xs font-semibold mb-1">
+                    Vehicle Body Number
+                  </label>
                   <input
                     name="vehicle_body_number"
                     value={editForm.vehicle_body_number || ""}
@@ -348,7 +398,10 @@ export default function VTCVehiclePage() {
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setEditOpen(false)} className="bg-gray-200 text-gray-700">
+            <Button
+              onClick={() => setEditOpen(false)}
+              className="bg-gray-200 text-gray-700"
+            >
               Cancel
             </Button>
             <Button onClick={handleEditSave} className="bg-red-500 text-white">

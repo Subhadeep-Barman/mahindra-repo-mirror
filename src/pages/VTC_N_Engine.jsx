@@ -16,7 +16,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/UI/radio-group";
 import { Card, CardContent } from "@/components/UI/card";
 import { ArrowBack } from "@mui/icons-material";
-import Navbar2 from "@/components/UI/navbar2";
+import Navbar1 from "@/components/UI/navbar";
 
 export default function EngineForm() {
   const [activeTab, setActiveTab] = useState("Engine");
@@ -76,11 +76,11 @@ export default function EngineForm() {
   };
 
   const handleTabClick = (tab) => {
-  setActiveTab(tab);
-  if (tab === "Job Order") navigate("/nashik/joborder");
-  else if (tab === "Vehicle") navigate("/nashik/vehicle");
-  else if (tab === "Engine") navigate("/nashik/engine");
-};
+    setActiveTab(tab);
+    if (tab === "Job Order") navigate("/nashik/joborder");
+    else if (tab === "Vehicle") navigate("/nashik/vehicle");
+    else if (tab === "Engine") navigate("/nashik/engine");
+  };
 
   const handleClear = () => {
     setFormData({
@@ -141,7 +141,7 @@ export default function EngineForm() {
 
   return (
     <>
-      <Navbar2 />
+      <Navbar1 />
 
       {/* Header */}
       <div className="bg-white dark:bg-black">

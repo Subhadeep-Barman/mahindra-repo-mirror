@@ -16,7 +16,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/UI/radio-group";
 import { Card, CardContent } from "@/components/UI/card";
 import { ArrowBack } from "@mui/icons-material";
-import Navbar2 from "@/components/UI/navbar2";
+import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
 
 export default function EngineForm() {
@@ -190,8 +190,9 @@ export default function EngineForm() {
           ? false
           : null,
       nozzle_hole_count: formData.nozzleNumberOfHoles,
-      nozzle_through_flow:
-        formData.nozzleThroughFlow ? parseFloat(formData.nozzleThroughFlow) : null,
+      nozzle_through_flow: formData.nozzleThroughFlow
+        ? parseFloat(formData.nozzleThroughFlow)
+        : null,
       egr_valve_make: formData.egrValveMake,
       egr_valve_type: formData.egrValveType,
       egr_valve_diameter_mm: formData.egrValveDiameter
@@ -229,10 +230,18 @@ export default function EngineForm() {
       vehicle_serial_number: formData.vehicleSerialNumber,
       engine_family: formData.engineFamily,
       hv_battery_make: formData.hvBatteryMake,
-      hv_battery_capacity: formData.hvBatteryCapacity ? parseFloat(formData.hvBatteryCapacity) : null,
-      hv_battery_voltage: formData.hvBatteryVoltage ? parseFloat(formData.hvBatteryVoltage) : null,
-      hv_battery_current: formData.hvBatteryCurrent ? parseFloat(formData.hvBatteryCurrent) : null,
-      ev_motor_power_kw: formData.evMotorPower ? parseFloat(formData.evMotorPower) : null,
+      hv_battery_capacity: formData.hvBatteryCapacity
+        ? parseFloat(formData.hvBatteryCapacity)
+        : null,
+      hv_battery_voltage: formData.hvBatteryVoltage
+        ? parseFloat(formData.hvBatteryVoltage)
+        : null,
+      hv_battery_current: formData.hvBatteryCurrent
+        ? parseFloat(formData.hvBatteryCurrent)
+        : null,
+      ev_motor_power_kw: formData.evMotorPower
+        ? parseFloat(formData.evMotorPower)
+        : null,
       created_on: now,
       updated_on: now,
       id_of_creator: userId,
@@ -246,7 +255,9 @@ export default function EngineForm() {
       alert("Engine added successfully!");
       // Optionally clear form or navigate
     } catch (err) {
-      alert("Error adding engine: " + (err.response?.data?.detail || err.message));
+      alert(
+        "Error adding engine: " + (err.response?.data?.detail || err.message)
+      );
     }
   };
 
@@ -264,7 +275,7 @@ export default function EngineForm() {
 
   return (
     <>
-      <Navbar2 />
+      <Navbar1 />
 
       {/* Header */}
       <div className="bg-white dark:bg-black">
@@ -947,7 +958,9 @@ export default function EngineForm() {
                 <Input
                   id="hvBatteryMake"
                   value={formData.hvBatteryMake}
-                  onChange={e => handleInputChange("hvBatteryMake", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("hvBatteryMake", e.target.value)
+                  }
                   placeholder="Enter HV Battery Make"
                 />
               </div>
@@ -957,7 +970,9 @@ export default function EngineForm() {
                 <Input
                   id="hvBatteryCapacity"
                   value={formData.hvBatteryCapacity}
-                  onChange={e => handleInputChange("hvBatteryCapacity", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("hvBatteryCapacity", e.target.value)
+                  }
                   placeholder="Enter HV Battery Capacity"
                 />
               </div>
@@ -967,7 +982,9 @@ export default function EngineForm() {
                 <Input
                   id="hvBatteryVoltage"
                   value={formData.hvBatteryVoltage}
-                  onChange={e => handleInputChange("hvBatteryVoltage", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("hvBatteryVoltage", e.target.value)
+                  }
                   placeholder="Enter HV Battery Voltage (V)"
                 />
               </div>
@@ -977,7 +994,9 @@ export default function EngineForm() {
                 <Input
                   id="hvBatteryCurrent"
                   value={formData.hvBatteryCurrent}
-                  onChange={e => handleInputChange("hvBatteryCurrent", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("hvBatteryCurrent", e.target.value)
+                  }
                   placeholder="Enter HV Battery Current (A)"
                 />
               </div>
@@ -987,7 +1006,9 @@ export default function EngineForm() {
                 <Input
                   id="evMotorPower"
                   value={formData.evMotorPower}
-                  onChange={e => handleInputChange("evMotorPower", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("evMotorPower", e.target.value)
+                  }
                   placeholder="Enter EV Motor Power (KW)"
                 />
               </div>

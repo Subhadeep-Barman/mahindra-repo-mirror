@@ -1,26 +1,36 @@
-"use client"
-import { Mail, Notifications, Menu, LightMode, DarkMode } from "@mui/icons-material"
-import { useState, useEffect } from "react"
-import { Switch } from "@/components/UI/switch"
-import AccountMenu from "@/components/UI/accountmenu"
-import darkLogo from "../../assets/mai_dark.png"
-import lightLogo from "../../assets/mai_light.png"
+"use client";
+import {
+  Mail,
+  Notifications,
+  Menu,
+  LightMode,
+  DarkMode,
+  Home,
+} from "@mui/icons-material";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { Switch } from "@/components/UI/switch";
+import AccountMenu from "@/components/UI/accountmenu";
+import darkLogo from "../../assets/mai_dark.png";
+import lightLogo from "../../assets/mai_light.png";
 
 export default function Navbar() {
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode)
-  }
+    setIsDarkMode(!isDarkMode);
+  };
 
   useEffect(() => {
     if (isDarkMode) {
-      document.documentElement.classList.add("dark")
+      document.documentElement.classList.add("dark");
     } else {
-      document.documentElement.classList.remove("dark")
+      document.documentElement.classList.remove("dark");
     }
-  }, [isDarkMode])
+  }, [isDarkMode]);
 
   return (
     <nav className="bg-black dark:bg-zinc-900/80 shadow-sm border-b border-gray-900 dark:border-zinc-800 transition-colors duration-200 rounded-2xl mt-2 mx-2 md:mx-4">
@@ -38,7 +48,12 @@ export default function Navbar() {
 
         {/* Right Side Icons - Hidden on Mobile */}
         <div className="hidden md:flex items-center space-x-6">
-
+          <button
+            className="p-2 text-red-500 dark:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700 transition-colors duration-200"
+            onClick={() => navigate("/home")}
+          >
+            <Home className="h-5 w-5" />
+          </button>
           <div className="flex items-center gap-2">
             <LightMode className="h-4 w-4 text-yellow-500" />
             <Switch
@@ -53,7 +68,7 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Menu Button */}
-        <button 
+        <button
           className="md:hidden p-2 text-red-500 dark:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
@@ -84,5 +99,5 @@ export default function Navbar() {
         </div>
       )}
     </nav>
-  )
+  );
 }

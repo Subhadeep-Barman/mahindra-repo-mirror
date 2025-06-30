@@ -1,28 +1,53 @@
-"use client"
+"use client";
 
-import { ArrowBack, PersonAdd, Edit, Delete, ChevronLeft, ChevronRight } from "@mui/icons-material"
-import { Button } from "@/components/UI/button"
-import { Badge } from "@/components/UI/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/UI/table"
-import { Card } from "@/components/UI/card"
-import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/UI/dialog"
-import { Input } from "@/components/UI/input"
-import { Label } from "@/components/UI/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/UI/select"
-import { PersonAdd as PersonAddIcon } from "@mui/icons-material"
-import Navbar2 from "@/components/UI/navbar2"
-import axios from "axios"
+import {
+  ArrowBack,
+  PersonAdd,
+  Edit,
+  Delete,
+  ChevronLeft,
+  ChevronRight,
+} from "@mui/icons-material";
+import { Button } from "@/components/UI/button";
+import { Badge } from "@/components/UI/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/UI/table";
+import { Card } from "@/components/UI/card";
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/UI/dialog";
+import { Input } from "@/components/UI/input";
+import { Label } from "@/components/UI/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/UI/select";
+import { PersonAdd as PersonAddIcon } from "@mui/icons-material";
+import Navbar1 from "@/components/UI/navbar";
+import axios from "axios";
 
-const apiURL = import.meta.env.VITE_BACKEND_URL
+const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function SystemUsersPage() {
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 8
-  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false)
-  const [users, setUsers] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [editingUser, setEditingUser] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   const [newUser, setNewUser] = useState({
     id: "",
     email: "",
@@ -30,93 +55,112 @@ export default function SystemUsersPage() {
     role: "",
     team: "",
     location: "",
-  })
+  });
 
   // Fetch users from backend API on component mount
   useEffect(() => {
-    fetchAllUsers()
-  }, [])
+    fetchAllUsers();
+  }, []);
 
   // API Functions
   const fetchAllUsers = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await axios.get(`${apiURL}/api/users/read_all_users`)
-      setUsers(response.data)
+      const response = await axios.get(`${apiURL}/api/users/read_all_users`);
+      setUsers(response.data);
     } catch (error) {
       if (error.response?.status === 404) {
-        setUsers([]) // No users found
+        setUsers([]); // No users found
       } else {
-        console.error('Error fetching users:', error)
-        alert('Failed to fetch users')
+        console.error("Error fetching users:", error);
+        alert("Failed to fetch users");
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const createUser = async (userData) => {
     try {
-      const response = await axios.post(`${apiURL}/api/users/create_user`, userData, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-      
-      await fetchAllUsers() // Refresh the list
-      return true
+      const response = await axios.post(
+        `${apiURL}/api/users/create_user`,
+        userData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      await fetchAllUsers(); // Refresh the list
+      return true;
     } catch (error) {
-      console.error('Error creating user:', error)
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to create user'
-      alert(errorMessage)
-      return false
+      console.error("Error creating user:", error);
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Failed to create user";
+      alert(errorMessage);
+      return false;
     }
-  }
+  };
 
   const updateUser = async (userId, userData) => {
     try {
-      const response = await axios.put(`${apiURL}/api/users/update_user?user_id=${userId}`, userData, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-      
-      await fetchAllUsers() // Refresh the list
-      return true
+      const response = await axios.put(
+        `${apiURL}/api/users/update_user?user_id=${userId}`,
+        userData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      await fetchAllUsers(); // Refresh the list
+      return true;
     } catch (error) {
-      console.error('Error updating user:', error)
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to update user'
-      alert(errorMessage)
-      return false
+      console.error("Error updating user:", error);
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Failed to update user";
+      alert(errorMessage);
+      return false;
     }
-  }
+  };
 
   const deleteUserApi = async (userId) => {
     try {
-      const response = await axios.delete(`${apiURL}/api/users/delete_user?user_id=${userId}`)
-      
-      await fetchAllUsers() // Refresh the list
-      return true
+      const response = await axios.delete(
+        `${apiURL}/api/users/delete_user?user_id=${userId}`
+      );
+
+      await fetchAllUsers(); // Refresh the list
+      return true;
     } catch (error) {
-      console.error('Error deleting user:', error)
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to delete user'
-      alert(errorMessage)
-      return false
+      console.error("Error deleting user:", error);
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Failed to delete user";
+      alert(errorMessage);
+      return false;
     }
-  }
+  };
 
   // Calculate pagination
-  const totalPages = Math.ceil(users.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentUsers = users.slice(startIndex, endIndex)
+  const totalPages = Math.ceil(users.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentUsers = users.slice(startIndex, endIndex);
 
   const handleBack = () => {
-    console.log("Navigate back")
-  }
+    console.log("Navigate back");
+  };
 
   const handleAddUser = () => {
-    setEditingUser(null)
+    setEditingUser(null);
     setNewUser({
       id: "",
       email: "",
@@ -124,12 +168,12 @@ export default function SystemUsersPage() {
       role: "",
       team: "",
       location: "",
-    })
-    setIsAddUserModalOpen(true)
-  }
+    });
+    setIsAddUserModalOpen(true);
+  };
 
   const handleEdit = (user) => {
-    setEditingUser(user)
+    setEditingUser(user);
     setNewUser({
       id: user.id,
       email: user.email,
@@ -137,31 +181,31 @@ export default function SystemUsersPage() {
       role: user.role,
       team: user.team,
       location: user.location,
-    })
-    setIsAddUserModalOpen(true)
-  }
+    });
+    setIsAddUserModalOpen(true);
+  };
 
   const handleDelete = async (userId) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      await deleteUserApi(userId)
+    if (window.confirm("Are you sure you want to delete this user?")) {
+      await deleteUserApi(userId);
     }
-  }
+  };
 
   const handlePreviousPage = () => {
-    setCurrentPage((prev) => Math.max(prev - 1, 1))
-  }
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
 
   const handleNextPage = () => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-  }
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
 
   const handlePageClick = (page) => {
-    setCurrentPage(page)
-  }
+    setCurrentPage(page);
+  };
 
   const handleCloseModal = () => {
-    setIsAddUserModalOpen(false)
-    setEditingUser(null)
+    setIsAddUserModalOpen(false);
+    setEditingUser(null);
     setNewUser({
       id: "",
       email: "",
@@ -169,75 +213,82 @@ export default function SystemUsersPage() {
       role: "",
       team: "",
       location: "",
-    })
-  }
+    });
+  };
 
   const handleCreateUser = async () => {
-    if (!newUser.id || !newUser.email || !newUser.username || !newUser.role || !newUser.team || !newUser.location) {
-      alert('Please fill in all fields')
-      return
+    if (
+      !newUser.id ||
+      !newUser.email ||
+      !newUser.username ||
+      !newUser.role ||
+      !newUser.team ||
+      !newUser.location
+    ) {
+      alert("Please fill in all fields");
+      return;
     }
 
-    let success = false
+    let success = false;
     if (editingUser) {
       // Update existing user
-      success = await updateUser(editingUser.id, newUser)
+      success = await updateUser(editingUser.id, newUser);
     } else {
       // Create new user
-      success = await createUser(newUser)
+      success = await createUser(newUser);
     }
 
     if (success) {
-      handleCloseModal()
+      handleCloseModal();
     }
-  }
+  };
 
   const handleInputChange = (field, value) => {
     setNewUser((prev) => ({
       ...prev,
       [field]: value,
-    }))
-  }
+    }));
+  };
 
   // Generate page numbers to display
   const getPageNumbers = () => {
-    const pages = []
-    const maxVisiblePages = 5
+    const pages = [];
+    const maxVisiblePages = 5;
 
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
-        pages.push(i)
+        pages.push(i);
       }
     } else {
       if (currentPage <= 3) {
         for (let i = 1; i <= 4; i++) {
-          pages.push(i)
+          pages.push(i);
         }
-        pages.push("...")
-        pages.push(totalPages)
+        pages.push("...");
+        pages.push(totalPages);
       } else if (currentPage >= totalPages - 2) {
-        pages.push(1)
-        pages.push("...")
+        pages.push(1);
+        pages.push("...");
         for (let i = totalPages - 3; i <= totalPages; i++) {
-          pages.push(i)
+          pages.push(i);
         }
       } else {
-        pages.push(1)
-        pages.push("...")
+        pages.push(1);
+        pages.push("...");
         for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i)
+          pages.push(i);
         }
-        pages.push("...")
-        pages.push(totalPages)
+        pages.push("...");
+        pages.push(totalPages);
       }
     }
 
-    return pages
-  }
+    return pages;
+  };
 
   return (
     <>
-     <Navbar2/>
+      <Navbar1 />
       {/* Header */}
       <div className="bg-white dark:bg-black">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -248,12 +299,17 @@ export default function SystemUsersPage() {
                 size="sm"
                 onClick={handleBack}
                 className="text-red-500 hover:text-red-600 hover:bg-red-50 border-2 border-red-500 rounded-full p-2"
-                >
+              >
                 <ArrowBack className="h-5 w-5" />
               </Button>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-red-500">System Users</h1>
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-red-500">
+                System Users
+              </h1>
             </div>
-            <Button onClick={handleAddUser} className="bg-red-500 hover:bg-red-600 text-white rounded-xl">
+            <Button
+              onClick={handleAddUser}
+              className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
+            >
               <PersonAdd className="h-4 w-4 mr-2" />
               ADD NEW USER
             </Button>
@@ -272,35 +328,67 @@ export default function SystemUsersPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold text-gray-700">User ID</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Email</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Username</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Role</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Team</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Location</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Action</TableHead>
+                  <TableHead className="font-semibold text-gray-700">
+                    User ID
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700">
+                    Email
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700">
+                    Username
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700">
+                    Role
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700">
+                    Team
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700">
+                    Location
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700">
+                    Action
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {currentUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    <TableCell
+                      colSpan={7}
+                      className="text-center py-8 text-gray-500"
+                    >
                       No users found
                     </TableCell>
                   </TableRow>
                 ) : (
                   currentUsers.map((user, index) => (
-                    <TableRow key={user.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
-                      <TableCell className="font-medium text-gray-900">{user.id}</TableCell>
-                      <TableCell className="text-gray-600">{user.email}</TableCell>
-                      <TableCell className="text-gray-900">{user.username}</TableCell>
+                    <TableRow
+                      key={user.id}
+                      className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
+                    >
+                      <TableCell className="font-medium text-gray-900">
+                        {user.id}
+                      </TableCell>
+                      <TableCell className="text-gray-600">
+                        {user.email}
+                      </TableCell>
+                      <TableCell className="text-gray-900">
+                        {user.username}
+                      </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50">
+                        <Badge
+                          variant="outline"
+                          className="text-purple-600 border-purple-200 bg-purple-50"
+                        >
                           {user.role}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="default" className="bg-red-500 hover:bg-red-600 text-white">
+                        <Badge
+                          variant="default"
+                          className="bg-red-500 hover:bg-red-600 text-white"
+                        >
                           {user.team}
                         </Badge>
                       </TableCell>
@@ -349,25 +437,25 @@ export default function SystemUsersPage() {
               onClick={handlePreviousPage}
               disabled={currentPage === 1}
               className="text-gray-600 border-gray-300 hover:bg-gray-50"
-              >
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
             {getPageNumbers().map((page, index) => (
-                <div key={index}>
+              <div key={index}>
                 {page === "..." ? (
-                    <span className="px-3 py-1 text-gray-500">...</span>
+                  <span className="px-3 py-1 text-gray-500">...</span>
                 ) : (
-                    <Button
+                  <Button
                     variant={currentPage === page ? "default" : "outline"}
                     size="sm"
                     onClick={() => handlePageClick(page)}
                     className={
-                        currentPage === page
+                      currentPage === page
                         ? "bg-red-500 hover:bg-red-600 text-white border-red-500"
                         : "text-gray-600 border-gray-300 hover:bg-gray-50"
                     }
-                    >
+                  >
                     {page}
                   </Button>
                 )}
@@ -380,7 +468,7 @@ export default function SystemUsersPage() {
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
               className="text-gray-600 border-gray-300 hover:bg-gray-50"
-              >
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -401,7 +489,10 @@ export default function SystemUsersPage() {
           <div className="space-y-4 py-4">
             {/* User ID */}
             <div className="space-y-2">
-              <Label htmlFor="userId" className="text-sm font-medium text-gray-700 dark:text-red-500">
+              <Label
+                htmlFor="userId"
+                className="text-sm font-medium text-gray-700 dark:text-red-500"
+              >
                 User ID
               </Label>
               <Input
@@ -416,7 +507,10 @@ export default function SystemUsersPage() {
 
             {/* Email Address */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-red-500">
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-gray-700 dark:text-red-500"
+              >
                 Email Address
               </Label>
               <Input
@@ -431,7 +525,10 @@ export default function SystemUsersPage() {
 
             {/* Username */}
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-sm font-medium text-gray-700 dark:text-red-500">
+              <Label
+                htmlFor="username"
+                className="text-sm font-medium text-gray-700 dark:text-red-500"
+              >
                 Username
               </Label>
               <Input
@@ -445,10 +542,16 @@ export default function SystemUsersPage() {
 
             {/* Role */}
             <div className="space-y-2">
-              <Label htmlFor="role" className="text-sm font-medium text-gray-700 dark:text-red-500">
+              <Label
+                htmlFor="role"
+                className="text-sm font-medium text-gray-700 dark:text-red-500"
+              >
                 Role
               </Label>
-              <Select value={newUser.role} onValueChange={(value) => handleInputChange("role", value)}>
+              <Select
+                value={newUser.role}
+                onValueChange={(value) => handleInputChange("role", value)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select Role" />
                 </SelectTrigger>
@@ -462,10 +565,16 @@ export default function SystemUsersPage() {
 
             {/* Team */}
             <div className="space-y-2">
-              <Label htmlFor="team" className="text-sm font-medium text-gray-700 dark:text-red-500">
+              <Label
+                htmlFor="team"
+                className="text-sm font-medium text-gray-700 dark:text-red-500"
+              >
                 Team
               </Label>
-              <Select value={newUser.team} onValueChange={(value) => handleInputChange("team", value)}>
+              <Select
+                value={newUser.team}
+                onValueChange={(value) => handleInputChange("team", value)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select Team" />
                 </SelectTrigger>
@@ -478,10 +587,16 @@ export default function SystemUsersPage() {
 
             {/* Location */}
             <div className="space-y-2">
-              <Label htmlFor="location" className="text-sm font-medium text-gray-700 dark:text-red-500">
+              <Label
+                htmlFor="location"
+                className="text-sm font-medium text-gray-700 dark:text-red-500"
+              >
                 Location
               </Label>
-              <Select value={newUser.location} onValueChange={(value) => handleInputChange("location", value)}>
+              <Select
+                value={newUser.location}
+                onValueChange={(value) => handleInputChange("location", value)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select Location" />
                 </SelectTrigger>
@@ -502,12 +617,15 @@ export default function SystemUsersPage() {
             >
               CANCEL
             </Button>
-            <Button onClick={handleCreateUser} className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white">
+            <Button
+              onClick={handleCreateUser}
+              className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white"
+            >
               {editingUser ? "UPDATE USER" : "CREATE USER"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }
