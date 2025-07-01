@@ -188,40 +188,40 @@ export default function VTCChennaiPage() {
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 bg-white dark:bg-black">
           <Card>
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="min-w-full border-collapse border border-gray-200">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="font-semibold text-gray-700 text-xs">
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Job Order Number
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Project
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Vehicle Number
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Body No
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Engine Number
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Domain
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Job Order Status
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Created By
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Created on
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Last updated By
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Last updated on
                     </TableHead>
                   </TableRow>
@@ -230,42 +230,44 @@ export default function VTCChennaiPage() {
                   {currentRows.map((order, index) => (
                     <TableRow
                       key={order.job_order_id || index}
-                      className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
+                      className={`${
+                        index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                      } hover:bg-gray-100`}
                     >
                       <TableCell
-                        className="text-xs text-blue-600 underline cursor-pointer"
+                        className="text-xs text-blue-600 underline cursor-pointer px-4 py-2"
                         onClick={() => handleJobOrderClick(order.job_order_id)}
                       >
                         {order.job_order_id}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-900">
+                      <TableCell className="text-xs text-gray-900 px-4 py-2">
                         {order.project_id}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-600">
+                      <TableCell className="text-xs text-gray-600 px-4 py-2">
                         {order.vehicle_id}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-600">
+                      <TableCell className="text-xs text-gray-600 px-4 py-2">
                         {order.vehicle_body_number}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-600">
+                      <TableCell className="text-xs text-gray-600 px-4 py-2">
                         {order.engine_id}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-900">
+                      <TableCell className="text-xs text-gray-900 px-4 py-2">
                         {order.domain}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-900">
+                      <TableCell className="text-xs text-gray-900 px-4 py-2">
                         {order.job_order_status}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-600">
+                      <TableCell className="text-xs text-gray-600 px-4 py-2">
                         {order.name_of_creator}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-600">
+                      <TableCell className="text-xs text-gray-600 px-4 py-2">
                         {order.created_on?.slice(0, 10)}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-600">
+                      <TableCell className="text-xs text-gray-600 px-4 py-2">
                         {order.name_of_updater}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-600">
+                      <TableCell className="text-xs text-gray-600 px-4 py-2">
                         {order.updated_on?.slice(0, 10)}
                       </TableCell>
                     </TableRow>
@@ -307,11 +309,11 @@ export default function VTCChennaiPage() {
                     variant={currentPage === page ? "default" : "outline"}
                     size="sm"
                     onClick={() => handlePageChange(page)}
-                    className={
+                    className={`${
                       currentPage === page
                         ? "bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black"
                         : "text-gray-600 dark:text-white dark:border-gray-600"
-                    }
+                    } px-3 py-1`}
                   >
                     {page}
                   </Button>

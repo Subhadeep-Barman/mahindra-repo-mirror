@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/UI/button";
+import DropzoneFileList from "@/components/UI/DropzoneFileList";
 import { Input } from "@/components/UI/input";
 import { Label } from "@/components/UI/label";
+import Navbar1 from "@/components/UI/navbar";
 import {
   Select,
   SelectContent,
@@ -11,12 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/UI/select";
-import Navbar1 from "@/components/UI/navbar";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Switch } from "@/components/UI/switch";
 import useStore from "@/store/useStore";
 import axios from "axios";
-import DropzoneFileList from "@/components/UI/DropzoneFileList";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 const apiURL = import.meta.env.VITE_BACKEND_URL
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
@@ -402,7 +401,7 @@ export default function CreateJobOrder() {
               cNkmph2: coastDownData.c_value?.toString() || "",
               f0N: coastDownData.f0_value?.toString() || "",
               f1Nkmph: coastDownData.f1_value?.toString() || "",
-              f2Nkmph: coastDownData.f2_value?.toString() || "",
+              f2Nkmph2: coastDownData.f2_value?.toString() || "",
             };
           } catch (error) {
             console.error("Error fetching coast down data:", error);
@@ -955,6 +954,7 @@ export default function CreateJobOrder() {
         emissionCheckAttachment: testOrder.emission_check_attachment || "",
         specificInstruction: testOrder.specific_instruction || "",
         testOrderId: testOrder.test_order_id,
+        status: testOrder.status || "Created", // Use current status if present
         // Coast down fields if present
         cdReportRef: testOrder.cdReportRef || "",
         vehicleRefMass: testOrder.vehicleRefMass || "",
@@ -1005,7 +1005,7 @@ export default function CreateJobOrder() {
       emission_check_date: test.emissionCheckDate || null,
       emission_check_attachment: test.emissionCheckAttachment || "",
       specific_instruction: test.specificInstruction || "",
-      status: "Created",
+      status: test.status || "Created", // <-- Use current status if present
       id_of_creator: "",
       name_of_creator: "",
       created_on: new Date().toISOString(),
@@ -1030,6 +1030,78 @@ export default function CreateJobOrder() {
   const [uploadDocModals, setUploadDocModals] = useState({});
   const [emissionCheckModals, setEmissionCheckModals] = useState({});
 
+  // Modal state for remark and modal type
+  const [remarkModalOpen, setRemarkModalOpen] = useState(false);
+  const [remarkType, setRemarkType] = useState(""); // "Reject" or "Edit"
+  const [remarkInput, setRemarkInput] = useState("");
+
+  // Handler to send status update to backend
+  const handleStatusUpdate = async (status, remark = "", testOrderId = null, testIdx = null) => {
+    try {
+      // Only send test_order_id, status, and remark
+      const payload = {
+        test_order_id: testOrderId,
+        status,
+        remark,
+      };
+      await axios.post(`${apiURL}/testorders/status`, payload);
+
+      // Update test status in UI if testIdx is provided
+      if (typeof testIdx === "number") {
+        setTests((prev) =>
+          prev.map((t, i) =>
+            i === testIdx
+              ? { ...t, status: status === "Started" ? "Started" : status }
+              : t
+          )
+        );
+      }
+
+      setRemarkInput("");
+      setRemarkModalOpen(false);
+    } catch (err) {
+      alert("Failed to update status: " + (err.response?.data?.detail || err.message));
+    }
+  };
+
+  // Modal component
+  const RemarkModal = ({ open, onClose, onSubmit, type, value, setValue }) => {
+    if (!open) return null;
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="bg-white rounded shadow-lg p-6 w-96">
+          <div className="font-semibold mb-2">
+            {type === "Reject" ? "Reason for Reject" : "Reason for Edit"}
+          </div>
+          <textarea
+            className="w-full border rounded p-2 mb-4"
+            rows={3}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder={`Enter remark for ${type.toLowerCase()}...`}
+          />
+          <div className="flex justify-end gap-2">
+            <Button
+              className="bg-gray-300 text-black px-4 py-1 rounded"
+              type="button"
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-blue-600 text-white px-4 py-1 rounded"
+              type="button"
+              onClick={onSubmit}
+              disabled={!value.trim()}
+            >
+              Submit
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <Navbar1 />
@@ -1044,14 +1116,14 @@ export default function CreateJobOrder() {
               Chennai Job Order
             </Button>
             <div className="flex flex-col">
-              <span className="font-semibold text-lg">New Job Order</span>
+              {/* <span className="font-semibold text-lg">New Job Order</span>
               {location.state?.isEdit && (
-                <span className="text-sm text-blue-600 font-medium">
-                  {isLoading
-                    ? "Loading job order data..."
-                    : `Pre-filled from Job Order: ${location.state.originalJobOrderId}`}
-                </span>
-              )}
+                // <span className="text-sm text-blue-600 font-medium">
+                //   {isLoading
+                //     ? "Loading job order data..."
+                //     : `Pre-filled from Job Order: ${location.state.originalJobOrderId}`}
+                // </span>
+              )} */}
             </div>
           </div>
           <div className="flex gap-2">
@@ -1067,7 +1139,7 @@ export default function CreateJobOrder() {
           </div>
         </div>
         {/* Form Row */}
-        <form className="flex flex-row gap-6 px-8 py-6 items-end">
+        <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-8 py-6">
           {/* Project Code */}
           <div className="flex flex-col">
             <Label htmlFor="projectCode">
@@ -1079,7 +1151,7 @@ export default function CreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1102,7 +1174,7 @@ export default function CreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1126,7 +1198,7 @@ export default function CreateJobOrder() {
               id="vehicleNumber"
               value={form.vehicleNumber}
               readOnly
-              className="w-44"
+              className="w-full"
               placeholder="Auto-fetched"
               required
               disabled={formDisabled}
@@ -1143,7 +1215,7 @@ export default function CreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1166,7 +1238,7 @@ export default function CreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1189,7 +1261,7 @@ export default function CreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1212,7 +1284,7 @@ export default function CreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1234,7 +1306,7 @@ export default function CreateJobOrder() {
               onClick={() => setVehicleAccordionOpen((prev) => !prev)}
             >
               <span className="font-semibold text-sm">
-                Vehicle Details (Editable)
+                Vehicle Details
               </span>
               <span>{vehicleAccordionOpen ? "▲" : "▼"}</span>
             </div>
@@ -1271,7 +1343,7 @@ export default function CreateJobOrder() {
               onClick={() => setEngineAccordionOpen((prev) => !prev)}
             >
               <span className="font-semibold text-sm">
-                Engine Details (Editable)
+                Engine Details
               </span>
               <span>{engineAccordionOpen ? "▲" : "▼"}</span>
             </div>
@@ -1309,7 +1381,7 @@ export default function CreateJobOrder() {
               </Label>
               {location.state?.isEdit && existingCoastDownId && (
                 <span className="text-sm text-blue-600 ml-2">
-                  (Editing existing data - ID: {existingCoastDownId})
+                  {/* (Editing existing data - ID: {existingCoastDownId}) */}
                 </span>
               )}
             </div>
@@ -1504,28 +1576,84 @@ export default function CreateJobOrder() {
             className="mx-8 mb-4 border rounded shadow px-6 py-4 bg-gray-50"
           >
             <div className="flex items-center justify-between mb-2">
-              <div className="font-semibold text-sm text-yellow-700">
-                Test {idx + 1}
+              {/* Top left: Started with timer icon if status is Started */}
+              <div className="flex items-center gap-2">
+                {test?.status === "Started" ? (
+                  <button
+                    type="button"
+                    className="flex items-center bg-yellow-100 border border-yellow-400 text-yellow-800 font-semibold text-sm px-3 py-1 rounded shadow"
+                    style={{ backgroundColor: "#FFF8E1", borderColor: "#FFA500", color: "#FFA500" }}
+                    disabled
+                  >
+                    {/* Timer Icon SVG */}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      style={{ color: "#FFA500" }}
+                    >
+                      <circle cx="12" cy="12" r="9" stroke="#FFA500" strokeWidth="2" fill="none" />
+                      <path d="M12 7v5l3 3" stroke="#FFA500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Started
+                  </button>
+                ) : (
+                  <span className="font-semibold text-sm text-yellow-700">
+                    Test {idx + 1}
+                  </span>
+                )}
               </div>
+              {/* Top right: Action buttons */}
               <div className="flex gap-2">
-                <Button
-                  className="bg-green-600 text-white text-xs px-3 py-1 rounded"
-                  type="button"
-                  onClick={() => {
-                    /* handle start logic here */
-                  }}
-                >
-                  Start
-                </Button>
-                <Button
-                  className="bg-red-600 text-white text-xs px-3 py-1 rounded"
-                  type="button"
-                  onClick={() => {
-                    /* handle reject logic here */
-                  }}
-                >
-                  Reject
-                </Button>
+                {/* If not Started, show Start and Reject */}
+                {!test?.status || test?.status !== "Started" ? (
+                  <>
+                  {console.log("Test status:", test?.status)}
+                    <Button
+                      className="bg-green-600 text-white text-xs px-3 py-1 rounded"
+                      type="button"
+                      onClick={async () => {
+                        await handleStatusUpdate("Started", "", test.testOrderId, idx);
+                      }}
+                    >
+                      Start
+                    </Button>
+                    <Button
+                      className="bg-red-600 text-white text-xs px-3 py-1 rounded"
+                      type="button"
+                      onClick={() => {
+                        setRemarkType("Reject");
+                        setRemarkModalOpen({ idx, type: "Reject" });
+                      }}
+                    >
+                      Reject
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    {/* If Started, show re-edit and complete */}
+                    <Button
+                      className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
+                      type="button"
+                      onClick={() => {
+                        setRemarkType("Edit");
+                        setRemarkModalOpen({ idx, type: "Edit" });
+                      }}
+                    >
+                      re-edit
+                    </Button>
+                    <Button
+                      className="bg-yellow-600 text-white text-xs px-3 py-1 rounded"
+                      type="button"
+                      onClick={() => handleUpdateTestOrder(idx)}
+                    >
+                      Complete
+                    </Button>
+                  </>
+                )}
                 <Button
                   variant="ghost"
                   className="text-xs text-red-600 px-2 py-0"
@@ -2006,6 +2134,7 @@ export default function CreateJobOrder() {
                         // Copy coast down data from main form to this test
                         handleTestChange(idx, "cdReportRef", form.cdReportRef);
                         handleTestChange(
+
                           idx,
                           "vehicleRefMass",
                           form.vehicleRefMass
@@ -2110,6 +2239,29 @@ export default function CreateJobOrder() {
         {/* Red line below */}
         <div className="border-b-4 border-red-600 mx-8" />
       </div>
+
+      {/* Remark Modal */}
+      <RemarkModal
+        open={!!remarkModalOpen}
+        onClose={() => {
+          setRemarkModalOpen(false);
+          setRemarkInput("");
+        }}
+        onSubmit={async () => {
+          if (remarkModalOpen) {
+            const { idx, type } = remarkModalOpen;
+            const testOrderId = tests[idx]?.testOrderId;
+            if (type === "Reject") {
+              await handleStatusUpdate("Rejected", remarkInput, testOrderId, idx);
+            } else if (type === "Edit") {
+              await handleStatusUpdate("Edit", remarkInput, testOrderId, idx);
+            }
+          }
+        }}
+        type={remarkType}
+        value={remarkInput}
+        setValue={setRemarkInput}
+      />
     </>
   );
 }

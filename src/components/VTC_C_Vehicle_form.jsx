@@ -273,7 +273,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       </div>
       {/* Main Form */}
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Project */}
           <div>
             <label className="block text-xs font-semibold mb-1">
@@ -411,7 +411,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               placeholder="Enter"
             />
           </div>
-          {/* Engine Number (auto-fetch) */}
+          {/* Engine Number */}
           <div>
             <label className="block text-xs font-semibold mb-1">
               Engine Number <span className="text-red-500">*</span>

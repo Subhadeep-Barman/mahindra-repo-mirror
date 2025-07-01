@@ -380,25 +380,25 @@ export default function VTCEnginePage() {
               {error && (
                 <div className="text-red-500 text-sm mb-2">{error}</div>
               )}
-              <Table>
+              <Table className="min-w-full border-collapse border border-gray-200">
                 <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Engine Serial Number
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-sm">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Engine Build Level
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-sm">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Engine Capacity (cc)
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-sm">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Engine Type
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-sm">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Last Updated on
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-sm">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Edit
                     </TableHead>
                   </TableRow>
@@ -408,7 +408,7 @@ export default function VTCEnginePage() {
                     <TableRow>
                       <TableCell
                         colSpan={6}
-                        className="text-center text-gray-500"
+                        className="text-center text-gray-500 px-4 py-2"
                       >
                         Loading...
                       </TableCell>
@@ -417,7 +417,7 @@ export default function VTCEnginePage() {
                     <TableRow>
                       <TableCell
                         colSpan={6}
-                        className="text-center text-gray-500"
+                        className="text-center text-gray-500 px-4 py-2"
                       >
                         No engines found.
                       </TableCell>
@@ -426,26 +426,26 @@ export default function VTCEnginePage() {
                     engines.map((engine, index) => (
                       <TableRow
                         key={index}
-                        className={
-                          index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
-                        }
+                        className={`${
+                          index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                        } hover:bg-gray-100`}
                       >
-                        <TableCell className="text-sm text-gray-900 font-medium">
+                        <TableCell className="text-xs text-gray-900 font-medium px-4 py-2">
                           {engine.engineSerialNumber}
                         </TableCell>
-                        <TableCell className="text-sm text-gray-900">
+                        <TableCell className="text-xs text-gray-900 px-4 py-2">
                           {engine.engineBuildLevel}
                         </TableCell>
-                        <TableCell className="text-sm text-gray-900">
+                        <TableCell className="text-xs text-gray-900 px-4 py-2">
                           {engine.engineCapacity}
                         </TableCell>
-                        <TableCell className="text-sm text-gray-900">
+                        <TableCell className="text-xs text-gray-900 px-4 py-2">
                           {engine.engineType}
                         </TableCell>
-                        <TableCell className="text-sm text-gray-600">
+                        <TableCell className="text-xs text-gray-600 px-4 py-2">
                           {engine.lastUpdatedOn}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-4 py-2">
                           <IconButton
                             aria-label="edit"
                             size="small"
