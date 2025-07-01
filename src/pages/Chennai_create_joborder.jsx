@@ -64,7 +64,6 @@ export default function CreateJobOrder() {
   const [engineFormData, setEngineFormData] = useState(null);
   const [showVehicleDetails, setShowVehicleDetails] = useState(true);
   const [showEngineDetails, setShowEngineDetails] = useState(true);
-  const [showCoastDown, setShowCoastDown] = useState(true);
 
   // State to control pre-filling mode to prevent useEffect conflicts
   const [isPreFilling, setIsPreFilling] = useState(false);
@@ -940,21 +939,21 @@ export default function CreateJobOrder() {
         inertiaClass: testOrder.inertia_class || "",
         dpf: testOrder.dpf || "",
         datasetRefreshed:
-          testOrder.dataset_flashed === true
+          test.dataset_flashed === true
             ? "Yes"
-            : testOrder.dataset_flashed === false
+            : test.dataset_flashed === false
             ? "No"
             : "",
-        ess: testOrder.ess || "",
-        mode: testOrder.mode || "",
-        hardwareChange: testOrder.hardware_change || "",
-        equipmentRequired: testOrder.equipment_required || "",
-        shift: testOrder.shift || "",
-        preferredDate: testOrder.preferred_date || "",
-        emissionCheckDate: testOrder.emission_check_date || "",
-        emissionCheckAttachment: testOrder.emission_check_attachment || "",
-        specificInstruction: testOrder.specific_instruction || "",
-        testOrderId: testOrder.test_order_id,
+        ess: test.ess || "",
+        mode: test.mode || "",
+        hardwareChange: test.hardware_change || "",
+        equipmentRequired: test.equipment_required || "",
+        shift: test.shift || "",
+        preferredDate: test.preferred_date || "",
+        emissionCheckDate: test.emission_check_date || "",
+        emissionCheckAttachment: test.emission_check_attachment || "",
+        specificInstruction: test.specific_instruction || "",
+        testOrderId: test.test_order_id,
         // Coast down fields if present
         cdReportRef: testOrder.cdReportRef || "",
         vehicleRefMass: testOrder.vehicleRefMass || "",
@@ -1873,23 +1872,19 @@ export default function CreateJobOrder() {
 
             {/* Coast Down Data Section for Test */}
             <div className="mt-4 border rounded shadow px-4 py-3 bg-blue-50">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3 mb-3">
                 <span className="font-semibold text-sm text-blue-700">
                   Coast Down Data for Test {idx + 1}
                 </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="text-xs text-blue-600 px-2 py-1"
-                  onClick={() => {
+                <Switch
+                  checked={!!test.showCoastDownData}
+                  onCheckedChange={(checked) => {
                     const updatedTests = [...tests];
-                    updatedTests[idx].showCoastDownData =
-                      !updatedTests[idx].showCoastDownData;
+                    updatedTests[idx].showCoastDownData = checked;
                     setTests(updatedTests);
                   }}
-                >
-                  {test.showCoastDownData ? "Hide" : "Show"} Coast Down Data
-                </Button>
+                  className="data-[state=checked]:bg-red-500"
+                />
               </div>
 
               {test.showCoastDownData && (
