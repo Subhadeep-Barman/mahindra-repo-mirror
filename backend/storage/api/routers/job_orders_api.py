@@ -6,7 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.storage.api.api_utils import get_db
-from backend.storage.models.models import JobOrder
+from backend.storage.models.models import JobOrder, TestOrder  # Add TestOrder import
 
 router = APIRouter()
 
@@ -53,6 +53,11 @@ class JobOrderSchema(BaseModel):
     id_of_updater: str = None
     name_of_updater: str = None
     updated_on: datetime = None
+
+class TestOrderStatusUpdateSchema(BaseModel):
+    test_order_id: str
+    status: str
+    remark: str = None
 
 def joborder_to_dict(joborder: JobOrder):
     return {
@@ -127,3 +132,28 @@ def delete_joborder(job_order_id: str, db: Session = Depends(get_db)):
     db.delete(joborder)
     db.commit()
     return {"detail": "JobOrder deleted successfully"}
+
+@router.post("/testorders/status")
+def update_testorder_status(
+    payload: TestOrderStatusUpdateSchema = Body(...),
+    db: Session = Depends(get_db)
+):
+    test_order = db.query(TestOrder).filter(TestOrder.test_order_id == payload.test_order_id).first()
+    if not test_order:
+        raise HTTPException(status_code=404, detail="TestOrder not found")
+    # If status is "started", set to "under progress"
+    if payload.status.lower() == "started":
+        test_order.status = "under progress"
+    else:
+        test_order.status = payload.status
+    if payload.remark is not None:
+        test_order.remark = payload.remark
+    test_order.updated_on = datetime.utcnow()
+    db.commit()
+    db.refresh(test_order)
+    return {
+        "test_order_id": test_order.test_order_id,
+        "status": test_order.status,
+        "remark": test_order.remark,
+        "updated_on": test_order.updated_on
+    }
