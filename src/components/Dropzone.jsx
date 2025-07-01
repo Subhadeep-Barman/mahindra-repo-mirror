@@ -16,7 +16,7 @@ import {
   FormControl,
 } from "@mui/material";
 import axios from "axios";
-import Spinner from "./UI/Spinner"; // Ensure the path is correct
+import Spinner from "./UI/spinner"; // Ensure the path is correct
 import showSnackbar from "../utils/showSnackbar";
 import useStore from "../store/useStore";
 import {
