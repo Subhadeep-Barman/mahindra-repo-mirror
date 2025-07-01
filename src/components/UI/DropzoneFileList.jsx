@@ -14,7 +14,7 @@ import Dropzone from "../Dropzone";
 import DownloadIcon from "@mui/icons-material/Download";
 import axios from "axios";
 import Cookies from "js-cookie";
-import Spinner from "./Spinner";
+import Spinner from './spinner'; // Ensure the path is correct
 import showSnackbar from "../../utils/showSnackbar";
 import { CloudUpload, Download } from "@mui/icons-material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
