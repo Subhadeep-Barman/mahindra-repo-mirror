@@ -11,7 +11,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Switch } from "@/components/UI/switch";
 import darkLogo from "../../assets/mai_dark.png";
-import lightLogo from "../../assets/mai_light.png";
+import lightLogo from "../../assets/mai_dark.png";
 
 export default function Navbar2() {
   const [isDarkMode, setIsDarkMode] = useState(false);

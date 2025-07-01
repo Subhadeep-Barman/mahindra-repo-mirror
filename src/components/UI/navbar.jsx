@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { Switch } from "@/components/UI/switch";
 import AccountMenu from "@/components/UI/accountmenu";
 import darkLogo from "../../assets/mai_dark.png";
-import lightLogo from "../../assets/mai_light.png";
+import lightLogo from "../../assets/mai_dark.png";
 
 export default function Navbar() {
   const [isDarkMode, setIsDarkMode] = useState(false);

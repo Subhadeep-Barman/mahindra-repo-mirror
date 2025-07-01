@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Switch } from "@/components/UI/switch";
 import { Sun, Moon } from "lucide-react";
 import darkLogo from "../assets/mai_dark.png";
-import lightLogo from "../assets/mai_light.png";
+import lightLogo from "../assets/mai_dark.png";
 import { useNavigate } from "react-router-dom";
 
 function Login() {

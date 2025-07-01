@@ -215,31 +215,31 @@ export default function VTCVehiclePage() {
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Card>
           <div className="overflow-x-auto">
-            <Table>
+            <Table className="min-w-full border-collapse border border-gray-200">
               <TableHeader>
-                <TableRow>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                <TableRow className="bg-gray-100">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Vehicle Serial Number
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Vehicle Body Number
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Vehicle Model
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Created By
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Created on
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Last Updated By
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Last Updated on
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Edit
                   </TableHead>
                 </TableRow>
@@ -248,30 +248,32 @@ export default function VTCVehiclePage() {
                 {currentItems.map((vehicle, index) => (
                   <TableRow
                     key={vehicle.vehicle_id || index}
-                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
+                    className={`${
+                      index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                    } hover:bg-gray-100`}
                   >
-                    <TableCell className="text-sm text-gray-900 font-medium">
+                    <TableCell className="text-xs text-gray-900 font-medium px-4 py-2">
                       {vehicle.vehicle_serial_number}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-900">
+                    <TableCell className="text-xs text-gray-900 px-4 py-2">
                       {vehicle.vehicle_body_number}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-900">
+                    <TableCell className="text-xs text-gray-900 px-4 py-2">
                       {vehicle.vehicle_model}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600">
+                    <TableCell className="text-xs text-gray-600 px-4 py-2">
                       {vehicle.id_of_creator}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600">
+                    <TableCell className="text-xs text-gray-600 px-4 py-2">
                       {vehicle.created_on}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600">
+                    <TableCell className="text-xs text-gray-600 px-4 py-2">
                       {vehicle.id_of_updater}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600">
+                    <TableCell className="text-xs text-gray-600 px-4 py-2">
                       {vehicle.updated_on}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="px-4 py-2">
                       <button
                         onClick={() => handleEditClick(vehicle)}
                         className="text-gray-500 hover:text-red-500"
@@ -299,7 +301,7 @@ export default function VTCVehiclePage() {
               size="sm"
               disabled={currentPage === 1}
               onClick={() => handlePageChange(1)}
-              className={currentPage === 1 ? "text-gray-400" : "text-gray-600"}
+              className="text-gray-400"
             >
               {"<<"}
             </Button>
@@ -308,18 +310,31 @@ export default function VTCVehiclePage() {
               size="sm"
               disabled={currentPage === 1}
               onClick={() => handlePageChange(currentPage - 1)}
-              className={currentPage === 1 ? "text-gray-400" : "text-gray-600"}
+              className="text-gray-400"
             >
               {"<"}
             </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePageChange(page)}
+                className={`${
+                  currentPage === page
+                    ? "bg-black text-white hover:bg-gray-800"
+                    : "text-gray-600"
+                } px-3 py-1`}
+              >
+                {page}
+              </Button>
+            ))}
             <Button
               variant="outline"
               size="sm"
               disabled={currentPage === totalPages}
               onClick={() => handlePageChange(currentPage + 1)}
-              className={
-                currentPage === totalPages ? "text-gray-400" : "text-gray-600"
-              }
+              className="text-gray-400"
             >
               {">"}
             </Button>
@@ -328,9 +343,7 @@ export default function VTCVehiclePage() {
               size="sm"
               disabled={currentPage === totalPages}
               onClick={() => handlePageChange(totalPages)}
-              className={
-                currentPage === totalPages ? "text-gray-400" : "text-gray-600"
-              }
+              className="text-gray-400"
             >
               {">>"}
             </Button>
