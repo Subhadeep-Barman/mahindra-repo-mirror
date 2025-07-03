@@ -33,7 +33,6 @@ export default function AccountMenu() {
   const userName = userCookies.userName;
   const userEmail = userCookies.userEmail;
   const userEmployeeId = userCookies.userEmployeeId;
-  const teamType = userCookies.teamType; 
   const { logInteraction } = useUserInteractionLogger(userEmployeeId);
   const navigate = useNavigate();
 
@@ -41,7 +40,7 @@ export default function AccountMenu() {
     console.log("Logging out...");
     logout();
     logInteraction("User logged out");
-    navigate("/");
+    navigate("/login");
     logger.info("User logged out");
   }
 
@@ -127,18 +126,6 @@ export default function AccountMenu() {
         </MenuItem>
         <MenuItem onClick={() => logInteraction("User name clicked")}>
           <Avatar /> {userName}
-        </MenuItem>
-        <MenuItem onClick={() => logInteraction("User teamtype clicked")}>
-          <Avatar /> {teamType}
-        </MenuItem>
-
-        <MenuItem
-          onClick={() => handleNavigation("/home", "Navigated to Dashboard")}
-        >
-          <ListItemIcon>
-            <HomeIcon />
-          </ListItemIcon>
-          Dashboard
         </MenuItem>
         <Divider />
         <MenuItem onClick={handleLogout}>

@@ -40,7 +40,6 @@ function App() {
       <div className="p-4">
         <Routes>
           {/* Auth & Home */}
-          <Route path="/" element={<Login />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/default-login" element={<DefaultLogin />} />

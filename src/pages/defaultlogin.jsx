@@ -14,8 +14,6 @@ const apiURL = import.meta.env.VITE_BACKEND_URL;
 export default function DefaultLogin() {
   const [role, setRole] = useState("");
   const [password, setPassword] = useState("");
-  const [teamType, setTeamType] = useState("");
-  const [teamLocation, setTeamLocation] = useState("");
   const [message, setMessage] = useState("");
   const [shakeForm, setShakeForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -81,8 +79,6 @@ export default function DefaultLogin() {
           username,
           email,
           employeecode,
-          teamType,
-          teamLocation, // Changed from engineType to teamLocation to match location parameter
           access_token
         );
         console.log("User logged in successfully:", username);
@@ -105,9 +101,7 @@ export default function DefaultLogin() {
   function validateForm() {
     return (
       role.trim().length > 0 &&
-      password.trim().length > 0 &&
-      teamType !== "" &&
-      teamLocation !== ""
+      password.trim().length > 0 
     );
   }
 
@@ -142,36 +136,6 @@ export default function DefaultLogin() {
                   className="w-full px-3 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   required
                 />
-              </label>
-              <label className="block">
-                <p className="text-white mb-2">Team Type</p>
-                <select
-                  value={teamType}
-                  onChange={(e) => setTeamType(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                  required
-                >
-                  <option value="" disabled>
-                    Select Team Type
-                  </option>
-                  <option value="RDE">RDE</option>
-                  <option value="VTC">VTC</option>
-                </select>
-              </label>
-              <label className="block">
-                <p className="text-white mb-2">Team Location</p>
-                <select
-                  value={teamLocation}
-                  onChange={(e) => setTeamLocation(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                  required
-                >
-                  <option value="" disabled>
-                    Select Team Location
-                  </option>
-                  <option value="Chennai">Chennai</option>
-                  <option value="Nashik">Nashik</option>
-                </select>
               </label>
               <div className="flex justify-center">
                 <button

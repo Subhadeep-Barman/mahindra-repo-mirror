@@ -32,15 +32,15 @@ export default function VTCNashikPage() {
     setCurrentPage(page);
   };
 
+  const navigate = useNavigate();
+
   const handleBack = () => {
-    console.log("Navigate back");
+    navigate(-1); // Navigate back to the previous page
   };
 
   const handleCreateJobOrder = () => {
     console.log("Create new job order");
   };
-
-  const navigate = useNavigate();
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);

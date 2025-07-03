@@ -38,34 +38,6 @@ export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
     gearRatio: "",
   });
 
-  const dummyData = {
-    project: "Project A",
-    vehicleBuildLevel: "Level 1",
-    vehicleModel: "Bolero",
-    vehicleBodyNumber: "V.B.NO123456",
-    vehicleNumber: "MH12AB1234",
-    transmissionType: "MT",
-    finalDriveAxleRatio: "3.73",
-    engineNumber: "EN987654",
-    domain: "OBD",
-    coastDownTestReportReference: "CDTR-001",
-    tyreMake: "MRF",
-    tyreSize: "215/75R15",
-    tyrePressureFront: "32",
-    tyrePressureRear: "34",
-    tyreRunIn: "500",
-    engineRunIn: "1000",
-    gearBoxRunIn: "800",
-    axleRunIn: "600",
-    engineOilSpecification: "5W30",
-    axleOilSpecification: "80W90",
-    transmissionOilSpecification: "75W85",
-    driveType: "2WD",
-    drivenWheel: "Rear",
-    intercoolerLocation: "Front",
-    gearRatio: "4.10",
-  };
-
   const handleVehicleBodyChange = (value) => {
     // Get all saved vehicle forms (if you want to support multiple, otherwise just get the single one)
     const vehicleFormData = JSON.parse(
@@ -136,10 +108,6 @@ export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
       gearRatio: "",
     });
     if (onClear) onClear();
-  };
-
-  const handleFillDummy = () => {
-    setForm(dummyData);
   };
 
   const [activeTab, setActiveTab] = useState("Vehicle");
@@ -683,13 +651,6 @@ export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
             className="bg-white border border-red-500 text-red-500 px-6 py-2 rounded flex items-center gap-2"
           >
             <span>CLEAR</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleFillDummy}
-            className="bg-gray-200 border border-gray-400 text-gray-700 px-6 py-2 rounded flex items-center gap-2"
-          >
-            <span>FILL DUMMY DATA</span>
           </button>
         </div>
         <div className="text-xs text-red-500 mt-2">*required field</div>

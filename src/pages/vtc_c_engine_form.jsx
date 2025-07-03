@@ -27,7 +27,7 @@ export default function VTCCEngineForm() {
     engineType: "",
     engineCapacity: "",
     numberOfCylinders: "",
-    compressionRatio: "",
+    compressionRatio: { numerator: "", denominator: "" },
     bore: "",
     stroke: "",
     vacuumModulatorMake: "",
@@ -72,6 +72,7 @@ export default function VTCCEngineForm() {
     evMotorPower: "",
   });
   const [engineFamilies, setEngineFamilies] = useState([]);
+  const [vehicleSerialNumbers, setVehicleSerialNumbers] = useState([]);
   const apiUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
 
@@ -79,6 +80,13 @@ export default function VTCCEngineForm() {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
+    }));
+  };
+
+  const handleRatioChange = (field, part, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: { ...prev[field], [part]: value },
     }));
   };
 
@@ -96,7 +104,7 @@ export default function VTCCEngineForm() {
       engineType: "",
       engineCapacity: "",
       numberOfCylinders: "",
-      compressionRatio: "",
+      compressionRatio: { numerator: "", denominator: "" },
       bore: "",
       stroke: "",
       vacuumModulatorMake: "",
@@ -162,6 +170,18 @@ export default function VTCCEngineForm() {
       });
   }, []);
 
+  useEffect(() => {
+    // Fetch vehicle serial numbers from the API
+    axios
+      .get(`${apiUrl}/vehicle_serial_numbers`)
+      .then((res) => {
+        setVehicleSerialNumbers(res.data);
+      })
+      .catch(() => {
+        setVehicleSerialNumbers([]);
+      });
+  }, []);
+
   return (
     <>
       <Navbar1 />
@@ -180,17 +200,14 @@ export default function VTCCEngineForm() {
                   <ArrowBack className="h-5 w-5" />
                 </Button>
                 <div>
-                  <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
+                  <h1 className="text-sm font-medium text-black-600 dark:text-red-500 ">
                     VTC CHENNAI
                   </h1>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
-                    NEW ENGINE
-                  </h2>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 {/* Tab Buttons */}
-                {["Job Order", "Vehicle", "Engine"].map((tab) => (
+                {/* {["Job Order", "Vehicle", "Engine"].map((tab) => (
                   <Button
                     key={tab}
                     variant={activeTab === tab ? "default" : "outline"}
@@ -205,7 +222,7 @@ export default function VTCCEngineForm() {
                   >
                     {tab}
                   </Button>
-                ))}
+                ))} */}
               </div>
             </div>
           </div>
@@ -280,14 +297,27 @@ export default function VTCCEngineForm() {
               {/* Compression Ratio */}
               <div className="space-y-2">
                 <Label htmlFor="compressionRatio">Compression Ratio</Label>
-                <Input
-                  id="compressionRatio"
-                  value={formData.compressionRatio}
-                  onChange={(e) =>
-                    handleInputChange("compressionRatio", e.target.value)
-                  }
-                  placeholder="Enter"
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="compressionRatioNumerator"
+                    value={formData.compressionRatio.numerator}
+                    onChange={(e) =>
+                      handleRatioChange("compressionRatio", "numerator", e.target.value)
+                    }
+                    placeholder="Enter numerator"
+                    className="w-1/2"
+                  />
+                  <span className="text-gray-500">:</span>
+                  <Input
+                    id="compressionRatioDenominator"
+                    value={formData.compressionRatio.denominator}
+                    onChange={(e) =>
+                      handleRatioChange("compressionRatio", "denominator", e.target.value)
+                    }
+                    placeholder="Enter denominator"
+                    className="w-1/2"
+                  />
+                </div>
               </div>
               {/* Bore */}
               <div className="space-y-2">
@@ -741,9 +771,20 @@ export default function VTCCEngineForm() {
                     <SelectValue placeholder="Select Vehicle Serial No" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="VSN001">VSN001</SelectItem>
-                    <SelectItem value="VSN002">VSN002</SelectItem>
-                    <SelectItem value="VSN003">VSN003</SelectItem>
+                    {vehicleSerialNumbers.length > 0 ? (
+                      vehicleSerialNumbers.map((serialNumber) => (
+                        <SelectItem
+                          key={serialNumber}
+                          value={serialNumber}
+                        >
+                          {serialNumber}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem disabled>
+                        No Vehicle Serial Numbers Available
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -837,12 +878,6 @@ export default function VTCCEngineForm() {
                   placeholder="Enter EV Motor Power (KW)"
                 />
               </div>
-            </div>
-            {/* Required Field Note */}
-            <div className="mt-6">
-              <p className="text-sm text-red-500 dark:text-red-500">
-                <span className="text-red-500">*</span>required field
-              </p>
             </div>
             {/* Action Buttons */}
             <div className="mt-6 flex justify-end gap-3">

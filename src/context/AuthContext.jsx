@@ -11,8 +11,6 @@ export const AuthProvider = ({ children }) => {
   const [userId, setUserId] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [decodedToken, setDecodedToken] = useState(null);
-  const [teamType, setTeamType] = useState(null);
-  const [location, setLocation] = useState(null);
 
   useEffect(() => {
     const userCookies = useStore.getState().getUserCookieData();
@@ -28,8 +26,6 @@ export const AuthProvider = ({ children }) => {
       setUserEmail(userCookies.userEmail);
       setUserId(userCookies.userId || null);
       setAccessToken(userCookies.token);
-      setTeamType(userCookies.teamType || null);
-      setLocation(userCookies.location || null);
       
       try {
         const decoded = JSON.parse(atob(userCookies.token.split('.')[1]));
@@ -41,14 +37,12 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const login = (role, name, email, employeeId, teamTy, locationVal, token) => {
+  const login = (role, name, email, employeeId, token) => {
     setUserRole(role);
     setUserName(name);
     setUserEmail(email);
     setUserId(employeeId);
     setAccessToken(token);
-    setTeamType(teamTy);
-    setLocation(locationVal);
     try {
       const decoded = JSON.parse(atob(token.split('.')[1]));
       setDecodedToken(decoded);
@@ -64,8 +58,6 @@ export const AuthProvider = ({ children }) => {
       LoggedIn: "true",
       userEmail: email,
       userId: employeeId,
-      teamType: teamTy,
-      location: locationVal,
     });
   };
 
@@ -77,8 +69,6 @@ export const AuthProvider = ({ children }) => {
     setUserId(null);
     setAccessToken(null);
     setDecodedToken(null);
-    setTeamType(null);
-    setLocation(null);
 
     // Clear stored user cookie data in the store
     console.log("Clearing user cookie data...");
@@ -93,8 +83,6 @@ export const AuthProvider = ({ children }) => {
       userId,
       accessToken,
       decodedToken,
-      teamType,
-      location,
       login,
       logout,
       isAuthenticated: !!userRole

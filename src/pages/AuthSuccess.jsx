@@ -7,18 +7,8 @@ import useStore from "../store/useStore";
 import { jwtDecode } from "jwt-decode";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
-// Validation functions for userloyee API fields
 function isValidUserRole(role) {
-  return typeof role === "string" && /^[A-Za-z0-9_-]{1,50}$/.test(role);
-}
-
-function isValidTeam(team) {
-  return typeof team === "string" && /^[A-Za-z0-9_-]{1,50}$/.test(team);
-}
-
-function isValidlocation(location) {
-  return typeof location === "string" &&
-    /^[A-Za-z0-9_-]{1,50}$/.test(location);
+  return typeof role === "string" && /^[A-Za-z0-9 _-]{1,50}$/.test(role);
 }
 
 // Validate that the userloyee data from the API conforms to expected types and values
@@ -27,16 +17,12 @@ const validateUserData = (data) => {
   return data.every(user =>
     typeof user === "object" &&
     typeof user.id === "string" &&
-    isValidUserRole(user.role) &&
-    isValidTeam(user.team) && // <-- check for team
-    isValidlocation(user.location) // <-- check for location
+    isValidUserRole(user.role)
   );
 };
 
 export default function AuthSuccess() {
   const navigate = useNavigate();
-  // You may need to import/use your AuthContext's login if available
-  // const { login } = useAuth();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
 
@@ -67,42 +53,27 @@ export default function AuthSuccess() {
             "You are not registered, send mail to the Admin",
             "error"
           );
-          navigate("/");
+          navigate("/login");
           return;
         }
 
-        // Update the store with the user cookie data
         useStore.getState().setUserCookieData({
           token: jwtToken,
           userRole: user.role,
           LoggedIn: "true",
           userEmail: userDetails.emailaddress,
           userId: userDetails.user,
-          userName: userDetails.displayname,
-          teamType: user.team, // <-- use team
-          location: user.location // <-- use location
+          userName: userDetails.displayname
         });
-
-        // If you have a login function, call it here with the new parameters
-        // login(
-        //   user.role,
-        //   userDetails.displayname,
-        //   userDetails.emailaddress,
-        //   userDetails.user,
-        //   user.team_type,
-        //   user.engine_type,
-        //   jwtToken
-        // );
 
         console.log("User authenticated successfully:", userDetails);
         showSnackbar("User authenticated successfully", "success");
         navigate("/home");
-        console.log("User Cookie Data:", useStore.getState().userCookieData);
 
       } catch (error) {
         console.error("Authentication Error:", error);
         showSnackbar("Error processing JWT token", "warning");
-        navigate("/");
+        navigate("/login");
         console.error("Error during authentication:", error);
       } finally {
         setLoading(false);
@@ -113,8 +84,8 @@ export default function AuthSuccess() {
 
   return (
     <>
-      <Spinner loading={loading} />
-      <div className="full-container">hello world</div>
+      <Spinner loadings={loading} />
+      <div className="full-container">loading....</div>
     </>
   );
 }

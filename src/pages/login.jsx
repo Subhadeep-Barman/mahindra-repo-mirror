@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Switch } from "@/components/UI/switch";
 import { Sun, Moon } from "lucide-react";
 import darkLogo from "../assets/mai_dark.png";
-import lightLogo from "../assets/mai_dark.png";
+import lightLogo from "../assets/mai_light.png";
 import { useNavigate } from "react-router-dom";
 
 function Login() {
@@ -24,8 +24,6 @@ function Login() {
 
   const handleSubmit = (e) => {
     window.location.href = import.meta.env.VITE_AUTH_SUCCESS_URL;
-    // "https://ccservices.mahindra.com/auth/redirect?id=d57d1358-38fc-4850-8bdd-e469ee1e2eaf&env=UAT";
-    // No need for navigate("/home") here
   };
 
   const slides = [
@@ -91,10 +89,10 @@ function Login() {
 
             {/* Form Header */}
             <div className="flex flex-col items-center justify-center h-full space-y-6">
-              <h2 className="text-5xl font-bold text-red-500">EDC JOB ORDER</h2>
+              <h2 className="text-5xl font-bold text-red-500">VTC & RDE TOOL</h2>
               <p className="text-xl">
-                <span className="text-red-500 font-semibold">MAI SSO</span>{" "}
-                <span className="text-black dark:text-white">login</span>
+                {/* <span className="text-red-500 font-semibold">MAI SSO</span>{" "}
+                <span className="text-black dark:text-white">login</span> */}
               </p>
               <button
                 onClick={handleSubmit}
@@ -108,7 +106,7 @@ function Login() {
             <div className="fixed bottom-4 left-4">
               <p className="text-lg text-gray-500 dark:text-gray-400">
                 <span className="text-red-500 font-semibold">VERSION</span>{" "}
-                <span className="text-black dark:text-white">1.1.2</span>
+                <span className="text-black dark:text-white">1.0.0</span>
               </p>
             </div>
           </div>
@@ -178,13 +176,6 @@ function Login() {
                 alt={slides[currentSlide].title}
                 className="rounded-lg shadow-2xl w-full"
               />
-              {/* Small overlay image */}
-              <div className="absolute -top-4 -right-4 bg-white dark:bg-gray-800 rounded-lg p-2 shadow-lg">
-                <img
-                  src={slides[currentSlide].image}
-                  className="w-16 h-12 rounded object-cover"
-                />
-              </div>
             </div>
 
             {/* Content */}

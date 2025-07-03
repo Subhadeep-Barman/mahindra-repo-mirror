@@ -28,7 +28,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     vehicleBodyNumber: "",
     vehicleNumber: "",
     transmissionType: "",
-    finalDriveAxleRatio: "",
+    finalDriveAxleRatio: { numerator: "", denominator: "" },
     engineNumber: "",
     domain: "",
     coastDownTestReportReference: "",
@@ -46,36 +46,8 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     driveType: "",
     drivenWheel: "",
     intercoolerLocation: "",
-    gearRatio: "",
+    gearRatio: { numerator: "", denominator: "" },
   });
-
-  const dummyData = {
-    project: "Project A",
-    vehicleBuildLevel: "Level 1",
-    vehicleModel: "Bolero",
-    vehicleBodyNumber: "V.B.NO123456",
-    vehicleNumber: "MH12AB1234",
-    transmissionType: "MT",
-    finalDriveAxleRatio: "3.73",
-    engineNumber: "EN987654",
-    domain: "OBD",
-    coastDownTestReportReference: "CDTR-001",
-    tyreMake: "MRF",
-    tyreSize: "215/75R15",
-    tyrePressureFront: "32",
-    tyrePressureRear: "34",
-    tyreRunIn: "500",
-    engineRunIn: "1000",
-    gearBoxRunIn: "800",
-    axleRunIn: "600",
-    engineOilSpecification: "5W30",
-    axleOilSpecification: "80W90",
-    transmissionOilSpecification: "75W85",
-    driveType: "2WD",
-    drivenWheel: "Rear",
-    intercoolerLocation: "Front",
-    gearRatio: "4.10",
-  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -83,6 +55,13 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
 
   const handleRadioChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleRatioChange = (e, field, part) => {
+    setForm({
+      ...form,
+      [field]: { ...form[field], [part]: e.target.value },
+    });
   };
 
   // Helper to generate UUID for vehicle_id
@@ -108,7 +87,12 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       vehicle_number: form.vehicleNumber,
       vehicle_build_level: form.vehicleBuildLevel,
       transmission_type: form.transmissionType,
-      final_drive_axle_ratio: form.finalDriveAxleRatio,
+      final_drive_axle_ratio:
+        form.finalDriveAxleRatio.numerator &&
+        form.finalDriveAxleRatio.denominator
+          ? parseFloat(form.finalDriveAxleRatio.numerator) /
+            parseFloat(form.finalDriveAxleRatio.denominator)
+          : null,
       domain: form.domain,
       coast_down_test_reference_report: form.coastDownTestReportReference,
       tyre_make: form.tyreMake,
@@ -129,7 +113,10 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       wd_type: form.driveType,
       driven_wheel: form.drivenWheel,
       intercooler_location: form.intercoolerLocation,
-      gear_ratio: form.gearRatio,
+      gear_ratio:
+        form.gearRatio.numerator && form.gearRatio.denominator
+          ? parseFloat(form.gearRatio.numerator) / parseFloat(form.gearRatio.denominator)
+          : null,
       // id_of_creator, created_on, id_of_updater, updated_on handled by backend
     };
   }
@@ -165,7 +152,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       vehicleBodyNumber: "",
       vehicleNumber: "",
       transmissionType: "",
-      finalDriveAxleRatio: "",
+      finalDriveAxleRatio: { numerator: "", denominator: "" },
       engineNumber: "",
       domain: "",
       coastDownTestReportReference: "",
@@ -183,13 +170,9 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       driveType: "",
       drivenWheel: "",
       intercoolerLocation: "",
-      gearRatio: "",
+      gearRatio: { numerator: "", denominator: "" },
     });
     if (onClear) onClear();
-  };
-
-  const handleFillDummy = () => {
-    setForm(dummyData);
   };
 
   const [activeTab, setActiveTab] = useState("Vehicle");
@@ -229,7 +212,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     <>
       <Navbar1 />
       {/* Header */}
-      <div className="bg-white dark:bg-black">
+      <div className="bg-white dark:bg-gray-900 shadow-md">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
@@ -242,41 +225,23 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
                 <ArrowBack className="h-5 w-5" />
               </Button>
               <div>
-                <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
+                <h1 className="text-lg font-semibold text-gray-800 dark:text-red-500">
                   VTC CHENNAI
                 </h1>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
-                  NEW VEHICLE
-                </h2>
               </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              {["Job Order", "Vehicle", "Engine"].map((tab) => (
-                <Button
-                  key={tab}
-                  variant={activeTab === tab ? "default" : "outline"}
-                  onClick={() => handleTabClick(tab)}
-                  className={`rounded-xl ${
-                    tab === "Job Order"
-                      ? "bg-red-500 text-white hover:bg-red-600"
-                      : tab === "Vehicle" || tab === "Engine"
-                      ? "bg-red-500 text-white hover:bg-red-600"
-                      : "text-red-500 border-red-500 hover:bg-red-50"
-                  }`}
-                >
-                  {tab}
-                </Button>
-              ))}
             </div>
           </div>
         </div>
       </div>
       {/* Main Form */}
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg max-w-7xl mx-auto mt-8"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Project */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Project <span className="text-red-500">*</span>
             </label>
             <select
@@ -284,7 +249,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.project}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
             >
               <option value="">Select Project</option>
               {projectOptions.map((opt) => (
@@ -296,7 +261,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           </div>
           {/* Vehicle Build Level */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Vehicle Build Level <span className="text-red-500">*</span>
             </label>
             <input
@@ -304,13 +269,13 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.vehicleBuildLevel}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
               placeholder="Enter Vehicle Build Level"
             />
           </div>
           {/* Vehicle Model */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Vehicle Model <span className="text-red-500">*</span>
             </label>
             <select
@@ -318,7 +283,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.vehicleModel}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
             >
               <option value="">Select Model</option>
               {vehicleModelOptions.map((opt) => (
@@ -330,7 +295,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           </div>
           {/* Vehicle Body Number */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Vehicle Body Number <span className="text-red-500">*</span>
             </label>
             <input
@@ -338,27 +303,27 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.vehicleBodyNumber}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
               placeholder="Enter Vehicle Body Number"
             />
           </div>
           {/* Vehicle Number */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
-              Vehicle Number <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Vehicle Serial Number <span className="text-red-500">*</span>
             </label>
             <input
               name="vehicleNumber"
               value={form.vehicleNumber}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
-              placeholder="Enter Vehicle Number"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
+              placeholder="Enter Vehicle Serial Number"
             />
           </div>
           {/* Transmission Type */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Transmission Type <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2">
@@ -399,36 +364,36 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           </div>
           {/* Final Drive Axle Ratio */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Final Drive Axle Ratio <span className="text-red-500">*</span>
             </label>
-            <input
-              name="finalDriveAxleRatio"
-              value={form.finalDriveAxleRatio}
-              onChange={handleChange}
-              required
-              className="border rounded px-2 py-1 w-full"
-              placeholder="Enter"
-            />
-          </div>
-          {/* Engine Number */}
-          <div>
-            <label className="block text-xs font-semibold mb-1">
-              Engine Number <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="engineNumber"
-              value={form.engineNumber}
-              onChange={handleChange}
-              required
-              className="border rounded px-2 py-1 w-full bg-gray-100"
-              placeholder="Auto-fetched"
-              readOnly
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={form.finalDriveAxleRatio.numerator}
+                onChange={(e) =>
+                  handleRatioChange(e, "finalDriveAxleRatio", "numerator")
+                }
+                required
+                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter numerator"
+              />
+              <span className="text-gray-500">:</span>
+              <input
+                type="number"
+                value={form.finalDriveAxleRatio.denominator}
+                onChange={(e) =>
+                  handleRatioChange(e, "finalDriveAxleRatio", "denominator")
+                }
+                required
+                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter denominator"
+              />
+            </div>
           </div>
           {/* Domain */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Domain <span className="text-red-500">*</span>
             </label>
             <select
@@ -436,7 +401,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.domain}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
             >
               <option value="">Select Domain</option>
               {domainOptions.map((opt) => (
@@ -448,7 +413,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           </div>
           {/* Coast Down Test Report Reference */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Coast Down Test Report Reference{" "}
               <span className="text-red-500">*</span>
             </label>
@@ -457,13 +422,13 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.coastDownTestReportReference}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
               placeholder="Enter Reference"
             />
           </div>
           {/* Tyre Make */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Tyre Make <span className="text-red-500">*</span>
             </label>
             <input
@@ -471,13 +436,13 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.tyreMake}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
               placeholder="Enter Tyre Make"
             />
           </div>
           {/* Tyre Size */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Tyre Size <span className="text-red-500">*</span>
             </label>
             <input
@@ -485,13 +450,13 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.tyreSize}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
               placeholder="Enter Tyre Size"
             />
           </div>
           {/* Tyre Pressure Front */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Tyre Pressure Front(psi) <span className="text-red-500">*</span>
             </label>
             <input
@@ -499,14 +464,14 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.tyrePressureFront}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
               placeholder="Enter Front Tyre Pressure"
               type="number"
             />
           </div>
           {/* Tyre Pressure Rear */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Tyre Pressure Rear(psi) <span className="text-red-500">*</span>
             </label>
             <input
@@ -514,14 +479,14 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.tyrePressureRear}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
               placeholder="Enter Rear Tyre Pressure"
               type="number"
             />
           </div>
           {/* Tyre Run-in(Kms) */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Tyre Run-in(Kms) <span className="text-red-500">*</span>
             </label>
             <input
@@ -529,14 +494,14 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.tyreRunIn}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
               placeholder="Enter Tyre Run-in(Kms)"
               type="number"
             />
           </div>
           {/* Engine Run-in(Kms) */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Engine Run-in(Kms) <span className="text-red-500">*</span>
             </label>
             <input
@@ -544,14 +509,14 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.engineRunIn}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
               placeholder="Enter Engine Run-in(Kms)"
               type="number"
             />
           </div>
           {/* Gear Box Run-in(Kms) */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Gear Box Run-in(Kms) <span className="text-red-500">*</span>
             </label>
             <input
@@ -559,14 +524,14 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.gearBoxRunIn}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
               placeholder="Enter Gear Box Run-in(Kms)"
               type="number"
             />
           </div>
           {/* Axle Run-in(Kms) */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Axle Run-in(Kms) <span className="text-red-500">*</span>
             </label>
             <input
@@ -574,14 +539,14 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.axleRunIn}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
               placeholder="Enter Axle Run-in(Kms)"
               type="number"
             />
           </div>
           {/* Engine Oil Specification */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Engine Oil Specification <span className="text-red-500">*</span>
             </label>
             <input
@@ -589,13 +554,13 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.engineOilSpecification}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
               placeholder="Enter Engine Oil Specification"
             />
           </div>
           {/* Axle Oil Specification */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Axle Oil Specification <span className="text-red-500">*</span>
             </label>
             <input
@@ -603,13 +568,13 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.axleOilSpecification}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
               placeholder="Enter Axle Oil Specification"
             />
           </div>
           {/* Transmission Oil Specification */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Transmission Oil Specification{" "}
               <span className="text-red-500">*</span>
             </label>
@@ -618,13 +583,13 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               value={form.transmissionOilSpecification}
               onChange={handleChange}
               required
-              className="border rounded px-2 py-1 w-full"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
               placeholder="Enter Transmission Oil Specification"
             />
           </div>
           {/* 2WD / 4WD */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               2WD / 4WD <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2">
@@ -654,7 +619,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           </div>
           {/* Driven Wheel */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Driven Wheel <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2">
@@ -684,7 +649,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           </div>
           {/* Intercooler Location */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Intercooler Location <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2">
@@ -725,43 +690,46 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           </div>
           {/* Gear Ratio */}
           <div>
-            <label className="block text-xs font-semibold mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Gear Ratio <span className="text-red-500">*</span>
             </label>
-            <input
-              name="gearRatio"
-              value={form.gearRatio}
-              onChange={handleChange}
-              required
-              className="border rounded px-2 py-1 w-full"
-              placeholder="Enter Gear Ratio"
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={form.gearRatio.numerator}
+                onChange={(e) => handleRatioChange(e, "gearRatio", "numerator")}
+                required
+                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter numerator"
+              />
+              <span className="text-gray-500">:</span>
+              <input
+                type="number"
+                value={form.gearRatio.denominator}
+                onChange={(e) => handleRatioChange(e, "gearRatio", "denominator")}
+                required
+                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter denominator"
+              />
+            </div>
           </div>
         </div>
         {/* Buttons */}
-        <div className="flex gap-4 mt-8 justify-end">
+        <div className="flex gap-4 mt-10 justify-end">
           <button
             type="submit"
-            className="bg-red-500 text-white px-6 py-2 rounded flex items-center gap-2"
+            className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg shadow-md transition-all"
           >
-            <span>ADD VEHICLE</span>
+            ADD VEHICLE
           </button>
           <button
             type="button"
             onClick={handleClear}
-            className="bg-white border border-red-500 text-red-500 px-6 py-2 rounded flex items-center gap-2"
+            className="bg-gray-100 hover:bg-gray-200 text-red-500 border border-red-500 px-6 py-3 rounded-lg shadow-md transition-all"
           >
-            <span>CLEAR</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleFillDummy}
-            className="bg-gray-200 border border-gray-400 text-gray-700 px-6 py-2 rounded flex items-center gap-2"
-          >
-            <span>FILL DUMMY DATA</span>
+            CLEAR
           </button>
         </div>
-        <div className="text-xs text-red-500 mt-2">*required field</div>
       </form>
     </>
   );

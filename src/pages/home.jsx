@@ -66,7 +66,7 @@ export default function HomePage() {
       >
         <div className="flex flex-col items-center mt-10 mb-10">
           <h1 className="text-4xl md:text-5xl font-extrabold text-red-600 dark:text-red-400 drop-shadow-lg tracking-tight mb-2">
-            DBMRS VTC Portal
+            DBMRS VTC & RDE Portal
           </h1>
         </div>
         <div className="flex justify-center flex-1">

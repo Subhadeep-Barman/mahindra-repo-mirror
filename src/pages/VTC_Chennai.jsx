@@ -140,12 +140,9 @@ export default function VTCChennaiPage() {
                   <ArrowBack className="h-5 w-5" />
                 </Button>
                 <div>
-                  <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
+                  <h1 className="text-sm font-medium text-black-600 dark:text-red-500 ">
                     VTC CHENNAI
                   </h1>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
-                    NEW JOB ORDER
-                  </h2>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
@@ -210,19 +207,19 @@ export default function VTCChennaiPage() {
                       Domain
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Job Order Status
+                      Test Status
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Created By
+                      Completed Tasks
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Created on
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Last updated By
+                      Last updated on
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Last updated on
+                      Last updated by
                     </TableHead>
                   </TableRow>
                 </TableHeader>

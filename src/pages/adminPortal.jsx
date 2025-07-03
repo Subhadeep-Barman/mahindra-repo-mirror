@@ -38,10 +38,12 @@ import {
 import { PersonAdd as PersonAddIcon } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function SystemUsersPage() {
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
@@ -53,8 +55,6 @@ export default function SystemUsersPage() {
     email: "",
     username: "",
     role: "",
-    team: "",
-    location: "",
   });
 
   // Fetch users from backend API on component mount
@@ -156,7 +156,7 @@ export default function SystemUsersPage() {
   const currentUsers = users.slice(startIndex, endIndex);
 
   const handleBack = () => {
-    console.log("Navigate back");
+    navigate(-1);
   };
 
   const handleAddUser = () => {
@@ -166,8 +166,6 @@ export default function SystemUsersPage() {
       email: "",
       username: "",
       role: "",
-      team: "",
-      location: "",
     });
     setIsAddUserModalOpen(true);
   };
@@ -179,8 +177,6 @@ export default function SystemUsersPage() {
       email: user.email,
       username: user.username,
       role: user.role,
-      team: user.team,
-      location: user.location,
     });
     setIsAddUserModalOpen(true);
   };
@@ -211,8 +207,6 @@ export default function SystemUsersPage() {
       email: "",
       username: "",
       role: "",
-      team: "",
-      location: "",
     });
   };
 
@@ -221,9 +215,7 @@ export default function SystemUsersPage() {
       !newUser.id ||
       !newUser.email ||
       !newUser.username ||
-      !newUser.role ||
-      !newUser.team ||
-      !newUser.location
+      !newUser.role
     ) {
       alert("Please fill in all fields");
       return;
@@ -303,7 +295,7 @@ export default function SystemUsersPage() {
                 <ArrowBack className="h-5 w-5" />
               </Button>
               <h1 className="text-xl font-semibold text-gray-900 dark:text-red-500">
-                System Users
+                System Users ({users.length})
               </h1>
             </div>
             <Button
@@ -341,12 +333,6 @@ export default function SystemUsersPage() {
                     Role
                   </TableHead>
                   <TableHead className="font-semibold text-gray-700">
-                    Team
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700">
-                    Location
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700">
                     Action
                   </TableHead>
                 </TableRow>
@@ -382,22 +368,6 @@ export default function SystemUsersPage() {
                           className="text-purple-600 border-purple-200 bg-purple-50"
                         >
                           {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="default"
-                          className="bg-red-500 hover:bg-red-600 text-white"
-                        >
-                          {user.team}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className="text-blue-600 border-blue-200 bg-blue-50"
-                        >
-                          {user.location}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -559,50 +529,6 @@ export default function SystemUsersPage() {
                   <SelectItem value="Project Team">Project Team</SelectItem>
                   <SelectItem value="Test Engineer">Test Engineer</SelectItem>
                   <SelectItem value="Admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Team */}
-            <div className="space-y-2">
-              <Label
-                htmlFor="team"
-                className="text-sm font-medium text-gray-700 dark:text-red-500"
-              >
-                Team
-              </Label>
-              <Select
-                value={newUser.team}
-                onValueChange={(value) => handleInputChange("team", value)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select Team" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="VTC">VTC</SelectItem>
-                  <SelectItem value="RDE">RDE</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Location */}
-            <div className="space-y-2">
-              <Label
-                htmlFor="location"
-                className="text-sm font-medium text-gray-700 dark:text-red-500"
-              >
-                Location
-              </Label>
-              <Select
-                value={newUser.location}
-                onValueChange={(value) => handleInputChange("location", value)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select Location" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Chennai">Chennai</SelectItem>
-                  <SelectItem value="Nashik">Nashik</SelectItem>
                 </SelectContent>
               </Select>
             </div>
