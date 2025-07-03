@@ -5,5 +5,3 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     role: str
-    team: str
-    location: str

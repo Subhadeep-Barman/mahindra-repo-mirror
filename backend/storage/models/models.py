@@ -10,10 +10,7 @@ class User(Base):
     id = Column(String, primary_key=True)
     username = Column(String)
     email = Column(String, unique=True)
-    team = Column(String)
     role = Column(String)
-    location = Column(String)
-
 
 
 class Vehicle(Base):
@@ -145,6 +142,29 @@ class JobOrder(Base):
     id_of_updater = Column(String)  
     name_of_updater = Column(String)
     updated_on = Column(TIMESTAMP, default=datetime.utcnow)
+
+class RDEJobOrder(Base):
+    __tablename__ = "RDEJobOrders"
+    job_order_id = Column(String, primary_key=True)
+    project_id = Column(String)
+    vehicle_id = Column(String)
+    vehicle_body_number = Column(String)
+    engine_id = Column(String)
+    CoastDownData_id = Column(String)
+    type_of_engine = Column(String)
+    department = Column(String)
+    domain = Column(String)
+    job_order_status = Column(String)
+    remarks = Column(String)
+    rejection_remarks = Column(String)
+    mail_remarks = Column(String)
+    id_of_creator = Column(String)  
+    name_of_creator = Column(String)
+    created_on = Column(TIMESTAMP, default=datetime.utcnow)
+    id_of_updater = Column(String)  
+    name_of_updater = Column(String)
+    updated_on = Column(TIMESTAMP, default=datetime.utcnow)
+
 
 
 class TestOrder(Base):

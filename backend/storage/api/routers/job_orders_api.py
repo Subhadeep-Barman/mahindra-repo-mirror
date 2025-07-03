@@ -6,7 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.storage.api.api_utils import get_db
-from backend.storage.models.models import JobOrder, TestOrder  # Add TestOrder import
+from backend.storage.models.models import JobOrder, TestOrder, Vehicle  # Add Vehicle import
 
 router = APIRouter()
 
@@ -32,6 +32,15 @@ def get_body_numbers():
         return body_numbers
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/vehicle_serial_numbers")
+def get_vehicle_serial_numbers(db: Session = Depends(get_db)):
+    """
+    Returns all vehicle serial numbers from the Vehicle table.
+    """
+    results = db.query(Vehicle.vehicle_serial_number).all()
+    # Return list of serial numbers, filtering out None values
+    return [sn for (sn,) in results if sn is not None]
 
 class JobOrderSchema(BaseModel):
     job_order_id: str
@@ -157,3 +166,8 @@ def update_testorder_status(
         "remark": test_order.remark,
         "updated_on": test_order.updated_on
     }
+
+@router.get("/joborders/{job_order_id}/testorders/count")
+def get_testorder_count(job_order_id: str, db: Session = Depends(get_db)):
+    count = db.query(TestOrder).filter(TestOrder.job_order_id == job_order_id).count()
+    return count
