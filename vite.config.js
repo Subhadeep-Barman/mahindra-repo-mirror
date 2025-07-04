@@ -10,7 +10,7 @@ export default defineConfig({
     },
   },
   preview: {
-    allowedHosts: ["dbmrs-vtc-test.m-devsecops.com"],
+    allowedHosts: ["dbmrs-vtc.m-devsecops.com"],
   },
 })
 
