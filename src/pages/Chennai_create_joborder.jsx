@@ -1682,7 +1682,7 @@ export default function CreateJobOrder() {
                 )}
               </div>
               {/* Action Buttons for TestbedEngineer only */}
-              {apiUserRole === "Test Engineer" && (
+              {apiUserRole === "TestEngineer" && (
                 <div className="flex items-center gap-3"> {/* Use items-center and gap-3 for alignment */}
                   {/* Initial state: Start/Reject */}
                   {(!test?.status || test?.status === "Created") && (
@@ -1732,7 +1732,7 @@ export default function CreateJobOrder() {
                     </>
                   )}
                   {/* Close button always available for TestEngineer and ProjectTeam */}
-                  {(apiUserRole === "Test Engineer" || apiUserRole === "ProjectTeam") && (
+                  {(apiUserRole === "TestEngineer" || apiUserRole === "ProjectTeam") && (
                     <button
                       type="button"
                       onClick={() => handleDeleteTest(idx)}

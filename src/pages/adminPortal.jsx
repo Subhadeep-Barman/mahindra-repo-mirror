@@ -527,7 +527,7 @@ export default function SystemUsersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Project Team">Project Team</SelectItem>
-                  <SelectItem value="Test Engineer">Test Engineer</SelectItem>
+                  <SelectItem value="TestEngineer">Test Engineer</SelectItem>
                   <SelectItem value="Admin">Admin</SelectItem>
                 </SelectContent>
               </Select>

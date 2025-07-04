@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
     const fetchUsers = async () => {
       try {
         const apiUrl = import.meta.env.VITE_BACKEND_URL;
-        const res = await axios.get(`${apiUrl}/read_all_users`);
+        const res = await axios.get(`${apiUrl}/api/users/read_all_users`);
         setAllUsers(res.data);
         // Find the current user by email or id
         const currentUser = res.data.find(
