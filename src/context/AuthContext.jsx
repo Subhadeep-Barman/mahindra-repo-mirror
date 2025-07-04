@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import useStore from '../store/useStore';
+import axios from 'axios';
 
 const AuthContext = createContext({}); // Default to empty object
 const salt = import.meta.env.VITE_COOKIE_SALT || 'default-salt-value';
@@ -11,6 +12,8 @@ export const AuthProvider = ({ children }) => {
   const [userId, setUserId] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [decodedToken, setDecodedToken] = useState(null);
+  const [allUsers, setAllUsers] = useState([]);
+  const [apiUserRole, setApiUserRole] = useState(null);
 
   useEffect(() => {
     const userCookies = useStore.getState().getUserCookieData();
@@ -35,6 +38,24 @@ export const AuthProvider = ({ children }) => {
         setDecodedToken(null);
       }
     }
+    // Fetch all users and set apiUserRole
+    const fetchUsers = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_BACKEND_URL;
+        const res = await axios.get(`${apiUrl}/read_all_users`);
+        setAllUsers(res.data);
+        // Find the current user by email or id
+        const currentUser = res.data.find(
+          user => user.email === userCookies.userEmail || user.id === userCookies.userId
+        );
+        if (currentUser) setApiUserRole(currentUser.role);
+        else setApiUserRole(null);
+      } catch (err) {
+        setAllUsers([]);
+        setApiUserRole(null);
+      }
+    };
+    if (userCookies.userEmail || userCookies.userId) fetchUsers();
   }, []);
 
   const login = (role, name, email, employeeId, token) => {
@@ -85,7 +106,9 @@ export const AuthProvider = ({ children }) => {
       decodedToken,
       login,
       logout,
-      isAuthenticated: !!userRole
+      isAuthenticated: !!userRole,
+      apiUserRole,
+      allUsers
     }}>
       {children}
     </AuthContext.Provider>

@@ -16,6 +16,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Switch } from "@/components/UI/switch";
 import useStore from "@/store/useStore";
 import axios from "axios";
+import { Cancel, Edit, CheckCircle, Close as CloseIcon } from "@mui/icons-material";
+import { useAuth } from "@/context/AuthContext";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
@@ -1035,6 +1037,78 @@ export default function RDECreateJobOrder() {
       );
     }
   };
+
+  // Add modal state for remark and modal type
+  const [remarkModalOpen, setRemarkModalOpen] = useState(false);
+  const [remarkType, setRemarkType] = useState(""); // "Reject" or "Edit"
+  const [remarkInput, setRemarkInput] = useState("");
+
+  // Handler to send status update to backend
+  const handleStatusUpdate = async (status, remark = "", testOrderId = null, testIdx = null) => {
+    try {
+      // Only send test_order_id, status, and remark
+      const payload = {
+        test_order_id: testOrderId,
+        status,
+        remark,
+      };
+      await axios.post(`${apiURL}/testorders/status`, payload);
+      // Update test status in UI if testIdx is provided
+      if (typeof testIdx === "number") {
+        setTests((prev) =>
+          prev.map((t, i) =>
+            i === testIdx
+              ? { ...t, status }
+              : t
+          )
+        );
+      }
+      setRemarkInput("");
+      setRemarkModalOpen(false);
+    } catch (err) {
+      alert("Failed to update status: " + (err.response?.data?.detail || err.message));
+    }
+  };
+
+  // Modal component
+  const RemarkModal = ({ open, onClose, onSubmit, type, value, setValue }) => {
+    if (!open) return null;
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="bg-white rounded shadow-lg p-6 w-96">
+          <div className="font-semibold mb-2">
+            {type === "Reject" ? "Reason for Reject" : "Reason for Edit"}
+          </div>
+          <textarea
+            className="w-full border rounded p-2 mb-4"
+            rows={3}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder={`Enter remark for ${type.toLowerCase()}...`}
+          />
+          <div className="flex justify-end gap-2">
+            <Button
+              className="bg-gray-300 text-black px-4 py-1 rounded"
+              type="button"
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-blue-600 text-white px-4 py-1 rounded"
+              type="button"
+              onClick={onSubmit}
+              disabled={!value.trim()}
+            >
+              Submit
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const { apiUserRole } = useAuth();
 
   return (
     <>
@@ -2178,6 +2252,24 @@ export default function RDECreateJobOrder() {
         {/* Red line below */}
         <div className="border-b-4 border-red-600 mx-8" />
       </div>
+      <RemarkModal
+        open={!!remarkModalOpen}
+        onClose={() => { setRemarkModalOpen(false); setRemarkInput(""); }}
+        onSubmit={async () => {
+          if (remarkModalOpen) {
+            const { idx, type } = remarkModalOpen;
+            const testOrderId = tests[idx]?.testOrderId;
+            if (type === "Reject") {
+              await handleStatusUpdate("Rejected", remarkInput, testOrderId, idx);
+            } else if (type === "Edit") {
+              await handleStatusUpdate("Edit", remarkInput, testOrderId, idx);
+            }
+          }
+        }}
+        type={remarkType}
+        value={remarkInput}
+        setValue={setRemarkInput}
+      />
     </>
   );
 }
