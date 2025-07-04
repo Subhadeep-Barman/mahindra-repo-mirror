@@ -14,6 +14,7 @@ import VTCEnginePage from "./pages/VTC_C_engine_page";
 import EngineForm from "./pages/VTC_C_Engine";
 import VehicleForm from "@/components/VTC_C_Vehicle_form";
 import VTCCEngineForm from "./pages/vtc_c_engine_form";
+import RDEnginePage from "./pages/RDE_C_engine_page";
 
 // VTC Nashik
 import VTCNashikPage from "./pages/VTC_Nashik";
@@ -59,7 +60,7 @@ function App() {
           <Route path="/vtc-nashik" element={<VTCNashikPage />} />
           <Route path="/nashik/joborder" element={<NashikJobOrder />} />
           <Route path="/nashik/vehicle" element={<VTCNashikVehicle />} />
-          <Route path="/nashik/engine" element={<NEngine />} />
+          <Route path="/nashik/engine" element={<RDEnginePage />} />
           <Route
             path="/nashik/vehicle/new"
             element={<VTCNashikVehicleForm />}
