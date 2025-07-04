@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: asia-south1-docker.pkg.dev/gto-projects-dev-993026/gto-artifacts/gto-dbmrs-vtc-frontend-uat
+  repository: asia-south1-docker.pkg.dev/gto-projects-dev-993026/gto-artifacts/gto-dbmrs-vtc-frontend-test
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
@@ -79,7 +79,7 @@ tolerations:
     effect: "NoSchedule"
 
 virtualservice:
-  host: "dbmrs-vtc.m-devsecops.com"
+  host: "dbmrs-vtc-test.m-devsecops.com"
   gateway: "istio-system/default-internal-gateway"
   port: 4173
   prefix: /
@@ -88,9 +88,9 @@ ingress:
   enabled: false
   name: gto-projects
   ingressClassName: nginx
-  host: dbmrs-vtc.m-devsecops.com
+  host: dbmrs-vtc-test.m-devsecops.com
   tls:
-    host: dbmrs-vtc.m-devsecops.com
+    host: dbmrs-vtc-test.m-devsecops.com
     secretName: tlssecret
   service:
     name: gto-projects
