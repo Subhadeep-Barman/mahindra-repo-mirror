@@ -9,6 +9,7 @@ from backend.storage.api.routers import engines_api
 from backend.storage.api.routers import job_orders_api
 from backend.storage.api.routers import auth
 from backend.storage.api.routers import coast_down_api
+from backend.storage.api.routers import rde_job_orders_api
 
 # Configure logging to show DEBUG messages
 logging.basicConfig(
@@ -39,3 +40,4 @@ app.include_router(engines_api.router)
 app.include_router(job_orders_api.router)
 app.include_router(auth.router)
 app.include_router(coast_down_api.router)
+app.include_router(rde_job_orders_api.router)

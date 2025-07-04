@@ -1,8 +1,8 @@
-"""initial schema
+"""Initial migration
 
-Revision ID: b131a5244b37
+Revision ID: ae3a4769163f
 Revises: 
-Create Date: 2025-06-26 16:11:18.573075
+Create Date: 2025-07-04 15:48:00.325561
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'b131a5244b37'
+revision: str = 'ae3a4769163f'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -103,6 +103,37 @@ def upgrade() -> None:
     sa.Column('type_of_engine', sa.String(), nullable=True),
     sa.Column('department', sa.String(), nullable=True),
     sa.Column('domain', sa.String(), nullable=True),
+    sa.Column('test_status', sa.String(), nullable=True),
+    sa.Column('completed_test_count', sa.String(), nullable=True),
+    sa.Column('job_order_status', sa.String(), nullable=True),
+    sa.Column('remarks', sa.String(), nullable=True),
+    sa.Column('rejection_remarks', sa.String(), nullable=True),
+    sa.Column('mail_remarks', sa.String(), nullable=True),
+    sa.Column('id_of_creator', sa.String(), nullable=True),
+    sa.Column('name_of_creator', sa.String(), nullable=True),
+    sa.Column('created_on', sa.TIMESTAMP(), nullable=True),
+    sa.Column('id_of_updater', sa.String(), nullable=True),
+    sa.Column('name_of_updater', sa.String(), nullable=True),
+    sa.Column('updated_on', sa.TIMESTAMP(), nullable=True),
+    sa.PrimaryKeyConstraint('job_order_id')
+    )
+    op.create_table('RDEJobOrders',
+    sa.Column('job_order_id', sa.String(), nullable=False),
+    sa.Column('project_id', sa.String(), nullable=True),
+    sa.Column('vehicle_id', sa.String(), nullable=True),
+    sa.Column('vehicle_body_number', sa.String(), nullable=True),
+    sa.Column('engine_id', sa.String(), nullable=True),
+    sa.Column('CoastDownData_id', sa.String(), nullable=True),
+    sa.Column('type_of_engine', sa.String(), nullable=True),
+    sa.Column('department', sa.String(), nullable=True),
+    sa.Column('domain', sa.String(), nullable=True),
+    sa.Column('test_status', sa.String(), nullable=True),
+    sa.Column('completed_test_count', sa.String(), nullable=True),
+    sa.Column('wbs_code', sa.String(), nullable=True),
+    sa.Column('vehicle_gwv', sa.String(), nullable=True),
+    sa.Column('vehicle_kerb_weight', sa.String(), nullable=True),
+    sa.Column('vehicle_test_payload_criteria', sa.String(), nullable=True),
+    sa.Column('idle_exhaust_mass_flow', sa.String(), nullable=True),
     sa.Column('job_order_status', sa.String(), nullable=True),
     sa.Column('remarks', sa.String(), nullable=True),
     sa.Column('rejection_remarks', sa.String(), nullable=True),
@@ -149,9 +180,7 @@ def upgrade() -> None:
     sa.Column('id', sa.String(), nullable=False),
     sa.Column('username', sa.String(), nullable=True),
     sa.Column('email', sa.String(), nullable=True),
-    sa.Column('team', sa.String(), nullable=True),
     sa.Column('role', sa.String(), nullable=True),
-    sa.Column('location', sa.String(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')
     )
@@ -197,6 +226,7 @@ def downgrade() -> None:
     op.drop_table('Vehicles')
     op.drop_table('Users')
     op.drop_table('TestOrders')
+    op.drop_table('RDEJobOrders')
     op.drop_table('JobOrders')
     op.drop_table('Engines')
     op.drop_table('CoastDownData')

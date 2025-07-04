@@ -46,7 +46,7 @@ class EngineSchema(BaseModel):
     dpf_capacity: str = None
     scr_make: str = None
     scr_capacity: str = None
-    acc_compressor: bool = None
+    acc_compressor: Optional[bool] = None  # Mark as Optional
     acc_compressor_details: str = None
     ps_pump: str = None
     ps_details: str = None
@@ -66,6 +66,11 @@ class EngineSchema(BaseModel):
     created_on: datetime = None
     id_of_updater: Optional[str] = None
     updated_on: datetime = None
+
+    class Config:
+        orm_mode = True
+        # Exclude unset (None) fields from the response
+        exclude_unset = True
 
 @router.get("/engine-families")
 def get_engine_families():

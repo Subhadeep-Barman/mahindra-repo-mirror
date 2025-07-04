@@ -15,7 +15,7 @@ router = APIRouter()
 class VehicleSchema(BaseModel):
     vehicle_id: str
     project_code: str = None
-    vehicle_serial_number: str = None
+    vehicle_serial_number: Optional[str] = None  # Changed to Optional[str]
     vehicle_body_number: str = None
     vehicle_model: str = None
     vehicle_number: str = None

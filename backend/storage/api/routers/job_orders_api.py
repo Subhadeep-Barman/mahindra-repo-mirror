@@ -52,6 +52,8 @@ class JobOrderSchema(BaseModel):
     type_of_engine: str = None
     department: str = None
     domain: str = None
+    test_status: str = None  # Total number of test orders as string
+    completed_test_count: str = None  # Count of completed test orders as string
     job_order_status: str = None
     remarks: str = None
     rejection_remarks: str = None
@@ -68,7 +70,24 @@ class TestOrderStatusUpdateSchema(BaseModel):
     status: str
     remark: str = None
 
-def joborder_to_dict(joborder: JobOrder):
+def joborder_to_dict(joborder: JobOrder, db: Session = None):
+    # Calculate total test orders and completed test orders count
+    total_test_orders = 0
+    completed_test_orders = 0
+    
+    if db:
+        # Get total count of test orders for this job order
+        total_test_orders = db.query(TestOrder).filter(TestOrder.job_order_id == joborder.job_order_id).count()
+        
+        # Get count of completed test orders for this job order
+        completed_test_orders = db.query(TestOrder).filter(
+            TestOrder.job_order_id == joborder.job_order_id,
+            TestOrder.status == "completed"
+        ).count()
+
+        # print(f"Total test orders for {joborder.job_order_id}: {total_test_orders}")
+        # print(f"Completed test orders for {joborder.job_order_id}: {completed_test_orders}")
+    
     return {
         "job_order_id": joborder.job_order_id,
         "project_id": joborder.project_id,
@@ -79,6 +98,8 @@ def joborder_to_dict(joborder: JobOrder):
         "type_of_engine": joborder.type_of_engine,
         "department": joborder.department,
         "domain": joborder.domain,
+        "test_status": str(total_test_orders),  # Total number of test orders
+        "completed_test_count": str(completed_test_orders),  # Count of completed test orders
         "job_order_status": joborder.job_order_status,
         "remarks": joborder.remarks,
         "rejection_remarks": joborder.rejection_remarks,
@@ -101,19 +122,30 @@ def create_joborder_api(
     db.add(new_joborder)
     db.commit()
     db.refresh(new_joborder)
-    return joborder_to_dict(new_joborder)
+    return joborder_to_dict(new_joborder, db)
+
+@router.get("/departments")
+def get_departments(db: Session = Depends(get_db)):
+    """
+    Get all unique departments from job orders
+    """
+    departments = db.query(JobOrder.department).distinct().filter(JobOrder.department.isnot(None)).all()
+    return [dept[0] for dept in departments if dept[0]]
 
 @router.get("/joborders", response_model=List[JobOrderSchema])
-def read_joborders(db: Session = Depends(get_db)):
-    joborders = db.query(JobOrder).all()
-    return [joborder_to_dict(j) for j in joborders]
+def read_joborders(department: str = None, db: Session = Depends(get_db)):
+    if department:
+        joborders = db.query(JobOrder).filter(JobOrder.department == department).all()
+    else:
+        joborders = db.query(JobOrder).all()
+    return [joborder_to_dict(j, db) for j in joborders]
 
 @router.get("/joborders/{job_order_id}", response_model=JobOrderSchema)
 def read_joborder(job_order_id: str, db: Session = Depends(get_db)):
     joborder = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
     if not joborder:
         raise HTTPException(status_code=404, detail="JobOrder not found")
-    return joborder_to_dict(joborder)
+    return joborder_to_dict(joborder, db)
 
 @router.put("/joborders/{job_order_id}", response_model=JobOrderSchema)
 def update_joborder(
@@ -131,7 +163,7 @@ def update_joborder(
     joborder.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(joborder)
-    return joborder_to_dict(joborder)
+    return joborder_to_dict(joborder, db)
 
 @router.delete("/joborders/{job_order_id}")
 def delete_joborder(job_order_id: str, db: Session = Depends(get_db)):
