@@ -34,7 +34,7 @@ export default function RDECreateJobOrder() {
     engineNumber: "",
     engineType: "",
     domain: "",
-    department: "",
+    department: "RDE JO",
     coastDownTestReportReference: "",
     tyreMake: "",
     tyreSize: "",
@@ -566,18 +566,22 @@ export default function RDECreateJobOrder() {
     const job_order_id = "JO" + Date.now();
     const CoastDownData_id = "CD" + Date.now();
 
-    // You may need to fetch or map vehicle_id, engine_id, CoastDownData_id from backend if not available in frontend
-    // For now, use null or empty string if not available
-    const jobOrderPayload = {
+    // Prepare payload as per RDEJobOrderSchema
+    const rdeJobOrderPayload = {
       job_order_id,
       project_id: form.projectCode || null,
       vehicle_id: vehicleEditable?.vehicle_id || null,
       vehicle_body_number: form.vehicleBodyNumber || null,
       engine_id: engineEditable?.engine_id || null,
-      CoastDownData_id, // Now always a string
+      CoastDownData_id,
       type_of_engine: form.engineType || null,
       department: form.department || null,
       domain: form.domain || null,
+      wbs_code: form.wbsCode || null,
+      vehicle_gwv: form.vehicleGVW || null,
+      vehicle_kerb_weight: form.vehicleKerbWeight || null,
+      vehicle_test_payload_criteria: form.vehicleTestPayloadCriteria || null,
+      idle_exhaust_mass_flow: form.idleExhaustMassFlow || null,
       job_order_status: "Created",
       remarks: "",
       rejection_remarks: "",
@@ -590,7 +594,7 @@ export default function RDECreateJobOrder() {
       updated_on: new Date().toISOString(),
     };
 
-    // Coast Down Data payload
+    // Coast Down Data payload (unchanged)
     const coastDownPayload = {
       CoastDownData_id,
       job_order_id,
@@ -611,10 +615,10 @@ export default function RDECreateJobOrder() {
     };
 
     try {
-      // Create job order first
+      // Create RDE job order (use new endpoint)
       const jobOrderRes = await axios.post(
-        `${apiURL}/joborders`,
-        jobOrderPayload
+        `${apiURL}/rde_joborders`,
+        rdeJobOrderPayload
       );
 
       // Then create coast down data if there's any coast down information
@@ -632,12 +636,12 @@ export default function RDECreateJobOrder() {
         await axios.post(`${apiURL}/coastdown`, coastDownPayload);
       }
 
-      alert("Job Order Created! ID: " + jobOrderRes.data.job_order_id);
+      alert("RDE Job Order Created! ID: " + jobOrderRes.data.job_order_id);
       // Optionally, reset form or navigate
     } catch (err) {
-      console.error("Error creating job order:", err);
+      console.error("Error creating RDE job order:", err);
       alert(
-        "Failed to create job order: " +
+        "Failed to create RDE job order: " +
           (err.response?.data?.detail || err.message)
       );
     }
@@ -1286,7 +1290,7 @@ export default function RDECreateJobOrder() {
               value={form.department}
               onValueChange={(value) => handleChange("department", value)}
               required
-              disabled={formDisabled}
+              disabled={true}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Select" />
@@ -1414,7 +1418,7 @@ export default function RDECreateJobOrder() {
         </div>
 
         {/* Editable Vehicle Details Accordion */}
-        {vehicleEditable && (
+        {form.vehicleBodyNumber && vehicleEditable && (
           <div className="mx-8 mt-2 mb-4 border rounded shadow">
             <div
               className="flex items-center justify-between bg-gray-100 border-t-4 border-red-600 px-4 py-2 cursor-pointer"
@@ -1451,7 +1455,7 @@ export default function RDECreateJobOrder() {
         )}
 
         {/* Editable Engine Details Accordion */}
-        {engineEditable && (
+        {form.engineNumber && engineEditable && (
           <div className="mx-8 mt-2 mb-4 border rounded shadow">
             <div
               className="flex items-center justify-between bg-gray-100 border-t-4 border-blue-600 px-4 py-2 cursor-pointer"

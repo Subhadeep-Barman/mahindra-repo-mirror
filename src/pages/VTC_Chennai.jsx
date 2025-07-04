@@ -36,8 +36,9 @@ export default function VTCChennaiPage() {
   }, []);
 
   const fetchJobOrders = () => {
+    const department = "VTC_JO Chennai"; // Replace with the appropriate department value
     axios
-      .get(`${apiURL}/joborders`)
+      .get(`${apiURL}/joborders`, { params: { department } })
       .then((res) => setJobOrders(res.data || []))
       .catch(() => setJobOrders([]));
   };
@@ -207,19 +208,19 @@ export default function VTCChennaiPage() {
                       Domain
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Test Status
+                      Test Orders
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Completed Tasks
+                      Completed Test Orders
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Created on
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Last updated on
+                      Last updated by
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Last updated by
+                      Last updated on
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -253,10 +254,10 @@ export default function VTCChennaiPage() {
                         {order.domain}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900 px-4 py-2">
-                        {order.job_order_status}
+                        {order.test_status}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-600 px-4 py-2">
-                        {order.name_of_creator}
+                      <TableCell className="text-xs text-gray-900 px-4 py-2">
+                        {order.completed_test_count}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600 px-4 py-2">
                         {order.created_on?.slice(0, 10)}

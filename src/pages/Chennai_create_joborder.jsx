@@ -34,7 +34,7 @@ export default function CreateJobOrder() {
     engineNumber: "",
     engineType: "",
     domain: "",
-    department: "",
+    department: "VTC_JO Chennai", // Default value for Chennai
     coastDownTestReportReference: "",
     tyreMake: "",
     tyreSize: "",
@@ -658,11 +658,12 @@ export default function CreateJobOrder() {
     const test_order_id = "TO" + Date.now();
 
     // Get job_order_id from location state or create a new one if not available
-    const job_order_id = location.state?.jobOrder?.job_order_id || null;
+    // Ensure job_order_id is a string (not null)
+    const job_order_id = location.state?.jobOrder?.job_order_id || location.state?.originalJobOrderId || "";
 
     // Create or update coast down data for this specific test
     let CoastDownData_id =
-      location.state?.jobOrder?.CoastDownData_id || existingCoastDownId;
+      location.state?.jobOrder?.CoastDownData_id || existingCoastDownId || "";
 
     // If test has its own coast down data, create a new coast down entry
     const hasTestSpecificCoastDownData =
@@ -730,8 +731,8 @@ export default function CreateJobOrder() {
     // Create test order payload matching the API schema
     const testOrderPayload = {
       test_order_id,
-      job_order_id,
-      CoastDownData_id,
+      job_order_id: job_order_id || "", // Ensure string
+      CoastDownData_id: CoastDownData_id || "", // Ensure string
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -1300,7 +1301,7 @@ export default function CreateJobOrder() {
               value={form.department}
               onValueChange={(value) => handleChange("department", value)}
               required
-              disabled={formDisabled}
+              disabled={true} // Always disabled for Chennai
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
@@ -2117,6 +2118,7 @@ export default function CreateJobOrder() {
                     id={`test${idx}`}
                     submitted={false}
                     setSubmitted={() => {}}
+                   
                     openModal={!!a2lModals[idx]}
                     handleOpenModal={() =>
                       setA2LModals((prev) => ({ ...prev, [idx]: true }))

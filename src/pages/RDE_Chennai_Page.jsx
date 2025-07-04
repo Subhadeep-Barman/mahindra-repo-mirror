@@ -13,14 +13,33 @@ import {
   TableRow,
 } from "@/components/UI/table";
 import { Card } from "@/components/UI/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import axios from "axios";
 import Navbar1 from "@/components/UI/navbar";
-const jobOrders = [];
+const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function RDEChennaiPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("Job Order");
   const rowsPerPage = 8;
+
+  // Backend job orders state
+  const [jobOrders, setJobOrders] = useState([]);
+  const [selectedJobOrder, setSelectedJobOrder] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [jobOrderEdit, setJobOrderEdit] = useState(null);
+
+  useEffect(() => {
+    fetchJobOrders();
+  }, []);
+
+  const fetchJobOrders = () => {
+    axios
+      .get(`${apiURL}/rde_joborders`)
+      .then((res) => setJobOrders(res.data || []))
+      .catch(() => setJobOrders([]));
+  };
 
   // Calculate pagination values
   const totalPages = Math.ceil(jobOrders.length / rowsPerPage);
@@ -48,6 +67,44 @@ export default function RDEChennaiPage() {
     else if (tab === "Vehicle") navigate("/rde/vehicle");
     else if (tab === "Engine") navigate("/rde/engine");
   };
+
+  // Handler for clicking job order number
+  const handleJobOrderClick = (job_order_id) => {
+    axios
+      .get(`${apiURL}/rde_joborders/${job_order_id}`)
+      .then((res) => {
+        setJobOrderEdit(res.data);
+        setModalOpen(true);
+      })
+      .catch(() => {
+        setJobOrderEdit(null);
+        setModalOpen(false);
+      });
+  };
+
+  // Handler for editing fields in the modal
+  const handleEditChange = (field, value) => {
+    setJobOrderEdit((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // Handler for saving the updated job order
+  const handleSaveJobOrder = async () => {
+    if (!jobOrderEdit?.job_order_id) return;
+    try {
+      await axios.put(
+        `${apiURL}/rde_joborders/${jobOrderEdit.job_order_id}`,
+        jobOrderEdit
+      );
+      setModalOpen(false);
+      fetchJobOrders();
+    } catch (err) {
+      alert("Failed to update job order");
+    }
+  };
+
   return (
     <>
       <Navbar1 />
@@ -67,7 +124,7 @@ export default function RDEChennaiPage() {
                 </Button>
                 <div>
                   <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
-                    VTC NASHIK
+                    RDE CHENNAI
                   </h1>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
                     NEW JOB ORDER
@@ -119,9 +176,6 @@ export default function RDEChennaiPage() {
                 <TableHeader>
                   <TableRow className>
                     <TableHead className="font-semibold text-gray-700 text-xs">
-                      Week No
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs">
                       Job Order Number
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
@@ -159,46 +213,46 @@ export default function RDEChennaiPage() {
                 <TableBody>
                   {currentRows.map((order, index) => (
                     <TableRow
-                      key={index}
+                      key={order.job_order_id || index}
                       className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
                     >
-                      <TableCell className="text-xs text-gray-900">
-                        {order.weekNo}
-                      </TableCell>
                       <TableCell className="text-xs">
-                        <span className="text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400">
-                          {order.jobOrderNumber}
+                        <span
+                          className="text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400"
+                          onClick={() => handleJobOrderClick(order.job_order_id)}
+                        >
+                          {order.job_order_id}
                         </span>
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
-                        {order.project}
+                        {order.project_id}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.vehicleNumber}
+                        {order.vehicle_id}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.bodyNo}
+                        {order.vehicle_body_number}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.engineNumber}
+                        {order.engine_id}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
                         {order.domain}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
-                        {order.testStatus}
+                        {order.test_status}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.createdBy}
+                        {order.created_by}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.createdOn}
+                        {order.created_on?.slice(0, 10)}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.lastUpdatedBy}
+                        {order.last_updated_by}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.lastUpdatedOn}
+                        {order.updated_on?.slice(0, 10)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -271,6 +325,53 @@ export default function RDEChennaiPage() {
           </div>
         </div>
       </div>
+      {/* Modal for viewing/editing job order */}
+      {modalOpen && jobOrderEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-[90vw] max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">Job Order Details</h2>
+              <Button variant="ghost" onClick={() => setModalOpen(false)}>
+                Close
+              </Button>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSaveJobOrder();
+              }}
+            >
+              <div className="grid grid-cols-2 gap-4">
+                {Object.entries(jobOrderEdit).map(([key, value]) => (
+                  <div key={key} className="flex flex-col mb-2">
+                    <label className="font-semibold text-xs capitalize mb-1">
+                      {key.replace(/_/g, " ")}
+                    </label>
+                    <input
+                      className="border px-2 py-1 rounded text-xs"
+                      value={value ?? ""}
+                      onChange={(e) => handleEditChange(key, e.target.value)}
+                      disabled={key === "job_order_id"}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-red-600 text-white">
+                  Save
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }
