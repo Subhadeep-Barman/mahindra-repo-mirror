@@ -14,6 +14,7 @@ export const AuthProvider = ({ children }) => {
   const [decodedToken, setDecodedToken] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
   const [apiUserRole, setApiUserRole] = useState(null);
+  const [actualUserRole, setActualUserRole] = useState(null); // From token
 
   useEffect(() => {
     const userCookies = useStore.getState().getUserCookieData();
@@ -33,12 +34,14 @@ export const AuthProvider = ({ children }) => {
       try {
         const decoded = JSON.parse(atob(userCookies.token.split('.')[1]));
         setDecodedToken(decoded);
+        setActualUserRole(decoded.role); // Always set actualUserRole from token
       } catch (error) {
         console.error("Failed to decode token:", error);
         setDecodedToken(null);
+        setActualUserRole(null);
       }
     }
-    // Fetch all users and set apiUserRole
+    // Fetch all users and set apiUserRole only if user is in the list and has TestEngineer role
     const fetchUsers = async () => {
       try {
         const apiUrl = import.meta.env.VITE_BACKEND_URL;
@@ -48,8 +51,11 @@ export const AuthProvider = ({ children }) => {
         const currentUser = res.data.find(
           user => user.email === userCookies.userEmail || user.id === userCookies.userId
         );
-        if (currentUser) setApiUserRole(currentUser.role);
-        else setApiUserRole(null);
+        if (currentUser && currentUser.role === "TestEngineer") {
+          setApiUserRole("TestEngineer");
+        } else {
+          setApiUserRole(null); // Not a TestEngineer in API
+        }
       } catch (err) {
         setAllUsers([]);
         setApiUserRole(null);
@@ -107,7 +113,8 @@ export const AuthProvider = ({ children }) => {
       login,
       logout,
       isAuthenticated: !!userRole,
-      apiUserRole,
+      apiUserRole, // Only TestEngineer if found in API
+      actualUserRole, // Always from token
       allUsers
     }}>
       {children}
