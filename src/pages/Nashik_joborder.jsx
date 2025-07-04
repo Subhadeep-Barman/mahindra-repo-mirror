@@ -1096,8 +1096,6 @@ export default function CreateJobOrder() {
     );
   };
 
-  const { apiUserRole } = useAuth();
-
   return (
     <>
       <Navbar1 />

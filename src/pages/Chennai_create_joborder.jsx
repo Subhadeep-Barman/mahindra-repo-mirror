@@ -786,6 +786,7 @@ export default function CreateJobOrder() {
             ? "\nCoast Down Data ID: " + CoastDownData_id
             : "")
       );
+      navigate("/vtc-chennai");
     } catch (err) {
       console.error("Error creating test order:", err);
       alert(
@@ -1648,11 +1649,8 @@ export default function CreateJobOrder() {
             style={{ borderColor: "#e5e7eb", background: "#f9fafb" }}
           >
             <div className="flex items-center justify-between mb-4">
-              {/* Always show Test number, and status if Started */}
               <div className="flex items-center gap-3">
-                <span className="font-bold text-base text-blue-900">
-                  Test {idx + 1}
-                </span>
+                <span className="font-bold text-base text-blue-900">Test {idx + 1}</span>
                 {/* Status Icon and Label */}
                 {test?.status === "Started" && (
                   <span className="flex items-center bg-yellow-100 border border-yellow-400 text-yellow-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
@@ -1682,70 +1680,64 @@ export default function CreateJobOrder() {
                   </span>
                 )}
               </div>
-              {/* Action Buttons for TestbedEngineer only */}
-              {apiUserRole === "TestEngineer" && (
-                <div className="flex items-center gap-3"> {/* Use items-center and gap-3 for alignment */}
-                  {/* Initial state: Start/Reject */}
-                  {(!test?.status || test?.status === "Created") && (
-                    <>
-                      <Button
-                        className="bg-green-600 text-white text-xs px-3 py-1 rounded"
-                        type="button"
-                        onClick={async () => {
-                          await handleStatusUpdate("Started", "", test.testOrderId, idx);
-                        }}
-                      >
-                        Start
-                      </Button>
-                      <Button
-                        className="bg-red-600 text-white text-xs px-3 py-1 rounded"
-                        type="button"
-                        onClick={() => {
-                          setRemarkType("Reject");
-                          setRemarkModalOpen({ idx, type: "Reject" });
-                        }}
-                      >
-                        Reject
-                      </Button>
-                    </>
-                  )}
-                  {/* Started or Rejected: Re-edit/Complete */}
-                  {(test?.status === "Started" || test?.status === "Rejected" || test?.status === "Re-edit") && (
-                    <>
-                      <Button
-                        className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
-                        type="button"
-                        onClick={async () => {
-                          await handleStatusUpdate("Re-edit", "", test.testOrderId, idx);
-                        }}
-                      >
-                        Re-edit
-                      </Button>
-                      <Button
-                        className="bg-green-600 text-white text-xs px-3 py-1 rounded"
-                        type="button"
-                        onClick={async () => {
-                          await handleStatusUpdate("Completed", "", test.testOrderId, idx);
-                        }}
-                      >
-                        Completed
-                      </Button>
-                    </>
-                  )}
-                  {/* Close button always available for TestEngineer and ProjectTeam */}
-                  {(apiUserRole === "TestEngineer" || apiUserRole === "ProjectTeam") && (
-                    <button
+              <div className="flex items-center gap-3">
+                {/* Button Display Logic */}
+                {(!test?.status || test?.status === "Created") && (
+                  <>
+                    <Button
+                      className="bg-green-600 text-white text-xs px-3 py-1 rounded"
                       type="button"
-                      onClick={() => handleDeleteTest(idx)}
-                      className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 hover:bg-red-200 transition-colors border border-gray-300 text-gray-600 hover:text-red-600 focus:outline-none"
-                      title="Close"
-                      style={{ minWidth: 0, padding: 0 }}
+                      onClick={async () => {
+                        await handleStatusUpdate("Started", "", test.testOrderId, idx);
+                      }}
                     >
-                      <CloseIcon fontSize="small" />
-                    </button>
-                  )}
-                </div>
-              )}
+                      Start
+                    </Button>
+                    <Button
+                      className="bg-red-600 text-white text-xs px-3 py-1 rounded"
+                      type="button"
+                      onClick={() => {
+                        setRemarkType("Reject");
+                        setRemarkModalOpen({ idx, type: "Reject" });
+                      }}
+                    >
+                      Reject
+                    </Button>
+                  </>
+                )}
+                {(test?.status === "Started" || test?.status === "Rejected" || test?.status === "Re-edit") && (
+                  <>
+                    <Button
+                      className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
+                      type="button"
+                      onClick={async () => {
+                        await handleStatusUpdate("Re-edit", "", test.testOrderId, idx);
+                      }}
+                    >
+                      Re-edit
+                    </Button>
+                    <Button
+                      className="bg-green-600 text-white text-xs px-3 py-1 rounded"
+                      type="button"
+                      onClick={async () => {
+                        await handleStatusUpdate("Completed", "", test.testOrderId, idx);
+                      }}
+                    >
+                      Completed
+                    </Button>
+                  </>
+                )}
+                {/* Close button always available */}
+                <button
+                  type="button"
+                  onClick={() => handleDeleteTest(idx)}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 hover:bg-red-200 transition-colors border border-gray-300 text-gray-600 hover:text-red-600 focus:outline-none"
+                  title="Close"
+                  style={{ minWidth: 0, padding: 0 }}
+                >
+                  <CloseIcon fontSize="small" />
+                </button>
+              </div>
             </div>
             {/* Make form editable if status is Rejected */}
             {test?.status === "Rejected" && (
@@ -2364,7 +2356,6 @@ export default function CreateJobOrder() {
               <Button
                 className="bg-red-600 text-white text-xs px-6 py-2 rounded"
                 onClick={() => handleCreateTestOrder(idx)}
-                disabled={editingTestOrderIdx === idx}
               >
                 ✓ CREATE TEST ORDER
               </Button>
