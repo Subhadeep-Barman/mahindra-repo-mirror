@@ -27,9 +27,9 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     vehicleModel: "",
     vehicleBodyNumber: "",
     vehicleNumber: "",
+    vehicleSerialNumber: "", // Added
     transmissionType: "",
     finalDriveAxleRatio: { numerator: "", denominator: "" },
-    engineNumber: "",
     domain: "",
     coastDownTestReportReference: "",
     tyreMake: "",
@@ -81,18 +81,16 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     return {
       vehicle_id: generateVehicleId(),
       project_code: form.project,
-      vehicle_serial_number: form.engineNumber, // Assuming engineNumber as serial
       vehicle_body_number: form.vehicleBodyNumber,
       vehicle_model: form.vehicleModel,
       vehicle_number: form.vehicleNumber,
+      vehicle_serial_number: form.vehicleSerialNumber, // Added
       vehicle_build_level: form.vehicleBuildLevel,
       transmission_type: form.transmissionType,
       final_drive_axle_ratio:
-        form.finalDriveAxleRatio.numerator &&
-        form.finalDriveAxleRatio.denominator
-          ? parseFloat(form.finalDriveAxleRatio.numerator) /
-            parseFloat(form.finalDriveAxleRatio.denominator)
-          : null,
+        form.finalDriveAxleRatio.numerator && form.finalDriveAxleRatio.denominator
+          ? `${form.finalDriveAxleRatio.numerator}:${form.finalDriveAxleRatio.denominator}`
+          : "",
       domain: form.domain,
       coast_down_test_reference_report: form.coastDownTestReportReference,
       tyre_make: form.tyreMake,
@@ -115,19 +113,65 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       intercooler_location: form.intercoolerLocation,
       gear_ratio:
         form.gearRatio.numerator && form.gearRatio.denominator
-          ? parseFloat(form.gearRatio.numerator) / parseFloat(form.gearRatio.denominator)
-          : null,
+          ? `${form.gearRatio.numerator}:${form.gearRatio.denominator}`
+          : "",
       // id_of_creator, created_on, id_of_updater, updated_on handled by backend
     };
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Map of form keys to user-friendly field names
+    const fieldNames = {
+      project: "Project",
+      vehicleBuildLevel: "Vehicle Build Level",
+      vehicleModel: "Vehicle Model",
+      vehicleBodyNumber: "Vehicle Body Number",
+      vehicleNumber: "Vehicle Number",
+      vehicleSerialNumber: "Vehicle Serial Number", // Added
+      transmissionType: "Transmission Type",
+      finalDriveAxleRatio: "Final Drive Axle Ratio",
+      domain: "Domain",
+      coastDownTestReportReference: "Coast Down Test Report Reference",
+      tyreMake: "Tyre Make",
+      tyreSize: "Tyre Size",
+      tyrePressureFront: "Tyre Pressure Front",
+      tyrePressureRear: "Tyre Pressure Rear",
+      tyreRunIn: "Tyre Run-in",
+      engineRunIn: "Engine Run-in",
+      gearBoxRunIn: "Gear Box Run-in",
+      axleRunIn: "Axle Run-in",
+      engineOilSpecification: "Engine Oil Specification",
+      axleOilSpecification: "Axle Oil Specification",
+      transmissionOilSpecification: "Transmission Oil Specification",
+      driveType: "2WD / 4WD",
+      drivenWheel: "Driven Wheel",
+      intercoolerLocation: "Intercooler Location",
+      gearRatio: "Gear Ratio",
+    };
+
+    // Check for missing fields
+    const missingFields = [];
     for (let key in form) {
-      if (!form[key]) {
-        alert("Please fill all fields.");
-        return;
+      if (
+        typeof form[key] === "object" &&
+        form[key] !== null &&
+        ("numerator" in form[key] || "denominator" in form[key])
+      ) {
+        // For ratio fields
+        if (!form[key].numerator || !form[key].denominator) {
+          missingFields.push(fieldNames[key]);
+        }
+      } else if (!form[key]) {
+        missingFields.push(fieldNames[key]);
       }
+    }
+    if (missingFields.length > 0) {
+      alert(
+        "Please fill all fields.\nMissing: " +
+          missingFields.join(", ")
+      );
+      return;
     }
     const payload = mapFormToApi(form);
 
@@ -151,9 +195,9 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       vehicleModel: "",
       vehicleBodyNumber: "",
       vehicleNumber: "",
+      vehicleSerialNumber: "", // Added
       transmissionType: "",
       finalDriveAxleRatio: { numerator: "", denominator: "" },
-      engineNumber: "",
       domain: "",
       coastDownTestReportReference: "",
       tyreMake: "",
@@ -310,11 +354,25 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           {/* Vehicle Number */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Vehicle Serial Number <span className="text-red-500">*</span>
+              Vehicle Number <span className="text-red-500">*</span>
             </label>
             <input
               name="vehicleNumber"
               value={form.vehicleNumber}
+              onChange={handleChange}
+              required
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
+              placeholder="Enter Vehicle Number"
+            />
+          </div>
+          {/* Vehicle Serial Number */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Vehicle Serial Number <span className="text-red-500">*</span>
+            </label>
+            <input
+              name="vehicleSerialNumber"
+              value={form.vehicleSerialNumber}
               onChange={handleChange}
               required
               className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"

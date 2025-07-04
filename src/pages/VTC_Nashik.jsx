@@ -13,14 +13,32 @@ import {
   TableRow,
 } from "@/components/UI/table";
 import { Card } from "@/components/UI/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar1 from "@/components/UI/navbar";
-const jobOrders = [];
+import axios from "axios";
+const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function VTCNashikPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("Job Order");
+  const [jobOrders, setJobOrders] = useState([]);
+  const [selectedJobOrder, setSelectedJobOrder] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [jobOrderEdit, setJobOrderEdit] = useState(null);
   const rowsPerPage = 8;
+
+  // Fetch job orders from backend on mount
+  useEffect(() => {
+    fetchJobOrders();
+  }, []);
+
+  const fetchJobOrders = () => {
+    const department = "VTC_JO Nashik"; // Replace with the appropriate department value
+    axios
+      .get(`${apiURL}/joborders`, { params: { department } })
+      .then((res) => setJobOrders(res.data || []))
+      .catch(() => setJobOrders([]));
+  };
 
   // Calculate pagination values
   const totalPages = Math.ceil(jobOrders.length / rowsPerPage);
@@ -44,10 +62,50 @@ export default function VTCNashikPage() {
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
-    if (tab === "Job Order") navigate("/nashik/joborder");
+    if (tab === "Job Order") navigate("/vtc-nashik");
     else if (tab === "Vehicle") navigate("/nashik/vehicle");
     else if (tab === "Engine") navigate("/nashik/engine");
   };
+
+  const handleJobOrderClick = (job_order_id) => {
+    axios
+      .get(`${apiURL}/joborders/${job_order_id}`)
+      .then((res) => {
+        navigate("/createJobOrder", {
+          state: {
+            jobOrder: res.data,
+            isEdit: true,
+            originalJobOrderId: job_order_id,
+          },
+        });
+      })
+      .catch((error) => {
+        console.error("Failed to fetch job order details:", error);
+        navigate("/createJobOrder");
+      });
+  };
+
+  const handleEditChange = (field, value) => {
+    setJobOrderEdit((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSaveJobOrder = async () => {
+    if (!jobOrderEdit?.job_order_id) return;
+    try {
+      await axios.put(
+        `${apiURL}/joborders/${jobOrderEdit.job_order_id}`,
+        jobOrderEdit
+      );
+      setModalOpen(false);
+      fetchJobOrders();
+    } catch (err) {
+      alert("Failed to update job order");
+    }
+  };
+
   return (
     <>
       <Navbar1 />
@@ -66,12 +124,9 @@ export default function VTCNashikPage() {
                   <ArrowBack className="h-5 w-5" />
                 </Button>
                 <div>
-                  <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
+                  <h1 className="text-sm font-medium text-black-600 dark:text-red-500 ">
                     VTC NASHIK
                   </h1>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
-                    NEW JOB ORDER
-                  </h2>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
@@ -103,7 +158,7 @@ export default function VTCNashikPage() {
             Current Job Orders
           </Badge>
           <Button
-            onClick={() => navigate("/createJobOrder")}
+            onClick={() => navigate("/nashik/joborder")}
             className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
           >
             <Add className="h-4 w-4 mr-1" />
@@ -118,9 +173,6 @@ export default function VTCNashikPage() {
               <Table>
                 <TableHeader>
                   <TableRow className>
-                    <TableHead className="font-semibold text-gray-700 text-xs">
-                      Week No
-                    </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Job Order Number
                     </TableHead>
@@ -140,10 +192,10 @@ export default function VTCNashikPage() {
                       Domain
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
-                      Test Status
+                      Test Orders
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
-                      Created By
+                      Completed Test Orders
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Created on
@@ -159,46 +211,44 @@ export default function VTCNashikPage() {
                 <TableBody>
                   {currentRows.map((order, index) => (
                     <TableRow
-                      key={index}
+                      key={order.job_order_id || index}
                       className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
                     >
-                      <TableCell className="text-xs text-gray-900">
-                        {order.weekNo}
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        <span className="text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400">
-                          {order.jobOrderNumber}
-                        </span>
+                      <TableCell
+                        className="text-xs text-blue-600 underline cursor-pointer"
+                        onClick={() => handleJobOrderClick(order.job_order_id)}
+                      >
+                        {order.job_order_id || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
-                        {order.project}
+                        {order.project_id || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.vehicleNumber}
+                        {order.vehicle_id || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.bodyNo}
+                        {order.vehicle_body_number || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.engineNumber}
+                        {order.engine_id || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
-                        {order.domain}
+                        {order.domain || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
-                        {order.testStatus}
+                        {order.test_status || "0"}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-900">
+                        {order.completed_test_count || "0"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.createdBy}
+                        {order.created_on?.slice(0, 10) || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.createdOn}
+                        {order.name_of_updater || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.lastUpdatedBy}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-600">
-                        {order.lastUpdatedOn}
+                        {order.updated_on?.slice(0, 10) || "N/A"}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -270,6 +320,54 @@ export default function VTCNashikPage() {
             </div>
           </div>
         </div>
+
+        {/* Modal for viewing/editing job order */}
+        {modalOpen && jobOrderEdit && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+            <div className="bg-white rounded-lg shadow-lg p-6 w-[90vw] max-w-4xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold">Job Order Details</h2>
+                <Button variant="ghost" onClick={() => setModalOpen(false)}>
+                  Close
+                </Button>
+              </div>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSaveJobOrder();
+                }}
+              >
+                <div className="grid grid-cols-2 gap-4">
+                  {Object.entries(jobOrderEdit).map(([key, value]) => (
+                    <div key={key} className="flex flex-col mb-2">
+                      <label className="font-semibold text-xs capitalize mb-1">
+                        {key.replace(/_/g, " ")}
+                      </label>
+                      <input
+                        className="border px-2 py-1 rounded text-xs"
+                        value={value ?? ""}
+                        onChange={(e) => handleEditChange(key, e.target.value)}
+                        disabled={key === "job_order_id"}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="bg-red-600 text-white">
+                    Save
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

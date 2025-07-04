@@ -154,9 +154,93 @@ export default function VTCCEngineForm() {
     navigate(-1);
   };
 
-  const handleAddEngine = () => {
-    // TODO: Implement actual add logic or API call
-    alert("Engine added (stub)");
+  // Utility to map frontend formData to backend EngineSchema
+  const mapFormDataToEngineSchema = (formData) => {
+    // Helper to parse float or return undefined if empty
+    const parseFloatOrUndefined = (val) => (val ? parseFloat(val) : undefined);
+    // Helper to parse int or return undefined if empty
+    const parseIntOrUndefined = (val) => (val ? parseInt(val) : undefined);
+    // Helper to parse boolean from Yes/No
+    const parseBool = (val) =>
+      val === "Yes" ? true : val === "No" ? false : undefined;
+    // Compression ratio as float if both numerator and denominator are present
+    let compression_ratio = undefined;
+    if (
+      formData.compressionRatio.numerator &&
+      formData.compressionRatio.denominator
+    ) {
+      const num = parseFloat(formData.compressionRatio.numerator);
+      const den = parseFloat(formData.compressionRatio.denominator);
+      if (!isNaN(num) && !isNaN(den) && den !== 0) {
+        compression_ratio = num / den;
+      }
+    }
+    return {
+      engine_id: formData.engineSerialNumber, // Assuming engine_id is engineSerialNumber
+      engine_serial_number: formData.engineSerialNumber || undefined,
+      engine_build_level: formData.engineBuildLevel || undefined,
+      engine_capacity: parseFloatOrUndefined(formData.engineCapacity),
+      engine_type: formData.engineType || undefined,
+      number_of_cylinders: formData.numberOfCylinders || undefined,
+      compression_ratio,
+      bore_mm: parseFloatOrUndefined(formData.bore),
+      stroke_mm: parseFloatOrUndefined(formData.stroke),
+      vacuum_modulator_make: formData.vacuumModulatorMake || undefined,
+      vacuum_modulator_details: formData.vacuumModulatorDetails || undefined,
+      ecu_make: formData.ecuMake || undefined,
+      ecu_id_number: formData.ecuIdNumber || undefined,
+      ecu_dataset_number: formData.ecuDatasetNumber || undefined,
+      ecu_dataset_details: formData.ecuDatasetDetails || undefined,
+      injector_type: formData.injectorType || undefined,
+      turbo_charger_type: formData.turbochargerType || undefined,
+      blow_by_recirculation: parseBool(formData.blowByRecirculation),
+      nozzle_hole_count: formData.nozzleNumberOfHoles || undefined,
+      nozzle_through_flow: parseFloatOrUndefined(formData.nozzleThroughFlow),
+      egr_valve_make: formData.egrValveMake || undefined,
+      egr_valve_type: formData.egrValveType || undefined,
+      egr_valve_diameter_mm: parseFloatOrUndefined(formData.egrValveDiameter),
+      egr_cooler_make: formData.egrCoolerMake || undefined,
+      egr_cooler_capacity_kw: parseFloatOrUndefined(formData.egrCoolerCapacity),
+      catcon_make: formData.cafconMass || undefined,
+      catcon_type: formData.cafconType || undefined,
+      catcon_loading: formData.cafconLoading || undefined,
+      dpf_make: formData.dpfMake || undefined,
+      dpf_capacity: formData.dpfCapacity || undefined,
+      scr_make: formData.scrMake || undefined,
+      scr_capacity: formData.scrCapacity || undefined,
+      acc_compressor: parseBool(formData.acCompressor),
+      acc_compressor_details: formData.acCompressorDetails || undefined,
+      ps_pump: formData.powerSteeringPump || undefined,
+      ps_details: formData.powerSteeringDetails || undefined,
+      water_bypass: formData.waterByPass || undefined,
+      kerb_weight_faw_kg: parseFloatOrUndefined(formData.kerbWeightEmw),
+      kerb_weight_raw_kg: parseFloatOrUndefined(formData.kerbWeightRmw),
+      emission_status: formData.emissionStatus || undefined,
+      thermostat_details: formData.thermostatDetails || undefined,
+      vehicle_serial_number: formData.vehicleSerialNumber || undefined,
+      engine_family: formData.engineFamily || undefined,
+      hv_battery_make: formData.hvBatteryMake || undefined,
+      hv_battery_capacity: parseFloatOrUndefined(formData.hvBatteryCapacity),
+      hv_battery_voltage: parseFloatOrUndefined(formData.hvBatteryVoltage),
+      hv_battery_current: parseFloatOrUndefined(formData.hvBatteryCurrent),
+      ev_motor_power_kw: parseFloatOrUndefined(formData.evMotorPower),
+      // id_of_creator, created_on, id_of_updater, updated_on are handled by backend
+    };
+  };
+
+  const handleAddEngine = async () => {
+    const enginePayload = mapFormDataToEngineSchema(formData);
+    try {
+      const res = await axios.post(`${apiUrl}/engines`, enginePayload);
+      alert("Engine added successfully!");
+      handleClear();
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.detail) {
+        alert("Failed to add engine: " + err.response.data.detail);
+      } else {
+        alert("Failed to add engine. Please try again.");
+      }
+    }
   };
 
   useEffect(() => {
@@ -248,7 +332,10 @@ export default function VTCCEngineForm() {
               </div>
               {/* Engine Serial Number */}
               <div className="space-y-2">
-                <Label htmlFor="engineSerialNumber">Engine Serial Number <span className="text-red-500">*</span></Label>
+                <Label htmlFor="engineSerialNumber">
+                  Engine Serial Number{" "}
+                  <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="engineSerialNumber"
                   value={formData.engineSerialNumber}
@@ -711,7 +798,10 @@ export default function VTCCEngineForm() {
               </div>
               {/* Kerb Weight EMW */}
               <div className="space-y-2">
-                <Label htmlFor="kerbWeightEmw">Kerb Weight EMW (Kg) <span className="text-red-500">*</span></Label>
+                <Label htmlFor="kerbWeightEmw">
+                  Kerb Weight EMW (Kg){" "}
+                  <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="kerbWeightEmw"
                   value={formData.kerbWeightEmw}
@@ -723,7 +813,10 @@ export default function VTCCEngineForm() {
               </div>
               {/* Kerb Weight RMW */}
               <div className="space-y-2">
-                <Label htmlFor="kerbWeightRmw">Kerb Weight RMW (Kg) <span className="text-red-500">*</span></Label>
+                <Label htmlFor="kerbWeightRmw">
+                  Kerb Weight RMW (Kg){" "}
+                  <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="kerbWeightRmw"
                   value={formData.kerbWeightRmw}
@@ -760,7 +853,10 @@ export default function VTCCEngineForm() {
               </div>
               {/* Vehicle Serial Number */}
               <div className="space-y-2">
-                <Label htmlFor="vehicleSerialNumber">Vehicle Serial Number <span className="text-red-500">*</span></Label>
+                <Label htmlFor="vehicleSerialNumber">
+                  Vehicle Serial Number{" "}
+                  <span className="text-red-500">*</span>
+                </Label>
                 <Select
                   value={formData.vehicleSerialNumber}
                   onValueChange={(value) =>

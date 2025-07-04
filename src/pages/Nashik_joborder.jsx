@@ -32,7 +32,7 @@ export default function CreateJobOrder() {
     engineNumber: "",
     engineType: "",
     domain: "",
-    department: "",
+    department: "VTC_JO Nashik", // Default to Nashik
     coastDownTestReportReference: "",
     tyreMake: "",
     tyreSize: "",
@@ -1203,7 +1203,7 @@ export default function CreateJobOrder() {
               value={form.department}
               onValueChange={(value) => handleChange("department", value)}
               required
-              disabled={formDisabled}
+              disabled={true}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Select" />
