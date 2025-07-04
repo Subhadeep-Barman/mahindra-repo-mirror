@@ -17,6 +17,7 @@ import { Switch } from "@/components/UI/switch";
 import useStore from "@/store/useStore";
 import axios from "axios";
 import { Cancel, Edit, CheckCircle } from "@mui/icons-material";
+import { useAuth } from "@/context/AuthContext";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
@@ -1094,6 +1095,8 @@ export default function CreateJobOrder() {
       </div>
     );
   };
+
+  const { apiUserRole } = useAuth();
 
   return (
     <>

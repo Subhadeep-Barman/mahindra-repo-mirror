@@ -366,7 +366,7 @@ export default function CreateJobOrder() {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { userRole } = useAuth();
+  const { apiUserRole } = useAuth();
 
   // Prefill form if jobOrder is passed via navigation state
   useEffect(() => {
@@ -1682,7 +1682,7 @@ export default function CreateJobOrder() {
                 )}
               </div>
               {/* Action Buttons for TestbedEngineer only */}
-              {userRole === "TestEngineer" && (
+              {apiUserRole === "Test Engineer" && (
                 <div className="flex items-center gap-3"> {/* Use items-center and gap-3 for alignment */}
                   {/* Initial state: Start/Reject */}
                   {(!test?.status || test?.status === "Created") && (
@@ -1732,7 +1732,7 @@ export default function CreateJobOrder() {
                     </>
                   )}
                   {/* Close button always available for TestEngineer and ProjectTeam */}
-                  {(userRole === "TestEngineer" || userRole === "ProjectTeam") && (
+                  {(apiUserRole === "Test Engineer" || apiUserRole === "ProjectTeam") && (
                     <button
                       type="button"
                       onClick={() => handleDeleteTest(idx)}
