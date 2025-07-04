@@ -1,5 +1,5 @@
 "use client";
-import { ArrowBack, Add } from "@mui/icons-material";
+import { ArrowBack, Add, Cancel, Edit, Done, CheckCircle, Close as CloseIcon } from "@mui/icons-material";
 import { Button } from "@/components/UI/button";
 import DropzoneFileList from "@/components/UI/DropzoneFileList";
 import { Input } from "@/components/UI/input";
@@ -17,6 +17,7 @@ import useStore from "@/store/useStore";
 import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 const apiURL = import.meta.env.VITE_BACKEND_URL
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
@@ -365,6 +366,7 @@ export default function CreateJobOrder() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { userRole } = useAuth();
 
   // Prefill form if jobOrder is passed via navigation state
   useEffect(() => {
@@ -1055,18 +1057,16 @@ export default function CreateJobOrder() {
         remark,
       };
       await axios.post(`${apiURL}/testorders/status`, payload);
-
       // Update test status in UI if testIdx is provided
       if (typeof testIdx === "number") {
         setTests((prev) =>
           prev.map((t, i) =>
             i === testIdx
-              ? { ...t, status: status === "Started" ? "Started" : status }
+              ? { ...t, status }
               : t
           )
         );
       }
-
       setRemarkInput("");
       setRemarkModalOpen(false);
     } catch (err) {
@@ -1652,81 +1652,118 @@ export default function CreateJobOrder() {
                 <span className="font-bold text-base text-blue-900">
                   Test {idx + 1}
                 </span>
+                {/* Status Icon and Label */}
                 {test?.status === "Started" && (
-                  <span className="flex items-center bg-yellow-100 border border-yellow-400 text-yellow-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2" style={{ backgroundColor: "#FFF8E1", borderColor: "#FFA500", color: "#FFA500" }}>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4 mr-1"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      style={{ color: "#FFA500" }}
-                    >
+                  <span className="flex items-center bg-yellow-100 border border-yellow-400 text-yellow-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#FFA500" }}>
                       <circle cx="12" cy="12" r="9" stroke="#FFA500" strokeWidth="2" fill="none" />
                       <path d="M12 7v5l3 3" stroke="#FFA500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     Started
                   </span>
                 )}
-              </div>
-              {/* Top right: Action buttons */}
-              <div className="flex gap-2">
-                {/* If not Started, show Start and Reject */}
-                {!test?.status || test?.status !== "Started" ? (
-                  <>
-                    <Button
-                      className="bg-green-600 text-white text-xs px-3 py-1 rounded"
-                      type="button"
-                      onClick={async () => {
-                        await handleStatusUpdate("Started", "", test.testOrderId, idx);
-                      }}
-                    >
-                      Start
-                    </Button>
-                    <Button
-                      className="bg-red-600 text-white text-xs px-3 py-1 rounded"
-                      type="button"
-                      onClick={() => {
-                        setRemarkType("Reject");
-                        setRemarkModalOpen({ idx, type: "Reject" });
-                      }}
-                    >
-                      Reject
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    {/* If Started, show re-edit and complete */}
-                    <Button
-                      className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
-                      type="button"
-                      onClick={() => {
-                        setRemarkType("Edit");
-                        setRemarkModalOpen({ idx, type: "Edit" });
-                      }}
-                    >
-                      re-edit
-                    </Button>
-                    <Button
-                      className="bg-yellow-600 text-white text-xs px-3 py-1 rounded"
-                      type="button"
-                      onClick={() => handleUpdateTestOrder(idx)}
-                    >
-                      Complete
-                    </Button>
-                  </>
+                {test?.status === "Rejected" && (
+                  <span className="flex items-center bg-red-100 border border-red-400 text-red-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+                    <Cancel className="h-4 w-4 mr-1" style={{ color: "#e53935" }} />
+                    Rejected
+                  </span>
                 )}
-                <Button
-                  variant="ghost"
-                  className="bg-green-600 text-xs text-white-600 px-2 py-0"
-                  type="button"
-                  onClick={() => handleDeleteTest(idx)}
-                >
-                  Close
-                </Button>
+                {test?.status === "Re-edit" && (
+                  <span className="flex items-center bg-blue-100 border border-blue-400 text-blue-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+                    <Edit className="h-4 w-4 mr-1" style={{ color: "#1976d2" }} />
+                    Re-edit
+                  </span>
+                )}
+                {test?.status === "Completed" && (
+                  <span className="flex items-center bg-green-100 border border-green-400 text-green-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+                    <CheckCircle className="h-4 w-4 mr-1" style={{ color: "#43a047" }} />
+                    Completed
+                  </span>
+                )}
               </div>
+              {/* Action Buttons for TestbedEngineer only */}
+              {userRole === "TestEngineer" && (
+                <div className="flex items-center gap-3"> {/* Use items-center and gap-3 for alignment */}
+                  {/* Initial state: Start/Reject */}
+                  {(!test?.status || test?.status === "Created") && (
+                    <>
+                      <Button
+                        className="bg-green-600 text-white text-xs px-3 py-1 rounded"
+                        type="button"
+                        onClick={async () => {
+                          await handleStatusUpdate("Started", "", test.testOrderId, idx);
+                        }}
+                      >
+                        Start
+                      </Button>
+                      <Button
+                        className="bg-red-600 text-white text-xs px-3 py-1 rounded"
+                        type="button"
+                        onClick={() => {
+                          setRemarkType("Reject");
+                          setRemarkModalOpen({ idx, type: "Reject" });
+                        }}
+                      >
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                  {/* Started or Rejected: Re-edit/Complete */}
+                  {(test?.status === "Started" || test?.status === "Rejected" || test?.status === "Re-edit") && (
+                    <>
+                      <Button
+                        className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
+                        type="button"
+                        onClick={async () => {
+                          await handleStatusUpdate("Re-edit", "", test.testOrderId, idx);
+                        }}
+                      >
+                        Re-edit
+                      </Button>
+                      <Button
+                        className="bg-green-600 text-white text-xs px-3 py-1 rounded"
+                        type="button"
+                        onClick={async () => {
+                          await handleStatusUpdate("Completed", "", test.testOrderId, idx);
+                        }}
+                      >
+                        Completed
+                      </Button>
+                    </>
+                  )}
+                  {/* Close button always available for TestEngineer and ProjectTeam */}
+                  {(userRole === "TestEngineer" || userRole === "ProjectTeam") && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteTest(idx)}
+                      className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 hover:bg-red-200 transition-colors border border-gray-300 text-gray-600 hover:text-red-600 focus:outline-none"
+                      title="Close"
+                      style={{ minWidth: 0, padding: 0 }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
+            {/* Make form editable if status is Rejected */}
+            {test?.status === "Rejected" && (
+              <div className="bg-red-100 border border-red-400 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+                <div className="font-semibold text-sm text-red-700 mb-2">
+                  Rejected Reason
+                </div>
+                <textarea
+                  value={test.rejection_remarks}
+                  onChange={(e) =>
+                    handleTestChange(idx, "rejection_remarks", e.target.value)
+                  }
+                  placeholder="Enter rejection remarks"
+                  className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical"
+                  style={{ minWidth: "100%", fontSize: "1rem" }}
+                  rows={3}
+                />
+              </div>
+            )}
             {/* Inputs above attachments */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
               <div>
