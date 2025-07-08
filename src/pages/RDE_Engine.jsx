@@ -104,7 +104,6 @@ export default function VTCEnginePage() {
     try {
       const res = await axios.get(`${apiURL}/engines/${engineSerialNumber}`);
       setEditForm({
-        engineId: res.data.engine_id || "",
         engineBuildLevel: res.data.engine_build_level || "",
         engineSerialNumber: res.data.engine_serial_number || "",
         engineType: res.data.engine_type || "",
@@ -185,9 +184,7 @@ export default function VTCEnginePage() {
     setEditLoading(true);
     setEditError(null);
     try {
-      // Map editForm to API schema and include engine_id for update
       const payload = {
-        engine_id: editForm.engineId, // Always include engine_id for update
         engine_serial_number: editForm.engineSerialNumber || null,
         engine_build_level: editForm.engineBuildLevel || null,
         engine_capacity: editForm.engineCapacity
@@ -284,14 +281,13 @@ export default function VTCEnginePage() {
         }))
       );
     } catch (err) {
-      // If error is only about engine_id missing, ignore it
       if (
         err?.response?.data?.detail &&
         Array.isArray(err.response.data.detail) &&
         err.response.data.detail.some(
           (d) =>
             d.loc &&
-            d.loc.includes("engine_id") &&
+            d.loc.includes("engine_serial_number") &&
             d.msg &&
             d.msg.toLowerCase().includes("field required")
         )

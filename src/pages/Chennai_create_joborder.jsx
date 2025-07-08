@@ -28,10 +28,10 @@ export default function CreateJobOrder() {
     vehicleBuildLevel: "",
     vehicleModel: "",
     vehicleBodyNumber: "",
-    vehicleNumber: "",
+    vehicleSerialNumber: "",
     transmissionType: "",
     finalDriveAxleRatio: "",
-    engineNumber: "",
+    engineSerialNumber: "",
     engineType: "",
     domain: "",
     department: "VTC_JO Chennai", // Default value for Chennai
@@ -224,7 +224,7 @@ export default function CreateJobOrder() {
     fetch("/api/engines")
       .then((res) => res.json())
       .then((data) => setEngineList(data || []));
-    // Fetch vehicle body numbers (now returns both body number and vehicle number)
+    // Fetch vehicle body numbers (now returns both body number and vehicle_serial_number)
     (async () => {
       try {
         const res = await axios.get(`${apiURL}/vehicle-body-numbers`);
@@ -262,8 +262,8 @@ export default function CreateJobOrder() {
     setForm((prev) => ({
       ...prev,
       vehicleBodyNumber: value,
-      vehicleNumber: found?.vehicle_number || "",
-      engineNumber: "",
+      vehicleSerialNumber: found?.vehicle_serial_number || "",
+      engineSerialNumber: "",
       engineType: "",
     }));
     // Use the new API endpoint
@@ -319,7 +319,7 @@ export default function CreateJobOrder() {
 
     setForm((prev) => ({
       ...prev,
-      engineNumber: value,
+      engineSerialNumber: value,
     }));
     // Use the new API endpoint
     if (value) {
@@ -341,20 +341,20 @@ export default function CreateJobOrder() {
 
   // Keep engineEditable in sync with API response
   useEffect(() => {
-    if (form.engineNumber && !isPreFilling) {
+    if (form.engineSerialNumber && !isPreFilling) {
       axios
         .get(
           `${apiURL}/engines/by-engine-number/${encodeURIComponent(
-            form.engineNumber
+            form.engineSerialNumber
           )}`
         )
         .then((res) => setEngineEditable(res.data))
         .catch(() => setEngineEditable(null));
-    } else if (!form.engineNumber && !isPreFilling) {
+    } else if (!form.engineSerialNumber && !isPreFilling) {
       setEngineEditable(null);
     }
     // eslint-disable-next-line
-  }, [form.engineNumber, isPreFilling]);
+  }, [form.engineSerialNumber, isPreFilling]);
 
   // Handler for editable engine form changes
   const handleEngineEditableChange = (field, value) => {
@@ -433,19 +433,19 @@ export default function CreateJobOrder() {
 
         const newFormData = {
           ...form, // Preserve existing form state first
-          projectCode: jobOrder.project_id || "",
+          projectCode: jobOrder.project_code || "",
           vehicleBuildLevel:
             jobOrder.vehicle_build_level || jobOrder.vehicleBuildLevel || "",
           vehicleModel: jobOrder.vehicle_model || jobOrder.vehicleModel || "",
           vehicleBodyNumber: jobOrder.vehicle_body_number || "",
-          vehicleNumber: jobOrder.vehicle_id || "",
+          vehicleSerialNumber:jobOrder.vehicle_serial_number || "",
           transmissionType:
             jobOrder.transmission_type || jobOrder.transmissionType || "",
           finalDriveAxleRatio:
             jobOrder.final_drive_axle_ratio ||
             jobOrder.finalDriveAxleRatio ||
             "",
-          engineNumber: jobOrder.engine_id || "",
+          engineSerialNumber:jobOrder.engine_serial_number || "",
           engineType:
             jobOrder.type_of_engine ||
             jobOrder.engine_type ||
@@ -565,14 +565,14 @@ export default function CreateJobOrder() {
     const job_order_id = "JO" + Date.now();
     const CoastDownData_id = "CD" + Date.now();
 
-    // You may need to fetch or map vehicle_id, engine_id, CoastDownData_id from backend if not available in frontend
+    // You may need to fetch or map vehicle_serial_number, engine_serial_number, CoastDownData_id from backend if not available in frontend
     // For now, use null or empty string if not available
     const jobOrderPayload = {
       job_order_id,
-      project_id: form.projectCode || null,
-      vehicle_id: vehicleEditable?.vehicle_id || null,
+      project_code: form.projectCode || null,
+      vehicle_serial_number: vehicleEditable?.vehicle_serial_number || null,
       vehicle_body_number: form.vehicleBodyNumber || null,
-      engine_id: engineEditable?.engine_id || null,
+      engine_serial_number: engineEditable?.engine_serial_number || null,
       CoastDownData_id, // Now always a string
       type_of_engine: form.engineType || null,
       department: form.department || null,
@@ -1209,28 +1209,28 @@ export default function CreateJobOrder() {
               </SelectContent>
             </Select>
           </div>
-          {/* Vehicle Number (auto) */}
+          {/* vehicle_serial_number (auto) */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleNumber">
-              Vehicle Number <span className="text-red-500">*</span>
+            <Label htmlFor="vehicleSerialNumber">
+              Vehicle Serial Number <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="vehicleNumber"
-              value={form.vehicleNumber}
+              id="vehicleSerialNumber"
+              value={form.vehicleSerialNumber}
               readOnly
               className="w-full"
               placeholder="Auto-fetched"
               required
-              disabled={formDisabled}
+              disabled={!formDisabled}
             />
           </div>
           {/* Engine Number (dropdown) */}
           <div className="flex flex-col">
-            <Label htmlFor="engineNumber">
-              Engine Number <span className="text-red-500">*</span>
+            <Label htmlFor="engineSerialNumber">
+              Engine Serial Number <span className="text-red-500">*</span>
             </Label>
             <Select
-              value={form.engineNumber}
+              value={form.engineSerialNumber}
               onValueChange={handleEngineNumberChange}
               required
               disabled={formDisabled}
@@ -1239,9 +1239,9 @@ export default function CreateJobOrder() {
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
-                {engineNumbers.map((engineNumber) => (
-                  <SelectItem key={engineNumber} value={engineNumber}>
-                    {engineNumber}
+                {engineNumbers.map((engineSerialNumber) => (
+                  <SelectItem key={engineSerialNumber} value={engineSerialNumber}>
+                    {engineSerialNumber}
                   </SelectItem>
                 ))}
               </SelectContent>

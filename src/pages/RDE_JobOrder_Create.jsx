@@ -434,19 +434,19 @@ export default function RDECreateJobOrder() {
 
         const newFormData = {
           ...form, // Preserve existing form state first
-          projectCode: jobOrder.project_id || "",
+          projectCode: jobOrder.project_code || "",
           vehicleBuildLevel:
             jobOrder.vehicle_build_level || jobOrder.vehicleBuildLevel || "",
           vehicleModel: jobOrder.vehicle_model || jobOrder.vehicleModel || "",
           vehicleBodyNumber: jobOrder.vehicle_body_number || "",
-          vehicleNumber: jobOrder.vehicle_id || "",
+          vehicleNumber: jobOrder.vehicle_serial_number || "",
           transmissionType:
             jobOrder.transmission_type || jobOrder.transmissionType || "",
           finalDriveAxleRatio:
             jobOrder.final_drive_axle_ratio ||
             jobOrder.finalDriveAxleRatio ||
             "",
-          engineNumber: jobOrder.engine_id || "",
+          engineSerialNumber: jobOrder.engine_serial_number || "",
           engineType:
             jobOrder.type_of_engine ||
             jobOrder.engine_type ||
@@ -569,10 +569,10 @@ export default function RDECreateJobOrder() {
     // Prepare payload as per RDEJobOrderSchema
     const rdeJobOrderPayload = {
       job_order_id,
-      project_id: form.projectCode || null,
-      vehicle_id: vehicleEditable?.vehicle_id || null,
+      project_code: form.projectCode || null,
+      vehicle_serial_number: vehicleEditable?.vehicle_serial_number || null,
       vehicle_body_number: form.vehicleBodyNumber || null,
-      engine_id: engineEditable?.engine_id || null,
+      engine_serial_number: engineEditable?.engine_serial_number || null,
       CoastDownData_id,
       type_of_engine: form.engineType || null,
       department: form.department || null,

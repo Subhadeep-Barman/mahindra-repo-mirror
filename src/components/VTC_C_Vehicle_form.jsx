@@ -26,12 +26,10 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     vehicleBuildLevel: "",
     vehicleModel: "",
     vehicleBodyNumber: "",
-    vehicleNumber: "",
     vehicleSerialNumber: "", // Added
     transmissionType: "",
     finalDriveAxleRatio: { numerator: "", denominator: "" },
     domain: "",
-    coastDownTestReportReference: "",
     tyreMake: "",
     tyreSize: "",
     tyrePressureFront: "",
@@ -46,7 +44,12 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     driveType: "",
     drivenWheel: "",
     intercoolerLocation: "",
-    gearRatio: { numerator: "", denominator: "" },
+    gearRatio1: { numerator: "", denominator: "" },
+    gearRatio2: { numerator: "", denominator: "" },
+    gearRatio3: { numerator: "", denominator: "" },
+    gearRatio4: { numerator: "", denominator: "" },
+    gearRatio5: { numerator: "", denominator: "" },
+    reverseGearRatio: { numerator: "", denominator: "" },
   });
 
   const handleChange = (e) => {
@@ -64,26 +67,12 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     });
   };
 
-  // Helper to generate UUID for vehicle_id
-  function generateVehicleId() {
-    if (window.crypto && window.crypto.randomUUID) {
-      return window.crypto.randomUUID();
-    }
-    // fallback for older browsers
-    return "xxxxxxxxyxxxxyxxxyxxxxyxxxxyxxxxyx".replace(/[xy]/g, function (c) {
-      const r = (Math.random() * 16) | 0;
-      return r.toString(16);
-    });
-  }
-
   // Map form state to API schema
   function mapFormToApi(form) {
     return {
-      vehicle_id: generateVehicleId(),
       project_code: form.project,
       vehicle_body_number: form.vehicleBodyNumber,
       vehicle_model: form.vehicleModel,
-      vehicle_number: form.vehicleNumber,
       vehicle_serial_number: form.vehicleSerialNumber, // Added
       vehicle_build_level: form.vehicleBuildLevel,
       transmission_type: form.transmissionType,
@@ -92,7 +81,6 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           ? `${form.finalDriveAxleRatio.numerator}:${form.finalDriveAxleRatio.denominator}`
           : "",
       domain: form.domain,
-      coast_down_test_reference_report: form.coastDownTestReportReference,
       tyre_make: form.tyreMake,
       tyre_size: form.tyreSize,
       tyre_pressure_front: form.tyrePressureFront
@@ -111,9 +99,29 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       wd_type: form.driveType,
       driven_wheel: form.drivenWheel,
       intercooler_location: form.intercoolerLocation,
-      gear_ratio:
-        form.gearRatio.numerator && form.gearRatio.denominator
-          ? `${form.gearRatio.numerator}:${form.gearRatio.denominator}`
+      gear_ratio_1:
+        form.gearRatio1.numerator && form.gearRatio1.denominator
+          ? `${form.gearRatio1.numerator}:${form.gearRatio1.denominator}`
+          : "",
+      gear_ratio_2:
+        form.gearRatio2.numerator && form.gearRatio2.denominator
+          ? `${form.gearRatio2.numerator}:${form.gearRatio2.denominator}`
+          : "",
+      gear_ratio_3:
+        form.gearRatio3.numerator && form.gearRatio3.denominator
+          ? `${form.gearRatio3.numerator}:${form.gearRatio3.denominator}`
+          : "",
+      gear_ratio_4:
+        form.gearRatio4.numerator && form.gearRatio4.denominator
+          ? `${form.gearRatio4.numerator}:${form.gearRatio4.denominator}`
+          : "",
+      gear_ratio_5:
+        form.gearRatio5.numerator && form.gearRatio5.denominator
+          ? `${form.gearRatio5.numerator}:${form.gearRatio5.denominator}`
+          : "",
+      reverse_gear_ratio:
+        form.reverseGearRatio.numerator && form.reverseGearRatio.denominator
+          ? `${form.reverseGearRatio.numerator}:${form.reverseGearRatio.denominator}`
           : "",
       // id_of_creator, created_on, id_of_updater, updated_on handled by backend
     };
@@ -127,12 +135,10 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       vehicleBuildLevel: "Vehicle Build Level",
       vehicleModel: "Vehicle Model",
       vehicleBodyNumber: "Vehicle Body Number",
-      vehicleNumber: "Vehicle Number",
       vehicleSerialNumber: "Vehicle Serial Number", // Added
       transmissionType: "Transmission Type",
       finalDriveAxleRatio: "Final Drive Axle Ratio",
       domain: "Domain",
-      coastDownTestReportReference: "Coast Down Test Report Reference",
       tyreMake: "Tyre Make",
       tyreSize: "Tyre Size",
       tyrePressureFront: "Tyre Pressure Front",
@@ -147,7 +153,12 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       driveType: "2WD / 4WD",
       drivenWheel: "Driven Wheel",
       intercoolerLocation: "Intercooler Location",
-      gearRatio: "Gear Ratio",
+      gearRatio1: "1st Gear Ratio",
+      gearRatio2: "2nd Gear Ratio",
+      gearRatio3: "3rd Gear Ratio",
+      gearRatio4: "4th Gear Ratio",
+      gearRatio5: "5th Gear Ratio",
+      reverseGearRatio: "Reverse Gear Ratio",
     };
 
     // Check for missing fields
@@ -169,7 +180,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     if (missingFields.length > 0) {
       alert(
         "Please fill all fields.\nMissing: " +
-          missingFields.join(", ")
+        missingFields.join(", ")
       );
       return;
     }
@@ -194,12 +205,10 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       vehicleBuildLevel: "",
       vehicleModel: "",
       vehicleBodyNumber: "",
-      vehicleNumber: "",
       vehicleSerialNumber: "", // Added
       transmissionType: "",
       finalDriveAxleRatio: { numerator: "", denominator: "" },
       domain: "",
-      coastDownTestReportReference: "",
       tyreMake: "",
       tyreSize: "",
       tyrePressureFront: "",
@@ -215,6 +224,12 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       drivenWheel: "",
       intercoolerLocation: "",
       gearRatio: { numerator: "", denominator: "" },
+      gearRatio1: { numerator: "", denominator: "" },
+      gearRatio2: { numerator: "", denominator: "" },
+      gearRatio3: { numerator: "", denominator: "" },
+      gearRatio4: { numerator: "", denominator: "" },
+      gearRatio5: { numerator: "", denominator: "" },
+      reverseGearRatio: { numerator: "", denominator: "" },
     });
     if (onClear) onClear();
   };
@@ -351,20 +366,6 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               placeholder="Enter Vehicle Body Number"
             />
           </div>
-          {/* Vehicle Number */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Vehicle Number <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="vehicleNumber"
-              value={form.vehicleNumber}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Vehicle Number"
-            />
-          </div>
           {/* Vehicle Serial Number */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -468,21 +469,6 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
                 </option>
               ))}
             </select>
-          </div>
-          {/* Coast Down Test Report Reference */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Coast Down Test Report Reference{" "}
-              <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="coastDownTestReportReference"
-              value={form.coastDownTestReportReference}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Reference"
-            />
           </div>
           {/* Tyre Make */}
           <div>
@@ -747,15 +733,16 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
             </div>
           </div>
           {/* Gear Ratio */}
+          {/* 1st Gear Ratio */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Gear Ratio <span className="text-red-500">*</span>
+              1st Gear Ratio <span className="text-red-500">*</span>
             </label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
-                value={form.gearRatio.numerator}
-                onChange={(e) => handleRatioChange(e, "gearRatio", "numerator")}
+                value={form.gearRatio1.numerator}
+                onChange={(e) => handleRatioChange(e, "gearRatio1", "numerator")}
                 required
                 className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
                 placeholder="Enter numerator"
@@ -763,8 +750,133 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               <span className="text-gray-500">:</span>
               <input
                 type="number"
-                value={form.gearRatio.denominator}
-                onChange={(e) => handleRatioChange(e, "gearRatio", "denominator")}
+                value={form.gearRatio1.denominator}
+                onChange={(e) => handleRatioChange(e, "gearRatio1", "denominator")}
+                required
+                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter denominator"
+              />
+            </div>
+          </div>
+          {/* 2nd Gear Ratio */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              2nd Gear Ratio <span className="text-red-500">*</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={form.gearRatio2.numerator}
+                onChange={(e) => handleRatioChange(e, "gearRatio2", "numerator")}
+                required
+                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter numerator"
+              />
+              <span className="text-gray-500">:</span>
+              <input
+                type="number"
+                value={form.gearRatio2.denominator}
+                onChange={(e) => handleRatioChange(e, "gearRatio2", "denominator")}
+                required
+                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter denominator"
+              />
+            </div>
+          </div>
+          {/* 3rd Gear Ratio */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              3rd Gear Ratio <span className="text-red-500">*</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={form.gearRatio3.numerator}
+                onChange={(e) => handleRatioChange(e, "gearRatio3", "numerator")}
+                required
+                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter numerator"
+              />
+              <span className="text-gray-500">:</span>
+              <input
+                type="number"
+                value={form.gearRatio3.denominator}
+                onChange={(e) => handleRatioChange(e, "gearRatio3", "denominator")}
+                required
+                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter denominator"
+              />
+            </div>
+          </div>
+          {/* 4th Gear Ratio */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              4th Gear Ratio <span className="text-red-500">*</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={form.gearRatio4.numerator}
+                onChange={(e) => handleRatioChange(e, "gearRatio4", "numerator")}
+                required
+                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter numerator"
+              />
+              <span className="text-gray-500">:</span>
+              <input
+                type="number"
+                value={form.gearRatio4.denominator}
+                onChange={(e) => handleRatioChange(e, "gearRatio4", "denominator")}
+                required
+                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter denominator"
+              />
+            </div>
+          </div>
+          {/* 5th Gear Ratio */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              5th Gear Ratio <span className="text-red-500">*</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={form.gearRatio5.numerator}
+                onChange={(e) => handleRatioChange(e, "gearRatio5", "numerator")}
+                required
+                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter numerator"
+              />
+              <span className="text-gray-500">:</span>
+              <input
+                type="number"
+                value={form.gearRatio5.denominator}
+                onChange={(e) => handleRatioChange(e, "gearRatio5", "denominator")}
+                required
+                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter denominator"
+              />
+            </div>
+          </div>
+          {/* Reverse Gear Ratio */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Reverse Gear Ratio <span className="text-red-500">*</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={form.reverseGearRatio.numerator}
+                onChange={(e) => handleRatioChange(e, "reverseGearRatio", "numerator")}
+                required
+                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter numerator"
+              />
+              <span className="text-gray-500">:</span>
+              <input
+                type="number"
+                value={form.reverseGearRatio.denominator}
+                onChange={(e) => handleRatioChange(e, "reverseGearRatio", "denominator")}
                 required
                 className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
                 placeholder="Enter denominator"

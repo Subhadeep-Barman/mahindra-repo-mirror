@@ -47,9 +47,9 @@ export default function VTCCEngineForm() {
     egrValveDiameter: "",
     egrCoolerMake: "",
     egrCoolerCapacity: "",
-    cafconMass: "",
-    cafconType: "",
-    cafconLoading: "",
+    catconMass: "",
+    catconType: "",
+    catconLoading: "",
     dpfMake: "",
     dpfCapacity: "",
     scrMake: "",
@@ -59,8 +59,8 @@ export default function VTCCEngineForm() {
     powerSteeringPump: "",
     powerSteeringDetails: "",
     waterByPass: "",
-    kerbWeightEmw: "",
-    kerbWeightRmw: "",
+    kerbWeightFaw: "",
+    kerbWeightRaw: "",
     emissionStatus: "",
     thermostatDetails: "",
     vehicleSerialNumber: "",
@@ -124,9 +124,9 @@ export default function VTCCEngineForm() {
       egrValveDiameter: "",
       egrCoolerMake: "",
       egrCoolerCapacity: "",
-      cafconMass: "",
-      cafconType: "",
-      cafconLoading: "",
+      catconMass: "",
+      catconType: "",
+      catconLoading: "",
       dpfMake: "",
       dpfCapacity: "",
       scrMake: "",
@@ -136,8 +136,8 @@ export default function VTCCEngineForm() {
       powerSteeringPump: "",
       powerSteeringDetails: "",
       waterByPass: "",
-      kerbWeightEmw: "",
-      kerbWeightRmw: "",
+      kerbWeightFaw: "",
+      kerbWeightRaw: "",
       emissionStatus: "",
       thermostatDetails: "",
       vehicleSerialNumber: "",
@@ -176,7 +176,6 @@ export default function VTCCEngineForm() {
       }
     }
     return {
-      engine_id: formData.engineSerialNumber, // Assuming engine_id is engineSerialNumber
       engine_serial_number: formData.engineSerialNumber || undefined,
       engine_build_level: formData.engineBuildLevel || undefined,
       engine_capacity: parseFloatOrUndefined(formData.engineCapacity),
@@ -201,9 +200,9 @@ export default function VTCCEngineForm() {
       egr_valve_diameter_mm: parseFloatOrUndefined(formData.egrValveDiameter),
       egr_cooler_make: formData.egrCoolerMake || undefined,
       egr_cooler_capacity_kw: parseFloatOrUndefined(formData.egrCoolerCapacity),
-      catcon_make: formData.cafconMass || undefined,
-      catcon_type: formData.cafconType || undefined,
-      catcon_loading: formData.cafconLoading || undefined,
+      catcon_make: formData.catconMass || undefined,
+      catcon_type: formData.catconType || undefined,
+      catcon_loading: formData.catconLoading || undefined,
       dpf_make: formData.dpfMake || undefined,
       dpf_capacity: formData.dpfCapacity || undefined,
       scr_make: formData.scrMake || undefined,
@@ -213,8 +212,8 @@ export default function VTCCEngineForm() {
       ps_pump: formData.powerSteeringPump || undefined,
       ps_details: formData.powerSteeringDetails || undefined,
       water_bypass: formData.waterByPass || undefined,
-      kerb_weight_faw_kg: parseFloatOrUndefined(formData.kerbWeightEmw),
-      kerb_weight_raw_kg: parseFloatOrUndefined(formData.kerbWeightRmw),
+      kerb_weight_faw_kg: parseFloatOrUndefined(formData.kerbWeightFaw),
+      kerb_weight_raw_kg: parseFloatOrUndefined(formData.kerbWeightRaw),
       emission_status: formData.emissionStatus || undefined,
       thermostat_details: formData.thermostatDetails || undefined,
       vehicle_serial_number: formData.vehicleSerialNumber || undefined,
@@ -516,7 +515,7 @@ export default function VTCCEngineForm() {
               </div>
               {/* Turbocharger Type */}
               <div className="space-y-2">
-                <Label htmlFor="turbochargerType">Turbocharger Type</Label>
+                <Label htmlFor="turbochargerType">Turbo charger Type</Label>
                 <Input
                   id="turbochargerType"
                   value={formData.turbochargerType}
@@ -633,7 +632,7 @@ export default function VTCCEngineForm() {
               </div>
               {/* EGR Cooler Capacity */}
               <div className="space-y-2">
-                <Label htmlFor="egrCoolerCapacity">EGR Cooler Capacity (kW)</Label>
+                <Label htmlFor="egrCoolerCapacity">EGR Cooler Capacity (KW)</Label>
                 <Input
                   id="egrCoolerCapacity"
                   value={formData.egrCoolerCapacity}
@@ -643,40 +642,40 @@ export default function VTCCEngineForm() {
                   placeholder="Enter EGR Cooler Capacity (kW)"
                 />
               </div>
-              {/* CAFCON Mass */}
+              {/* CATCON Mass */}
               <div className="space-y-2">
-                <Label htmlFor="cafconMass">CAFCON Mass</Label>
+                <Label htmlFor="catconMass">CATCON Mass</Label>
                 <Input
-                  id="cafconMass"
-                  value={formData.cafconMass}
+                  id="catconMass"
+                  value={formData.catconMass}
                   onChange={(e) =>
-                    handleInputChange("cafconMass", e.target.value)
+                    handleInputChange("catconMass", e.target.value)
                   }
-                  placeholder="Enter CAFCON Mass"
+                  placeholder="Enter CATCON Mass"
                 />
               </div>
-              {/* CAFCON Type */}
+              {/* CATCON Type */}
               <div className="space-y-2">
-                <Label htmlFor="cafconType">CAFCON Type</Label>
+                <Label htmlFor="catconType">CATCON Type</Label>
                 <Input
-                  id="cafconType"
-                  value={formData.cafconType}
+                  id="catconType"
+                  value={formData.catconType}
                   onChange={(e) =>
-                    handleInputChange("cafconType", e.target.value)
+                    handleInputChange("catconType", e.target.value)
                   }
-                  placeholder="Enter CAFCON Type"
+                  placeholder="Enter CATCON Type"
                 />
               </div>
-              {/* CAFCON Loading */}
+              {/* CATCON Loading */}
               <div className="space-y-2">
-                <Label htmlFor="cafconLoading">CAFCON Loading</Label>
+                <Label htmlFor="catconLoading">CATCON Loading</Label>
                 <Input
-                  id="cafconLoading"
-                  value={formData.cafconLoading}
+                  id="catconLoading"
+                  value={formData.catconLoading}
                   onChange={(e) =>
-                    handleInputChange("cafconLoading", e.target.value)
+                    handleInputChange("catconLoading", e.target.value)
                   }
-                  placeholder="Enter CAFCON Loading"
+                  placeholder="Enter CATCON Loading"
                 />
               </div>
               {/* DPF Make */}
@@ -796,34 +795,34 @@ export default function VTCCEngineForm() {
                   placeholder="Enter Water by pass"
                 />
               </div>
-              {/* Kerb Weight EMW */}
+              {/* Kerb Weight FAW */}
               <div className="space-y-2">
-                <Label htmlFor="kerbWeightEmw">
-                  Kerb Weight EMW (Kg){" "}
+                <Label htmlFor="kerbWeightFaw">
+                  Kerb Weight FAW (Kg){" "}
                   <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="kerbWeightEmw"
-                  value={formData.kerbWeightEmw}
+                  id="kerbWeightFaw"
+                  value={formData.kerbWeightFaw}
                   onChange={(e) =>
-                    handleInputChange("kerbWeightEmw", e.target.value)
+                    handleInputChange("kerbWeightFaw", e.target.value)
                   }
-                  placeholder="Enter Kerb Weight EMW (Kg)"
+                  placeholder="Enter Kerb Weight FAW (Kg)"
                 />
               </div>
               {/* Kerb Weight RMW */}
               <div className="space-y-2">
-                <Label htmlFor="kerbWeightRmw">
-                  Kerb Weight RMW (Kg){" "}
+                <Label htmlFor="kerbWeightRaw">
+                  Kerb Weight RAW (Kg){" "}
                   <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="kerbWeightRmw"
-                  value={formData.kerbWeightRmw}
+                  id="kerbWeightRaw"
+                  value={formData.kerbWeightRaw}
                   onChange={(e) =>
-                    handleInputChange("kerbWeightRmw", e.target.value)
+                    handleInputChange("kerbWeightRaw", e.target.value)
                   }
-                  placeholder="Enter Kerb Weight RMW (Kg)"
+                  placeholder="Enter Kerb Weight RAW (Kg)"
                 />
               </div>
               {/* Emission Status */}
