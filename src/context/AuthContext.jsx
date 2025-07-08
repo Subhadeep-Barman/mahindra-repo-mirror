@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import useStore from '../store/useStore';
 import axios from 'axios';
+import Cookies from 'js-cookie'; // <-- Add this import
 
 const AuthContext = createContext({}); // Default to empty object
 const salt = import.meta.env.VITE_COOKIE_SALT || 'default-salt-value';
@@ -77,7 +78,7 @@ export const AuthProvider = ({ children }) => {
       console.error("Failed to decode token:", error);
     }
 
-    // Update store with user cookie data instead of setting cookies.
+    // Update store with user cookie data
     useStore.getState().setUserCookieData({
       token,
       userRole: role,
@@ -86,10 +87,17 @@ export const AuthProvider = ({ children }) => {
       userEmail: email,
       userId: employeeId,
     });
+
+    // Set browser cookies for persistence
+    Cookies.set('token', token);
+    Cookies.set('userRole', role);
+    Cookies.set('userName', name);
+    Cookies.set('LoggedIn', "true");
+    Cookies.set('userEmail', email);
+    Cookies.set('userId', employeeId);
   };
 
   const logout = () => {
-    // Clear state values
     setUserRole(null);
     setUserName(null);
     setUserEmail(null);
@@ -98,8 +106,15 @@ export const AuthProvider = ({ children }) => {
     setDecodedToken(null);
 
     // Clear stored user cookie data in the store
-    console.log("Clearing user cookie data...");
     useStore.getState().setUserCookieData({});
+
+    // Remove browser cookies
+    Cookies.remove('token');
+    Cookies.remove('userRole');
+    Cookies.remove('userName');
+    Cookies.remove('LoggedIn');
+    Cookies.remove('userEmail');
+    Cookies.remove('userId');
   };
 
   return (

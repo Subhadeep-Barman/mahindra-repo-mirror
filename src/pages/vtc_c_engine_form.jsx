@@ -176,7 +176,6 @@ export default function VTCCEngineForm() {
       }
     }
     return {
-      engine_id: formData.engineSerialNumber, // Assuming engine_id is engineSerialNumber
       engine_serial_number: formData.engineSerialNumber || undefined,
       engine_build_level: formData.engineBuildLevel || undefined,
       engine_capacity: parseFloatOrUndefined(formData.engineCapacity),

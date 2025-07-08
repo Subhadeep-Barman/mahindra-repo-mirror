@@ -239,16 +239,16 @@ export default function VTCChennaiPage() {
                         {order.job_order_id}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900 px-4 py-2">
-                        {order.project_id}
+                        {order.project_code}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-600 px-4 py-2">
-                        {order.vehicle_id}
+                      <TableCell className="text-xs text-gray-900 px-4 py-2">
+                        {order.vehicle_serial_number}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600 px-4 py-2">
                         {order.vehicle_body_number}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600 px-4 py-2">
-                        {order.engine_id}
+                        {order.engine_serial_number || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900 px-4 py-2">
                         {order.domain}

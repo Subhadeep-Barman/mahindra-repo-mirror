@@ -221,16 +221,13 @@ export default function VTCNashikPage() {
                         {order.job_order_id || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
-                        {order.project_id || "N/A"}
+                        {order.project_code || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.vehicle_id || "N/A"}
+                        {order.vehicle_serial_number || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
                         {order.vehicle_body_number || "N/A"}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-600">
-                        {order.engine_id || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
                         {order.domain || "N/A"}

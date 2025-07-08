@@ -228,13 +228,10 @@ export default function RDEChennaiPage() {
                         {order.project_id}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.vehicle_id}
+                        {order.vehicle_serial_number}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
                         {order.vehicle_body_number}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-600">
-                        {order.engine_id}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
                         {order.domain}

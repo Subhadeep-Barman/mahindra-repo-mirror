@@ -67,22 +67,9 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     });
   };
 
-  // Helper to generate UUID for vehicle_id
-  function generateVehicleId() {
-    if (window.crypto && window.crypto.randomUUID) {
-      return window.crypto.randomUUID();
-    }
-    // fallback for older browsers
-    return "xxxxxxxxyxxxxyxxxyxxxxyxxxxyxxxxyx".replace(/[xy]/g, function (c) {
-      const r = (Math.random() * 16) | 0;
-      return r.toString(16);
-    });
-  }
-
   // Map form state to API schema
   function mapFormToApi(form) {
     return {
-      vehicle_id: generateVehicleId(),
       project_code: form.project,
       vehicle_body_number: form.vehicleBodyNumber,
       vehicle_model: form.vehicleModel,

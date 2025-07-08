@@ -40,7 +40,6 @@ export default function VTCVehiclePage() {
         const response = await axios.get(`${apiURL}/vehicles`);
         // Only keep necessary fields for each vehicle
         const minimalVehicles = (response.data || []).map((v) => ({
-          vehicle_id: v.vehicle_id,
           vehicle_serial_number: v.vehicle_serial_number,
           vehicle_body_number: v.vehicle_body_number,
           vehicle_model: v.vehicle_model,
@@ -96,7 +95,7 @@ export default function VTCVehiclePage() {
   const handleEditClick = async (vehicle) => {
     try {
       const response = await axios.get(
-        `${apiURL}/vehicles/${vehicle.vehicle_id}`
+        `${apiURL}/vehicles/${vehicle.vehicle_serial_number}`
       );
       setEditVehicle(vehicle);
       setEditForm(response.data); // full vehicle data
@@ -123,8 +122,8 @@ export default function VTCVehiclePage() {
     if (!editVehicle || !editForm) return;
     try {
       await axios.put(
-        `${apiURL}/vehicles/${editVehicle.vehicle_id}`,
-        { ...editForm, vehicle_id: editVehicle.vehicle_id },
+        `${apiURL}/vehicles/${editVehicle.vehicle_serial_number}`,
+        { ...editForm, vehicle_serial_number: editVehicle.vehicle_serial_number },
         { headers: { "Content-Type": "application/json" } }
       );
       setEditOpen(false);
@@ -133,7 +132,7 @@ export default function VTCVehiclePage() {
       // Refresh list
       const response = await axios.get(`${apiURL}/vehicles`);
       const minimalVehicles = (response.data || []).map((v) => ({
-        vehicle_id: v.vehicle_id,
+        vehicle_serial_number: v.vehicle_serial_number,
         vehicle_serial_number: v.vehicle_serial_number,
         vehicle_body_number: v.vehicle_body_number,
         vehicle_model: v.vehicle_model,
@@ -247,7 +246,7 @@ export default function VTCVehiclePage() {
               <TableBody>
                 {currentItems.map((vehicle, index) => (
                   <TableRow
-                    key={vehicle.vehicle_id || index}
+                    key={vehicle.vehicle_serial_number || index}
                     className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
                   >
                     <TableCell className="text-sm text-gray-900 font-medium">

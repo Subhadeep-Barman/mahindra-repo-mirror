@@ -148,21 +148,10 @@ export default function EngineForm() {
   };
 
   const handleAddEngine = async () => {
-    // Generate UUID for engine_id
-    function generateEngineId() {
-      if (window.crypto && window.crypto.randomUUID) {
-        return window.crypto.randomUUID();
-      }
-      return "xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-        const r = (Math.random() * 16) | 0;
-        return r.toString(16);
-      });
-    }
 
     // Map formData to API schema
     const now = new Date().toISOString();
     const payload = {
-      engine_id: generateEngineId(),
       engine_serial_number: formData.engineSerialNumber,
       engine_build_level: formData.engineBuildLevel,
       engine_capacity: formData.engineCapacity
