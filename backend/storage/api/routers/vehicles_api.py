@@ -13,17 +13,14 @@ router = APIRouter()
 
 # Pydantic schema for Vehicle
 class VehicleSchema(BaseModel):
-    vehicle_id: str
     project_code: str = None
     vehicle_serial_number: Optional[str] = None  # Changed to Optional[str]
     vehicle_body_number: str = None
     vehicle_model: str = None
-    vehicle_number: str = None
     vehicle_build_level: str = None
     transmission_type: str = None
     final_drive_axle_ratio: str = None
     domain: str = None
-    coast_down_test_reference_report: str = None
     tyre_make: str = None
     tyre_size: str = None
     tyre_pressure_front: float = None
@@ -38,7 +35,12 @@ class VehicleSchema(BaseModel):
     wd_type: str = None
     driven_wheel: str = None
     intercooler_location: str = None
-    gear_ratio: str = None
+    gear_ratio_1: str = None
+    gear_ratio_2: str = None
+    gear_ratio_3: str = None
+    gear_ratio_4: str = None
+    gear_ratio_5: str = None
+    reverse_gear_ratio: str = None
     id_of_creator: Optional[str] = None
     created_on: datetime = None
     id_of_updater: Optional[str] = None
@@ -78,24 +80,24 @@ def read_vehicles(db: Session = Depends(get_db)):
     vehicles = db.query(Vehicle).all()
     return [vehicle_to_dict(v) for v in vehicles]
 
-@router.get("/vehicles/{vehicle_id}", response_model=VehicleSchema)
-def read_vehicle(vehicle_id: str, db: Session = Depends(get_db)):
-    vehicle = db.query(Vehicle).filter(Vehicle.vehicle_id == vehicle_id).first()
+@router.get("/vehicles/{vehicle_serial_number}", response_model=VehicleSchema)
+def read_vehicle(vehicle_serial_number: str, db: Session = Depends(get_db)):
+    vehicle = db.query(Vehicle).filter(Vehicle.vehicle_serial_number == vehicle_serial_number).first()
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehicle not found")
     return vehicle_to_dict(vehicle)
 
-@router.put("/vehicles/{vehicle_id}", response_model=VehicleSchema)
+@router.put("/vehicles/{vehicle_serial_number}", response_model=VehicleSchema)
 def update_vehicle(
-    vehicle_id: str,
+    vehicle_serial_number: str,
     vehicle_update: VehicleSchema = Body(...),
     db: Session = Depends(get_db)
 ):
-    vehicle = db.query(Vehicle).filter(Vehicle.vehicle_id == vehicle_id).first()
+    vehicle = db.query(Vehicle).filter(Vehicle.vehicle_serial_number == vehicle_serial_number).first()
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehicle not found")
     update_data = vehicle_update.dict(exclude_unset=True)
-    update_data.pop("vehicle_id", None)
+    update_data.pop("vehicle_serial_number", None)
     for key, value in update_data.items():
         setattr(vehicle, key, value)
     vehicle.updated_on = datetime.utcnow()
@@ -103,9 +105,9 @@ def update_vehicle(
     db.refresh(vehicle)
     return vehicle_to_dict(vehicle)
 
-@router.delete("/vehicles/{vehicle_id}")
-def delete_vehicle(vehicle_id: str, db: Session = Depends(get_db)):
-    vehicle = db.query(Vehicle).filter(Vehicle.vehicle_id == vehicle_id).first()
+@router.delete("/vehicles/{vehicle_serial_number}")
+def delete_vehicle(vehicle_serial_number: str, db: Session = Depends(get_db)):
+    vehicle = db.query(Vehicle).filter(Vehicle.vehicle_serial_number == vehicle_serial_number).first()
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehicle not found")
     db.delete(vehicle)
@@ -114,10 +116,10 @@ def delete_vehicle(vehicle_id: str, db: Session = Depends(get_db)):
 
 @router.get("/vehicle-body-numbers")
 def get_vehicle_body_numbers(db: Session = Depends(get_db)):
-    results = db.query(Vehicle.vehicle_body_number, Vehicle.vehicle_number).all()
+    results = db.query(Vehicle.vehicle_body_number, Vehicle.vehicle_serial_number).all()
     # Return list of dicts with both body number and vehicle number
     return [
-        {"vehicle_body_number": bn, "vehicle_number": vn}
+        {"vehicle_body_number": bn, "vehicle_serial_number": vn}
         for bn, vn in results if bn is not None
     ]
 

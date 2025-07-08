@@ -1,8 +1,8 @@
-"""Initial migration
+"""Initial schema setup
 
-Revision ID: ae3a4769163f
+Revision ID: 605e86188158
 Revises: 
-Create Date: 2025-07-04 15:48:00.325561
+Create Date: 2025-07-08 17:47:55.042754
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'ae3a4769163f'
+revision: str = '605e86188158'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -39,8 +39,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('CoastDownData_id')
     )
     op.create_table('Engines',
-    sa.Column('engine_id', sa.String(), nullable=False),
-    sa.Column('engine_serial_number', sa.String(), nullable=True),
+    sa.Column('engine_serial_number', sa.String(), nullable=False),
     sa.Column('engine_build_level', sa.String(), nullable=True),
     sa.Column('engine_capacity', sa.Float(), nullable=True),
     sa.Column('engine_type', sa.String(), nullable=True),
@@ -91,14 +90,14 @@ def upgrade() -> None:
     sa.Column('created_on', sa.TIMESTAMP(), nullable=True),
     sa.Column('id_of_updater', sa.String(), nullable=True),
     sa.Column('updated_on', sa.TIMESTAMP(), nullable=True),
-    sa.PrimaryKeyConstraint('engine_id')
+    sa.PrimaryKeyConstraint('engine_serial_number')
     )
     op.create_table('JobOrders',
     sa.Column('job_order_id', sa.String(), nullable=False),
-    sa.Column('project_id', sa.String(), nullable=True),
-    sa.Column('vehicle_id', sa.String(), nullable=True),
+    sa.Column('project_code', sa.String(), nullable=True),
+    sa.Column('vehicle_serial_number', sa.String(), nullable=True),
     sa.Column('vehicle_body_number', sa.String(), nullable=True),
-    sa.Column('engine_id', sa.String(), nullable=True),
+    sa.Column('engine_serial_number', sa.String(), nullable=True),
     sa.Column('CoastDownData_id', sa.String(), nullable=True),
     sa.Column('type_of_engine', sa.String(), nullable=True),
     sa.Column('department', sa.String(), nullable=True),
@@ -119,8 +118,7 @@ def upgrade() -> None:
     )
     op.create_table('RDEJobOrders',
     sa.Column('job_order_id', sa.String(), nullable=False),
-    sa.Column('project_id', sa.String(), nullable=True),
-    sa.Column('vehicle_id', sa.String(), nullable=True),
+    sa.Column('vehicle_serial_number', sa.String(), nullable=True),
     sa.Column('vehicle_body_number', sa.String(), nullable=True),
     sa.Column('engine_id', sa.String(), nullable=True),
     sa.Column('CoastDownData_id', sa.String(), nullable=True),
@@ -185,17 +183,14 @@ def upgrade() -> None:
     sa.UniqueConstraint('email')
     )
     op.create_table('Vehicles',
-    sa.Column('vehicle_id', sa.String(), nullable=False),
     sa.Column('project_code', sa.String(), nullable=True),
-    sa.Column('vehicle_serial_number', sa.String(), nullable=True),
+    sa.Column('vehicle_serial_number', sa.String(), nullable=False),
     sa.Column('vehicle_body_number', sa.String(), nullable=True),
     sa.Column('vehicle_model', sa.String(), nullable=True),
-    sa.Column('vehicle_number', sa.String(), nullable=True),
     sa.Column('vehicle_build_level', sa.String(), nullable=True),
     sa.Column('transmission_type', sa.String(), nullable=True),
     sa.Column('final_drive_axle_ratio', sa.String(), nullable=True),
     sa.Column('domain', sa.String(), nullable=True),
-    sa.Column('coast_down_test_reference_report', sa.String(), nullable=True),
     sa.Column('tyre_make', sa.String(), nullable=True),
     sa.Column('tyre_size', sa.String(), nullable=True),
     sa.Column('tyre_pressure_front', sa.Float(), nullable=True),
@@ -210,12 +205,17 @@ def upgrade() -> None:
     sa.Column('wd_type', sa.String(), nullable=True),
     sa.Column('driven_wheel', sa.String(), nullable=True),
     sa.Column('intercooler_location', sa.String(), nullable=True),
-    sa.Column('gear_ratio', sa.String(), nullable=True),
+    sa.Column('gear_ratio_1', sa.String(), nullable=True),
+    sa.Column('gear_ratio_2', sa.String(), nullable=True),
+    sa.Column('gear_ratio_3', sa.String(), nullable=True),
+    sa.Column('gear_ratio_4', sa.String(), nullable=True),
+    sa.Column('gear_ratio_5', sa.String(), nullable=True),
+    sa.Column('reverse_gear_ratio', sa.String(), nullable=True),
     sa.Column('id_of_creator', sa.String(), nullable=True),
     sa.Column('created_on', sa.TIMESTAMP(), nullable=True),
     sa.Column('id_of_updater', sa.String(), nullable=True),
     sa.Column('updated_on', sa.TIMESTAMP(), nullable=True),
-    sa.PrimaryKeyConstraint('vehicle_id')
+    sa.PrimaryKeyConstraint('vehicle_serial_number')
     )
     # ### end Alembic commands ###
 

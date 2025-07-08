@@ -44,10 +44,10 @@ def get_vehicle_serial_numbers(db: Session = Depends(get_db)):
 
 class JobOrderSchema(BaseModel):
     job_order_id: str
-    project_id: str = None
-    vehicle_id: str = None
+    project_code: str = None
+    vehicle_serial_number: str = None
     vehicle_body_number: str = None
-    engine_id: str = None
+    engine_serial_number: str = None
     CoastDownData_id: str = None
     type_of_engine: str = None
     department: str = None
@@ -90,10 +90,10 @@ def joborder_to_dict(joborder: JobOrder, db: Session = None):
     
     return {
         "job_order_id": joborder.job_order_id,
-        "project_id": joborder.project_id,
-        "vehicle_id": joborder.vehicle_id,
+        "project_code": joborder.project_code,
+        "vehicle_serial_number": joborder.vehicle_serial_number,
         "vehicle_body_number": joborder.vehicle_body_number,
-        "engine_id": joborder.engine_id,
+        "engine_serial_number": joborder.engine_serial_number,
         "CoastDownData_id": joborder.CoastDownData_id,
         "type_of_engine": joborder.type_of_engine,
         "department": joborder.department,
