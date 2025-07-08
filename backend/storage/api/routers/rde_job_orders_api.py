@@ -10,10 +10,10 @@ router = APIRouter()
 
 class RDEJobOrderSchema(BaseModel):
     job_order_id: str
-    project_id: str = None
-    vehicle_id: str = None
+    project_code: str = None
+    vehicle_serial_number: str = None
     vehicle_body_number: str = None
-    engine_id: str = None
+    engine_serial_number: str = None
     CoastDownData_id: str = None
     type_of_engine: str = None
     department: str = None
@@ -49,10 +49,10 @@ def rde_joborder_to_dict(rde_joborder: RDEJobOrder, db: Session = None):
 
     return {
         "job_order_id": rde_joborder.job_order_id,
-        "project_id": rde_joborder.project_id,
-        "vehicle_id": rde_joborder.vehicle_id,
+        "project_code": rde_joborder.project_code,
+        "vehicle_serial_number": rde_joborder.vehicle_serial_number,
         "vehicle_body_number": rde_joborder.vehicle_body_number,
-        "engine_id": rde_joborder.engine_id,
+        "engine_serial_number": rde_joborder.engine_serial_number,
         "CoastDownData_id": rde_joborder.CoastDownData_id,
         "type_of_engine": rde_joborder.type_of_engine,
         "department": rde_joborder.department,

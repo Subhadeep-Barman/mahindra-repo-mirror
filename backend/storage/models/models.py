@@ -15,17 +15,14 @@ class User(Base):
 
 class Vehicle(Base):
     __tablename__ = "Vehicles"
-    vehicle_id = Column(String, primary_key=True)
     project_code = Column(String)
-    vehicle_serial_number = Column(String)
+    vehicle_serial_number = Column(String, primary_key=True)
     vehicle_body_number = Column(String)
     vehicle_model = Column(String)
-    vehicle_number = Column(String)
     vehicle_build_level = Column(String)
     transmission_type = Column(String)
     final_drive_axle_ratio = Column(String)
     domain = Column(String)
-    coast_down_test_reference_report = Column(String)
     tyre_make = Column(String)
     tyre_size = Column(String)
     tyre_pressure_front = Column(Float)
@@ -40,7 +37,12 @@ class Vehicle(Base):
     wd_type = Column(String)
     driven_wheel = Column(String)
     intercooler_location = Column(String)
-    gear_ratio = Column(String)
+    gear_ratio_1 = Column(String)
+    gear_ratio_2 = Column(String)
+    gear_ratio_3 = Column(String)
+    gear_ratio_4 = Column(String)
+    gear_ratio_5 = Column(String)
+    reverse_gear_ratio = Column(String)
     id_of_creator = Column(String)  
     created_on = Column(TIMESTAMP, default=datetime.utcnow)
     id_of_updater = Column(String)  
@@ -49,8 +51,7 @@ class Vehicle(Base):
 
 class Engine(Base):
     __tablename__ = "Engines"
-    engine_id = Column(String, primary_key=True)
-    engine_serial_number = Column(String)
+    engine_serial_number = Column(String, primary_key=True)
     engine_build_level = Column(String)
     engine_capacity = Column(Float)
     engine_type = Column(String)
@@ -124,10 +125,10 @@ class CoastDownData(Base):
 class JobOrder(Base):
     __tablename__ = "JobOrders"
     job_order_id = Column(String, primary_key=True)
-    project_id = Column(String)
-    vehicle_id = Column(String)
+    project_code = Column(String)
+    vehicle_serial_number = Column(String)
     vehicle_body_number = Column(String)
-    engine_id = Column(String)
+    engine_serial_number = Column(String)
     CoastDownData_id = Column(String)
     type_of_engine = Column(String)
     department = Column(String)
@@ -148,8 +149,7 @@ class JobOrder(Base):
 class RDEJobOrder(Base):
     __tablename__ = "RDEJobOrders"
     job_order_id = Column(String, primary_key=True)
-    project_id = Column(String)
-    vehicle_id = Column(String)
+    vehicle_serial_number = Column(String)
     vehicle_body_number = Column(String)
     engine_id = Column(String)
     CoastDownData_id = Column(String)

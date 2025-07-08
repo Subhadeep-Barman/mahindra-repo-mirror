@@ -14,7 +14,6 @@ from backend.storage.crud.create_engine import create_engine as crud_create_engi
 router = APIRouter()
 
 class EngineSchema(BaseModel):
-    engine_id: str
     engine_serial_number: str = None
     engine_build_level: str = None
     engine_capacity: float = None
@@ -95,7 +94,7 @@ def create_engine_api(
         db.rollback()
         # Check for duplicate primary key or unique constraint
         if "UNIQUE constraint failed" in str(e.orig) or "duplicate key value" in str(e.orig):
-            raise HTTPException(status_code=400, detail=f"Engine with ID '{engine_data.get('engine_id')}' already exists.")
+            raise HTTPException(status_code=400, detail=f"Engine with ID '{engine_data.get('engine_serial_number')}' already exists.")
         raise HTTPException(status_code=400, detail="Database integrity error: " + str(e.orig))
     except Exception as e:
         db.rollback()
@@ -109,28 +108,28 @@ def read_engines(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to fetch engines: " + str(e))
 
-@router.get("/engines/{engine_id}", response_model=EngineSchema)
-def read_engine(engine_id: str, db: Session = Depends(get_db)):
+@router.get("/engines/{engine_serial_number}", response_model=EngineSchema)
+def read_engine(engine_serial_number: str, db: Session = Depends(get_db)):
     try:
-        engine = db.query(Engine).filter(Engine.engine_id == engine_id).first()
+        engine = db.query(Engine).filter(Engine.engine_serial_number == engine_serial_number).first()
         if not engine:
-            raise HTTPException(status_code=404, detail=f"Engine with ID '{engine_id}' not found")
+            raise HTTPException(status_code=404, detail=f"Engine with ID '{engine_serial_number}' not found")
         return engine_to_dict(engine)
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to fetch engine: " + str(e))
 
-@router.put("/engines/{engine_id}", response_model=EngineSchema)
+@router.put("/engines/{engine_serial_number}", response_model=EngineSchema)
 def update_engine(
-    engine_id: str,
+    engine_serial_number: str,
     engine_update: EngineSchema = Body(...),
     db: Session = Depends(get_db)
 ):
     try:
-        engine = db.query(Engine).filter(Engine.engine_id == engine_id).first()
+        engine = db.query(Engine).filter(Engine.engine_serial_number == engine_serial_number).first()
         if not engine:
-            raise HTTPException(status_code=404, detail=f"Engine with ID '{engine_id}' not found")
+            raise HTTPException(status_code=404, detail=f"Engine with ID '{engine_serial_number}' not found")
         update_data = engine_update.dict(exclude_unset=True)
-        update_data.pop("engine_id", None)
+        update_data.pop("engine_serial_number", None)
         for key, value in update_data.items():
             setattr(engine, key, value)
         engine.updated_on = datetime.utcnow()
@@ -144,12 +143,12 @@ def update_engine(
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to update engine: " + str(e))
 
-@router.delete("/engines/{engine_id}")
-def delete_engine(engine_id: str, db: Session = Depends(get_db)):
+@router.delete("/engines/{engine_serial_number}")
+def delete_engine(engine_serial_number: str, db: Session = Depends(get_db)):
     try:
-        engine = db.query(Engine).filter(Engine.engine_id == engine_id).first()
+        engine = db.query(Engine).filter(Engine.engine_serial_number == engine_serial_number).first()
         if not engine:
-            raise HTTPException(status_code=404, detail=f"Engine with ID '{engine_id}' not found")
+            raise HTTPException(status_code=404, detail=f"Engine with ID '{engine_serial_number}' not found")
         db.delete(engine)
         db.commit()
         return {"detail": "Engine deleted successfully"}
@@ -158,13 +157,13 @@ def delete_engine(engine_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Failed to delete engine: " + str(e))
 
 @router.get("/engine-numbers")
-def get_engine_numbers(db: Session = Depends(get_db)):
-    engine_numbers = db.query(Engine.engine_serial_number).all()
+def get_engine_serial_numbers(db: Session = Depends(get_db)):
+    engine_serial_numbers = db.query(Engine.engine_serial_number).all()
     # Flatten list of tuples and filter out None values
-    return [en[0] for en in engine_numbers if en[0] is not None]
+    return [en[0] for en in engine_serial_numbers if en[0] is not None]
 
 @router.get("/engines/by-engine-number/{engine_serial_number}", response_model=EngineSchema)
-def get_engine_by_engine_number(engine_serial_number: str, db: Session = Depends(get_db)):
+def get_engine_by_engine_serial_number(engine_serial_number: str, db: Session = Depends(get_db)):
     engine = db.query(Engine).filter(Engine.engine_serial_number == engine_serial_number).first()
     if not engine:
         raise HTTPException(status_code=404, detail="Engine not found for the given engine number")

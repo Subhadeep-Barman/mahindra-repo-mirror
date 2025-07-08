@@ -12,7 +12,6 @@ def create_engine(db: Session, engine_data: dict):
 
 def engine_to_dict(engine):
     return {
-        "engine_id": engine.engine_id,
         "engine_serial_number": engine.engine_serial_number,
         "engine_build_level": engine.engine_build_level,
         "engine_capacity": engine.engine_capacity,

@@ -6,7 +6,7 @@ class ProjectCode(BaseModel):
     project_code: str
 
 class Vehicle(BaseModel):
-    vehicle_id: str
+    # vehicle_id: str
     vehicle_model: str
 
 class EngineFamily(BaseModel):
