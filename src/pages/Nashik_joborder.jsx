@@ -88,6 +88,8 @@ export default function CreateJobOrder() {
   // State for modes from API
   const [modes, setModes] = useState([]);
 
+  const [fuelTypes, setFuelTypes] = useState([]);
+
   // Handler to add a new test
   const handleAddTest = () => {
     setTests((prev) => [
@@ -202,6 +204,22 @@ export default function CreateJobOrder() {
 
     fetchModes();
   }, []);
+
+  // Fetch fuel types from API
+    useEffect(() => {
+      const fetchFuelTypes = async () => {
+        try {
+          const response = await axios.get(`${apiURL}/fuel-types`);
+          setFuelTypes(response.data || []);
+        } catch (error) {
+          console.error("Error fetching fuel types:", error);
+          setFuelTypes([]);
+        }
+      };
+  
+      fetchFuelTypes();
+    }, []);
+  
 
   // New: State for fetched vehicles and engines
   const [vehicleList, setVehicleList] = useState([]);
@@ -1828,6 +1846,24 @@ export default function CreateJobOrder() {
                   }
                 />
               </div>
+              <div>
+                              <Label>Fuel Type</Label>
+                              <Select
+                                value={test.fuelType}
+                                onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {fuelTypes.map((fuelType, index) => (
+                                    <SelectItem key={`${fuelType}-${index}`} value={fuelType}>
+                                      {fuelType}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
               <div>
                 <Label>Equipment Required</Label>
                 <Input

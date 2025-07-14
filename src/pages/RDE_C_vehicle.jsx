@@ -133,7 +133,6 @@ export default function VTCVehiclePage() {
       const response = await axios.get(`${apiURL}/vehicles`);
       const minimalVehicles = (response.data || []).map((v) => ({
         vehicle_serial_number: v.vehicle_serial_number,
-        vehicle_serial_number: v.vehicle_serial_number,
         vehicle_body_number: v.vehicle_body_number,
         vehicle_model: v.vehicle_model,
         id_of_creator: v.id_of_creator,

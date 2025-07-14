@@ -94,6 +94,8 @@ export default function RDECreateJobOrder() {
   // State for modes from API
   const [modes, setModes] = useState([]);
 
+  const [fuelTypes, setFuelTypes] = useState([]);
+
   // Handler to add a new test
   const handleAddTest = () => {
     setTests((prev) => [
@@ -210,6 +212,22 @@ export default function RDECreateJobOrder() {
 
     fetchModes();
   }, []);
+
+  // Fetch fuel types from API
+    useEffect(() => {
+      const fetchFuelTypes = async () => {
+        try {
+          const response = await axios.get(`${apiURL}/fuel-types`);
+          setFuelTypes(response.data || []);
+        } catch (error) {
+          console.error("Error fetching fuel types:", error);
+          setFuelTypes([]);
+        }
+      };
+  
+      fetchFuelTypes();
+    }, []);
+  
 
   // New: State for fetched vehicles and engines
   const [vehicleList, setVehicleList] = useState([]);
@@ -1372,25 +1390,21 @@ export default function RDECreateJobOrder() {
               Vehicle Test Payload criteria (Kg){" "}
               <span className="text-red-500">*</span>
             </Label>
-            <Select
+            <Input
+              id="vehicleTestPayloadCriteria"
               value={form.vehicleTestPayloadCriteria}
-              onValueChange={(value) =>
+              onChange={(e) =>
                 setForm((prev) => ({
                   ...prev,
-                  vehicleTestPayloadCriteria: value,
+                  vehicleTestPayloadCriteria: e.target.value,
                 }))
               }
               required
               disabled={formDisabled}
-            >
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Legislation">Legislation</SelectItem>
-                <SelectItem value="Manual entry">Manual entry</SelectItem>
-              </SelectContent>
-            </Select>
+              className="w-44"
+              placeholder="Enter Vehicle Test Payload criteria"
+              type="text"
+            />
           </div>
           {/* Idle Exhaust Mass Flow */}
           <div className="flex flex-col">
@@ -1965,6 +1979,24 @@ export default function RDECreateJobOrder() {
                   }
                 />
               </div>
+              <div>
+                              <Label>Fuel Type</Label>
+                              <Select
+                                value={test.fuelType}
+                                onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {fuelTypes.map((fuelType, index) => (
+                                    <SelectItem key={`${fuelType}-${index}`} value={fuelType}>
+                                      {fuelType}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
               <div>
                 <Label>Equipment Required</Label>
                 <Input

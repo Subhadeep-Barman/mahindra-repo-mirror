@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/UI/table";
 import { Card } from "@/components/UI/card";
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
 import Dialog from "@mui/material/Dialog";
@@ -22,6 +22,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import { useRef } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -32,6 +33,7 @@ export default function VTCVehiclePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editVehicle, setEditVehicle] = useState(null);
   const [editForm, setEditForm] = useState(null);
+  const { apiUserRole, userId, userName } = useAuth();
 
   // Fetch vehicles from API on mount
   useEffect(() => {
@@ -43,7 +45,7 @@ export default function VTCVehiclePage() {
           vehicle_serial_number: v.vehicle_serial_number,
           vehicle_body_number: v.vehicle_body_number,
           vehicle_model: v.vehicle_model,
-          id_of_creator: v.id_of_creator,
+          id_of_creator: userId || "",
           created_on: v.created_on,
           id_of_updater: v.id_of_updater,
           updated_on: v.updated_on,
@@ -133,10 +135,9 @@ export default function VTCVehiclePage() {
       const response = await axios.get(`${apiURL}/vehicles`);
       const minimalVehicles = (response.data || []).map((v) => ({
         vehicle_serial_number: v.vehicle_serial_number,
-        vehicle_serial_number: v.vehicle_serial_number,
         vehicle_body_number: v.vehicle_body_number,
         vehicle_model: v.vehicle_model,
-        id_of_creator: v.id_of_creator,
+        id_of_creator: userId || "",
         created_on: v.created_on,
         id_of_updater: v.id_of_updater,
         updated_on: v.updated_on,
@@ -261,14 +262,30 @@ export default function VTCVehiclePage() {
                       {vehicle.id_of_creator}
                     </TableCell>
                     <TableCell className="text-xs text-gray-600 px-4 py-2">
-                      {vehicle.created_on}
-                    </TableCell>
+                        {new Date(vehicle.created_on).toLocaleString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          hour12: true,
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </TableCell>
                     <TableCell className="text-xs text-gray-600 px-4 py-2">
                       {vehicle.id_of_updater}
                     </TableCell>
                     <TableCell className="text-xs text-gray-600 px-4 py-2">
-                      {vehicle.updated_on}
-                    </TableCell>
+                        {new Date(vehicle.updated_on).toLocaleString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          hour12: true,
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </TableCell>
                     <TableCell className="px-4 py-2">
                       <button
                         onClick={() => handleEditClick(vehicle)}

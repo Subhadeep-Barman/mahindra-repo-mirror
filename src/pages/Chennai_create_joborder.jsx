@@ -87,6 +87,9 @@ export default function CreateJobOrder() {
   // State for modes from API
   const [modes, setModes] = useState([]);
 
+  // State for fuel types from API
+  const [fuelTypes, setFuelTypes] = useState([]);
+
   // Handler to add a new test
   const handleAddTest = () => {
     setTests((prev) => [
@@ -105,6 +108,7 @@ export default function CreateJobOrder() {
         hardwareChange: "",
         equipmentRequired: "",
         shift: "",
+        fuelType: "",
         preferredDate: "",
         emissionCheckDate: "",
         emissionCheckAttachment: "",
@@ -207,6 +211,21 @@ export default function CreateJobOrder() {
     fetchModes();
   }, []);
 
+  // Fetch fuel types from API
+  useEffect(() => {
+    const fetchFuelTypes = async () => {
+      try {
+        const response = await axios.get(`${apiURL}/fuel-types`);
+        setFuelTypes(response.data || []);
+      } catch (error) {
+        console.error("Error fetching fuel types:", error);
+        setFuelTypes([]);
+      }
+    };
+
+    fetchFuelTypes();
+  }, []);
+
   // New: State for fetched vehicles and engines
   const [vehicleList, setVehicleList] = useState([]);
   const [engineList, setEngineList] = useState([]);
@@ -245,7 +264,7 @@ export default function CreateJobOrder() {
   }, []);
 
   // Accordion state for vehicle details
-  const [vehicleAccordionOpen, setVehicleAccordionOpen] = useState(true);
+  const [vehicleAccordionOpen, setVehicleAccordionOpen] = useState(false);
 
   // Editable vehicle form state
   const [vehicleEditable, setVehicleEditable] = useState(null);
@@ -306,7 +325,7 @@ export default function CreateJobOrder() {
   };
 
   // Accordion state for engine details
-  const [engineAccordionOpen, setEngineAccordionOpen] = useState(true);
+  const [engineAccordionOpen, setEngineAccordionOpen] = useState(false);
 
   // Editable engine form state
   const [engineEditable, setEngineEditable] = useState(null);
@@ -366,7 +385,7 @@ export default function CreateJobOrder() {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { apiUserRole } = useAuth();
+  const { userRole, userId, userName } = useAuth();
 
   // Prefill form if jobOrder is passed via navigation state
   useEffect(() => {
@@ -541,7 +560,6 @@ export default function CreateJobOrder() {
       preFillForm();
     }
   }, []); // Empty dependency array - only run once on mount
-
   // Add these handlers
   const handleTabClick = (tab) => {
     if (tab === "Job Order") navigate("/chennai/joborder");
@@ -565,8 +583,12 @@ export default function CreateJobOrder() {
     const job_order_id = "JO" + Date.now();
     const CoastDownData_id = "CD" + Date.now();
 
-    // You may need to fetch or map vehicle_serial_number, engine_serial_number, CoastDownData_id from backend if not available in frontend
-    // For now, use null or empty string if not available
+    // Convert current time to IST and format as ISO 8601
+    const currentISTTime = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+    const formattedISTTime = new Date(currentISTTime).toISOString();
+
     const jobOrderPayload = {
       job_order_id,
       project_code: form.projectCode || null,
@@ -581,12 +603,12 @@ export default function CreateJobOrder() {
       remarks: "",
       rejection_remarks: "",
       mail_remarks: "",
-      id_of_creator: "",
-      name_of_creator: "",
-      created_on: new Date().toISOString(),
+      id_of_creator: userId || "",
+      name_of_creator: userName || "",
+      created_on: formattedISTTime, // Send created_on in ISO 8601 format
       id_of_updater: "",
       name_of_updater: "",
-      updated_on: new Date().toISOString(),
+      // updated_on: null, // Do not send updated_on during creation
     };
 
     // Coast Down Data payload
@@ -603,10 +625,10 @@ export default function CreateJobOrder() {
       f0_value: form.f0N ? parseFloat(form.f0N) : null,
       f1_value: form.f1Nkmph ? parseFloat(form.f1Nkmph) : null,
       f2_value: form.f2Nkmph2 ? parseFloat(form.f2Nkmph2) : null,
-      id_of_creator: "",
-      created_on: new Date().toISOString(),
+      id_of_creator: userId || "",
+      created_on: formattedISTTime, // Send created_on in ISO 8601 format
       id_of_updater: "",
-      updated_on: new Date().toISOString(),
+      // updated_on: null, // Do not send updated_on during creation
     };
 
     try {
@@ -709,10 +731,10 @@ export default function CreateJobOrder() {
           test.f2Nkmph2 || form.f2Nkmph2
             ? parseFloat(test.f2Nkmph2 || form.f2Nkmph2)
             : null,
-        id_of_creator: "",
-        created_on: new Date().toISOString(),
+        id_of_creator: userId || "",
+        created_on: formattedISTTime, // Send created_on in ISO 8601 format
         id_of_updater: "",
-        updated_on: new Date().toISOString(),
+        // updated_on: null, // Do not send updated_on during creation
       };
 
       try {
@@ -731,8 +753,8 @@ export default function CreateJobOrder() {
     // Create test order payload matching the API schema
     const testOrderPayload = {
       test_order_id,
-      job_order_id: job_order_id || "", // Ensure string
-      CoastDownData_id: CoastDownData_id || "", // Ensure string
+      job_order_id: job_order_id || "",
+      CoastDownData_id: CoastDownData_id || "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -751,13 +773,14 @@ export default function CreateJobOrder() {
       hardware_change: test.hardwareChange || "",
       equipment_required: test.equipmentRequired || "",
       shift: test.shift || "",
+      fuel_type: test.fuelType || "",
       preferred_date: test.preferredDate || null,
       emission_check_date: test.emissionCheckDate || null,
       emission_check_attachment: test.emissionCheckAttachment || "",
       specific_instruction: test.specificInstruction || "",
       status: "Created",
-      id_of_creator: "",
-      name_of_creator: "",
+      id_of_creator: userId || "",
+      name_of_creator: userName || "",
       created_on: new Date().toISOString(),
       id_of_updater: "",
       name_of_updater: "",
@@ -959,6 +982,7 @@ export default function CreateJobOrder() {
         hardwareChange: testOrder.hardware_change || "",
         equipmentRequired: testOrder.equipment_required || "",
         shift: testOrder.shift || "",
+        fuelType: testOrder.fuel_type || "",
         preferredDate: testOrder.preferred_date || "",
         emissionCheckDate: testOrder.emission_check_date || "",
         emissionCheckAttachment: testOrder.emission_check_attachment || "",
@@ -1011,6 +1035,7 @@ export default function CreateJobOrder() {
       hardware_change: test.hardwareChange || "",
       equipment_required: test.equipmentRequired || "",
       shift: test.shift || "",
+      fuel_type: test.fuelType || "",
       preferred_date: test.preferredDate || null,
       emission_check_date: test.emissionCheckDate || null,
       emission_check_attachment: test.emissionCheckAttachment || "",
@@ -1036,6 +1061,7 @@ export default function CreateJobOrder() {
     }
   };
 
+  // Add state for remark modal
   // Add these two lines to define the modal state for each test row
   const [emissionCheckModals, setEmissionCheckModals] = useState({});
   const [datasetModals, setDatasetModals] = useState({});
@@ -1044,10 +1070,68 @@ export default function CreateJobOrder() {
   const [dbcModals, setDBCModals] = useState({});
   const [wltpModals, setWLTPModals] = useState({});
 
-  // Modal state for remark and modal type
   const [remarkModalOpen, setRemarkModalOpen] = useState(false);
-  const [remarkType, setRemarkType] = useState(""); // "Reject" or "Edit"
+  const [remarkType, setRemarkType] = useState("");
   const [remarkInput, setRemarkInput] = useState("");
+
+  // Add state for re-edit and rejection remarks
+  const [reEditRemarks, setReEditRemarks] = useState({});
+  const [rejectionRemarks, setRejectionRemarks] = useState({});
+  const [mailRemarks, setMailRemarks] = useState("");
+
+  // Add modal state for re-edit, rejection, and mail remarks
+  const [reEditModalOpen, setReEditModalOpen] = useState(false);
+  const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
+  const [mailRemarksModalOpen, setMailRemarksModalOpen] = useState(false);
+
+  // Add handler to open re-edit modal
+  const handleOpenReEditModal = (idx) => {
+    setReEditModalOpen(idx);
+  };
+
+  // Add handler to open rejection modal
+  const handleOpenRejectionModal = (idx) => {
+    setRejectionModalOpen(idx);
+  };
+
+  // Add handler to open mail remarks modal
+  const handleOpenMailRemarksModal = () => {
+    setMailRemarksModalOpen(true);
+  };
+
+  // Add handler to submit re-edit remarks
+  const handleSubmitReEditRemarks = async (idx) => {
+    const testOrderId = tests[idx]?.testOrderId;
+    try {
+      await handleStatusUpdate("Re-edit", reEditRemarks[idx], testOrderId, idx);
+      setReEditModalOpen(false);
+    } catch (err) {
+      alert("Failed to submit re-edit remarks: " + err.message);
+    }
+  };
+
+  // Add handler to submit rejection remarks
+  const handleSubmitRejectionRemarks = async (idx) => {
+    const testOrderId = tests[idx]?.testOrderId;
+    try {
+      await handleStatusUpdate("Rejected", rejectionRemarks[idx], testOrderId, idx);
+      setRejectionModalOpen(false);
+    } catch (err) {
+      alert("Failed to submit rejection remarks: " + err.message);
+    }
+  };
+
+  // Add handler to submit mail remarks
+  const handleSubmitMailRemarks = async (idx) => {
+    const testOrderId = tests[idx]?.testOrderId;
+    try {
+      await updateTestOrder(testOrderId, { ...tests[idx], mailRemarks });
+      setMailRemarksModalOpen(false);
+      alert("Test order updated successfully!");
+    } catch (err) {
+      alert("Failed to submit mail remarks: " + err.message);
+    }
+  };
 
   // Handler to send status update to backend
   const handleStatusUpdate = async (status, remark = "", testOrderId = null, testIdx = null) => {
@@ -1133,7 +1217,9 @@ export default function CreateJobOrder() {
               variant="outline"
               className="bg-red-600 text-white px-3 py-1 rounded"
             >
-              Chennai Job Order
+              {location.state?.isEdit && (location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id)
+                ? (location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id)
+                : "Chennai Job Order"}
             </Button>
             <div className="flex flex-col">
               {/* <span className="font-semibold text-lg">New Job Order</span>
@@ -1225,29 +1311,34 @@ export default function CreateJobOrder() {
             />
           </div>
           {/* Engine Number (dropdown) */}
-          <div className="flex flex-col">
-            <Label htmlFor="engineSerialNumber">
-              Engine Serial Number <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={form.engineSerialNumber}
-              onValueChange={handleEngineNumberChange}
-              required
-              disabled={formDisabled}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                {engineNumbers.map((engineSerialNumber) => (
-                  <SelectItem key={engineSerialNumber} value={engineSerialNumber}>
+                <div className="flex flex-col">
+                <Label htmlFor="engineSerialNumber">
+                  Engine Serial Number <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={form.engineSerialNumber}
+                  onValueChange={handleEngineNumberChange}
+                  required
+                  // Disable if a test order exists for this job order
+                  disabled={
+                  formDisabled ||
+                  !!(location.state?.originalJobOrderId &&
+                    (allTestOrders[location.state?.originalJobOrderId] || []).length > 0)
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                  {engineNumbers.map((engineSerialNumber) => (
+                    <SelectItem key={engineSerialNumber} value={engineSerialNumber}>
                     {engineSerialNumber}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Type of Engine */}
+                    </SelectItem>
+                  ))}
+                  </SelectContent>
+                </Select>
+                </div>
+                {/* Type of Engine */}
           <div className="flex flex-col">
             <Label htmlFor="engineType">
               Type of Engine <span className="text-red-500">*</span>
@@ -1681,8 +1772,8 @@ export default function CreateJobOrder() {
                 )}
               </div>
               <div className="flex items-center gap-3">
-                {/* Button Display Logic */}
-                {(!test?.status || test?.status === "Created") && (
+                {/* Buttons for TestEngineer */}
+                {userRole === "TestEngineer" && (!test?.status || test?.status === "Created") && (
                   <>
                     <Button
                       className="bg-green-600 text-white text-xs px-3 py-1 rounded"
@@ -1705,7 +1796,20 @@ export default function CreateJobOrder() {
                     </Button>
                   </>
                 )}
-                {(test?.status === "Started" || test?.status === "Rejected" || test?.status === "Re-edit") && (
+                {/* Buttons for ProjectTeam */}
+                {userRole === "Project Team" && test?.status === "Started" && (
+                  <Button
+                    className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
+                    type="button"
+                    onClick={async () => {
+                      await handleStatusUpdate("Re-edit", "", test.testOrderId, idx);
+                    }}
+                  >
+                    Re-edit
+                  </Button>
+                )}
+                {/* Buttons for TestEngineer */}
+                {userRole === "TestEngineer" && (test?.status === "Started" || test?.status === "Rejected" || test?.status === "Re-edit") && (
                   <>
                     <Button
                       className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
@@ -1877,6 +1981,16 @@ export default function CreateJobOrder() {
                   </label>
                 </div>
               </div>
+              {test.dpf === "Yes" && (
+                <div>
+                  <Label>DPF Regen Occurs (g)*</Label>
+                  <Input
+                    value={test.dpfRegenOccurs || ""}
+                    onChange={(e) => handleTestChange(idx, "dpfRegenOccurs", e.target.value)}
+                    placeholder="Enter DPF Regen Occurs (g)"
+                  />
+                </div>
+              )}
               <div>
                 <Label>Dataset flashed</Label>
                 <div className="flex gap-2 mt-2">
@@ -1914,7 +2028,7 @@ export default function CreateJobOrder() {
                       type="radio"
                       name={`ess${idx}`}
                       value="On"
-                      checked={test.ess === "On"}
+                                           checked={test.ess === "On"}
                       onChange={() => handleTestChange(idx, "ess", "On")}
                     />{" "}
                     On
@@ -1985,6 +2099,24 @@ export default function CreateJobOrder() {
                 </Select>
               </div>
               <div>
+                <Label>Fuel Type</Label>
+                <Select
+                  value={test.fuelType}
+                  onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fuelTypes.map((fuelType, index) => (
+                      <SelectItem key={`${fuelType}-${index}`} value={fuelType}>
+                        {fuelType}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label>Equipment Required</Label>
                 <Input
                   value={test.equipmentRequired}
@@ -1997,6 +2129,7 @@ export default function CreateJobOrder() {
               <div>
                 <Label>Preferred Date</Label>
                 <Input
+                 
                   type="date"
                   value={test.preferredDate}
                   onChange={(e) =>
@@ -2042,7 +2175,7 @@ export default function CreateJobOrder() {
                     maxFiles={5}
                     formData={{
                       ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                           originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
                     }}
                     setFormData={(updatedTest) => {
                       setTests((prev) =>
@@ -2110,7 +2243,6 @@ export default function CreateJobOrder() {
                     id={`test${idx}`}
                     submitted={false}
                     setSubmitted={() => {}}
-                   
                     openModal={!!a2lModals[idx]}
                     handleOpenModal={() =>
                       setA2LModals((prev) => ({ ...prev, [idx]: true }))
@@ -2362,12 +2494,109 @@ export default function CreateJobOrder() {
               {editingTestOrderIdx === idx && (
                 <Button
                   className="bg-blue-600 text-white text-xs px-6 py-2 rounded ml-2"
-                  onClick={() => handleUpdateTestOrder(idx)}
+                  onClick={() => handleOpenMailRemarksModal()}
                 >
                   UPDATE TEST ORDER
                 </Button>
               )}
             </div>
+
+            {/* Re-edit remarks modal */}
+            {reEditModalOpen === idx && (
+              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                <div className="bg-white rounded shadow-lg p-6 w-96">
+                  <div className="font-semibold mb-2">Reason for Re-edit</div>
+                  <textarea
+                    className="w-full border rounded p-2 mb-4"
+                    rows={3}
+                    value={reEditRemarks[idx] || ""}
+                    onChange={(e) => setReEditRemarks((prev) => ({ ...prev, [idx]: e.target.value }))}
+                    placeholder="Enter reason for re-edit..."
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      className="bg-gray-300 text-black px-4 py-1 rounded"
+                      type="button"
+                      onClick={() => setReEditModalOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="bg-blue-600 text-white px-4 py-1 rounded"
+                      type="button"
+                      onClick={() => handleSubmitReEditRemarks(idx)}
+                      disabled={!reEditRemarks[idx]?.trim()}
+                    >
+                      Submit
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Rejection remarks modal */}
+            {rejectionModalOpen === idx && (
+              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                <div className="bg-white rounded shadow-lg p-6 w-96">
+                  <div className="font-semibold mb-2">Reason for Rejection</div>
+                  <textarea
+                    className="w-full border rounded p-2 mb-4"
+                    rows={3}
+                    value={rejectionRemarks[idx] || ""}
+                    onChange={(e) => setRejectionRemarks((prev) => ({ ...prev, [idx]: e.target.value }))}
+                    placeholder="Enter reason for rejection..."
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      className="bg-gray-300 text-black px-4 py-1 rounded"
+                      type="button"
+                      onClick={() => setRejectionModalOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="bg-red-600 text-white px-4 py-1 rounded"
+                      type="button"
+                      onClick={() => handleSubmitRejectionRemarks(idx)}
+                      disabled={!rejectionRemarks[idx]?.trim()}
+                    >
+                      Submit
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* mail remarks modal */}
+            {mailRemarksModalOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                <div className="bg-white rounded shadow-lg p-6 w-96">
+                  <div className="font-semibold mb-2">mail remarks</div>
+                  <textarea
+                    className="w-full border rounded p-2 mb-4"
+                    rows={3}
+                    value={mailRemarks}
+                    onChange={(e) => setMailRemarks(e.target.value)}
+                    placeholder="Enter mail remarks..."
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      className="bg-gray-300 text-black px-4 py-1 rounded"
+                      type="button"
+                      onClick={() => setMailRemarksModalOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="bg-blue-600 text-white px-4 py-1 rounded"
+                      type="button"
+                      onClick={() => handleSubmitMailRemarks(idx)}
+                      disabled={!mailRemarks.trim()}
+                    >
+                      Submit
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ))}
 
@@ -2382,6 +2611,7 @@ export default function CreateJobOrder() {
                   <th className="border px-2 py-1">Test Order ID</th>
                   <th className="border px-2 py-1">Test Type</th>
                   <th className="border px-2 py-1">Objective</th>
+                  <th className="border px-2 py-1">Fuel Type</th>
                   <th className="border px-2 py-1">Status</th>
                   <th className="border px-2 py-1">Actions</th>
                 </tr>
@@ -2393,6 +2623,7 @@ export default function CreateJobOrder() {
                     <td className="border px-2 py-1">{to.test_order_id}</td>
                     <td className="border px-2 py-1">{to.test_type}</td>
                     <td className="border px-2 py-1">{to.test_objective}</td>
+                    <td className="border px-2 py-1">{to.fuel_type}</td>
                     <td className="border px-2 py-1">{to.status}</td>
                     <td className="border px-2 py-1">
                       <Button
@@ -2406,7 +2637,7 @@ export default function CreateJobOrder() {
                 ))}
                 {(allTestOrders[location.state?.originalJobOrderId] || []).length === 0 && (
                   <tr>
-                    <td colSpan={6} className="text-center py-2 text-gray-500">
+                    <td colSpan={7} className="text-center py-2 text-gray-500">
                       No test orders found.
                     </td>
                   </tr>
