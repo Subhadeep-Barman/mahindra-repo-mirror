@@ -28,7 +28,7 @@ export default function RDECreateJobOrder() {
     vehicleBuildLevel: "",
     vehicleModel: "",
     vehicleBodyNumber: "",
-    vehicleNumber: "",
+    vehicleSerialNumber: "",
     transmissionType: "",
     finalDriveAxleRatio: "",
     engineNumber: "",
@@ -283,7 +283,7 @@ export default function RDECreateJobOrder() {
     setForm((prev) => ({
       ...prev,
       vehicleBodyNumber: value,
-      vehicleNumber: found?.vehicle_number || "",
+      vehicleSerialNumber: found?.vehicle_serial_number || "",
       engineNumber: "",
       engineType: "",
     }));
@@ -457,7 +457,7 @@ export default function RDECreateJobOrder() {
             jobOrder.vehicle_build_level || jobOrder.vehicleBuildLevel || "",
           vehicleModel: jobOrder.vehicle_model || jobOrder.vehicleModel || "",
           vehicleBodyNumber: jobOrder.vehicle_body_number || "",
-          vehicleNumber: jobOrder.vehicle_serial_number || "",
+          vehicleSerialNumber: jobOrder.vehicle_serial_number || "",
           transmissionType:
             jobOrder.transmission_type || jobOrder.transmissionType || "",
           finalDriveAxleRatio:
@@ -1217,12 +1217,12 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Vehicle Number (auto) */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleNumber">
+            <Label htmlFor="vehicleSerialNumber">
               Vehicle Number <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="vehicleNumber"
-              value={form.vehicleNumber}
+              id="vehicleSerialNumber"
+              value={form.vehicleSerialNumber}
               readOnly
               className="w-44"
               placeholder="Auto-fetched"
@@ -1858,6 +1858,16 @@ export default function RDECreateJobOrder() {
                   </label>
                 </div>
               </div>
+              {test.dpf === "Yes" && (
+                              <div>
+                                <Label>DPF Regen Occurs (g)*</Label>
+                                <Input
+                                  value={test.dpfRegenOccurs || ""}
+                                  onChange={(e) => handleTestChange(idx, "dpfRegenOccurs", e.target.value)}
+                                  placeholder="Enter DPF Regen Occurs (g)"
+                                />
+                              </div>
+                            )}
             </div>
             <div className="grid grid-cols-4 gap-4 mb-2">
               <div>

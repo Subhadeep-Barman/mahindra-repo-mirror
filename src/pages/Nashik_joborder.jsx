@@ -1725,6 +1725,16 @@ export default function CreateJobOrder() {
                   </label>
                 </div>
               </div>
+              {test.dpf === "Yes" && (
+                                            <div>
+                                              <Label>DPF Regen Occurs (g)*</Label>
+                                              <Input
+                                                value={test.dpfRegenOccurs || ""}
+                                                onChange={(e) => handleTestChange(idx, "dpfRegenOccurs", e.target.value)}
+                                                placeholder="Enter DPF Regen Occurs (g)"
+                                              />
+                                            </div>
+                                          )}
             </div>
             <div className="grid grid-cols-4 gap-4 mb-2">
               <div>
