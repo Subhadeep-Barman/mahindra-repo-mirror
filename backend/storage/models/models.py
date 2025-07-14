@@ -192,6 +192,7 @@ class TestOrder(Base):
     dataset_flashed = Column(Boolean)
     ess = Column(String)
     mode = Column(String)
+    fuel_type = Column(String)
     hardware_change = Column(Text)
     equipment_required = Column(Text)
     shift = Column(String)
