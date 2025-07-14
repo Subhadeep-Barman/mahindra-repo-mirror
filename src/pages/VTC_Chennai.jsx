@@ -190,7 +190,7 @@ export default function VTCChennaiPage() {
                 <TableHeader>
                   <TableRow className="bg-gray-100">
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Job Order Number
+                      Job Order ID
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Project
@@ -211,16 +211,19 @@ export default function VTCChennaiPage() {
                       Test Orders
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Completed Test Orders
+                      Completed Tests
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                      Created by
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Created on
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Last updated by
+                      Updated by
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Last updated on
+                      Updated on
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -257,16 +260,39 @@ export default function VTCChennaiPage() {
                         {order.test_status}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900 px-4 py-2">
-                        {order.completed_test_count}
+                        {order.completed_test_count == 0
+                          ? "0"
+                          : `${order.completed_test_count}/${order.test_status}`}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600 px-4 py-2">
-                        {order.created_on?.slice(0, 10)}
+                        {order.name_of_creator}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600 px-4 py-2">
+                        {new Date(order.created_on).toLocaleString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          hour12: true,
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600 px-4 py-2">
                         {order.name_of_updater}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600 px-4 py-2">
-                        {order.updated_on?.slice(0, 10)}
+                        {order.updated_on
+                          ? new Date(order.updated_on).toLocaleString("en-IN", {
+                              timeZone: "Asia/Kolkata",
+                              hour12: true,
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "N/A"}
                       </TableCell>
                     </TableRow>
                   ))}

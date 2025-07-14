@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import axios from "axios";
 import { Button } from "@/components/UI/button";
 import { ArrowBack } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
 import { useNavigate } from "react-router-dom";
 import useStore from "@/store/useStore";
+import { useAuth } from "@/context/AuthContext";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function VehicleEngineForm({ onSubmit, onClear }) {
@@ -20,6 +21,8 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
   const fetchProjects = useStore((state) => state.fetchProjects);
   const fetchVehicleModels = useStore((state) => state.fetchVehicleModels);
   const fetchDomains = useStore((state) => state.fetchDomains);
+
+  const { apiUserRole, userId, userName } = useAuth();
 
   const [form, setForm] = useState({
     project: "",
@@ -123,6 +126,10 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         form.reverseGearRatio.numerator && form.reverseGearRatio.denominator
           ? `${form.reverseGearRatio.numerator}:${form.reverseGearRatio.denominator}`
           : "",
+      id_of_creator: userId || "", // id_of_creator handled by backend
+      // created_on: "", // created_on handled by backend
+      id_of_updater: "", // id_of_updater handled by backend
+      // updated_on: "",
       // id_of_creator, created_on, id_of_updater, updated_on handled by backend
     };
   }

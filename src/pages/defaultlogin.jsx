@@ -82,7 +82,7 @@ export default function DefaultLogin() {
           access_token
         );
         // Fetch all users to trigger AuthContext update
-        await axios.get(`${apiURL}/api/users/read_all_users`);
+        // await axios.get(`${apiURL}/api/users/read_all_users`);
         console.log("User logged in successfully:", username);
         showSnackbar("Login successful", "success");
 
