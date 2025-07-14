@@ -64,6 +64,7 @@ class JobOrderSchema(BaseModel):
     id_of_updater: str = None
     name_of_updater: str = None
     updated_on: datetime = None
+    cft_members: List[str] = None
 
 class TestOrderStatusUpdateSchema(BaseModel):
     test_order_id: str
@@ -82,7 +83,7 @@ def joborder_to_dict(joborder: JobOrder, db: Session = None):
         # Get count of completed test orders for this job order
         completed_test_orders = db.query(TestOrder).filter(
             TestOrder.job_order_id == joborder.job_order_id,
-            TestOrder.status == "completed"
+            TestOrder.status == "Completed" 
         ).count()
 
         # print(f"Total test orders for {joborder.job_order_id}: {total_test_orders}")
@@ -109,7 +110,8 @@ def joborder_to_dict(joborder: JobOrder, db: Session = None):
         "created_on": joborder.created_on,
         "id_of_updater": joborder.id_of_updater,
         "name_of_updater": joborder.name_of_updater,
-        "updated_on": joborder.updated_on,
+        # "updated_on": joborder.updated_on,
+        "cft_members": joborder.cft_members if joborder.cft_members else []
     }
 
 @router.post("/joborders", response_model=JobOrderSchema)

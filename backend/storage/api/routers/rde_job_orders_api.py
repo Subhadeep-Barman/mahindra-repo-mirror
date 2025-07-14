@@ -35,6 +35,7 @@ class RDEJobOrderSchema(BaseModel):
     id_of_updater: str = None
     name_of_updater: str = None
     updated_on: datetime = None
+    cft_members: List[str] = None
 
 def rde_joborder_to_dict(rde_joborder: RDEJobOrder, db: Session = None):
     total_test_orders = 0
@@ -44,7 +45,7 @@ def rde_joborder_to_dict(rde_joborder: RDEJobOrder, db: Session = None):
         total_test_orders = db.query(TestOrder).filter(TestOrder.job_order_id == rde_joborder.job_order_id).count()
         completed_test_orders = db.query(TestOrder).filter(
             TestOrder.job_order_id == rde_joborder.job_order_id,
-            TestOrder.status == "completed"
+            TestOrder.status == "Completed"
         ).count()
 
     return {
@@ -74,6 +75,7 @@ def rde_joborder_to_dict(rde_joborder: RDEJobOrder, db: Session = None):
         "id_of_updater": rde_joborder.id_of_updater,
         "name_of_updater": rde_joborder.name_of_updater,
         "updated_on": rde_joborder.updated_on,
+        "cft_members": rde_joborder.cft_members if rde_joborder.cft_members else []
     }
 
 @router.post("/rde_joborders", response_model=RDEJobOrderSchema)

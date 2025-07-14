@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, String, Float, Boolean, Text, Date, TIMESTAMP
+from sqlalchemy import Column, String, String, Float, Boolean, Text, Date, TIMESTAMP, JSON
 from sqlalchemy.orm import declarative_base
 from datetime import datetime
 
@@ -145,6 +145,7 @@ class JobOrder(Base):
     id_of_updater = Column(String)  
     name_of_updater = Column(String)
     updated_on = Column(TIMESTAMP, default=datetime.utcnow)
+    cft_members = Column(JSON)
 
 class RDEJobOrder(Base):
     __tablename__ = "RDEJobOrders"
@@ -169,10 +170,10 @@ class RDEJobOrder(Base):
     mail_remarks = Column(String)
     id_of_creator = Column(String)  
     name_of_creator = Column(String)
-    created_on = Column(TIMESTAMP, default=datetime.utcnow)
+    created_on = Column(TIMESTAMP)
     id_of_updater = Column(String)  
     name_of_updater = Column(String)
-    updated_on = Column(TIMESTAMP, default=datetime.utcnow)
+    updated_on = Column(TIMESTAMP)
 
 
 
@@ -191,6 +192,7 @@ class TestOrder(Base):
     dataset_flashed = Column(Boolean)
     ess = Column(String)
     mode = Column(String)
+    fuel_type = Column(String)
     hardware_change = Column(Text)
     equipment_required = Column(Text)
     shift = Column(String)
