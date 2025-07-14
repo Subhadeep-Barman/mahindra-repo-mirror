@@ -1,8 +1,8 @@
 """Initial schema setup
 
-Revision ID: 605e86188158
+Revision ID: 332896d803bc
 Revises: 
-Create Date: 2025-07-08 17:47:55.042754
+Create Date: 2025-07-14 10:33:37.554139
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '605e86188158'
+revision: str = '332896d803bc'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -114,6 +114,7 @@ def upgrade() -> None:
     sa.Column('id_of_updater', sa.String(), nullable=True),
     sa.Column('name_of_updater', sa.String(), nullable=True),
     sa.Column('updated_on', sa.TIMESTAMP(), nullable=True),
+    sa.Column('cft_members', sa.JSON(), nullable=True),
     sa.PrimaryKeyConstraint('job_order_id')
     )
     op.create_table('RDEJobOrders',
