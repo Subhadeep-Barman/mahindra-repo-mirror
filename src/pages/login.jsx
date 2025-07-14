@@ -107,7 +107,7 @@ function Login() {
             <div className="fixed bottom-4 left-4">
               <p className="text-lg text-gray-500 dark:text-gray-400">
                 <span className="text-red-500 font-semibold">VERSION</span>{" "}
-                <span className="text-black dark:text-white">1.0.0</span>
+                <span className="text-black dark:text-white">1.1.0</span>
               </p>
             </div>
           </div>
