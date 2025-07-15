@@ -18,6 +18,7 @@ import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import CFTMembers from "@/components/CFTMembers";
 const apiURL = import.meta.env.VITE_BACKEND_URL
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
@@ -63,8 +64,7 @@ export default function CreateJobOrder() {
 
   const [vehicleFormData, setVehicleFormData] = useState(null);
   const [engineFormData, setEngineFormData] = useState(null);
-  const [showVehicleDetails, setShowVehicleDetails] = useState(true);
-  const [showEngineDetails, setShowEngineDetails] = useState(true);
+  const [showCFTPanel, setShowCFTPanel] = useState(false);
 
   // State to control pre-filling mode to prevent useEffect conflicts
   const [isPreFilling, setIsPreFilling] = useState(false);
@@ -131,7 +131,7 @@ export default function CreateJobOrder() {
   };
 
 
-   const handleBack = () => {
+  const handleBack = () => {
     navigate(-1);
   };
   // Handler to update a test
@@ -457,14 +457,14 @@ export default function CreateJobOrder() {
             jobOrder.vehicle_build_level || jobOrder.vehicleBuildLevel || "",
           vehicleModel: jobOrder.vehicle_model || jobOrder.vehicleModel || "",
           vehicleBodyNumber: jobOrder.vehicle_body_number || "",
-          vehicleSerialNumber:jobOrder.vehicle_serial_number || "",
+          vehicleSerialNumber: jobOrder.vehicle_serial_number || "",
           transmissionType:
             jobOrder.transmission_type || jobOrder.transmissionType || "",
           finalDriveAxleRatio:
             jobOrder.final_drive_axle_ratio ||
             jobOrder.finalDriveAxleRatio ||
             "",
-          engineSerialNumber:jobOrder.engine_serial_number || "",
+          engineSerialNumber: jobOrder.engine_serial_number || "",
           engineType:
             jobOrder.type_of_engine ||
             jobOrder.engine_type ||
@@ -659,7 +659,7 @@ export default function CreateJobOrder() {
       console.error("Error creating job order:", err);
       alert(
         "Failed to create job order: " +
-          (err.response?.data?.detail || err.message)
+        (err.response?.data?.detail || err.message)
       );
     }
   };
@@ -744,7 +744,7 @@ export default function CreateJobOrder() {
         console.error("Error creating test-specific coast down data:", err);
         alert(
           "Failed to create coast down data for test: " +
-            (err.response?.data?.detail || err.message)
+          (err.response?.data?.detail || err.message)
         );
         return;
       }
@@ -766,8 +766,8 @@ export default function CreateJobOrder() {
         test.datasetflashed === "Yes"
           ? true
           : test.datasetflashed === "No"
-          ? false
-          : null,
+            ? false
+            : null,
       ess: test.ess || "",
       mode: test.mode || "",
       hardware_change: test.hardwareChange || "",
@@ -804,17 +804,17 @@ export default function CreateJobOrder() {
 
       alert(
         "Test Order Created! ID: " +
-          response.data.test_order_id +
-          (hasTestSpecificCoastDownData
-            ? "\nCoast Down Data ID: " + CoastDownData_id
-            : "")
+        response.data.test_order_id +
+        (hasTestSpecificCoastDownData
+          ? "\nCoast Down Data ID: " + CoastDownData_id
+          : "")
       );
       navigate("/vtc-chennai");
     } catch (err) {
       console.error("Error creating test order:", err);
       alert(
         "Failed to create test order: " +
-          (err.response?.data?.detail || err.message)
+        (err.response?.data?.detail || err.message)
       );
     }
   };
@@ -975,8 +975,8 @@ export default function CreateJobOrder() {
           testOrder.dataset_flashed === true
             ? "Yes"
             : testOrder.dataset_flashed === false
-            ? "No"
-            : "",
+              ? "No"
+              : "",
         ess: testOrder.ess || "",
         mode: testOrder.mode || "",
         hardwareChange: testOrder.hardware_change || "",
@@ -1028,8 +1028,8 @@ export default function CreateJobOrder() {
         test.datasetflashed === "Yes"
           ? true
           : test.datasetflashed === "No"
-          ? false
-          : null,
+            ? false
+            : null,
       ess: test.ess || "",
       mode: test.mode || "",
       hardware_change: test.hardwareChange || "",
@@ -1056,7 +1056,7 @@ export default function CreateJobOrder() {
     } catch (err) {
       alert(
         "Failed to update test order: " +
-          (err.response?.data?.detail || err.message)
+        (err.response?.data?.detail || err.message)
       );
     }
   };
@@ -1206,13 +1206,13 @@ export default function CreateJobOrder() {
         <div className="flex items-center justify-between px-8 pt-6">
           <div className="flex items-center gap-4">
             <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleBack}
-            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:border-red-500 dark:hover:bg-red-950 rounded-full border border-red-500"
-          >
-            <ArrowBack className="h-5 w-5" />
-          </Button>
+              variant="ghost"
+              size="sm"
+              onClick={handleBack}
+              className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:border-red-500 dark:hover:bg-red-950 rounded-full border border-red-500"
+            >
+              <ArrowBack className="h-5 w-5" />
+            </Button>
             <Button
               variant="outline"
               className="bg-red-600 text-white px-3 py-1 rounded"
@@ -1311,34 +1311,34 @@ export default function CreateJobOrder() {
             />
           </div>
           {/* Engine Number (dropdown) */}
-                <div className="flex flex-col">
-                <Label htmlFor="engineSerialNumber">
-                  Engine Serial Number <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={form.engineSerialNumber}
-                  onValueChange={handleEngineNumberChange}
-                  required
-                  // Disable if a test order exists for this job order
-                  disabled={
-                  formDisabled ||
-                  !!(location.state?.originalJobOrderId &&
-                    (allTestOrders[location.state?.originalJobOrderId] || []).length > 0)
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                  {engineNumbers.map((engineSerialNumber) => (
-                    <SelectItem key={engineSerialNumber} value={engineSerialNumber}>
+          <div className="flex flex-col">
+            <Label htmlFor="engineSerialNumber">
+              Engine Serial Number <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={form.engineSerialNumber}
+              onValueChange={handleEngineNumberChange}
+              required
+              // Disable if a test order exists for this job order
+              disabled={
+                formDisabled ||
+                !!(location.state?.originalJobOrderId &&
+                  (allTestOrders[location.state?.originalJobOrderId] || []).length > 0)
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                {engineNumbers.map((engineSerialNumber) => (
+                  <SelectItem key={engineSerialNumber} value={engineSerialNumber}>
                     {engineSerialNumber}
-                    </SelectItem>
-                  ))}
-                  </SelectContent>
-                </Select>
-                </div>
-                {/* Type of Engine */}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Type of Engine */}
           <div className="flex flex-col">
             <Label htmlFor="engineType">
               Type of Engine <span className="text-red-500">*</span>
@@ -1687,7 +1687,7 @@ export default function CreateJobOrder() {
                   } catch (err) {
                     alert(
                       "Failed to update coast down data: " +
-                        (err.response?.data?.detail || err.message)
+                      (err.response?.data?.detail || err.message)
                     );
                   }
                 }}
@@ -1726,11 +1726,24 @@ export default function CreateJobOrder() {
           >
             + ADD TEST
           </Button>
-          <Button variant="ghost" className="text-xs text-blue-700 px-0">
-            + CFT MEMBERS
+          <Button
+            variant="ghost"
+            className="text-xs text-blue-700 px-0"
+            onClick={() => {
+              setShowCFTPanel((prev) => !prev);
+              console.log("Toggled CFT panel");
+            }}
+          >
+            {showCFTPanel ? "− CFT MEMBERS" : "+ CFT MEMBERS"}
           </Button>
           <div className="flex-1"></div>
         </div>
+        {showCFTPanel && (
+          <div className="mt-4 mx-8 mb-8 bg-white border rounded-lg">
+            <CFTMembers />
+          </div>
+        )}
+
 
         {/* Test Forms */}
         {tests.map((test, idx) => (
@@ -2028,7 +2041,7 @@ export default function CreateJobOrder() {
                       type="radio"
                       name={`ess${idx}`}
                       value="On"
-                                           checked={test.ess === "On"}
+                      checked={test.ess === "On"}
                       onChange={() => handleTestChange(idx, "ess", "On")}
                     />{" "}
                     On
@@ -2129,7 +2142,7 @@ export default function CreateJobOrder() {
               <div>
                 <Label>Preferred Date</Label>
                 <Input
-                 
+
                   type="date"
                   value={test.preferredDate}
                   onChange={(e) =>
@@ -2175,7 +2188,7 @@ export default function CreateJobOrder() {
                     maxFiles={5}
                     formData={{
                       ...test,
-                                           originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
                     }}
                     setFormData={(updatedTest) => {
                       setTests((prev) =>
@@ -2184,7 +2197,7 @@ export default function CreateJobOrder() {
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => {}}
+                    setSubmitted={() => { }}
                     openModal={!!emissionCheckModals[idx]}
                     handleOpenModal={() =>
                       setEmissionCheckModals((prev) => ({ ...prev, [idx]: true }))
@@ -2213,7 +2226,7 @@ export default function CreateJobOrder() {
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => {}}
+                    setSubmitted={() => { }}
                     openModal={!!datasetModals[idx]}
                     handleOpenModal={() =>
                       setDatasetModals((prev) => ({ ...prev, [idx]: true }))
@@ -2242,7 +2255,7 @@ export default function CreateJobOrder() {
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => {}}
+                    setSubmitted={() => { }}
                     openModal={!!a2lModals[idx]}
                     handleOpenModal={() =>
                       setA2LModals((prev) => ({ ...prev, [idx]: true }))
@@ -2271,7 +2284,7 @@ export default function CreateJobOrder() {
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => {}}
+                    setSubmitted={() => { }}
                     openModal={!!experimentModals[idx]}
                     handleOpenModal={() =>
                       setExperimentModals((prev) => ({ ...prev, [idx]: true }))
@@ -2300,7 +2313,7 @@ export default function CreateJobOrder() {
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => {}}
+                    setSubmitted={() => { }}
                     openModal={!!dbcModals[idx]}
                     handleOpenModal={() =>
                       setDBCModals((prev) => ({ ...prev, [idx]: true }))
@@ -2308,7 +2321,7 @@ export default function CreateJobOrder() {
                     handleCloseModal={() =>
                       setDBCModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                                       disabled={false}
+                    disabled={false}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
                   />
                 </div>
@@ -2329,7 +2342,7 @@ export default function CreateJobOrder() {
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => {}}
+                    setSubmitted={() => { }}
                     openModal={!!wltpModals[idx]}
                     handleOpenModal={() =>
                       setWLTPModals((prev) => ({ ...prev, [idx]: true }))
