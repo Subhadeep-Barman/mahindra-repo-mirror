@@ -385,6 +385,7 @@ export default function CreateJobOrder() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const [jobOrderId, setJobOrderId] = useState();
   const { userRole, userId, userName } = useAuth();
 
   // Prefill form if jobOrder is passed via navigation state
@@ -437,6 +438,11 @@ export default function CreateJobOrder() {
         }
         return {};
       };
+
+      const jobOrderId =
+        location.state?.originalJobOrderId ||
+        location.state?.jobOrder?.job_order_id ||
+        "";
 
       // Async function to handle the pre-filling with coast down data
       const preFillForm = async () => {
@@ -652,6 +658,7 @@ export default function CreateJobOrder() {
       if (hasCoastDownData) {
         await axios.post(`${apiURL}/coastdown`, coastDownPayload);
       }
+      setJobOrderId(job_order_id);
 
       alert("Job Order Created! ID: " + jobOrderRes.data.job_order_id);
       // Optionally, reset form or navigate
@@ -1740,7 +1747,8 @@ export default function CreateJobOrder() {
         </div>
         {showCFTPanel && (
           <div className="mt-4 mx-8 mb-8 bg-white border rounded-lg">
-            <CFTMembers />
+            {console.log("Passing jobOrderId to CFTMembers:", jobOrderId)}
+            <CFTMembers jobOrderId={jobOrderId} />
           </div>
         )}
 
