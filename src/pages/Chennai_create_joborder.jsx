@@ -137,7 +137,7 @@ export default function CreateJobOrder() {
   // Handler to update a test
   const handleTestChange = (idx, field, value) => {
     setTests((prev) =>
-      prev.map((test, i) => (i === idx ? { ...test, [field]: value } : test))
+      prev.map((test, i) => (i === idx ? { ...test, [field]: value, disabled: true } : test))
     );
   };
 
@@ -558,6 +558,10 @@ export default function CreateJobOrder() {
 
       // Execute the pre-filling
       preFillForm();
+      // If this is an update (read API), disable the form
+      if (location.state?.isEdit) {
+        setFormDisabled(true);
+      }
     }
   }, []); // Empty dependency array - only run once on mount
   // Add these handlers
@@ -793,11 +797,11 @@ export default function CreateJobOrder() {
         testOrderPayload
       );
 
-      // Update the test in state with the created test order ID
+      // Update the test in state with the created test order ID and disable its fields
       setTests((prev) =>
         prev.map((t, i) =>
           i === testIndex
-            ? { ...t, testOrderId: response.data.test_order_id }
+            ? { ...t, testOrderId: response.data.test_order_id, disabled: true }
             : t
         )
       );
@@ -1069,6 +1073,11 @@ export default function CreateJobOrder() {
   const [experimentModals, setExperimentModals] = useState({});
   const [dbcModals, setDBCModals] = useState({});
   const [wltpModals, setWLTPModals] = useState({});
+
+  const [pdfReportModals, setpdfReportModals] = useState({});
+  const [excelReportModals, setexcelReportModals] = useState({});
+  const [datFileModals, setDATModals] = useState({});
+  const [othersModals, setOthersModals] = useState({});
 
   const [remarkModalOpen, setRemarkModalOpen] = useState(false);
   const [remarkType, setRemarkType] = useState("");
@@ -1420,33 +1429,6 @@ export default function CreateJobOrder() {
                 Vehicle Details
               </span>
               <span>{vehicleAccordionOpen ? "▲" : "▼"}</span>
-              {/* <div className="flex items-center gap-2">
-                {!vehicleEditMode ? (
-                  <Button
-                    className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setVehicleEditMode(true);
-                    }}
-                  >
-                    Edit
-                  </Button>
-                ) : (
-                  <Button
-                    className="bg-green-600 text-white text-xs px-3 py-1 rounded"
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setVehicleEditMode(false);
-                      // Optionally, send updated vehicleEditable to backend here
-                    }}
-                  >
-                    Save
-                  </Button>
-                )}
-                <span>{vehicleAccordionOpen ? "▲" : "▼"}</span>
-              </div> */}
             </div>
             {vehicleAccordionOpen && (
               <form className="bg-white px-4 py-4">
@@ -1483,33 +1465,6 @@ export default function CreateJobOrder() {
                 Engine Details
               </span>
               <span>{engineAccordionOpen ? "▲" : "▼"}</span>
-              {/* <div className="flex items-center gap-2">
-                {!engineEditMode ? (
-                  <Button
-                    className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEngineEditMode(true);
-                    }}
-                  >
-                    Edit
-                  </Button>
-                ) : (
-                  <Button
-                    className="bg-green-600 text-white text-xs px-3 py-1 rounded"
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEngineEditMode(false);
-                      // Optionally, send updated engineEditable to backend here
-                    }}
-                  >
-                    Save
-                  </Button>
-                )}
-                <span>{engineAccordionOpen ? "▲" : "▼"}</span>
-              </div> */}
             </div>
             {engineAccordionOpen && (
               <form className="bg-white px-4 py-4">
@@ -1677,7 +1632,7 @@ export default function CreateJobOrder() {
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
-            {location.state?.isEdit && existingCoastDownId && (
+            {/* {location.state?.isEdit && existingCoastDownId && (
               <Button
                 className="bg-blue-600 text-white text-xs px-6 py-2 rounded"
                 onClick={async () => {
@@ -1694,8 +1649,8 @@ export default function CreateJobOrder() {
               >
                 UPDATE COAST DOWN DATA
               </Button>
-            )}
-            <Button
+            )} */}
+            {/* <Button
               className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
               type="button"
               onClick={() =>
@@ -1713,7 +1668,7 @@ export default function CreateJobOrder() {
               }
             >
               CLEAR
-            </Button>
+            </Button> */}
           </div>
         </div>
 
@@ -2095,6 +2050,8 @@ export default function CreateJobOrder() {
                   <SelectContent>
                     <SelectItem value="Shift1">Shift1</SelectItem>
                     <SelectItem value="Shift2">Shift2</SelectItem>
+                    <SelectItem value="Shift3">Shift3</SelectItem>
+                    <SelectItem value="General">General</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -2336,6 +2293,131 @@ export default function CreateJobOrder() {
                     }
                     handleCloseModal={() =>
                       setWLTPModals((prev) => ({ ...prev, [idx]: false }))
+                    }
+                    disabled={false}
+                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Testbed Engineers Attachments Card */}
+            <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+              <div className="font-semibold text-sm text-gray-700 mb-2">
+                Test Engineers Attachments
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label>PDF Reprt</Label>
+                  <DropzoneFileList
+                    buttonText="PDF Report"
+                    name="PDF_report"
+                    maxFiles={5}
+                    formData={{
+                      ...test,
+                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                    }}
+                    setFormData={(updatedTest) => {
+                      setTests((prev) =>
+                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                      );
+                    }}
+                    id={`test${idx}`}
+                    submitted={false}
+                    setSubmitted={() => {}}
+                    openModal={!!pdfReportModals[idx]}
+                    handleOpenModal={() =>
+                      setpdfReportModals((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    handleCloseModal={() =>
+                      setpdfReportModals((prev) => ({ ...prev, [idx]: false }))
+                    }
+                    disabled={false}
+                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                  />
+                </div>
+                <div>
+                  <Label>Excel Report</Label>
+                  <DropzoneFileList
+                    buttonText="Excel Report"
+                    name="Excel_report"
+                    maxFiles={5}
+                    formData={{
+                      ...test,
+                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                    }}
+                    setFormData={(updatedTest) => {
+                      setTests((prev) =>
+                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                      );
+                    }}
+                    id={`test${idx}`}
+                    submitted={false}
+                    setSubmitted={() => {}}
+                    openModal={!!excelReportModals[idx]}
+                    handleOpenModal={() =>
+                      setexcelReportModals((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    handleCloseModal={() =>
+                      setexcelReportModals((prev) => ({ ...prev, [idx]: false }))
+                    }
+                    disabled={false}
+                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                  />
+                </div>
+                <div>
+                  <Label>DAT File Attachment</Label>
+                  <DropzoneFileList
+                    buttonText="DAT File Attachment"
+                    name="DAT_file_attachment"
+                    maxFiles={5}
+                    formData={{
+                      ...test,
+                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                    }}
+                    setFormData={(updatedTest) => {
+                      setTests((prev) =>
+                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                      );
+                    }}
+                    id={`test${idx}`}
+                    submitted={false}
+                    setSubmitted={() => {}}
+                    openModal={!!datFileModals[idx]}
+                    handleOpenModal={() =>
+                      setDATModals((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    handleCloseModal={() =>
+                      setDATModals((prev) => ({ ...prev, [idx]: false }))
+                    }
+                    disabled={false}
+                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                  />
+                </div>
+                <div>
+                  <Label>Others Attachment</Label>
+                  <DropzoneFileList
+                    buttonText="Others Attachment"
+                    name="Others_attachment"
+                    maxFiles={5}
+                    formData={{
+                      ...test,
+                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                    }}
+                    setFormData={(updatedTest) => {
+                      setTests((prev) =>
+                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                      );
+                    }}
+                    id={`test${idx}`}
+                    submitted={false}
+                    setSubmitted={() => {}}
+                    openModal={!!othersModals[idx]}
+                    handleOpenModal={() =>
+                      setOthersModals((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    handleCloseModal={() =>
+                      setOthersModals((prev) => ({ ...prev, [idx]: false }))
                     }
                     disabled={false}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}

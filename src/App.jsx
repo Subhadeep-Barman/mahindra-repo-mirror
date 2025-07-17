@@ -28,7 +28,7 @@ import VTCNashikVehicleForm from "./pages/VTC_N_Vehicle_form";
 // RDE
 import RDEChennaiPage from "./pages/RDE_Chennai_Page";
 import RDE_JobOrder_Create from "./pages/RDE_JobOrder_Create";
-import RDEJobOrder from "./pages/RDE_JOBORDER";
+// import RDEJobOrder from "./pages/RDE_JOBORDER";
 import RDEVehicle from "./pages/RDE_C_vehicle";
 import RDEEngine from "./pages/RDE_Engine";
 
@@ -92,7 +92,7 @@ function App() {
 
           {/* RDE */}
           <Route path="/rde-chennai" element={<ProtectedRoute element={<RDEChennaiPage />} />} />
-          <Route path="/rde/joborder" element={<ProtectedRoute element={<RDEJobOrder />} />} />
+          {/* <Route path="/rde/joborder" element={<ProtectedRoute element={<RDEJobOrder />} />} /> */}
           <Route path="/rde/vehicle" element={<ProtectedRoute element={<RDEVehicle />} />} />
           <Route path="/rde/engine" element={<ProtectedRoute element={<RDEEngine />} />} />
 

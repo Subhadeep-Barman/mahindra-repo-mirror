@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/UI/button";
 import { Input } from "@/components/UI/input";
 import { Label } from "@/components/UI/label";
+import DropzoneFileList from "@/components/UI/DropzoneFileList";
 import {
   Select,
   SelectContent,
@@ -89,6 +90,18 @@ export default function CreateJobOrder() {
   const [modes, setModes] = useState([]);
 
   const [fuelTypes, setFuelTypes] = useState([]);
+
+  const [emissionCheckModals, setEmissionCheckModals] = useState({});
+    const [datasetModals, setDatasetModals] = useState({});
+    const [a2lModals, setA2LModals] = useState({});
+    const [experimentModals, setExperimentModals] = useState({});
+    const [dbcModals, setDBCModals] = useState({});
+    const [wltpModals, setWLTPModals] = useState({});
+
+    const [pdfReportModals, setpdfReportModals] = useState({});
+      const [excelReportModals, setexcelReportModals] = useState({});
+      const [datFileModals, setDATModals] = useState({});
+      const [othersModals, setOthersModals] = useState({});
 
   // Handler to add a new test
   const handleAddTest = () => {
@@ -1833,6 +1846,8 @@ export default function CreateJobOrder() {
                   <SelectContent>
                     <SelectItem value="Shift1">Shift1</SelectItem>
                     <SelectItem value="Shift2">Shift2</SelectItem>
+                    <SelectItem value="Shift3">Shift3</SelectItem>
+                    <SelectItem value="General">General</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1911,6 +1926,314 @@ export default function CreateJobOrder() {
                 />
               </div>
             </div>
+
+            {/* Attachments Card */}
+                        <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+                          <div className="font-semibold text-sm text-gray-700 mb-2">
+                            Attachments
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <Label>Emission Check Attachment</Label>
+                              <DropzoneFileList
+                                buttonText="Emission Check Attachment"
+                                name="Emission_check"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                                       originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!emissionCheckModals[idx]}
+                                handleOpenModal={() =>
+                                  setEmissionCheckModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setEmissionCheckModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>Dataset Attachment</Label>
+                              <DropzoneFileList
+                                buttonText="Dataset Attachment"
+                                name="Dataset_attachment"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!datasetModals[idx]}
+                                handleOpenModal={() =>
+                                  setDatasetModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setDatasetModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>A2L Attachment</Label>
+                              <DropzoneFileList
+                                buttonText="A2L Attachment"
+                                name="A2L"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!a2lModals[idx]}
+                                handleOpenModal={() =>
+                                  setA2LModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setA2LModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>Experiment Attachment</Label>
+                              <DropzoneFileList
+                                buttonText="Experiment Attachment"
+                                name="Experiment_attachment"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!experimentModals[idx]}
+                                handleOpenModal={() =>
+                                  setExperimentModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setExperimentModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>DBC Attachment</Label>
+                              <DropzoneFileList
+                                buttonText="DBC Attachment"
+                                name="DBC_attachment"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!dbcModals[idx]}
+                                handleOpenModal={() =>
+                                  setDBCModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setDBCModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                                   disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>WLTP Input Sheet</Label>
+                              <DropzoneFileList
+                                buttonText="WLTP Input Sheet"
+                                name="WLTP_input_sheet"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!wltpModals[idx]}
+                                handleOpenModal={() =>
+                                  setWLTPModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setWLTPModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+            {/* Testbed Engineers Attachments Card */}
+                        <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+                          <div className="font-semibold text-sm text-gray-700 mb-2">
+                            Test Engineers Attachments
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <Label>PDF Reprt</Label>
+                              <DropzoneFileList
+                                buttonText="PDF Report"
+                                name="PDF_report"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!pdfReportModals[idx]}
+                                handleOpenModal={() =>
+                                  setpdfReportModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setpdfReportModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>Excel Report</Label>
+                              <DropzoneFileList
+                                buttonText="Excel Report"
+                                name="Excel_report"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!excelReportModals[idx]}
+                                handleOpenModal={() =>
+                                  setexcelReportModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setexcelReportModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>DAT File Attachment</Label>
+                              <DropzoneFileList
+                                buttonText="DAT File Attachment"
+                                name="DAT_file_attachment"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!datFileModals[idx]}
+                                handleOpenModal={() =>
+                                  setDATModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setDATModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>Others Attachment</Label>
+                              <DropzoneFileList
+                                buttonText="Others Attachment"
+                                name="Others_attachment"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!othersModals[idx]}
+                                handleOpenModal={() =>
+                                  setOthersModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setOthersModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                          </div>
+                        </div>
 
             {/* Coast Down Data Section for Test */}
             <div className="mt-4 border rounded shadow px-4 py-3 bg-blue-50">
