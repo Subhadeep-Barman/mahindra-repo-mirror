@@ -17,8 +17,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Switch } from "@/components/UI/switch";
 import useStore from "@/store/useStore";
 import axios from "axios";
-import { Cancel, Edit, CheckCircle } from "@mui/icons-material";
-import { useAuth } from "@/context/AuthContext";
+import CFTMembers from "@/components/CFTMembers";
+
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
@@ -64,9 +64,7 @@ export default function CreateJobOrder() {
 
   const [vehicleFormData, setVehicleFormData] = useState(null);
   const [engineFormData, setEngineFormData] = useState(null);
-  const [showVehicleDetails, setShowVehicleDetails] = useState(true);
-  const [showEngineDetails, setShowEngineDetails] = useState(true);
-  const [showCoastDown, setShowCoastDown] = useState(true);
+  const [showCFTPanel, setShowCFTPanel] = useState(false);
 
   // State to control pre-filling mode to prevent useEffect conflicts
   const [isPreFilling, setIsPreFilling] = useState(false);
@@ -219,20 +217,20 @@ export default function CreateJobOrder() {
   }, []);
 
   // Fetch fuel types from API
-    useEffect(() => {
-      const fetchFuelTypes = async () => {
-        try {
-          const response = await axios.get(`${apiURL}/fuel-types`);
-          setFuelTypes(response.data || []);
-        } catch (error) {
-          console.error("Error fetching fuel types:", error);
-          setFuelTypes([]);
-        }
-      };
-  
-      fetchFuelTypes();
-    }, []);
-  
+  useEffect(() => {
+    const fetchFuelTypes = async () => {
+      try {
+        const response = await axios.get(`${apiURL}/fuel-types`);
+        setFuelTypes(response.data || []);
+      } catch (error) {
+        console.error("Error fetching fuel types:", error);
+        setFuelTypes([]);
+      }
+    };
+
+    fetchFuelTypes();
+  }, []);
+
 
   // New: State for fetched vehicles and engines
   const [vehicleList, setVehicleList] = useState([]);
@@ -657,7 +655,7 @@ export default function CreateJobOrder() {
       console.error("Error creating job order:", err);
       alert(
         "Failed to create job order: " +
-          (err.response?.data?.detail || err.message)
+        (err.response?.data?.detail || err.message)
       );
     }
   };
@@ -741,7 +739,7 @@ export default function CreateJobOrder() {
         console.error("Error creating test-specific coast down data:", err);
         alert(
           "Failed to create coast down data for test: " +
-            (err.response?.data?.detail || err.message)
+          (err.response?.data?.detail || err.message)
         );
         return;
       }
@@ -763,8 +761,8 @@ export default function CreateJobOrder() {
         test.datasetRefreshed === "Yes"
           ? true
           : test.datasetRefreshed === "No"
-          ? false
-          : null,
+            ? false
+            : null,
       ess: test.ess || "",
       mode: test.mode || "",
       hardware_change: test.hardwareChange || "",
@@ -800,16 +798,16 @@ export default function CreateJobOrder() {
 
       alert(
         "Test Order Created! ID: " +
-          response.data.test_order_id +
-          (hasTestSpecificCoastDownData
-            ? "\nCoast Down Data ID: " + CoastDownData_id
-            : "")
+        response.data.test_order_id +
+        (hasTestSpecificCoastDownData
+          ? "\nCoast Down Data ID: " + CoastDownData_id
+          : "")
       );
     } catch (err) {
       console.error("Error creating test order:", err);
       alert(
         "Failed to create test order: " +
-          (err.response?.data?.detail || err.message)
+        (err.response?.data?.detail || err.message)
       );
     }
   };
@@ -970,8 +968,8 @@ export default function CreateJobOrder() {
           testOrder.dataset_flashed === true
             ? "Yes"
             : testOrder.dataset_flashed === false
-            ? "No"
-            : "",
+              ? "No"
+              : "",
         ess: testOrder.ess || "",
         mode: testOrder.mode || "",
         hardwareChange: testOrder.hardware_change || "",
@@ -1021,8 +1019,8 @@ export default function CreateJobOrder() {
         test.datasetRefreshed === "Yes"
           ? true
           : test.datasetRefreshed === "No"
-          ? false
-          : null,
+            ? false
+            : null,
       ess: test.ess || "",
       mode: test.mode || "",
       hardware_change: test.hardwareChange || "",
@@ -1048,7 +1046,7 @@ export default function CreateJobOrder() {
     } catch (err) {
       alert(
         "Failed to update test order: " +
-          (err.response?.data?.detail || err.message)
+        (err.response?.data?.detail || err.message)
       );
     }
   };
@@ -1544,7 +1542,7 @@ export default function CreateJobOrder() {
                   } catch (err) {
                     alert(
                       "Failed to update coast down data: " +
-                        (err.response?.data?.detail || err.message)
+                      (err.response?.data?.detail || err.message)
                     );
                   }
                 }}
@@ -1583,11 +1581,23 @@ export default function CreateJobOrder() {
           >
             + ADD TEST
           </Button>
-          <Button variant="ghost" className="text-xs text-blue-700 px-0">
-            + CFT MEMBERS
+          <Button
+            variant="ghost"
+            className="text-xs text-blue-700 px-0"
+            onClick={() => {
+              setShowCFTPanel((prev) => !prev);
+              console.log("Toggled CFT panel");
+            }}
+          >
+            {showCFTPanel ? "− CFT MEMBERS" : "+ CFT MEMBERS"}
           </Button>
           <div className="flex-1"></div>
         </div>
+        {showCFTPanel && (
+          <div className="mt-4 mx-8 mb-8 bg-white border rounded-lg">
+            <CFTMembers />
+          </div>
+        )}
 
         {/* Test Forms */}
         {tests.map((test, idx) => (
@@ -1862,23 +1872,23 @@ export default function CreateJobOrder() {
                 />
               </div>
               <div>
-                              <Label>Fuel Type</Label>
-                              <Select
-                                value={test.fuelType}
-                                onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {fuelTypes.map((fuelType, index) => (
-                                    <SelectItem key={`${fuelType}-${index}`} value={fuelType}>
-                                      {fuelType}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
+                <Label>Fuel Type</Label>
+                <Select
+                  value={test.fuelType}
+                  onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fuelTypes.map((fuelType, index) => (
+                      <SelectItem key={`${fuelType}-${index}`} value={fuelType}>
+                        {fuelType}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label>Equipment Required</Label>
                 <Input
@@ -2460,12 +2470,12 @@ export default function CreateJobOrder() {
                 )}
                 {(allTestOrders[location.state?.originalJobOrderId] || [])
                   .length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="text-center py-2 text-gray-500">
-                      No test orders found.
-                    </td>
-                  </tr>
-                )}
+                    <tr>
+                      <td colSpan={5} className="text-center py-2 text-gray-500">
+                        No test orders found.
+                      </td>
+                    </tr>
+                  )}
               </tbody>
             </table>
           </div>
