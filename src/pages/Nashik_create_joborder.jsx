@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Navbar1 from "@/components/ui/navbar";
-import { useNavigate } from "react-router-dom";
+import CFTMembers from "@/components/CFTMembers";
 
 // Mock data for dropdowns
 const projectCodes = ["U352", "U952"];
@@ -77,6 +77,7 @@ export default function CreateJobOrder() {
   const [engineFormData, setEngineFormData] = useState(null);
   const [showVehicleDetails, setShowVehicleDetails] = useState(true);
   const [showEngineDetails, setShowEngineDetails] = useState(true);
+  const [showCFTPanel, setShowCFTPanel] = useState(false);
 
   // Test state
   const [tests, setTests] = useState([]);
@@ -135,8 +136,8 @@ export default function CreateJobOrder() {
   // Get engine numbers filtered by selected vehicle body number
   const engineNumbers = form.vehicleBodyNumber
     ? vehicleBodyNumbers
-        .filter((v) => v.body === form.vehicleBodyNumber)
-        .map((v) => v.engine)
+      .filter((v) => v.body === form.vehicleBodyNumber)
+      .map((v) => v.engine)
     : vehicleBodyNumbers.map((v) => v.engine);
 
   // Handle dropdown/input changes
@@ -686,11 +687,23 @@ export default function CreateJobOrder() {
           >
             + ADD TEST
           </Button>
-          <Button variant="ghost" className="text-xs text-blue-700 px-0">
-            + CFT MEMBERS
+          <Button
+            variant="ghost"
+            className="text-xs text-blue-700 px-0"
+            onClick={() => {
+              setShowCFTPanel((prev) => !prev);
+              console.log("Toggled CFT panel");
+            }}
+          >
+            {showCFTPanel ? "− CFT MEMBERS" : "+ CFT MEMBERS"}
           </Button>
           <div className="flex-1"></div>
         </div>
+        {showCFTPanel && (
+          <div className="mt-4 mx-8 mb-8 bg-white border rounded-lg">
+            <CFTMembers />
+          </div>
+        )}
 
         {/* Coast Down Data (CD) Section */}
         <div className="mx-8 mb-4 border rounded shadow px-6 py-4">
