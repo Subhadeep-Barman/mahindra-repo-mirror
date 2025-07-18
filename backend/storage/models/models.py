@@ -44,9 +44,9 @@ class Vehicle(Base):
     gear_ratio_5 = Column(String)
     reverse_gear_ratio = Column(String)
     id_of_creator = Column(String)  
-    created_on = Column(TIMESTAMP, default=datetime.utcnow)
+    created_on = Column(TIMESTAMP)
     id_of_updater = Column(String)  
-    updated_on = Column(TIMESTAMP, default=datetime.utcnow)
+    updated_on = Column(TIMESTAMP)
 
 
 class Engine(Base):
@@ -99,9 +99,9 @@ class Engine(Base):
     hv_battery_current = Column(Float)
     ev_motor_power_kw = Column(Float)
     id_of_creator = Column(String)  
-    created_on = Column(TIMESTAMP, default=datetime.utcnow)
+    created_on = Column(TIMESTAMP)
     id_of_updater = Column(String)  
-    updated_on = Column(TIMESTAMP, default=datetime.utcnow)
+    updated_on = Column(TIMESTAMP)
 
 
 class CoastDownData(Base):
@@ -117,9 +117,9 @@ class CoastDownData(Base):
     f1_value = Column(Float)
     f2_value = Column(Float)
     id_of_creator = Column(String)  
-    created_on = Column(TIMESTAMP, default=datetime.utcnow)
+    created_on = Column(TIMESTAMP)
     id_of_updater = Column(String)  
-    updated_on = Column(TIMESTAMP, default=datetime.utcnow)
+    updated_on = Column(TIMESTAMP)
 
 
 class JobOrder(Base):
@@ -141,10 +141,10 @@ class JobOrder(Base):
     mail_remarks = Column(String)
     id_of_creator = Column(String)  
     name_of_creator = Column(String)
-    created_on = Column(TIMESTAMP, default=datetime.utcnow)
+    created_on = Column(TIMESTAMP)
     id_of_updater = Column(String)  
     name_of_updater = Column(String)
-    updated_on = Column(TIMESTAMP, default=datetime.utcnow)
+    updated_on = Column(TIMESTAMP)
     cft_members = Column(JSON)
 
 class RDEJobOrder(Base):
@@ -163,8 +163,10 @@ class RDEJobOrder(Base):
     vehicle_gwv = Column(String)
     vehicle_kerb_weight = Column(String)
     vehicle_test_payload_criteria = Column(String)
+    requested_payload = Column(String)
     idle_exhaust_mass_flow = Column(String)
     job_order_status = Column(String)
+    cft_members = Column(JSON)
     remarks = Column(String)
     rejection_remarks = Column(String)
     mail_remarks = Column(String)
@@ -198,12 +200,21 @@ class TestOrder(Base):
     shift = Column(String)
     preferred_date = Column(Date)
     emission_check_date = Column(Date)
-    emission_check_attachment = Column(Text)
+    emission_check_attachment = Column(JSON)
+    dataset_attachment = Column(JSON)
+    a2l_attachment = Column(JSON)
+    experiment_attachment = Column(JSON)
+    dbc_attachment = Column(JSON)
+    wltp_attachment = Column(JSON)
+    pdf_report = Column(JSON)
+    excel_report = Column(JSON)
+    dat_file_attachment = Column(JSON)
+    others_attachement = Column(JSON)
     specific_instruction = Column(Text)
     status = Column(String)
     id_of_creator = Column(String)  
     name_of_creator = Column(String)
-    created_on = Column(TIMESTAMP, default=datetime.utcnow)
+    created_on = Column(TIMESTAMP)
     id_of_updater = Column(String)  
     name_of_updater = Column(String)
-    updated_on = Column(TIMESTAMP, default=datetime.utcnow)
+    updated_on = Column(TIMESTAMP)

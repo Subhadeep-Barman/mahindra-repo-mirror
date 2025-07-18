@@ -24,9 +24,11 @@ class RDEJobOrderSchema(BaseModel):
     vehicle_gwv: str = None
     vehicle_kerb_weight: str = None
     vehicle_test_payload_criteria: str = None
+    requested_payload: str = None
     idle_exhaust_mass_flow: str = None
     job_order_status: str = None
     remarks: str = None
+    cft_members: List[str] = None
     rejection_remarks: str = None
     mail_remarks: str = None
     id_of_creator: str = None
@@ -64,6 +66,7 @@ def rde_joborder_to_dict(rde_joborder: RDEJobOrder, db: Session = None):
         "vehicle_gwv": rde_joborder.vehicle_gwv,
         "vehicle_kerb_weight": rde_joborder.vehicle_kerb_weight,
         "vehicle_test_payload_criteria": rde_joborder.vehicle_test_payload_criteria,
+        "requested_payload": rde_joborder.requested_payload,
         "idle_exhaust_mass_flow": rde_joborder.idle_exhaust_mass_flow,
         "job_order_status": rde_joborder.job_order_status,
         "remarks": rde_joborder.remarks,

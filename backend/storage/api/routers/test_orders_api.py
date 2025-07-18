@@ -82,6 +82,15 @@ class TestOrderSchema(BaseModel):
     preferred_date: date = None
     emission_check_date: date = None
     emission_check_attachment: str = None
+    dataset_attachment: str = None
+    a2l_attachment: str = None
+    experiment_attachment: str = None
+    dbc_attachment: str = None
+    wltp_attachment: str = None
+    pdf_report: str = None
+    excel_report: str = None
+    dat_file_attachment: str = None
+    others_attachement: str = None
     specific_instruction: str = None
     status: str = None
     id_of_creator: str = None
@@ -112,6 +121,15 @@ def testorder_to_dict(testorder: TestOrder):
         "preferred_date": testorder.preferred_date,
         "emission_check_date": testorder.emission_check_date,
         "emission_check_attachment": testorder.emission_check_attachment,
+        "dataset_attachment": testorder.dataset_attachment,
+        "a2l_attachment": testorder.a2l_attachment,
+        "experiment_attachment": testorder.experiment_attachment,
+        "dbc_attachment": testorder.dbc_attachment,
+        "wltp_attachment": testorder.wltp_attachment,
+        "pdf_report": testorder.pdf_report,
+        "excel_report": testorder.excel_report,
+        "dat_file_attachment": testorder.dat_file_attachment,
+        "others_attachement": testorder.others_attachement,
         "specific_instruction": testorder.specific_instruction,
         "status": testorder.status,
         "id_of_creator": testorder.id_of_creator,
@@ -365,30 +383,6 @@ async def merge_chunks(sess_idt, folder_path, file_name, attachment_type, file):
     try:
         blob.upload_from_filename(final_file_path, timeout=UPLOAD_TIMEOUT)
         upload_results.append({"filename": file_name, "status": "uploaded"})
-
-        if (
-            attachment_type == "wearAnalysisReportAttachment"
-            and file_name.lower().endswith((".xls", ".xlsx"))
-        ):
-            try:
-                file.file.seek(0)
-                pdf_result = convert_excel_to_pdf(file)
-                if pdf_result is None:
-                    raise ValueError(
-                        "PDF conversion failed: convert_excel_to_pdf returned None."
-                    )
-                pdf_filename, pdf_content = pdf_result
-                pdf_blob = bucket.blob(folder_path + pdf_filename)
-                pdf_blob.upload_from_string(pdf_content, content_type="application/pdf")
-                upload_results.append({"filename": pdf_filename, "status": "uploaded"})
-            except Exception as e:
-                upload_results.append(
-                    {
-                        "filename": os.path.splitext(file_name)[0] + ".pdf",
-                        "status": "failed",
-                        "error": "PDF conversion and upload failed. Please try again later.",
-                    }
-                )
     except Exception as e:
         os.remove(final_file_path)
         raise HTTPException(
@@ -398,5 +392,4 @@ async def merge_chunks(sess_idt, folder_path, file_name, attachment_type, file):
     finally:
         if os.path.exists(final_file_path):
             os.remove(final_file_path)
-    return upload_results
-
+    return
