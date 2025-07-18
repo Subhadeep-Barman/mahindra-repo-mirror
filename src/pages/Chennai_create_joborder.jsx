@@ -112,6 +112,15 @@ export default function CreateJobOrder() {
         preferredDate: "",
         emissionCheckDate: "",
         emissionCheckAttachment: "",
+        dataset_attachment: "",
+        a2l_attachment: "",
+        experiment_attachment: "",
+        dbc_attachment: "",
+        wltp_attachment: "",
+        pdf_report: "",
+        excel_report: "",
+        dat_file_attachment: "",
+        others_attachement: "",
         specificInstruction: "",
         uploadDocuments: null,
         testOrderId: null, // Track created test order ID
@@ -789,6 +798,16 @@ export default function CreateJobOrder() {
       id_of_updater: "",
       name_of_updater: "",
       updated_on: new Date().toISOString(),
+      // Add all required attachment fields as strings
+      dataset_attachment: test.dataset_attachment || "",
+      a2l_attachment: test.a2l_attachment || "",
+      experiment_attachment: test.experiment_attachment || "",
+      dbc_attachment: test.dbc_attachment || "",
+      wltp_attachment: test.wltp_attachment || "",
+      pdf_report: test.pdf_report || "",
+      excel_report: test.excel_report || "",
+      dat_file_attachment: test.dat_file_attachment || "",
+      others_attachement: test.others_attachement || "",
     };
 
     try {
@@ -990,6 +1009,15 @@ export default function CreateJobOrder() {
         preferredDate: testOrder.preferred_date || "",
         emissionCheckDate: testOrder.emission_check_date || "",
         emissionCheckAttachment: testOrder.emission_check_attachment || "",
+        dataset_attachment: testOrder.dataset_attachment || "",
+        a2l_attachment: testOrder.a2l_attachment || "",
+        experiment_attachment: testOrder.experiment_attachment || "",
+        dbc_attachment: testOrder.dbc_attachment || "",
+        wltp_attachment: testOrder.wltp_attachment || "",
+        pdf_report: testOrder.pdf_report || "",
+        excel_report: testOrder.excel_report || "",
+        dat_file_attachment: testOrder.dat_file_attachment || "",
+        others_attachment: testOrder.others_attachment || "",
         specificInstruction: testOrder.specific_instruction || "",
         testOrderId: testOrder.test_order_id,
         status: testOrder.status || "Created", // Use current status if present
@@ -1043,6 +1071,15 @@ export default function CreateJobOrder() {
       preferred_date: test.preferredDate || null,
       emission_check_date: test.emissionCheckDate || null,
       emission_check_attachment: test.emissionCheckAttachment || "",
+      dataset_attachment: test.dataset_attachment || "",
+      a2l_attachment: test.a2l_attachment || "",
+      experiment_attachment: test.experiment_attachment || "",
+      dbc_attachment: test.dbc_attachment || "",
+      wltp_attachment: test.wltp_attachment || "",
+      pdf_report: test.pdf_report || "",
+      excel_report: test.excel_report || "",
+      dat_file_attachment: test.dat_file_attachment || "",
+      others_attachment: test.others_attachment || "",
       specific_instruction: test.specificInstruction || "",
       status: test.status || "Created", // <-- Use current status if present
       id_of_creator: "",
@@ -1207,6 +1244,8 @@ export default function CreateJobOrder() {
     );
   };
 
+  const isTestEngineer = userRole === "TestEngineer";
+
   return (
     <>
       <Navbar1 />
@@ -1264,7 +1303,7 @@ export default function CreateJobOrder() {
               value={form.projectCode}
               onValueChange={(value) => handleChange("projectCode", value)}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
@@ -1287,7 +1326,7 @@ export default function CreateJobOrder() {
               value={form.vehicleBodyNumber}
               onValueChange={handleVehicleBodyChange}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
@@ -1316,7 +1355,7 @@ export default function CreateJobOrder() {
               className="w-full"
               placeholder="Auto-fetched"
               required
-              disabled={!formDisabled}
+              disabled={!formDisabled || isTestEngineer}
             />
           </div>
           {/* Engine Number (dropdown) */}
@@ -1328,9 +1367,9 @@ export default function CreateJobOrder() {
               value={form.engineSerialNumber}
               onValueChange={handleEngineNumberChange}
               required
-              // Disable if a test order exists for this job order
               disabled={
                 formDisabled ||
+                isTestEngineer ||
                 !!(location.state?.originalJobOrderId &&
                   (allTestOrders[location.state?.originalJobOrderId] || []).length > 0)
               }
@@ -1356,7 +1395,7 @@ export default function CreateJobOrder() {
               value={form.engineType}
               onValueChange={(value) => handleChange("engineType", value)}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
@@ -1379,7 +1418,7 @@ export default function CreateJobOrder() {
               value={form.domain}
               onValueChange={(value) => handleChange("domain", value)}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
@@ -1444,7 +1483,7 @@ export default function CreateJobOrder() {
                           handleVehicleEditableChange(label, e.target.value)
                         }
                         className="mt-1"
-                        disabled={!vehicleEditMode}
+                        disabled={!vehicleEditMode || isTestEngineer}
                       />
                     </div>
                   ))}
@@ -1480,7 +1519,7 @@ export default function CreateJobOrder() {
                           handleEngineEditableChange(label, e.target.value)
                         }
                         className="mt-1"
-                        disabled={!engineEditMode}
+                        disabled={!engineEditMode || isTestEngineer}
                       />
                     </div>
                   ))}
@@ -1512,7 +1551,7 @@ export default function CreateJobOrder() {
             onChange={(e) =>
               setForm((prev) => ({ ...prev, cdReportRef: e.target.value }))
             }
-            disabled={formDisabled}
+            disabled={formDisabled || isTestEngineer}
           />
           <div className="mb-2 font-semibold text-xs mt-4">CD Values</div>
           <div className="grid grid-cols-7 gap-4">
@@ -1531,7 +1570,7 @@ export default function CreateJobOrder() {
                     vehicleRefMass: e.target.value,
                   }))
                 }
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
             </div>
             <div>
@@ -1546,7 +1585,7 @@ export default function CreateJobOrder() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, aN: e.target.value }))
                 }
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
             </div>
             <div>
@@ -1561,7 +1600,7 @@ export default function CreateJobOrder() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, bNkmph: e.target.value }))
                 }
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
             </div>
             <div>
@@ -1576,7 +1615,7 @@ export default function CreateJobOrder() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, cNkmph2: e.target.value }))
                 }
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
             </div>
             <div>
@@ -1591,7 +1630,7 @@ export default function CreateJobOrder() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, f0N: e.target.value }))
                 }
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
             </div>
             <div>
@@ -1606,7 +1645,7 @@ export default function CreateJobOrder() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, f1Nkmph: e.target.value }))
                 }
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
             </div>
             <div>
@@ -1621,7 +1660,7 @@ export default function CreateJobOrder() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, f2Nkmph2: e.target.value }))
                 }
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
             </div>
           </div>
@@ -1629,6 +1668,7 @@ export default function CreateJobOrder() {
             <Button
               className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
               onClick={handleCreateJobOrder}
+              disabled={isTestEngineer}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
@@ -1678,6 +1718,7 @@ export default function CreateJobOrder() {
             variant="ghost"
             className="text-xs text-blue-700 px-0"
             onClick={handleAddTest}
+            disabled={isTestEngineer}
           >
             + ADD TEST
           </Button>
@@ -1688,17 +1729,17 @@ export default function CreateJobOrder() {
               setShowCFTPanel((prev) => !prev);
               console.log("Toggled CFT panel");
             }}
+            disabled={isTestEngineer}
           >
             {showCFTPanel ? "− CFT MEMBERS" : "+ CFT MEMBERS"}
           </Button>
           <div className="flex-1"></div>
         </div>
-        {showCFTPanel && (
+        {showCFTPanel && !isTestEngineer && (
           <div className="mt-4 mx-8 mb-8 bg-white border rounded-lg">
             <CFTMembers />
           </div>
         )}
-
 
         {/* Test Forms */}
         {tests.map((test, idx) => (
@@ -1741,7 +1782,7 @@ export default function CreateJobOrder() {
               </div>
               <div className="flex items-center gap-3">
                 {/* Buttons for TestEngineer */}
-                {userRole === "TestEngineer" && (!test?.status || test?.status === "Created") && (
+                {isTestEngineer && (!test?.status || test?.status === "Created") && (
                   <>
                     <Button
                       className="bg-green-600 text-white text-xs px-3 py-1 rounded"
@@ -1765,7 +1806,7 @@ export default function CreateJobOrder() {
                   </>
                 )}
                 {/* Buttons for ProjectTeam */}
-                {userRole === "Project Team" && test?.status === "Started" && (
+                {!isTestEngineer && userRole === "ProjectTeam" && test?.status === "Started" && (
                   <Button
                     className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
                     type="button"
@@ -1777,7 +1818,7 @@ export default function CreateJobOrder() {
                   </Button>
                 )}
                 {/* Buttons for TestEngineer */}
-                {userRole === "TestEngineer" && (test?.status === "Started" || test?.status === "Rejected" || test?.status === "Re-edit") && (
+                {isTestEngineer && (test?.status === "Started" || test?.status === "Rejected" || test?.status === "Re-edit") && (
                   <>
                     <Button
                       className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
@@ -1799,16 +1840,18 @@ export default function CreateJobOrder() {
                     </Button>
                   </>
                 )}
-                {/* Close button always available */}
-                <button
-                  type="button"
-                  onClick={() => handleDeleteTest(idx)}
-                  className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 hover:bg-red-200 transition-colors border border-gray-300 text-gray-600 hover:text-red-600 focus:outline-none"
-                  title="Close"
-                  style={{ minWidth: 0, padding: 0 }}
-                >
-                  <CloseIcon fontSize="small" />
-                </button>
+                {/* Close button always available for ProjectTeam */}
+                {!isTestEngineer && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteTest(idx)}
+                    className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 hover:bg-red-200 transition-colors border border-gray-300 text-gray-600 hover:text-red-600 focus:outline-none"
+                    title="Close"
+                    style={{ minWidth: 0, padding: 0 }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </button>
+                )}
               </div>
             </div>
             {/* Make form editable if status is Rejected */}
@@ -1831,11 +1874,13 @@ export default function CreateJobOrder() {
             )}
             {/* Inputs above attachments */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
+              {/* All test fields disabled for TestEngineer except status actions */}
               <div>
                 <Label>Test Type</Label>
                 <Select
                   value={test.testType}
                   onValueChange={(v) => handleTestChange(idx, "testType", v)}
+                  disabled={isTestEngineer}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -1859,6 +1904,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "objective", e.target.value)
                   }
                   placeholder="TESTING"
+                  disabled={isTestEngineer}
                 />
               </div>
               <div>
@@ -1869,6 +1915,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "vehicleLocation", e.target.value)
                   }
                   placeholder="Enter Vehicle Location"
+                  disabled={isTestEngineer}
                 />
               </div>
               <div>
@@ -1879,6 +1926,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "cycleGearShift", e.target.value)
                   }
                   placeholder="Enter Cycle Gear Shift"
+                  disabled={isTestEngineer}
                 />
               </div>
               <div>
@@ -1888,6 +1936,7 @@ export default function CreateJobOrder() {
                   onValueChange={(v) =>
                     handleTestChange(idx, "inertiaClass", v)
                   }
+                  disabled={isTestEngineer}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -1912,6 +1961,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "datasetName", e.target.value)
                   }
                   placeholder="Enter Dataset Name"
+                  disabled={isTestEngineer}
                 />
               </div>
               <div>
@@ -1924,6 +1974,7 @@ export default function CreateJobOrder() {
                       value="Yes"
                       checked={test.dpf === "Yes"}
                       onChange={() => handleTestChange(idx, "dpf", "Yes")}
+                      disabled={isTestEngineer}
                     />{" "}
                     Yes
                   </label>
@@ -1934,6 +1985,7 @@ export default function CreateJobOrder() {
                       value="No"
                       checked={test.dpf === "No"}
                       onChange={() => handleTestChange(idx, "dpf", "No")}
+                      disabled={isTestEngineer}
                     />{" "}
                     No
                   </label>
@@ -1944,6 +1996,7 @@ export default function CreateJobOrder() {
                       value="NA"
                       checked={test.dpf === "NA"}
                       onChange={() => handleTestChange(idx, "dpf", "NA")}
+                      disabled={isTestEngineer}
                     />{" "}
                     NA
                   </label>
@@ -1956,6 +2009,7 @@ export default function CreateJobOrder() {
                     value={test.dpfRegenOccurs || ""}
                     onChange={(e) => handleTestChange(idx, "dpfRegenOccurs", e.target.value)}
                     placeholder="Enter DPF Regen Occurs (g)"
+                    disabled={isTestEngineer}
                   />
                 </div>
               )}
@@ -1971,6 +2025,7 @@ export default function CreateJobOrder() {
                       onChange={() =>
                         handleTestChange(idx, "datasetflashed", "Yes")
                       }
+                      disabled={isTestEngineer}
                     />{" "}
                     Yes
                   </label>
@@ -1983,6 +2038,7 @@ export default function CreateJobOrder() {
                       onChange={() =>
                         handleTestChange(idx, "datasetflashed", "No")
                       }
+                      disabled={isTestEngineer}
                     />{" "}
                     No
                   </label>
@@ -1998,6 +2054,7 @@ export default function CreateJobOrder() {
                       value="On"
                       checked={test.ess === "On"}
                       onChange={() => handleTestChange(idx, "ess", "On")}
+                      disabled={isTestEngineer}
                     />{" "}
                     On
                   </label>
@@ -2008,6 +2065,7 @@ export default function CreateJobOrder() {
                       value="Off"
                       checked={test.ess === "Off"}
                       onChange={() => handleTestChange(idx, "ess", "Off")}
+                      disabled={isTestEngineer}
                     />{" "}
                     Off
                   </label>
@@ -2018,6 +2076,7 @@ export default function CreateJobOrder() {
                       value="NA"
                       checked={test.ess === "NA"}
                       onChange={() => handleTestChange(idx, "ess", "NA")}
+                      disabled={isTestEngineer}
                     />{" "}
                     NA
                   </label>
@@ -2028,6 +2087,7 @@ export default function CreateJobOrder() {
                 <Select
                   value={test.mode}
                   onValueChange={(v) => handleTestChange(idx, "mode", v)}
+                  disabled={isTestEngineer}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -2049,6 +2109,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "hardwareChange", e.target.value)
                   }
                   placeholder="Enter Hardware Change"
+                  disabled={isTestEngineer}
                 />
               </div>
               <div>
@@ -2056,6 +2117,7 @@ export default function CreateJobOrder() {
                 <Select
                   value={test.shift}
                   onValueChange={(v) => handleTestChange(idx, "shift", v)}
+                  disabled={isTestEngineer}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -2073,6 +2135,7 @@ export default function CreateJobOrder() {
                 <Select
                   value={test.fuelType}
                   onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
+                  disabled={isTestEngineer}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -2094,6 +2157,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "equipmentRequired", e.target.value)
                   }
                   placeholder="Enter Equipment Required"
+                  disabled={isTestEngineer}
                 />
               </div>
               <div>
@@ -2105,6 +2169,7 @@ export default function CreateJobOrder() {
                   onChange={(e) =>
                     handleTestChange(idx, "preferredDate", e.target.value)
                   }
+                  disabled={isTestEngineer}
                 />
               </div>
               <div>
@@ -2115,6 +2180,7 @@ export default function CreateJobOrder() {
                   onChange={(e) =>
                     handleTestChange(idx, "emissionCheckDate", e.target.value)
                   }
+                  disabled={isTestEngineer}
                 />
               </div>
               <div className="col-span-2">
@@ -2125,6 +2191,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "specificInstruction", e.target.value)
                   }
                   placeholder="Enter Specific Instructions"
+                  disabled={isTestEngineer}
                   className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical"
                   style={{ minWidth: "100%", fontSize: "1rem" }}
                   rows={3}
@@ -2140,7 +2207,7 @@ export default function CreateJobOrder() {
                 <div>
                   <Label>Emission Check Attachment</Label>
                   <DropzoneFileList
-                    buttonText="Emission Check Attachment"
+                    buttonText="Emission Check Attachment"  
                     name="Emission_check"
                     maxFiles={5}
                     formData={{
@@ -2191,8 +2258,9 @@ export default function CreateJobOrder() {
                     handleCloseModal={() =>
                       setDatasetModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    disabled={false}
+                    disabled={userRole === "TestEngineer"}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    viewOnly={userRole === "TestEngineer"}
                   />
                 </div>
                 <div>
@@ -2220,8 +2288,9 @@ export default function CreateJobOrder() {
                     handleCloseModal={() =>
                       setA2LModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    disabled={false}
+                    disabled={userRole === "TestEngineer"}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    viewOnly={userRole === "TestEngineer"}
                   />
                 </div>
                 <div>
@@ -2249,7 +2318,8 @@ export default function CreateJobOrder() {
                     handleCloseModal={() =>
                       setExperimentModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    disabled={false}
+                    disabled={userRole === "TestEngineer"}
+                    viewOnly={userRole === "TestEngineer"}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
                   />
                 </div>
@@ -2278,7 +2348,8 @@ export default function CreateJobOrder() {
                     handleCloseModal={() =>
                       setDBCModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    disabled={false}
+                    disabled={userRole === "TestEngineer"}
+                    viewOnly={userRole === "TestEngineer"}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
                   />
                 </div>
@@ -2307,7 +2378,8 @@ export default function CreateJobOrder() {
                     handleCloseModal={() =>
                       setWLTPModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    disabled={false}
+                    disabled={userRole === "TestEngineer"}
+                    viewOnly={userRole === "TestEngineer"}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
                   />
                 </div>
@@ -2345,8 +2417,10 @@ export default function CreateJobOrder() {
                     handleCloseModal={() =>
                       setpdfReportModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    disabled={false}
+                    // Disable upload for ProjectTeam, allow only view/download
+                    disabled={userRole === "ProjectTeam"}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    viewOnly={userRole === "ProjectTeam"}
                   />
                 </div>
                 <div>
@@ -2374,8 +2448,9 @@ export default function CreateJobOrder() {
                     handleCloseModal={() =>
                       setexcelReportModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    disabled={false}
+                    disabled={userRole === "ProjectTeam"}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    viewOnly={userRole === "ProjectTeam"}
                   />
                 </div>
                 <div>
@@ -2403,8 +2478,9 @@ export default function CreateJobOrder() {
                     handleCloseModal={() =>
                       setDATModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    disabled={false}
+                    disabled={userRole === "ProjectTeam"}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    viewOnly={userRole === "ProjectTeam"}
                   />
                 </div>
                 <div>
@@ -2432,8 +2508,9 @@ export default function CreateJobOrder() {
                     handleCloseModal={() =>
                       setOthersModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    disabled={false}
+                    disabled={userRole === "ProjectTeam"}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    viewOnly={userRole === "ProjectTeam"}
                   />
                 </div>
               </div>
@@ -2451,6 +2528,7 @@ export default function CreateJobOrder() {
                     updatedTests[idx].showCoastDownData = checked;
                     setTests(updatedTests);
                   }}
+                  disabled={isTestEngineer}
                   className="data-[state=checked]:bg-red-500"
                 />
               </div>

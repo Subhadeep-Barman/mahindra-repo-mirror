@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/UI/table";
+import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/UI/card";
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
@@ -29,6 +30,7 @@ export default function RDEChennaiPage() {
   const [selectedJobOrder, setSelectedJobOrder] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [jobOrderEdit, setJobOrderEdit] = useState(null);
+    const { userRole, userId, userName } = useAuth();
 
   useEffect(() => {
     fetchJobOrders();
@@ -133,22 +135,22 @@ export default function RDEChennaiPage() {
               </div>
               <div className="flex items-center space-x-3">
                 {/* Tab Buttons */}
-                {["Job Order", "Vehicle", "Engine"].map((tab) => (
-                  <Button
-                    key={tab}
-                    variant={activeTab === tab ? "default" : "outline"}
-                    onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${
-                      tab === "Job Order"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : tab === "Vehicle" || tab === "Engine"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "text-red-500 border-red-500 hover:bg-red-50"
-                    }`}
-                  >
-                    {tab}
-                  </Button>
-                ))}
+                  {userRole !== "TestEngineer" &&
+                  ["Job Order", "Vehicle", "Engine"].map((tab) => (
+                    <Button
+                      key={tab}
+                      onClick={() => handleTabClick(tab)}
+                      className={`rounded-xl px-4 py-2 font-semibold border
+                        ${
+                          activeTab === tab
+                            ? "bg-red-500 text-white border-red-500"
+                            : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                        }
+                      `}
+                    >
+                      {tab}
+                    </Button>
+                  ))}
               </div>
             </div>
           </div>
@@ -159,13 +161,16 @@ export default function RDEChennaiPage() {
           <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
             Current Job Orders
           </Badge>
-          <Button
-            onClick={() => navigate("/RDECreateJobOrder")}
-            className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
-          >
-            <Add className="h-4 w-4 mr-1" />
-            CREATE JOB ORDER
-          </Button>
+          {/* Hide CREATE JOB ORDER button for TEST ENGINEER */}
+          {userRole !== "TestEngineer" && (
+            <Button
+              onClick={handleCreateJobOrder}
+              className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
+            >
+              <Add className="h-4 w-4 mr-1" />
+              CREATE JOB ORDER
+            </Button>
+          )}
         </div>
 
         {/* Main Content */}
