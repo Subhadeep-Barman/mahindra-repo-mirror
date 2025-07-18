@@ -43,7 +43,9 @@ const ProtectedRoute = ({ element }) => {
 
   useEffect(() => {
     console.log("Checking user login status...");
-    const userCookies = document.cookie.split(";").find(cookie => cookie.trim().startsWith("userRole="));
+    const userCookies = document.cookie
+      .split(";")
+      .find((cookie) => cookie.trim().startsWith("userRole="));
     if (userCookies) {
       console.log("User is logged in");
       setIsLoggedIn(true);
@@ -66,39 +68,96 @@ function App() {
       <div className="p-4">
         <Routes>
           {/* Auth & Home */}
-          <Route path="/home" 
-          element={<ProtectedRoute element={<HomePage />} />} />
-          <Route path="/login"element={<Login />} />
-          <Route path="/default-login"element={<DefaultLogin />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route
+            path="/home"
+            element={<ProtectedRoute element={<HomePage />} />}
+          />
+          <Route path="/login" element={<Login />} />
+          <Route path="/default-login" element={<DefaultLogin />} />
 
           {/* Admin */}
-          <Route path="/admin-portal" element={<ProtectedRoute element={<AdminPortal />} />} />
+          <Route
+            path="/admin-portal"
+            element={<ProtectedRoute element={<AdminPortal />} />}
+          />
 
           {/* VTC Chennai */}
-          <Route path="/vtc-chennai" element={<ProtectedRoute element={<VTCChennaiPage />} />} />
-          <Route path="/vtccvehicle" element={<ProtectedRoute element={<VTCCVehiclePage />} />} />
-          <Route path="/vtcChennaiEngine" element={<ProtectedRoute element={<VTCEnginePage />} />} />
-          <Route path="/engineform" element={<ProtectedRoute element={<EngineForm />} />} />
-          <Route path="/vtcvehicle/new" element={<ProtectedRoute element={<VehicleForm />} />} />
-          <Route path="/chennai/engine/new" element={<ProtectedRoute element={<VTCCEngineForm />} />} />
+          <Route
+            path="/vtc-chennai"
+            element={<ProtectedRoute element={<VTCChennaiPage />} />}
+          />
+          <Route
+            path="/vtccvehicle"
+            element={<ProtectedRoute element={<VTCCVehiclePage />} />}
+          />
+          <Route
+            path="/vtcChennaiEngine"
+            element={<ProtectedRoute element={<VTCEnginePage />} />}
+          />
+          <Route
+            path="/engineform"
+            element={<ProtectedRoute element={<EngineForm />} />}
+          />
+          <Route
+            path="/vtcvehicle/new"
+            element={<ProtectedRoute element={<VehicleForm />} />}
+          />
+          <Route
+            path="/chennai/engine/new"
+            element={<ProtectedRoute element={<VTCCEngineForm />} />}
+          />
 
           {/* VTC Nashik */}
-          <Route path="/vtc-nashik" element={<ProtectedRoute element={<VTCNashikPage />} />} />
-          <Route path="/nashik/joborder" element={<ProtectedRoute element={<NashikJobOrder />} />} />
-          <Route path="/nashik/vehicle" element={<ProtectedRoute element={<VTCNashikVehicle />} />} />
-          <Route path="/nashik/engine" element={<ProtectedRoute element={<RDEnginePage />} />} />
-          <Route path="/nashik/vehicle/new" element={<ProtectedRoute element={<VTCNashikVehicleForm />} />} />
-          <Route path="/nashik/engine/new" element={<ProtectedRoute element={<NEngine />} />} />
+          <Route
+            path="/vtc-nashik"
+            element={<ProtectedRoute element={<VTCNashikPage />} />}
+          />
+          <Route
+            path="/nashik/joborder"
+            element={<ProtectedRoute element={<NashikJobOrder />} />}
+          />
+          <Route
+            path="/nashik/vehicle"
+            element={<ProtectedRoute element={<VTCNashikVehicle />} />}
+          />
+          <Route
+            path="/nashik/engine"
+            element={<ProtectedRoute element={<RDEnginePage />} />}
+          />
+          <Route
+            path="/nashik/vehicle/new"
+            element={<ProtectedRoute element={<VTCNashikVehicleForm />} />}
+          />
+          <Route
+            path="/nashik/engine/new"
+            element={<ProtectedRoute element={<NEngine />} />}
+          />
 
           {/* RDE */}
-          <Route path="/rde-chennai" element={<ProtectedRoute element={<RDEChennaiPage />} />} />
+          <Route
+            path="/rde-chennai"
+            element={<ProtectedRoute element={<RDEChennaiPage />} />}
+          />
           {/* <Route path="/rde/joborder" element={<ProtectedRoute element={<RDEJobOrder />} />} /> */}
-          <Route path="/rde/vehicle" element={<ProtectedRoute element={<RDEVehicle />} />} />
-          <Route path="/rde/engine" element={<ProtectedRoute element={<RDEEngine />} />} />
+          <Route
+            path="/rde/vehicle"
+            element={<ProtectedRoute element={<RDEVehicle />} />}
+          />
+          <Route
+            path="/rde/engine"
+            element={<ProtectedRoute element={<RDEEngine />} />}
+          />
 
           {/* Misc */}
-          <Route path="/RDECreateJobOrder" element={<ProtectedRoute element={<RDE_JobOrder_Create />} />} />
-          <Route path="/createJobOrder" element={<ProtectedRoute element={<CreateJobOrder />} />} />
+          <Route
+            path="/RDECreateJobOrder"
+            element={<ProtectedRoute element={<RDE_JobOrder_Create />} />}
+          />
+          <Route
+            path="/createJobOrder"
+            element={<ProtectedRoute element={<CreateJobOrder />} />}
+          />
           <Route path="/authSuccess" element={<AuthSuccess />} />
         </Routes>
       </div>
