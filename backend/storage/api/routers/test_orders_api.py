@@ -6,7 +6,7 @@ import json
 import uuid
 import aiofiles
 from fastapi import APIRouter, HTTPException, Depends, Body, UploadFile, File, Form
-from typing import List
+from typing import List, Optional
 from datetime import datetime, date
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -63,42 +63,45 @@ def get_fuel_types():
         raise HTTPException(status_code=500, detail=str(e))
 
 class TestOrderSchema(BaseModel):
-    test_order_id: str
-    job_order_id: str = None
-    CoastDownData_id: str = None
-    test_type: str = None
-    test_objective: str = None
-    vehicle_location: str = None
-    cycle_gear_shift: str = None
-    inertia_class: str = None
-    dataset_name: str = None
-    dpf: str = None
-    dataset_flashed: bool = None
-    ess: str = None
-    mode: str = None
-    hardware_change: str = None
-    equipment_required: str = None
-    shift: str = None
-    preferred_date: date = None
-    emission_check_date: date = None
-    emission_check_attachment: str = None
-    dataset_attachment: str = None
-    a2l_attachment: str = None
-    experiment_attachment: str = None
-    dbc_attachment: str = None
-    wltp_attachment: str = None
-    pdf_report: str = None
-    excel_report: str = None
-    dat_file_attachment: str = None
-    others_attachement: str = None
-    specific_instruction: str = None
-    status: str = None
-    id_of_creator: str = None
-    name_of_creator: str = None
-    created_on: datetime = None
-    id_of_updater: str = None
-    name_of_updater: str = None
-    updated_on: datetime = None
+    test_order_id: Optional[str] = None
+    job_order_id: Optional[str] = None
+    CoastDownData_id: Optional[str] = None
+    test_type: Optional[str] = None
+    test_objective: Optional[str] = None
+    vehicle_location: Optional[str] = None
+    cycle_gear_shift: Optional[str] = None
+    inertia_class: Optional[str] = None
+    dataset_name: Optional[str] = None
+    dpf: Optional[str] = None
+    dataset_flashed: Optional[bool] = None
+    ess: Optional[str] = None
+    mode: Optional[str] = None
+    hardware_change: Optional[str] = None
+    equipment_required: Optional[str] = None
+    shift: Optional[str] = None
+    preferred_date: Optional[date] = None
+    emission_check_date: Optional[date] = None
+    emission_check_attachment: Optional[str] = None
+    dataset_attachment: Optional[str] = None
+    a2l_attachment: Optional[str] = None
+    experiment_attachment: Optional[str] = None
+    dbc_attachment: Optional[str] = None
+    wltp_attachment: Optional[str] = None
+    pdf_report: Optional[str] = None
+    excel_report: Optional[str] = None
+    dat_file_attachment: Optional[str] = None
+    others_attachement: Optional[str] = None
+    specific_instruction: Optional[str] = None
+    remarks: Optional[str] = None
+    rejection_remarks: Optional[str] = None
+    mail_remarks: Optional[str] = None
+    status: Optional[str] = None
+    id_of_creator: Optional[str] = None
+    name_of_creator: Optional[str] = None
+    created_on: Optional[datetime] = None
+    id_of_updater: Optional[str] = None
+    name_of_updater: Optional[str] = None
+    updated_on: Optional[datetime] = None
 
 def testorder_to_dict(testorder: TestOrder):
     return {
@@ -131,6 +134,9 @@ def testorder_to_dict(testorder: TestOrder):
         "dat_file_attachment": testorder.dat_file_attachment,
         "others_attachement": testorder.others_attachement,
         "specific_instruction": testorder.specific_instruction,
+        "remarks": testorder.remarks if testorder.remarks is not None else "",
+        "rejection_remarks": testorder.rejection_remarks if testorder.rejection_remarks is not None else "",
+        "mail_remarks": testorder.mail_remarks if testorder.mail_remarks is not None else "",
         "status": testorder.status,
         "id_of_creator": testorder.id_of_creator,
         "name_of_creator": testorder.name_of_creator,

@@ -39,7 +39,7 @@ def coastdown_to_dict(cd: CoastDownData):
         "id_of_creator": cd.id_of_creator,
         "created_on": cd.created_on,
         "id_of_updater": cd.id_of_updater,
-        "updated_on": cd.updated_on,
+        # "updated_on": cd.updated_on,
     }
 
 @router.post("/coastdown", response_model=CoastDownDataSchema)

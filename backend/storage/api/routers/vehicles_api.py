@@ -13,38 +13,41 @@ router = APIRouter()
 
 # Pydantic schema for Vehicle
 class VehicleSchema(BaseModel):
-    project_code: str = None
-    vehicle_serial_number: Optional[str] = None  # Changed to Optional[str]
-    vehicle_body_number: str = None
-    vehicle_model: str = None
-    vehicle_build_level: str = None
-    transmission_type: str = None
-    final_drive_axle_ratio: str = None
-    domain: str = None
-    tyre_make: str = None
-    tyre_size: str = None
-    tyre_pressure_front: float = None
-    tyre_pressure_rear: float = None
-    tyre_run_in: float = None
-    engine_run_in: float = None
-    gearbox_run_in: float = None
-    axle_run_in: float = None
-    engine_oil_specification: str = None
-    axle_oil_specification: str = None
-    transmission_oil_specification: str = None
-    wd_type: str = None
-    driven_wheel: str = None
-    intercooler_location: str = None
-    gear_ratio_1: str = None
-    gear_ratio_2: str = None
-    gear_ratio_3: str = None
-    gear_ratio_4: str = None
-    gear_ratio_5: str = None
-    reverse_gear_ratio: str = None
+    project_code: Optional[str] = None
+    vehicle_serial_number: Optional[str] = None
+    vehicle_body_number: Optional[str] = None
+    vehicle_model: Optional[str] = None
+    vehicle_build_level: Optional[str] = None
+    transmission_type: Optional[str] = None
+    final_drive_axle_ratio: Optional[str] = None
+    domain: Optional[str] = None
+    tyre_make: Optional[str] = None
+    tyre_size: Optional[str] = None
+    tyre_pressure_front: Optional[float] = None
+    tyre_pressure_rear: Optional[float] = None
+    tyre_run_in: Optional[float] = None
+    engine_run_in: Optional[float] = None
+    gearbox_run_in: Optional[float] = None
+    axle_run_in: Optional[float] = None
+    engine_oil_specification: Optional[str] = None
+    axle_oil_specification: Optional[str] = None
+    transmission_oil_specification: Optional[str] = None
+    wd_type: Optional[str] = None
+    driven_wheel: Optional[str] = None
+    intercooler_location: Optional[str] = None
+    gear_ratio_1: Optional[str] = None
+    gear_ratio_2: Optional[str] = None
+    gear_ratio_3: Optional[str] = None
+    gear_ratio_4: Optional[str] = None
+    gear_ratio_5: Optional[str] = None
+    reverse_gear_ratio: Optional[str] = None
     id_of_creator: Optional[str] = None
-    created_on: datetime = None
+    created_on: Optional[datetime] = None
     id_of_updater: Optional[str] = None
-    updated_on: datetime = None
+    updated_on: Optional[datetime] = None
+
+    class Config:
+        orm_mode = True
 
 @router.get("/project-codes")
 def get_project_codes():

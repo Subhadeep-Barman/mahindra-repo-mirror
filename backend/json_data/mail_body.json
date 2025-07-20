@@ -1,0 +1,30 @@
+{
+    "job_created": {
+        "subject": "Job Created: {job_title}",
+        "body": "A new job '{job_title}' has been created by {created_by}."
+    },
+    "job_updated": {
+        "subject": "Job Updated: {job_title}",
+        "body": "The job '{job_title}' has been updated. Please review the changes."
+    },
+    "test_created": {
+        "subject": "Test Created: {test_name}",
+        "body": "A new test '{test_name}' has been created for job '{job_title}'."
+    },
+    "test_started": {
+        "subject": "Test Started: {test_name}",
+        "body": "The test '{test_name}' has started for job '{job_title}'."
+    },
+    "test_reedit": {
+        "subject": "Test Re-Edit: {test_name}",
+        "body": "The test '{test_name}' for job '{job_title}' requires re-editing."
+    },
+    "test_complete": {
+        "subject": "Test Complete: {test_name}",
+        "body": "The test '{test_name}' for job '{job_title}' has been completed."
+    },
+    "test_reject": {
+        "subject": "Test Rejected: {test_name}",
+        "body": "The test '{test_name}' for job '{job_title}' has been rejected."
+    }
+}

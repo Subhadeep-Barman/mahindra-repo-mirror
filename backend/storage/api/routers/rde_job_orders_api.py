@@ -27,10 +27,6 @@ class RDEJobOrderSchema(BaseModel):
     requested_payload: str = None
     idle_exhaust_mass_flow: str = None
     job_order_status: str = None
-    remarks: str = None
-    cft_members: List[str] = None
-    rejection_remarks: str = None
-    mail_remarks: str = None
     id_of_creator: str = None
     name_of_creator: str = None
     created_on: datetime = None
@@ -69,9 +65,6 @@ def rde_joborder_to_dict(rde_joborder: RDEJobOrder, db: Session = None):
         "requested_payload": rde_joborder.requested_payload,
         "idle_exhaust_mass_flow": rde_joborder.idle_exhaust_mass_flow,
         "job_order_status": rde_joborder.job_order_status,
-        "remarks": rde_joborder.remarks,
-        "rejection_remarks": rde_joborder.rejection_remarks,
-        "mail_remarks": rde_joborder.mail_remarks,
         "id_of_creator": rde_joborder.id_of_creator,
         "name_of_creator": rde_joborder.name_of_creator,
         "created_on": rde_joborder.created_on,

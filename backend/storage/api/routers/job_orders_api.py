@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Body
 from pathlib import Path
 import json
-from typing import List
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -43,28 +43,28 @@ def get_vehicle_serial_numbers(db: Session = Depends(get_db)):
     return [sn for (sn,) in results if sn is not None]
 
 class JobOrderSchema(BaseModel):
-    job_order_id: str
-    project_code: str = None
-    vehicle_serial_number: str = None
-    vehicle_body_number: str = None
-    engine_serial_number: str = None
-    CoastDownData_id: str = None
-    type_of_engine: str = None
-    department: str = None
-    domain: str = None
-    test_status: str = None  # Total number of test orders as string
-    completed_test_count: str = None  # Count of completed test orders as string
-    job_order_status: str = None
-    remarks: str = None
-    rejection_remarks: str = None
-    mail_remarks: str = None
-    id_of_creator: str = None
-    name_of_creator: str = None
-    created_on: datetime = None
-    id_of_updater: str = None
-    name_of_updater: str = None
-    updated_on: datetime = None
-    cft_members: List[str] = None
+    job_order_id: Optional[str] = None
+    project_code: Optional[str] = None
+    vehicle_serial_number: Optional[str] = None
+    vehicle_body_number: Optional[str] = None
+    engine_serial_number: Optional[str] = None
+    CoastDownData_id: Optional[str] = None
+    type_of_engine: Optional[str] = None
+    department: Optional[str] = None
+    domain: Optional[str] = None
+    test_status: Optional[str] = None  # Total number of test orders as string
+    completed_test_count: Optional[str] = None  # Count of completed test orders as string
+    job_order_status: Optional[str] = None
+    id_of_creator: Optional[str] = None
+    name_of_creator: Optional[str] = None
+    created_on: Optional[datetime] = None
+    id_of_updater: Optional[str] = None
+    name_of_updater: Optional[str] = None
+    updated_on: Optional[datetime] = None
+    cft_members: Optional[List[Dict[str, Any]]] = None  # <-- Accept list of objects
+
+    class Config:
+        orm_mode = True
 
 class TestOrderStatusUpdateSchema(BaseModel):
     test_order_id: str
@@ -102,15 +102,12 @@ def joborder_to_dict(joborder: JobOrder, db: Session = None):
         "test_status": str(total_test_orders),  # Total number of test orders
         "completed_test_count": str(completed_test_orders),  # Count of completed test orders
         "job_order_status": joborder.job_order_status,
-        "remarks": joborder.remarks,
-        "rejection_remarks": joborder.rejection_remarks,
-        "mail_remarks": joborder.mail_remarks,
         "id_of_creator": joborder.id_of_creator,
         "name_of_creator": joborder.name_of_creator,
         "created_on": joborder.created_on,
         "id_of_updater": joborder.id_of_updater,
         "name_of_updater": joborder.name_of_updater,
-        # "updated_on": joborder.updated_on,
+        "updated_on": joborder.updated_on,
         "cft_members": joborder.cft_members if joborder.cft_members else []
     }
 
@@ -120,6 +117,9 @@ def create_joborder_api(
     db: Session = Depends(get_db)
 ):
     joborder_data = joborder.dict(exclude_unset=True)
+    # Ensure cft_members is a list of dicts or set to []
+    if "cft_members" in joborder_data and joborder_data["cft_members"] is None:
+        joborder_data["cft_members"] = []
     new_joborder = JobOrder(**joborder_data)
     db.add(new_joborder)
     db.commit()
@@ -160,6 +160,9 @@ def update_joborder(
         raise HTTPException(status_code=404, detail="JobOrder not found")
     update_data = joborder_update.dict(exclude_unset=True)
     update_data.pop("job_order_id", None)
+    # Ensure cft_members is a list of dicts or set to []
+    if "cft_members" in update_data and update_data["cft_members"] is None:
+        update_data["cft_members"] = []
     for key, value in update_data.items():
         setattr(joborder, key, value)
     joborder.updated_on = datetime.utcnow()
