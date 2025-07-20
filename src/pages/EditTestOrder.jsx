@@ -101,8 +101,7 @@ export default function EditTestOrder() {
   const [mailRemarks, setMailRemarks] = useState("");
 
   const handleBack = () => {
-    // Navigate back to the page we came from with the original state
-    navigate(returnPath || "/chennai/joborder", { state: returnState || {} });
+    navigate(-1);
   };
 
   // Handle form field changes

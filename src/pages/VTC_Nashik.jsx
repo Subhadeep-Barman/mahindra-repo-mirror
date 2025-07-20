@@ -59,7 +59,7 @@ export default function VTCNashikPage() {
   };
 
   const handleCreateJobOrder = () => {
-    console.log("Create new job order");
+    navigate("/NashikCreateJobOrder")
   };
 
   const handleTabClick = (tab) => {

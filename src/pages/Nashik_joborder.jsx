@@ -24,7 +24,7 @@ const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
 
-export default function CreateJobOrder() {
+export default function NashikCreateJobOrder() {
   const [form, setForm] = useState({
     projectCode: "",
     vehicleBuildLevel: "",
