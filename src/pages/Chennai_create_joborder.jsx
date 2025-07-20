@@ -24,7 +24,6 @@ const apiURL = import.meta.env.VITE_BACKEND_URL
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
 
 export default function CreateJobOrder() {
-  // CFT Members state
   const [cftMembers, setCftMembers] = useState([]);
   const [form, setForm] = useState({
     projectCode: "",
@@ -558,6 +557,11 @@ export default function CreateJobOrder() {
         if (jobOrder.vehicleDetails)
           setVehicleEditable(jobOrder.vehicleDetails);
         if (jobOrder.engineDetails) setEngineEditable(jobOrder.engineDetails);
+
+        // Prefill CFT members if present in job order
+        if (Array.isArray(jobOrder.cft_members)) {
+          setCftMembers(jobOrder.cft_members);
+        }
 
         // Use setTimeout to allow form state to settle before enabling other useEffects
         setTimeout(() => {

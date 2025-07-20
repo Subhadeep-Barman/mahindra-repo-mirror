@@ -19,6 +19,26 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
         fetchMembers();
     }, [jobOrderId, setMembers]);
 
+    // Update member
+    const updateMember = async (idx, updatedMember) => {
+        if (!jobOrderId) return;
+        try {
+            await axios.put(`${apiURL}/cft_members/update`, null, {
+                params: {
+                    job_order_id: jobOrderId,
+                    member_index: idx,
+                },
+                data: updatedMember,
+            });
+            setMembers((prev) =>
+                prev.map((m, i) => (i === idx ? updatedMember : m))
+            );
+        } catch (err) {
+            alert("Failed to update member");
+        }
+    };
+
+    // Remove member
     const removeMember = async (idx) => {
         if (!jobOrderId) return;
         try {
@@ -68,8 +88,59 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
         }
     };
 
-    const handleGroupsClick = () => {
-        alert("Groups panel would open here");
+    // State for apply button
+    const [applyLoading, setApplyLoading] = useState(false);
+    const [applyError, setApplyError] = useState("");
+
+    const handleApply = async () => {
+        setApplyError("");
+        if (!jobOrderId) {
+            setApplyError("No job order selected.");
+            return;
+        }
+        setApplyLoading(true);
+        try {
+            await axios.put(
+                `${apiURL}/joborders/${jobOrderId}`,
+                {
+                    job_order_id: jobOrderId,
+                    cft_members: members,
+                }
+            );
+            setApplyLoading(false);
+        } catch (err) {
+            setApplyError("Failed to update CFT members.");
+            setApplyLoading(false);
+        }
+    };
+
+    // Groups modal state
+    const [groupsModalOpen, setGroupsModalOpen] = useState(false);
+    const [groups, setGroups] = useState([]);
+    const [groupName, setGroupName] = useState("");
+    const [groupError, setGroupError] = useState("");
+
+    const openGroupsModal = () => {
+        setGroupName("");
+        setGroupError("");
+        setGroupsModalOpen(true);
+    };
+
+    const closeGroupsModal = () => {
+        setGroupsModalOpen(false);
+    };
+
+    const handleAddGroup = () => {
+        if (!groupName.trim()) {
+            setGroupError("Group name required");
+            return;
+        }
+        setGroups(prev => [...prev, { name: groupName.trim() }]);
+        setGroupsModalOpen(false);
+    };
+
+    const handleGroupsClick = () => {        
+        openGroupsModal();
     };
 
     return (
@@ -89,11 +160,22 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                     <button
                         onClick={handleGroupsClick}
                         className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition-colors"
-                        // disabled={disabled}
                     >
                         <Users size={16} />
                     </button>
                 </div>
+
+                {/* Groups List */}
+                {groups.length > 0 && (
+                    <div className="mb-4">
+                        <div className="font-semibold text-gray-700 text-xs mb-1">Groups:</div>
+                        {groups.map((g, i) => (
+                            <div key={i} className="text-xs text-gray-800 mb-1 border rounded px-2 py-1 bg-gray-50">
+                                <span className="font-bold">{g.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {/* Members List */}
                 <div className="mb-2">
@@ -159,6 +241,36 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                                     onClick={handleAddMember}
                                     className="px-3 py-1 bg-red-600 text-white rounded text-sm"
                                 >Add</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Groups Modal */}
+                {groupsModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+                        <div className="bg-white rounded-lg shadow-lg p-6 w-80 relative">
+                            <h3 className="text-lg font-semibold mb-4">Add Group</h3>
+                            <div className="mb-2">
+                                <label className="block text-sm font-medium mb-1">Group Name</label>
+                                <input
+                                    type="text"
+                                    value={groupName}
+                                    onChange={e => setGroupName(e.target.value)}
+                                    className="w-full border rounded px-2 py-1"
+                                    placeholder="Enter group name"
+                                />
+                            </div>
+                            {groupError && <div className="text-red-600 text-xs mb-2">{groupError}</div>}
+                            <div className="flex justify-end gap-2 mt-4">
+                                <button
+                                    onClick={closeGroupsModal}
+                                    className="px-3 py-1 bg-gray-200 rounded text-gray-700 text-sm"
+                                >Cancel</button>
+                                <button
+                                    onClick={handleAddGroup}
+                                    className="px-3 py-1 bg-red-600 text-white rounded text-sm"
+                                >Add Group</button>
                             </div>
                         </div>
                     </div>
