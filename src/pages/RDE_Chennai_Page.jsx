@@ -60,7 +60,7 @@ export default function RDEChennaiPage() {
   };
 
   const handleCreateJobOrder = () => {
-    console.log("Create new job order");
+    navigate("/RDECreateJobOrder");
   };
 
   const handleTabClick = (tab) => {

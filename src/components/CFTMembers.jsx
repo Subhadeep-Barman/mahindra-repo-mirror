@@ -47,20 +47,24 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
     };
 
     const handleAddMember = async () => {
-        if (!jobOrderId) {
-            setAddError("Create Job Order first");
-            return;
-        }
+        // Remove jobOrderId check and allow adding locally
         if (!newCode.trim() || !newName.trim()) {
             setAddError("Both code and name are required");
             return;
         }
-        try {
-            await axios.post(`${apiURL}/cft_members/add`, { job_order_id: jobOrderId, member: { code: newCode.trim(), name: newName.trim() } });
+        // If jobOrderId exists, try to add to backend, else just update local state
+        if (jobOrderId) {
+            try {
+                await axios.post(`${apiURL}/cft_members/add`, { job_order_id: jobOrderId, member: { code: newCode.trim(), name: newName.trim() } });
+                setMembers((prev) => [...prev, { code: newCode.trim(), name: newName.trim() }]);
+                setAddModalOpen(false);
+            } catch (err) {
+                setAddError("Failed to add member");
+            }
+        } else {
+            // Add to local state only
             setMembers((prev) => [...prev, { code: newCode.trim(), name: newName.trim() }]);
             setAddModalOpen(false);
-        } catch (err) {
-            setAddError("Failed to add member");
         }
     };
 
@@ -85,7 +89,7 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                     <button
                         onClick={handleGroupsClick}
                         className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition-colors"
-                        disabled={disabled}
+                        // disabled={disabled}
                     >
                         <Users size={16} />
                     </button>
@@ -103,7 +107,7 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                             <button
                                 onClick={() => removeMember(idx)}
                                 className="text-gray-400 hover:text-red-500 transition-colors ml-2"
-                                disabled={disabled}
+                                // disabled={disabled}
                             >
                                 <Trash2 size={16} />
                             </button>
@@ -115,7 +119,7 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                 <button
                     onClick={openAddModal}
                     className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center mt-2"
-                    disabled={disabled}
+                    // disabled={disabled}
                 >
                     + ADD CFT
                 </button>

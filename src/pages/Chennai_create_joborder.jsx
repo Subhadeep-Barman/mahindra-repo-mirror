@@ -595,10 +595,10 @@ export default function CreateJobOrder() {
     e.preventDefault();
 
     // Require at least one CFT member
-    if (!cftMembers || cftMembers.length === 0) {
-      alert("Please add at least one CFT member before creating a job order.");
-      return;
-    }
+    // if (!cftMembers || cftMembers.length === 0) {
+    //   showError("Please add at least one CFT member before creating a job order.");
+    //   return;
+    // }
 
     // Generate job_order_id and CoastDownData_id based on timestamp
     const job_order_id = "JO" + Date.now();
@@ -1869,17 +1869,7 @@ export default function CreateJobOrder() {
                   </>
                 )}
                 {/* Buttons for ProjectTeam */}
-                {!isTestEngineer && userRole === "ProjectTeam" && test?.status === "Started" && (
-                  <Button
-                    className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
-                    type="button"
-                    onClick={async () => {
-                      await handleStatusUpdate("Re-edit", "", test.testOrderId, idx);
-                    }}
-                  >
-                    Re-edit
-                  </Button>
-                )}
+                {/* ProjectTeam should NOT see the Re-edit button */}
                 {/* Buttons for TestEngineer */}
                 {isTestEngineer && (test?.status === "Started" || test?.status === "Rejected" || test?.status === "Re-edit") && (
                   <>
@@ -2303,6 +2293,7 @@ export default function CreateJobOrder() {
                     }
                     disabled={!areTestFieldsEditable(test, idx)}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    viewOnly={userRole === "TestEngineer"}
                   />
                 </div>
                 <div>

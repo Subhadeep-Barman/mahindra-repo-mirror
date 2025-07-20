@@ -87,7 +87,7 @@ function App() {
 
           {/* VTC Nashik */}
           <Route path="/vtc-nashik" element={<ProtectedRoute element={<VTCNashikPage />} />} />
-          <Route path="/nashik/joborder" element={<ProtectedRoute element={<NashikJobOrder />} />} />
+          <Route path="/NashikCreateJobOrder" element={<ProtectedRoute element={<NashikJobOrder />} />} />
           <Route path="/nashik/vehicle" element={<ProtectedRoute element={<VTCNashikVehicle />} />} />
           <Route path="/nashik/engine" element={<ProtectedRoute element={<RDEnginePage />} />} />
           <Route path="/nashik/vehicle/new" element={<ProtectedRoute element={<VTCNashikVehicleForm />} />} />
