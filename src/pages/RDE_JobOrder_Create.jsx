@@ -1131,7 +1131,22 @@ export default function RDECreateJobOrder() {
     );
   };
 
-  const { apiUserRole } = useAuth();
+  const { apiUserRole: userRole } = useAuth();
+  const isTestEngineer = userRole === "TestEngineer";
+  const isProjectTeam = userRole === "ProjectTeam";
+
+  // Helper function to determine if test fields should be editable
+  const areTestFieldsEditable = (test, idx) => {
+    if (test.disabled) return false;
+    if (!!test.testOrderId && editingTestOrderIdx !== idx) return false;
+    if (isTestEngineer) return false;
+    if (isProjectTeam) {
+      if (!test.testOrderId) return true;
+      if (test.status === "Re-edit" && editingTestOrderIdx === idx) return true;
+      return false;
+    }
+    return !test.disabled && (!test.testOrderId || editingTestOrderIdx === idx);
+  };
 
   return (
     <>

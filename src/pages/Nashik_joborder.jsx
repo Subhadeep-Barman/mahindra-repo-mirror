@@ -18,6 +18,7 @@ import { Switch } from "@/components/UI/switch";
 import useStore from "@/store/useStore";
 import axios from "axios";
 import CFTMembers from "@/components/CFTMembers";
+import { useAuth } from "@/context/AuthContext";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -1121,6 +1122,23 @@ export default function CreateJobOrder() {
     );
   };
 
+  const { userRole } = useAuth();
+  const isTestEngineer = userRole === "TestEngineer";
+  const isProjectTeam = userRole === "ProjectTeam";
+
+  // Helper function to determine if test fields should be editable
+  const areTestFieldsEditable = (test, idx) => {
+    if (test.disabled) return false;
+    if (!!test.testOrderId && editingTestOrderIdx !== idx) return false;
+    if (isTestEngineer) return false;
+    if (isProjectTeam) {
+      if (!test.testOrderId) return true;
+      if (test.status === "Re-edit" && editingTestOrderIdx === idx) return true;
+      return false;
+    }
+    return !test.disabled && (!test.testOrderId || editingTestOrderIdx === idx);
+  };
+
   return (
     <>
       <Navbar1 />
@@ -1167,7 +1185,7 @@ export default function CreateJobOrder() {
               value={form.projectCode}
               onValueChange={(value) => handleChange("projectCode", value)}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Select" />
@@ -1190,7 +1208,7 @@ export default function CreateJobOrder() {
               value={form.vehicleBodyNumber}
               onValueChange={handleVehicleBodyChange}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Select" />
@@ -1219,7 +1237,7 @@ export default function CreateJobOrder() {
               className="w-44"
               placeholder="Auto-fetched"
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             />
           </div>
           {/* Engine Number (dropdown) */}
@@ -1231,7 +1249,7 @@ export default function CreateJobOrder() {
               value={form.engineSerialNumber}
               onValueChange={handleEngineNumberChange}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Select" />
@@ -1254,7 +1272,7 @@ export default function CreateJobOrder() {
               value={form.engineType}
               onValueChange={(value) => handleChange("engineType", value)}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Select" />
@@ -1277,7 +1295,7 @@ export default function CreateJobOrder() {
               value={form.domain}
               onValueChange={(value) => handleChange("domain", value)}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Select" />
@@ -1342,7 +1360,7 @@ export default function CreateJobOrder() {
                           handleVehicleEditableChange(label, e.target.value)
                         }
                         className="mt-1"
-                        disabled={formDisabled}
+                        disabled={formDisabled || isTestEngineer}
                       />
                     </div>
                   ))}
@@ -1379,7 +1397,7 @@ export default function CreateJobOrder() {
                           handleEngineEditableChange(label, e.target.value)
                         }
                         className="mt-1"
-                        disabled={formDisabled}
+                        disabled={formDisabled || isTestEngineer}
                       />
                     </div>
                   ))}
@@ -1412,7 +1430,7 @@ export default function CreateJobOrder() {
             onChange={(e) =>
               setForm((prev) => ({ ...prev, cdReportRef: e.target.value }))
             }
-            disabled={formDisabled}
+            disabled={formDisabled || isTestEngineer}
           />
           <div className="mb-2 font-semibold text-xs mt-4">CD Values</div>
           <div className="grid grid-cols-7 gap-4">
@@ -1431,7 +1449,7 @@ export default function CreateJobOrder() {
                     vehicleRefMass: e.target.value,
                   }))
                 }
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
             </div>
             <div>
@@ -1446,7 +1464,7 @@ export default function CreateJobOrder() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, aN: e.target.value }))
                 }
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
             </div>
             <div>
@@ -1461,7 +1479,7 @@ export default function CreateJobOrder() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, bNkmph: e.target.value }))
                 }
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
             </div>
             <div>
@@ -1476,7 +1494,7 @@ export default function CreateJobOrder() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, cNkmph2: e.target.value }))
                 }
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
             </div>
             <div>
@@ -1491,7 +1509,7 @@ export default function CreateJobOrder() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, f0N: e.target.value }))
                 }
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
             </div>
             <div>
@@ -1506,7 +1524,7 @@ export default function CreateJobOrder() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, f1Nkmph: e.target.value }))
                 }
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
             </div>
             <div>
@@ -1521,7 +1539,7 @@ export default function CreateJobOrder() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, f2Nkmph2: e.target.value }))
                 }
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
             </div>
           </div>
@@ -1529,6 +1547,7 @@ export default function CreateJobOrder() {
             <Button
               className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
               onClick={handleCreateJobOrder}
+              disabled={isTestEngineer}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
@@ -1578,6 +1597,7 @@ export default function CreateJobOrder() {
             variant="ghost"
             className="text-xs text-blue-700 px-0"
             onClick={handleAddTest}
+            disabled={isTestEngineer}
           >
             + ADD TEST
           </Button>
@@ -1588,6 +1608,7 @@ export default function CreateJobOrder() {
               setShowCFTPanel((prev) => !prev);
               console.log("Toggled CFT panel");
             }}
+            disabled={isTestEngineer}
           >
             {showCFTPanel ? "− CFT MEMBERS" : "+ CFT MEMBERS"}
           </Button>
@@ -1614,6 +1635,7 @@ export default function CreateJobOrder() {
                 className="text-xs text-red-600 px-2 py-0"
                 type="button"
                 onClick={() => handleDeleteTest(idx)}
+                disabled={isTestEngineer}
               >
                 Delete
               </Button>
@@ -1624,6 +1646,7 @@ export default function CreateJobOrder() {
                 <Select
                   value={test.testType}
                   onValueChange={(v) => handleTestChange(idx, "testType", v)}
+                  disabled={!areTestFieldsEditable(test, idx)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -1647,6 +1670,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "objective", e.target.value)
                   }
                   placeholder="TESTING"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
               <div>
@@ -1657,6 +1681,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "vehicleLocation", e.target.value)
                   }
                   placeholder="Enter Vehicle Location"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
               <div>
@@ -1666,6 +1691,7 @@ export default function CreateJobOrder() {
                   onChange={(e) =>
                     handleTestChange(idx, "uploadDocuments", e.target.files[0])
                   }
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
             </div>
@@ -1678,6 +1704,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "cycleGearShift", e.target.value)
                   }
                   placeholder="Enter Cycle Gear Shift"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
               <div>
@@ -1688,6 +1715,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "datasetName", e.target.value)
                   }
                   placeholder="Enter Dataset Name"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
               <div>
@@ -1697,6 +1725,7 @@ export default function CreateJobOrder() {
                   onValueChange={(v) =>
                     handleTestChange(idx, "inertiaClass", v)
                   }
+                  disabled={!areTestFieldsEditable(test, idx)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -1819,6 +1848,7 @@ export default function CreateJobOrder() {
                 <Select
                   value={test.mode}
                   onValueChange={(v) => handleTestChange(idx, "mode", v)}
+                  disabled={!areTestFieldsEditable(test, idx)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -1840,6 +1870,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "hardwareChange", e.target.value)
                   }
                   placeholder="Enter Hardware Change"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
             </div>
@@ -1849,6 +1880,7 @@ export default function CreateJobOrder() {
                 <Select
                   value={test.shift}
                   onValueChange={(v) => handleTestChange(idx, "shift", v)}
+                  disabled={!areTestFieldsEditable(test, idx)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -1869,6 +1901,7 @@ export default function CreateJobOrder() {
                   onChange={(e) =>
                     handleTestChange(idx, "preferredDate", e.target.value)
                   }
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
               <div>
@@ -1876,6 +1909,7 @@ export default function CreateJobOrder() {
                 <Select
                   value={test.fuelType}
                   onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
+                  disabled={!areTestFieldsEditable(test, idx)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -1897,6 +1931,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "equipmentRequired", e.target.value)
                   }
                   placeholder="Enter Equipment Required"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
               <div>
@@ -1907,6 +1942,7 @@ export default function CreateJobOrder() {
                   onChange={(e) =>
                     handleTestChange(idx, "emissionCheckDate", e.target.value)
                   }
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
             </div>
@@ -1923,6 +1959,7 @@ export default function CreateJobOrder() {
                     )
                   }
                   placeholder="Enter Attachment Path/URL"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
               <div>
@@ -1933,6 +1970,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "specificInstruction", e.target.value)
                   }
                   placeholder="Enter Specific Instructions"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
             </div>
@@ -2075,7 +2113,7 @@ export default function CreateJobOrder() {
                                   );
                                 }}
                                 id={`test${idx}`}
-                                submitted={false}
+                                                               submitted={false}
                                 setSubmitted={() => {}}
                                 openModal={!!dbcModals[idx]}
                                 handleOpenModal={() =>
@@ -2403,7 +2441,7 @@ export default function CreateJobOrder() {
               <Button
                 className="bg-red-600 text-white text-xs px-6 py-2 rounded"
                 onClick={() => handleCreateTestOrder(idx)}
-                disabled={editingTestOrderIdx === idx}
+                disabled={editingTestOrderIdx === idx || isTestEngineer}
               >
                 ✓ CREATE TEST ORDER
               </Button>
@@ -2411,6 +2449,7 @@ export default function CreateJobOrder() {
                 <Button
                   className="bg-blue-600 text-white text-xs px-6 py-2 rounded ml-2"
                   onClick={() => handleUpdateTestOrder(idx)}
+                  disabled={isTestEngineer}
                 >
                   UPDATE TEST ORDER
                 </Button>
