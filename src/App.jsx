@@ -37,6 +37,9 @@ import CreateJobOrder from "./pages/Chennai_create_joborder";
 import AuthSuccess from "./pages/AuthSuccess";
 import DefaultLogin from "./pages/defaultlogin";
 
+// Import EditTestOrder component
+import EditTestOrder from "./pages/EditTestOrder";
+
 const ProtectedRoute = ({ element }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,6 +102,7 @@ function App() {
           {/* Misc */}
           <Route path="/RDECreateJobOrder" element={<ProtectedRoute element={<RDE_JobOrder_Create />} />} />
           <Route path="/createJobOrder" element={<ProtectedRoute element={<CreateJobOrder />} />} />
+          <Route path="/editTestOrder" element={<ProtectedRoute element={<EditTestOrder />} />} />
           <Route path="/authSuccess" element={<AuthSuccess />} />
         </Routes>
       </div>

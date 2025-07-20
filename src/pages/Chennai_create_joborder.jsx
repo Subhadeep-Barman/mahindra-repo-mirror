@@ -2894,7 +2894,14 @@ export default function CreateJobOrder() {
                           return (
                             <Button
                               className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
-                              onClick={() => handleEditTestOrder(to, 0)}
+                              onClick={() => navigate('/editTestOrder', { 
+                                state: { 
+                                  testOrder: to, 
+                                  jobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id,
+                                  returnPath: location.pathname,
+                                  returnState: location.state
+                                } 
+                              })}
                             >
                               Edit
                             </Button>
@@ -2905,7 +2912,14 @@ export default function CreateJobOrder() {
                           return (
                             <Button
                               className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
-                              onClick={() => handleEditTestOrder(to, 0)}
+                              onClick={() => navigate('/editTestOrder', { 
+                                state: { 
+                                  testOrder: to, 
+                                  jobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id,
+                                  returnPath: location.pathname,
+                                  returnState: location.state
+                                } 
+                              })}
                             >
                               Edit
                             </Button>
