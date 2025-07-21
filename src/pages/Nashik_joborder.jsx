@@ -142,16 +142,16 @@ export default function CreateJobOrder() {
   const handleCDNumberInput = (field, value) => {
     // Allow empty value
     if (value === "") {
-      setCdError("");
+      setCdFieldErrors((prev) => ({ ...prev, [field]: "" }));
       setForm((prev) => ({ ...prev, [field]: "" }));
       return;
     }
     // Allow only numbers (including decimals)
     if (/^-?\d*\.?\d*$/.test(value)) {
-      setCdError("");
+      setCdFieldErrors((prev) => ({ ...prev, [field]: "" }));
       setForm((prev) => ({ ...prev, [field]: value }));
     } else {
-      setCdError("Please enter valid numbers");
+      setCdFieldErrors((prev) => ({ ...prev, [field]: "Please enter valid numbers" }));
     }
   };
 
@@ -243,6 +243,7 @@ export default function CreateJobOrder() {
   const [vehicleBodyNumbers, setVehicleBodyNumbers] = useState([]);
   // New: State for engine numbers from API
   const [engineNumbers, setEngineNumbers] = useState([]);
+  const [cdFieldErrors, setCdFieldErrors] = useState({});
 
   // Fetch vehicle and engine lists from API on mount
   useEffect(() => {
@@ -1416,6 +1417,9 @@ export default function CreateJobOrder() {
             onChange={(e) => handleCDNumberInput("cdReportRef", e.target.value)}
             disabled={formDisabled}
           />
+          {cdFieldErrors.cdReportRef && (
+            <div className="text-red-600 text-xs mt-1">{cdFieldErrors.cdReportRef}</div>
+          )}
           <div className="mb-2 font-semibold text-xs mt-4">CD Values</div>
 
           <div className="grid grid-cols-7 gap-4">
@@ -1431,6 +1435,9 @@ export default function CreateJobOrder() {
                 onChange={(e) => handleCDNumberInput("vehicleRefMass", e.target.value)}
                 disabled={formDisabled}
               />
+              {cdFieldErrors.vehicleRefMass && (
+                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.vehicleRefMass}</div>
+              )}
             </div>
             <div>
               <Label htmlFor="aN" className="text-xs">
@@ -1444,6 +1451,9 @@ export default function CreateJobOrder() {
                 onChange={(e) => handleCDNumberInput("aN", e.target.value)}
                 disabled={formDisabled}
               />
+              {cdFieldErrors.aN && (
+                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.aN}</div>
+              )}
             </div>
             <div>
               <Label htmlFor="bNkmph" className="text-xs">
@@ -1457,6 +1467,9 @@ export default function CreateJobOrder() {
                 onChange={(e) => handleCDNumberInput("bNkmph", e.target.value)}
                 disabled={formDisabled}
               />
+              {cdFieldErrors.bNkmph && (
+                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.bNkmph}</div>
+              )}
             </div>
             <div>
               <Label htmlFor="cNkmph2" className="text-xs">
@@ -1470,6 +1483,9 @@ export default function CreateJobOrder() {
                 onChange={(e) => handleCDNumberInput("cNkmph2", e.target.value)}
                 disabled={formDisabled}
               />
+              {cdFieldErrors.cNkmph2 && (
+                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.cNkmph2}</div>
+              )}
             </div>
             <div>
               <Label htmlFor="f0N" className="text-xs">
@@ -1483,6 +1499,9 @@ export default function CreateJobOrder() {
                 onChange={(e) => handleCDNumberInput("f0N", e.target.value)}
                 disabled={formDisabled}
               />
+              {cdFieldErrors.f0N && (
+                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.vehicleRefMass}</div>
+              )}
             </div>
             <div>
               <Label htmlFor="f1Nkmph" className="text-xs">
@@ -1496,6 +1515,9 @@ export default function CreateJobOrder() {
                 onChange={(e) => handleCDNumberInput("f1Nkmph", e.target.value)}
                 disabled={formDisabled}
               />
+              {cdFieldErrors.f1Nkmph && (
+                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.f1Nkmph}</div>
+              )}
             </div>
             <div>
               <Label htmlFor="f2Nkmph2" className="text-xs">
@@ -1509,11 +1531,11 @@ export default function CreateJobOrder() {
                 onChange={(e) => handleCDNumberInput("f2Nkmph2", e.target.value)}
                 disabled={formDisabled}
               />
+              {cdFieldErrors.f2Nkmph2 && (
+                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.f2Nkmph2}</div>
+              )}
             </div>
           </div>
-          {cdError && (
-            <div className="text-red-600 text-xs mt-2">{cdError}</div>
-          )}
           <div className="flex items-center mt-4 gap-6">
             <Button
               className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
