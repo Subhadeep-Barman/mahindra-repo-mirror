@@ -199,13 +199,12 @@ export default function CJobOrder() {
                     key={tab}
                     variant={activeTab === tab ? "default" : "outline"}
                     onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${
-                      tab === "Job Order"
+                    className={`rounded-xl ${tab === "Job Order"
                         ? "bg-red-500 text-white hover:bg-red-600"
                         : tab === "Vehicle" || tab === "Engine"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "text-red-500 border-red-500 hover:bg-red-50"
-                    }`}
+                          ? "bg-red-500 text-white hover:bg-red-600"
+                          : "text-red-500 border-red-500 hover:bg-red-50"
+                      }`}
                   >
                     {tab}
                   </Button>
@@ -714,9 +713,8 @@ export default function CJobOrder() {
 
                     {/* File List */}
                     <div
-                      className={`flex flex-wrap gap-2 ${
-                        showFiles ? "" : "hidden"
-                      }`}
+                      className={`flex flex-wrap gap-2 ${showFiles ? "" : "hidden"
+                        }`}
                     >
                       {uploadedFiles.map((file, index) => (
                         <Badge
@@ -767,11 +765,10 @@ export default function CJobOrder() {
                   variant={cftMode === "SINGLE" ? "default" : "outline"}
                   size="sm"
                   onClick={() => handleCFTModeChange("SINGLE")}
-                  className={`flex items-center gap-2 ${
-                    cftMode === "SINGLE"
+                  className={`flex items-center gap-2 ${cftMode === "SINGLE"
                       ? "bg-red-500 text-white hover:bg-red-600"
                       : "text-red-500 border-red-500 hover:bg-red-50"
-                  }`}
+                    }`}
                 >
                   <PersonIcon className="h-4 w-4" />
                   SINGLE
@@ -780,11 +777,10 @@ export default function CJobOrder() {
                   variant={cftMode === "GROUP" ? "default" : "outline"}
                   size="sm"
                   onClick={() => handleCFTModeChange("GROUP")}
-                  className={`flex items-center gap-2 ${
-                    cftMode === "GROUP"
+                  className={`flex items-center gap-2 ${cftMode === "GROUP"
                       ? "bg-red-500 text-white hover:bg-red-600"
                       : "text-red-500 border-red-500 hover:bg-red-50"
-                  }`}
+                    }`}
                 >
                   <GroupAddIcon className="h-4 w-4" />
                   GROUP

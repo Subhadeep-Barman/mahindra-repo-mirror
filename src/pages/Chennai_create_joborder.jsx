@@ -65,6 +65,7 @@ export default function CreateJobOrder() {
   const [vehicleFormData, setVehicleFormData] = useState(null);
   const [engineFormData, setEngineFormData] = useState(null);
   const [showCFTPanel, setShowCFTPanel] = useState(false);
+  const [cdError, setCdError] = useState("");
 
   // State to control pre-filling mode to prevent useEffect conflicts
   const [isPreFilling, setIsPreFilling] = useState(false);
@@ -1167,6 +1168,22 @@ export default function CreateJobOrder() {
     }
   };
 
+  const handleCDNumberInput = (field, value) => {
+    // Allow empty value
+    if (value === "") {
+      setCdError("");
+      setForm((prev) => ({ ...prev, [field]: "" }));
+      return;
+    }
+    // Allow only numbers (including decimals)
+    if (/^-?\d*\.?\d*$/.test(value)) {
+      setCdError("");
+      setForm((prev) => ({ ...prev, [field]: value }));
+    } else {
+      setCdError("Please enter valid numbers");
+    }
+  };
+
   // Modal component
   const RemarkModal = ({ open, onClose, onSubmit, type, value, setValue }) => {
     if (!open) return null;
@@ -1561,12 +1578,11 @@ export default function CreateJobOrder() {
             placeholder="Enter Coast Test Report Ref."
             className="w-80 mt-1"
             value={form.cdReportRef}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, cdReportRef: e.target.value }))
-            }
+            onChange={(e) => handleCDNumberInput("cdReportRef", e.target.value)}
             disabled={formDisabled}
           />
           <div className="mb-2 font-semibold text-xs mt-4">CD Values</div>
+
           <div className="grid grid-cols-7 gap-4">
             <div>
               <Label htmlFor="vehicleRefMass" className="text-xs">
@@ -1577,12 +1593,7 @@ export default function CreateJobOrder() {
                 placeholder="Enter Vehicle Reference mass (Kg)"
                 className="mt-1"
                 value={form.vehicleRefMass}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    vehicleRefMass: e.target.value,
-                  }))
-                }
+                onChange={(e) => handleCDNumberInput("vehicleRefMass", e.target.value)}
                 disabled={formDisabled}
               />
             </div>
@@ -1595,9 +1606,7 @@ export default function CreateJobOrder() {
                 placeholder="Enter A (N)"
                 className="mt-1"
                 value={form.aN}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, aN: e.target.value }))
-                }
+                onChange={(e) => handleCDNumberInput("aN", e.target.value)}
                 disabled={formDisabled}
               />
             </div>
@@ -1610,9 +1619,7 @@ export default function CreateJobOrder() {
                 placeholder="Enter B (N/kmph)"
                 className="mt-1"
                 value={form.bNkmph}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, bNkmph: e.target.value }))
-                }
+                onChange={(e) => handleCDNumberInput("bNkmph", e.target.value)}
                 disabled={formDisabled}
               />
             </div>
@@ -1625,9 +1632,7 @@ export default function CreateJobOrder() {
                 placeholder="Enter C (N/kmph^2)"
                 className="mt-1"
                 value={form.cNkmph2}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, cNkmph2: e.target.value }))
-                }
+                onChange={(e) => handleCDNumberInput("cNkmph2", e.target.value)}
                 disabled={formDisabled}
               />
             </div>
@@ -1640,9 +1645,7 @@ export default function CreateJobOrder() {
                 placeholder="Enter F0 (N)"
                 className="mt-1"
                 value={form.f0N}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, f0N: e.target.value }))
-                }
+                onChange={(e) => handleCDNumberInput("f0N", e.target.value)}
                 disabled={formDisabled}
               />
             </div>
@@ -1655,9 +1658,7 @@ export default function CreateJobOrder() {
                 placeholder="Enter F1 (N/kmph)"
                 className="mt-1"
                 value={form.f1Nkmph}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, f1Nkmph: e.target.value }))
-                }
+                onChange={(e) => handleCDNumberInput("f1Nkmph", e.target.value)}
                 disabled={formDisabled}
               />
             </div>
@@ -1670,13 +1671,14 @@ export default function CreateJobOrder() {
                 placeholder="Enter F2 (N/kmph^2)"
                 className="mt-1"
                 value={form.f2Nkmph2}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, f2Nkmph2: e.target.value }))
-                }
+                onChange={(e) => handleCDNumberInput("f2Nkmph2", e.target.value)}
                 disabled={formDisabled}
               />
             </div>
           </div>
+          {cdError && (
+            <div className="text-red-600 text-xs mt-2">{cdError}</div>
+          )}
           <div className="flex items-center mt-4 gap-6">
             <Button
               className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
