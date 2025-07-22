@@ -261,7 +261,11 @@ export default function CreateJobOrder() {
     // Fetch vehicle body numbers (now returns both body number and vehicle_serial_number)
     (async () => {
       try {
-        const res = await axios.get(`${apiURL}/vehicle-body-numbers`);
+        // Pass department as query param for filtering
+        const res = await axios.get(
+          `${apiURL}/vehicle-body-numbers`,
+          { params: { department: form.department || "VTC_JO Chennai" } }
+        );
         setVehicleBodyNumbers(res.data || []);
       } catch (err) {
         setVehicleBodyNumbers([]);
@@ -270,7 +274,11 @@ export default function CreateJobOrder() {
     // Fetch engine numbers from FastAPI endpoint
     (async () => {
       try {
-        const res = await axios.get(`${apiURL}/engine-numbers`);
+        // Pass department as query param for filtering
+        const res = await axios.get(
+          `${apiURL}/engine-numbers`,
+          { params: { department: form.department || "VTC_JO Chennai" } }
+        );
         setEngineNumbers(res.data || []);
       } catch (err) {
         setEngineNumbers([]);
@@ -860,11 +868,19 @@ export default function CreateJobOrder() {
         "Test Order Created! ID: " +
         response.data.test_order_id +
         (hasTestSpecificCoastDownData
-          ? " | Coast Down Data ID: " + CoastDownData_id
-          : ""),
-        "success"
-      );
-      navigate("/vtc-chennai");
+          ? "\nCoast Down Data ID: " + CoastDownData_id
+          : "")
+      );// Redirect based on department
+      const dept = form.department || (location.state?.jobOrder?.department) || "";
+      if (dept === "RDE JO") {
+        navigate("/rde-chennai");
+      } else if (dept === "VTC_JO Chennai") {
+        navigate("/vtc-chennai");
+      } else if (dept === "VTC_JO Nashik") {
+        navigate("/vtc-nashik");
+      } else {
+        navigate("/"); // fallback
+      }
     } catch (err) {
       console.error("Error creating test order:", err);
       showSnackbar(

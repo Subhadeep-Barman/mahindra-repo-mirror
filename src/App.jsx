@@ -25,7 +25,7 @@ import VTCNashikPage from "./pages/VTC_Nashik";
 import NashikJobOrder from "./pages/Nashik_create_joborder";
 import VTCNashikVehicle from "./pages/VTC_N_vehicle";
 import NEngine from "./pages/VTC_N_Engine";
-import VTCNashikVehicleForm from "./pages/VTC_N_Vehicle_form";
+// import VTCNashikVehicleForm from "./pages/VTC_N_Vehicle_form";
 
 // RDE
 import RDEChennaiPage from "./pages/RDE_Chennai_Page";
@@ -103,7 +103,7 @@ function App() {
           <Route path="/NashikCreateJobOrder" element={<ProtectedRoute element={<NashikJobOrder />} />} />
           <Route path="/nashik/vehicle" element={<ProtectedRoute element={<VTCNashikVehicle />} />} />
           <Route path="/nashik/engine" element={<ProtectedRoute element={<RDEnginePage />} />} />
-          <Route path="/nashik/vehicle/new" element={<ProtectedRoute element={<VTCNashikVehicleForm />} />} />
+          {/* <Route path="/nashik/vehicle/new" element={<ProtectedRoute element={<VTCNashikVehicleForm />} />} /> */}
           <Route path="/nashik/engine/new" element={<ProtectedRoute element={<NEngine />} />} />
 
           {/* RDE */}
