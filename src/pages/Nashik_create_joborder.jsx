@@ -796,6 +796,7 @@ export default function NashikCreateJobOrder() {
       inertia_class: test.inertiaClass || "",
       dataset_name: test.datasetName || "",
       dpf: test.dpf || "",
+      dpf_regen_occurs: test.dpfRegenOccurs || "",
       dataset_flashed:
         test.datasetRefreshed === "Yes"
           ? true
@@ -1004,6 +1005,7 @@ export default function NashikCreateJobOrder() {
         datasetName: testOrder.dataset_name || "",
         inertiaClass: testOrder.inertia_class || "",
         dpf: testOrder.dpf || "",
+        dpfRegenOccurs: testOrder.dpf_regen_occurs || "",
         datasetRefreshed:
           testOrder.dataset_flashed === true
             ? "Yes"
@@ -1055,6 +1057,7 @@ export default function NashikCreateJobOrder() {
       inertia_class: test.inertiaClass || "",
       dataset_name: test.datasetName || "",
       dpf: test.dpf || "",
+      dpf_regen_occurs: test.dpfRegenOccurs || "",
       dataset_flashed:
         test.datasetRefreshed === "Yes"
           ? true

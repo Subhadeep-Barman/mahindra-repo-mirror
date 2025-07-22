@@ -41,6 +41,7 @@ export default function EditTestOrder() {
     datasetName: testOrder?.dataset_name || "",
     inertiaClass: testOrder?.inertia_class || "",
     dpf: testOrder?.dpf || "",
+    dpfRegenOccurs: testOrder?.dpf_regen_occurs || "",
     datasetflashed: testOrder?.dataset_flashed === true ? "Yes" : 
                    testOrder?.dataset_flashed === false ? "No" : "",
     ess: testOrder?.ess || "",
@@ -99,6 +100,7 @@ export default function EditTestOrder() {
   // State for remarks modals
   const [mailRemarksModal, setMailRemarksModal] = useState(false);
   const [mailRemarks, setMailRemarks] = useState("");
+  const [modalActionType, setModalActionType] = useState(""); // "re-edit" or "reject" or "update"
 
   const handleBack = () => {
     navigate(-1);
@@ -182,6 +184,7 @@ export default function EditTestOrder() {
         inertia_class: test.inertiaClass || "",
         dataset_name: test.datasetName || "",
         dpf: test.dpf || "",
+        dpf_regen_occurs: test.dpfRegenOccurs || "",
         dataset_flashed:
           test.datasetflashed === "Yes"
             ? true
@@ -243,19 +246,22 @@ export default function EditTestOrder() {
   // Handler for mail remarks
   const handleSubmitMailRemarks = async () => {
     try {
-      // If ProjectTeam is updating a test in Re-edit status, set status to 'Started'
+      // If ProjectTeam is updating a test in Re-edit or Rejected status, set status to 'Started'
       let newStatus = test.status;
-      if (isProjectTeam && newStatus === "Re-edit") {
+      if (
+        isProjectTeam &&
+        (newStatus === "Re-edit" || newStatus === "Rejected")
+      ) {
         newStatus = "Started";
       }
-      
+
       const payload = {
         ...test,
         mail_remarks: mailRemarks,
         test_order_id: test.testOrderId,
         status: newStatus,
       };
-      
+
       await axios.put(`${apiURL}/testorders/${test.testOrderId}`, payload);
       setMailRemarksModal(false);
       alert("Test order updated successfully!");
@@ -270,9 +276,9 @@ export default function EditTestOrder() {
     // TestEngineer cannot edit fields
     if (isTestEngineer) return false;
     
-    // ProjectTeam can only edit if test is in Re-edit status
+    // ProjectTeam can edit if test is in Re-edit or Rejected status
     if (isProjectTeam) {
-      return test.status === "Re-edit";
+      return test.status === "Re-edit" || test.status === "Rejected";
     }
     
     // For admin or other roles, allow editing
@@ -1070,6 +1076,8 @@ export default function EditTestOrder() {
                   className="bg-red-600 text-white text-xs px-3 py-1 rounded"
                   type="button"
                   onClick={() => {
+                    setModalActionType("reject");
+                    setMailRemarks("");
                     setMailRemarksModal(true);
                   }}
                 >
@@ -1079,12 +1087,16 @@ export default function EditTestOrder() {
             )}
 
             {/* Buttons for TestEngineer */}
-            {isTestEngineer && (test.status === "Started" || test.status === "Rejected" || test.status === "Re-edit") && (
+            {isTestEngineer && (test.status === "Started" || test.status === "Rejected" || test.status === "under progress") && (
               <>
                 <Button
                   className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
                   type="button"
-                  onClick={() => setMailRemarksModal(true)}
+                  onClick={() => {
+                    setModalActionType("re-edit");
+                    setMailRemarks("");
+                    setMailRemarksModal(true);
+                  }}
                 >
                   Re-edit
                 </Button>
@@ -1104,6 +1116,8 @@ export default function EditTestOrder() {
                 className="bg-red-600 text-white text-xs px-6 py-2 rounded"
                 onClick={() => {
                   if (isProjectTeam) {
+                    setModalActionType("update");
+                    setMailRemarks("");
                     setMailRemarksModal(true);
                   } else {
                     handleUpdateTestOrder();
@@ -1121,18 +1135,24 @@ export default function EditTestOrder() {
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-white rounded shadow-lg p-6 w-96">
               <div className="font-semibold mb-2">
-                {isProjectTeam ? "Update Comments" : 
-                 isTestEngineer && test.status === "Started" ? "Re-edit Reason" : 
-                 "Rejection Reason"}
+                {modalActionType === "re-edit"
+                  ? "Re-edit Reason"
+                  : modalActionType === "reject"
+                  ? "Rejection Reason"
+                  : "Update Comments"}
               </div>
               <textarea
                 className="w-full border rounded p-2 mb-4"
                 rows={3}
                 value={mailRemarks}
                 onChange={(e) => setMailRemarks(e.target.value)}
-                placeholder={isProjectTeam ? "Enter update comments..." : 
-                             isTestEngineer && test.status === "Started" ? "Enter reason for re-edit..." :
-                             "Enter reason for rejection..."}
+                placeholder={
+                  modalActionType === "re-edit"
+                    ? "Enter reason for re-edit..."
+                    : modalActionType === "reject"
+                    ? "Enter reason for rejection..."
+                    : "Enter update comments..."
+                }
               />
               <div className="flex justify-end gap-2">
                 <Button
@@ -1144,7 +1164,9 @@ export default function EditTestOrder() {
                 </Button>
                 <Button
                   className={`${
-                    isTestEngineer && test.status !== "Started"
+                    modalActionType === "re-edit"
+                      ? "bg-blue-600"
+                      : modalActionType === "reject"
                       ? "bg-red-600"
                       : "bg-blue-600"
                   } text-white px-4 py-1 rounded`}
@@ -1153,9 +1175,9 @@ export default function EditTestOrder() {
                     if (isProjectTeam) {
                       handleSubmitMailRemarks();
                     } else if (isTestEngineer) {
-                      if (test.status === "Started") {
+                      if (modalActionType === "re-edit") {
                         handleStatusUpdate("Re-edit", mailRemarks);
-                      } else {
+                      } else if (modalActionType === "reject") {
                         handleStatusUpdate("Rejected", mailRemarks);
                       }
                     } else {

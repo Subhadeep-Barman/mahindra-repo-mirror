@@ -42,7 +42,7 @@ const truncateFilename = (filename) => {
 };
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
-const CHUNK_SIZE = 1024 * 1024;
+const CHUNK_SIZE = 64 * 1024 * 1024;
 
 // Add allowed file extensions mapping for different upload types
 const ALLOWED_EXTENSIONS_MAP = {

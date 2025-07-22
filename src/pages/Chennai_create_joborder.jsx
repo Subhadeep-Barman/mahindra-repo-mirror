@@ -820,7 +820,7 @@ export default function CreateJobOrder() {
       inertia_class: test.inertiaClass || "",
       dataset_name: test.datasetName || "",
       dpf: test.dpf || "",
-      dpfRegenOccurs: test.dpfRegenOccurs || "",
+      dpf_regen_occurs: test.dpfRegenOccurs || "",
       dataset_flashed:
         test.datasetflashed === "Yes"
           ? true
@@ -1056,7 +1056,7 @@ export default function CreateJobOrder() {
         datasetName: testOrder.dataset_name || "",
         inertiaClass: testOrder.inertia_class || "",
         dpf: testOrder.dpf || "",
-        dpfRegenOccurs: testOrder.dpfRegenOccurs || "",
+        dpfRegenOccurs: testOrder.dpf_regen_occurs || "",
         datasetflashed:
           testOrder.dataset_flashed === true
             ? "Yes"
@@ -1125,7 +1125,7 @@ export default function CreateJobOrder() {
       inertia_class: test.inertiaClass || "",
       dataset_name: test.datasetName || "",
       dpf: test.dpf || "",
-      dpfRegenOccurs: test.dpfRegenOccurs || "",
+      dpf_regen_occurs: test.dpfRegenOccurs || "",
       dataset_flashed:
         test.datasetflashed === "Yes"
           ? true
