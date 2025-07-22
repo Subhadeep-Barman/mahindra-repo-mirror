@@ -253,7 +253,11 @@ export default function NashikCreateJobOrder() {
     // Fetch vehicle body numbers (now returns both body number and vehicle number)
     (async () => {
       try {
-        const res = await axios.get(`${apiURL}/vehicle-body-numbers`);
+        // Pass department as query param for filtering
+        const res = await axios.get(
+          `${apiURL}/vehicle-body-numbers`,
+          { params: { department: form.department || "VTC_JO Nashik" } }
+        );
         setVehicleBodyNumbers(res.data || []);
       } catch (err) {
         setVehicleBodyNumbers([]);
@@ -262,7 +266,10 @@ export default function NashikCreateJobOrder() {
     // Fetch engine numbers from FastAPI endpoint
     (async () => {
       try {
-        const res = await axios.get(`${apiURL}/engine-numbers`);
+        const res = await axios.get(
+          `${apiURL}/engine-numbers`,
+          { params: { department: form.department || "VTC_JO Nashik" } }
+        );
         setEngineNumbers(res.data || []);
       } catch (err) {
         setEngineNumbers([]);

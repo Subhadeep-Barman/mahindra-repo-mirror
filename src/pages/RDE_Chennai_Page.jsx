@@ -134,12 +134,9 @@ export default function RDEChennaiPage() {
                   <ArrowBack className="h-5 w-5" />
                 </Button>
                 <div>
-                  <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
+                  <h1 className="text-sm font-medium text-black-600 dark:text-red-500 ">
                     RDE CHENNAI
                   </h1>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
-                    NEW JOB ORDER
-                  </h2>
                 </div>
               </div>
               <div className="flex items-center space-x-3">

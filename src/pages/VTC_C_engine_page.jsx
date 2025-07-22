@@ -50,7 +50,7 @@ export default function VTCEnginePage() {
   };
 
   const handleAddNewEngine = () => {
-    navigate("/chennai/engine/new");
+    navigate("/chennai/engine/new?department=VTC_JO%20Chennai");
   };
 
   const handleTabClick = (tab) => {
@@ -68,7 +68,10 @@ export default function VTCEnginePage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get(`${apiURL}/engines`);
+        // Add department param for VTC_JO Chennai
+        const res = await axios.get(`${apiURL}/engines`, {
+          params: { department: "VTC_JO Chennai" },
+        });
         // Only pick required fields for table
         setEngines(
           (res.data || []).map((e) => ({
@@ -268,7 +271,9 @@ export default function VTCEnginePage() {
       await axios.put(`${apiURL}/engines/${editId}`, payload);
       setEditOpen(false);
       // Refresh engine list
-      const res = await axios.get(`${apiURL}/engines`);
+      const res = await axios.get(`${apiURL}/engines`, {
+        params: { department: "VTC_JO Chennai" },
+      });
       setEngines(
         (res.data || []).map((e) => ({
           engineSerialNumber: e.engine_serial_number || "",

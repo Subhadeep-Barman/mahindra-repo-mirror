@@ -39,7 +39,11 @@ export default function VTCVehiclePage() {
   useEffect(() => {
     async function fetchVehicles() {
       try {
-        const response = await axios.get(`${apiURL}/vehicles`);
+        // Add department as query parameter
+        const department = "VTC_JO Chennai";
+        const response = await axios.get(
+          `${apiURL}/vehicles?department=${encodeURIComponent(department)}`
+        );
         // Only keep necessary fields for each vehicle
         const minimalVehicles = (response.data || []).map((v) => ({
           vehicle_serial_number: v.vehicle_serial_number,
@@ -86,7 +90,7 @@ export default function VTCVehiclePage() {
   };
 
   const handleAddNewVehicle = () => {
-    navigate("/vtcvehicle/new");
+    navigate("/vtcvehicle/new?department=VTC_JO%20Chennai");
   };
 
   const handlePageChange = (pageNumber) => {

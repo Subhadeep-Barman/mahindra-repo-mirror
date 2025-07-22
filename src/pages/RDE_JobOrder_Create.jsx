@@ -251,7 +251,11 @@ export default function RDECreateJobOrder() {
     // Fetch vehicle body numbers (now returns both body number and vehicle number)
     (async () => {
       try {
-        const res = await axios.get(`${apiURL}/vehicle-body-numbers`);
+        // Pass department as query param for filtering
+        const res = await axios.get(
+          `${apiURL}/vehicle-body-numbers`,
+          { params: { department: form.department || "RDE JO" } }
+        );
         setVehicleBodyNumbers(res.data || []);
       } catch (err) {
         setVehicleBodyNumbers([]);
@@ -260,7 +264,10 @@ export default function RDECreateJobOrder() {
     // Fetch engine numbers from FastAPI endpoint
     (async () => {
       try {
-        const res = await axios.get(`${apiURL}/engine-numbers`);
+        const res = await axios.get(
+          `${apiURL}/engine-numbers`,
+          { params: { department: form.department || "RDE JO" } }
+        );
         setEngineNumbers(res.data || []);
       } catch (err) {
         setEngineNumbers([]);
@@ -1162,10 +1169,9 @@ export default function RDECreateJobOrder() {
               variant="outline"
               className="bg-red-600 text-white px-3 py-1 rounded"
             >
-              Chennai Job Order
+              RDE Job Order
             </Button>
             <div className="flex flex-col">
-              <span className="font-semibold text-lg">New Job Order</span>
               {location.state?.isEdit && (
                 <span className="text-sm text-blue-600 font-medium">
                   {isLoading

@@ -50,16 +50,16 @@ export default function RDEnginePage() {
   };
 
   const handleAddNewEngine = () => {
-    navigate("/chennai/engine/new");
+    navigate("/chennai/engine/new?department=VTC_JO%20Nashik");
   };
 
   const handleTabClick = (tab) => {
     if (tab === "Job Order") {
-      navigate("/vtc-chennai");
+      navigate("/vtc-nashik");
     } else if (tab === "Vehicle") {
-      navigate("/vtccvehicle");
+      navigate("/nashik/vehicle");
     } else if (tab === "Engine") {
-      navigate("/vtcchennaiengine");
+      navigate("/nashik/engine");
     }
   };
 
@@ -68,7 +68,10 @@ export default function RDEnginePage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get(`${apiURL}/engines`);
+        // Add department param for VTC_JO Nashik
+        const res = await axios.get(`${apiURL}/engines`, {
+          params: { department: "VTC_JO Nashik" },
+        });
         // Only pick required fields for table
         setEngines(
           (res.data || []).map((e) => ({
@@ -268,7 +271,9 @@ export default function RDEnginePage() {
       await axios.put(`${apiURL}/engines/${editId}`, payload);
       setEditOpen(false);
       // Refresh engine list
-      const res = await axios.get(`${apiURL}/engines`);
+      const res = await axios.get(`${apiURL}/engines`, {
+        params: { department: "VTC_JO Nashik" },
+      });
       setEngines(
         (res.data || []).map((e) => ({
           engineSerialNumber: e.engine_serial_number || "",
@@ -324,11 +329,8 @@ export default function RDEnginePage() {
                 </Button>
                 <div>
                   <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
-                    VTC CHENNAI
+                    VTC NASHIK
                   </h1>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
-                    NEW ENGINE
-                  </h2>
                 </div>
               </div>
               <div className="flex items-center space-x-3">

@@ -50,7 +50,7 @@ export default function VTCEnginePage() {
   };
 
   const handleAddNewEngine = () => {
-    navigate("/chennai/engine/new");
+    navigate("/chennai/engine/new?department=RDE%20JO");
   };
 
   const handleTabClick = (tab) => {
@@ -68,7 +68,10 @@ export default function VTCEnginePage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get(`${apiURL}/engines`);
+        // Add department param for RDE JO
+        const res = await axios.get(`${apiURL}/engines`, {
+          params: { department: "RDE JO" },
+        });
         // Only pick required fields for table
         setEngines(
           (res.data || []).map((e) => ({
@@ -268,7 +271,9 @@ export default function VTCEnginePage() {
       await axios.put(`${apiURL}/engines/${editId}`, payload);
       setEditOpen(false);
       // Refresh engine list
-      const res = await axios.get(`${apiURL}/engines`);
+      const res = await axios.get(`${apiURL}/engines`, {
+        params: { department: "RDE JO" },
+      });
       setEngines(
         (res.data || []).map((e) => ({
           engineSerialNumber: e.engine_serial_number || "",
@@ -324,11 +329,8 @@ export default function VTCEnginePage() {
                 </Button>
                 <div>
                   <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
-                    VTC CHENNAI
+                    RDE CHENNAI
                   </h1>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
-                    NEW ENGINE
-                  </h2>
                 </div>
               </div>
               <div className="flex items-center space-x-3">

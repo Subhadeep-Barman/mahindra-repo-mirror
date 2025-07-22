@@ -3,12 +3,17 @@ import axios from "axios";
 import { Button } from "@/components/UI/button";
 import { ArrowBack } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import useStore from "@/store/useStore";
 import { useAuth } from "@/context/AuthContext";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
+const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
+
 export default function VehicleEngineForm({ onSubmit, onClear }) {
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const department = queryParams.get("department") || "VTC_JO Chennai";
   // Use global store for dropdowns
   const projectOptions = useStore((state) => state.projectOptions);
   const setProjectOptions = useStore((state) => state.setProjectOptions);
@@ -53,6 +58,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     gearRatio4: { numerator: "", denominator: "" },
     gearRatio5: { numerator: "", denominator: "" },
     reverseGearRatio: { numerator: "", denominator: "" },
+    department: department,
   });
 
   const handleChange = (e) => {
@@ -131,6 +137,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       id_of_updater: "", // id_of_updater handled by backend
       // updated_on: "",
       // id_of_creator, created_on, id_of_updater, updated_on handled by backend
+      department: form.department, // <-- add department to payload
     };
   }
 
@@ -166,6 +173,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       gearRatio4: "4th Gear Ratio",
       gearRatio5: "5th Gear Ratio",
       reverseGearRatio: "Reverse Gear Ratio",
+      department: "Department", // <-- add department to fieldNames
     };
 
     // Check for missing fields
@@ -237,6 +245,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       gearRatio4: { numerator: "", denominator: "" },
       gearRatio5: { numerator: "", denominator: "" },
       reverseGearRatio: { numerator: "", denominator: "" },
+      department: department
     });
     if (onClear) onClear();
   };
@@ -292,7 +301,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               </Button>
               <div>
                 <h1 className="text-lg font-semibold text-gray-800 dark:text-red-500">
-                  VTC CHENNAI
+                  NEW VEHICLE
                 </h1>
               </div>
             </div>
@@ -889,6 +898,19 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
                 placeholder="Enter denominator"
               />
             </div>
+          </div>
+          {/* Department */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Department <span className="text-red-500">*</span>
+            </label>
+            <input
+              name="department"
+              value={form.department}
+              readOnly
+              className="border rounded-lg px-3 py-2 w-full bg-gray-100 text-gray-500"
+              placeholder="Department"
+            />
           </div>
         </div>
         {/* Buttons */}
