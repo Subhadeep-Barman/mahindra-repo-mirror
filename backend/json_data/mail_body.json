@@ -1,30 +1,60 @@
 {
-    "job_created": {
-        "subject": "Job Created: {job_title}",
-        "body": "A new job '{job_title}' has been created by {created_by}."
-    },
-    "job_updated": {
-        "subject": "Job Updated: {job_title}",
-        "body": "The job '{job_title}' has been updated. Please review the changes."
-    },
-    "test_created": {
-        "subject": "Test Created: {test_name}",
-        "body": "A new test '{test_name}' has been created for job '{job_title}'."
-    },
-    "test_started": {
-        "subject": "Test Started: {test_name}",
-        "body": "The test '{test_name}' has started for job '{job_title}'."
-    },
-    "test_reedit": {
-        "subject": "Test Re-Edit: {test_name}",
-        "body": "The test '{test_name}' for job '{job_title}' requires re-editing."
-    },
-    "test_complete": {
-        "subject": "Test Complete: {test_name}",
-        "body": "The test '{test_name}' for job '{job_title}' has been completed."
-    },
-    "test_reject": {
-        "subject": "Test Rejected: {test_name}",
-        "body": "The test '{test_name}' for job '{job_title}' has been rejected."
-    }
+    "redirect_link": "https://dbmrs-test2.m-devsecops.com/",
+    "button_style": "background-color: #4CAF50; /* Green */ border: none; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 5px;",
+    "email_cases": [
+        {  
+            "id": "1",
+            "receivers": "TestEngineer",
+            "case": "Job Order Creation",
+            "body": {
+                "subject": "New Job Order Created",
+                "message": "A new job order has been created. Please review it at your earliest convenience."
+            }
+        },
+        {
+            "id": "2",
+            "receivers": "ProjectTeam",
+            "case": "Test Order Started",
+            "body": {
+                "subject": "Job Order Updated",
+                "message": "A job order has been updated. Please check the details."
+            }
+        },
+        {
+            "id": "3",
+            "receivers": "ProjectTeam",
+            "case": "Test Re-edit Request",
+            "body": {
+                "subject": "Job Order Rejected",
+                "message": "A job order has been rejected. Please review the rejection remarks."
+            }
+        },
+        {
+            "id": "4",
+            "receivers": "ProjectTeam",
+            "case": "Test Order Rejection",
+            "body": {
+                "subject": "Job Order Approved",
+                "message": "A job order has been approved. You can proceed with the next steps."
+            }
+        },
+        {
+            "id": "5",
+            "receivers": "TestEngineer",
+            "case": "Test Order Updated",
+            "body": {
+                "subject": "New Test Order Created",
+                "message": "A new test order has been created. Please review it at your earliest convenience."
+            }
+        },
+        {
+            "id": "6",
+            "receivers": "ProjectTeam",
+            "case": "Test Order Completed",
+            "body": {
+                "subject": "Test Order Completed",
+                "message": "A test order has been completed. Please check the results."
+            }
+        }
+    ]
 }

@@ -147,9 +147,10 @@ class JobOrder(Base):
 class RDEJobOrder(Base):
     __tablename__ = "RDEJobOrders"
     job_order_id = Column(String, primary_key=True)
+    project_code = Column(String, nullable=True)
     vehicle_serial_number = Column(String, nullable=True)
     vehicle_body_number = Column(String, nullable=True)
-    engine_id = Column(String, nullable=True)
+    engine_serial_number = Column(String, nullable=True)
     CoastDownData_id = Column(String, nullable=True)
     type_of_engine = Column(String, nullable=True)
     department = Column(String, nullable=True)
