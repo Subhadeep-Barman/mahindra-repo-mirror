@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
+import { Snackbar, Alert } from '@mui/material';
+import useStore from '@/store/useStore';
 
 // Auth & Home
 import Login from "./pages/login";
@@ -44,6 +46,8 @@ const ProtectedRoute = ({ element }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Remove snackbar state from here - it's not needed in ProtectedRoute
+
   useEffect(() => {
     console.log("Checking user login status...");
     const userCookies = document.cookie.split(";").find(cookie => cookie.trim().startsWith("userRole="));
@@ -64,15 +68,24 @@ const ProtectedRoute = ({ element }) => {
 };
 
 function App() {
+  // Move snackbar state to App component where Snackbar is rendered
+  const {
+    snackbarOpen,
+    snackbarMessage,
+    snackbarSeverity,
+    snackbarDuration,
+    setSnackbarOpen
+  } = useStore();
+
   return (
     <Router>
       <div className="p-4">
         <Routes>
           {/* Auth & Home */}
-          <Route path="/home" 
-          element={<ProtectedRoute element={<HomePage />} />} />
-          <Route path="/login"element={<Login />} />
-          <Route path="/default-login"element={<DefaultLogin />} />
+          <Route path="/home"
+            element={<ProtectedRoute element={<HomePage />} />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/default-login" element={<DefaultLogin />} />
 
           {/* Admin */}
           <Route path="/admin-portal" element={<ProtectedRoute element={<AdminPortal />} />} />
@@ -105,6 +118,21 @@ function App() {
           <Route path="/editTestOrder" element={<ProtectedRoute element={<EditTestOrder />} />} />
           <Route path="/authSuccess" element={<AuthSuccess />} />
         </Routes>
+
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={snackbarDuration}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <Alert
+            onClose={() => setSnackbarOpen(false)}
+            severity={snackbarSeverity}
+            sx={{ width: '100%' }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
       </div>
     </Router>
   );

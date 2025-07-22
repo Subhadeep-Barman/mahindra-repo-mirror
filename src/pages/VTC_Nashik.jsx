@@ -17,6 +17,8 @@ import { Card } from "@/components/UI/card";
 import { useState, useEffect } from "react";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
+import showSnackbar from "@/utils/showSnackbar";
+
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function VTCNashikPage() {
@@ -94,17 +96,29 @@ export default function VTCNashikPage() {
     }));
   };
 
+  // Handler for saving the updated job order
   const handleSaveJobOrder = async () => {
     if (!jobOrderEdit?.job_order_id) return;
     try {
+      showSnackbar("Updating job order...", "info");
+
       await axios.put(
-        `${apiURL}/joborders/${jobOrderEdit.job_order_id}`,
+        `${apiURL}/rde_joborders/${jobOrderEdit.job_order_id}`,
         jobOrderEdit
       );
+
       setModalOpen(false);
       fetchJobOrders();
+      showSnackbar(
+        `Job order ${jobOrderEdit.job_order_id} updated successfully!`,
+        "success"
+      );
     } catch (err) {
-      alert("Failed to update job order");
+      console.error("Error updating job order:", err);
+      showSnackbar(
+        "Failed to update job order: " + (err.response?.data?.detail || err.message),
+        "error"
+      );
     }
   };
 

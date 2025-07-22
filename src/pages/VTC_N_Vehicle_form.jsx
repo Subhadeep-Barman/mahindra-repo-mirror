@@ -3,6 +3,7 @@ import { Button } from "@/components/UI/button";
 import { ArrowBack } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
 import { useNavigate } from "react-router-dom";
+import showSnackbar from "@/utils/showSnackbar";
 
 export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
   // Replace these with your actual lists
@@ -96,11 +97,17 @@ export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
       }
     }
     if (missingFields.length > 0) {
-      alert("Please fill all fields.\nMissing: " + missingFields.join(", "));
+      showSnackbar(
+        "Please fill all fields. Missing: " + missingFields.join(", "),
+        "warning"
+      );
       return;
     }
     // Save to localStorage
     localStorage.setItem("vehicleFormData", JSON.stringify(form));
+
+    showSnackbar("Vehicle form saved successfully!", "success");
+
     if (onSubmit) onSubmit(form);
     else console.log(form);
   };
@@ -138,6 +145,9 @@ export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
       gearRatio5: { numerator: "", denominator: "" },
       reverseGearRatio: { numerator: "", denominator: "" },
     });
+
+    showSnackbar("Form cleared successfully!", "info");
+
     if (onClear) onClear();
   };
 
@@ -187,10 +197,10 @@ export default function VTCNashikVehicleForm({ onSubmit, onClear }) {
                   variant={activeTab === tab ? "default" : "outline"}
                   onClick={() => handleTabClick(tab)}
                   className={`rounded-xl ${tab === "Job Order"
+                    ? "bg-red-500 text-white hover:bg-red-600"
+                    : tab === "Vehicle" || tab === "Engine"
                       ? "bg-red-500 text-white hover:bg-red-600"
-                      : tab === "Vehicle" || tab === "Engine"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "text-red-500 border-red-500 hover:bg-red-50"
+                      : "text-red-500 border-red-500 hover:bg-red-50"
                     }`}
                 >
                   {tab}

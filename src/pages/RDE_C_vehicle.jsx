@@ -101,9 +101,10 @@ export default function VTCVehiclePage() {
       setEditForm(response.data); // full vehicle data
       setEditOpen(true);
     } catch (err) {
-      alert(
+      showSnackbar(
         "Error fetching vehicle details: " +
-          (err.response?.data?.detail || err.message)
+        (err.response?.data?.detail || err.message),
+        "error"
       );
     }
   };
@@ -129,6 +130,9 @@ export default function VTCVehiclePage() {
       setEditOpen(false);
       setEditVehicle(null);
       setEditForm(null);
+
+      showSnackbar("Vehicle updated successfully!", "success");
+
       // Refresh list
       const response = await axios.get(`${apiURL}/vehicles`);
       const minimalVehicles = (response.data || []).map((v) => ({
@@ -142,8 +146,9 @@ export default function VTCVehiclePage() {
       }));
       setVehicles(minimalVehicles);
     } catch (err) {
-      alert(
-        "Error updating vehicle: " + (err.response?.data?.detail || err.message)
+      showSnackbar(
+        "Error updating vehicle: " + (err.response?.data?.detail || err.message),
+        "error"
       );
     }
   };
@@ -166,7 +171,7 @@ export default function VTCVehiclePage() {
               </Button>
               <div>
                 <h1 className="text-sm font-medium text-gray-600 dark:text-red-500">
-                  VTC CHENNAI
+                  RDE CHENNAI
                 </h1>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
                   NEW VEHICLE
@@ -180,10 +185,9 @@ export default function VTCVehiclePage() {
                   key={tab}
                   onClick={() => handleTabClick(tab)}
                   className={`rounded-xl px-4 py-2 font-semibold border
-                    ${
-                      activeTab === tab
-                        ? "bg-red-500 text-white border-red-500"
-                        : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                    ${activeTab === tab
+                      ? "bg-red-500 text-white border-red-500"
+                      : "bg-white text-red-500 border-red-500 hover:bg-red-50"
                     }
                   `}
                 >

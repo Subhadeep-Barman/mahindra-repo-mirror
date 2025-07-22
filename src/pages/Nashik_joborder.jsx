@@ -1169,7 +1169,7 @@ export default function NashikCreateJobOrder() {
               variant="outline"
               className="bg-red-600 text-white px-3 py-1 rounded"
             >
-              Nashik Job Orderrrr
+              Nashik Job Order
             </Button>
             <div className="flex flex-col">
               {location.state?.isEdit && (

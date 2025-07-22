@@ -19,6 +19,8 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import CFTMembers from "@/components/CFTMembers";
+import showSnackbar from "@/utils/showSnackbar";
+
 const apiURL = import.meta.env.VITE_BACKEND_URL
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
@@ -688,13 +690,17 @@ export default function CreateJobOrder() {
       }
       setJobOrderId(job_order_id);
 
-      alert("Job Order Created! ID: " + jobOrderRes.data.job_order_id);
+      showSnackbar(
+        "Job Order Created! ID: " + jobOrderRes.data.job_order_id,
+        "success"
+      );
       // Optionally, reset form or navigate
     } catch (err) {
       console.error("Error creating job order:", err);
-      alert(
+      showSnackbar(
         "Failed to create job order: " +
-        (err.response?.data?.detail || err.message)
+        (err.response?.data?.detail || err.message),
+        "error"
       );
     }
   };
@@ -705,8 +711,9 @@ export default function CreateJobOrder() {
 
     // Validate required fields
     if (!test.objective) {
-      alert(
-        "Please fill in the objective of the test before creating test order."
+      showSnackbar(
+        "Please fill in the objective of the test before creating test order.",
+        "warning"
       );
       return;
     }
@@ -777,9 +784,10 @@ export default function CreateJobOrder() {
         console.log("Test-specific coast down data created:", CoastDownData_id);
       } catch (err) {
         console.error("Error creating test-specific coast down data:", err);
-        alert(
+        showSnackbar(
           "Failed to create coast down data for test: " +
-          (err.response?.data?.detail || err.message)
+          (err.response?.data?.detail || err.message),
+          "error"
         );
         return;
       }
@@ -847,20 +855,21 @@ export default function CreateJobOrder() {
             : t
         )
       );
-
-      alert(
+      showSnackbar(
         "Test Order Created! ID: " +
         response.data.test_order_id +
         (hasTestSpecificCoastDownData
-          ? "\nCoast Down Data ID: " + CoastDownData_id
-          : "")
+          ? " | Coast Down Data ID: " + CoastDownData_id
+          : ""),
+        "success"
       );
       navigate("/vtc-chennai");
     } catch (err) {
       console.error("Error creating test order:", err);
-      alert(
+      showSnackbar(
         "Failed to create test order: " +
-        (err.response?.data?.detail || err.message)
+        (err.response?.data?.detail || err.message),
+        "error"
       );
     }
 
@@ -1069,7 +1078,7 @@ export default function CreateJobOrder() {
   const handleUpdateTestOrder = async (idx) => {
     const test = tests[idx];
     if (!test.testOrderId) {
-      alert("No test order selected for update.");
+      showSnackbar("No test order selected for update.", "warning");
       return;
     }
     // If ProjectTeam is updating a test in Re-edit status, set status to 'Started' (under progress)
@@ -1125,13 +1134,14 @@ export default function CreateJobOrder() {
     };
     try {
       await updateTestOrder(test.testOrderId, testOrderPayload);
-      alert("Test Order updated successfully!");
+      showSnackbar("Test Order updated successfully!", "success");
       fetchAllTestOrders();
       setEditingTestOrderIdx(null);
     } catch (err) {
-      alert(
+      showSnackbar(
         "Failed to update test order: " +
-        (err.response?.data?.detail || err.message)
+        (err.response?.data?.detail || err.message),
+        "error"
       );
     }
   };
@@ -1188,7 +1198,7 @@ export default function CreateJobOrder() {
       // Clear the re-edit remarks from local state
       setReEditRemarks((prev) => ({ ...prev, [idx]: "" }));
     } catch (err) {
-      alert("Failed to submit re-edit remarks: " + err.message);
+      showSnackbar("Failed to submit re-edit remarks: " + err.message, "error");
     }
   };
 
@@ -1199,7 +1209,7 @@ export default function CreateJobOrder() {
       await handleStatusUpdate("Rejected", rejectionRemarks[idx], testOrderId, idx);
       setRejectionModalOpen(false);
     } catch (err) {
-      alert("Failed to submit rejection remarks: " + err.message);
+      showSnackbar("Failed to submit rejection remarks: " + err.message, "error");
     }
   };
 
@@ -1219,9 +1229,9 @@ export default function CreateJobOrder() {
         status: newStatus,
       });
       setMailRemarksModalOpen(false);
-      alert("Test order updated successfully!");
+      showSnackbar("Test order updated successfully!", "success");
     } catch (err) {
-      alert("Failed to submit mail remarks: " + err.message);
+      showSnackbar("Failed to submit mail remarks: " + err.message, "error");
     }
   };
 
@@ -1254,7 +1264,10 @@ export default function CreateJobOrder() {
       setRemarkInput("");
       setRemarkModalOpen(false);
     } catch (err) {
-      alert("Failed to update status: " + (err.response?.data?.detail || err.message));
+      showSnackbar(
+        "Failed to update status: " + (err.response?.data?.detail || err.message),
+        "error"
+      );
     }
   };
 
@@ -1796,11 +1809,12 @@ export default function CreateJobOrder() {
                 onClick={async () => {
                   try {
                     await handleUpdateCoastDownData(existingCoastDownId);
-                    alert("Coast Down Data updated successfully!");
+                    showSnackbar("Coast Down Data updated successfully!", "success");
                   } catch (err) {
-                    alert(
+                    showSnackbar(
                       "Failed to update coast down data: " +
-                      (err.response?.data?.detail || err.message)
+                      (err.response?.data?.detail || err.message),
+                      "error"
                     );
                   }
                 }}

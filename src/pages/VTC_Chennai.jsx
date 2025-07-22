@@ -17,6 +17,8 @@ import { Card } from "@/components/UI/card";
 import { useState, useEffect } from "react";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
+import showSnackbar from "@/utils/showSnackbar";
+
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function VTCChennaiPage() {
@@ -115,17 +117,28 @@ export default function VTCChennaiPage() {
   const handleSaveJobOrder = async () => {
     if (!jobOrderEdit?.job_order_id) return;
     try {
+      showSnackbar("Updating job order...", "info");
+
       await axios.put(
-        `${apiURL}/joborders/${jobOrderEdit.job_order_id}`,
+        `${apiURL}/rde_joborders/${jobOrderEdit.job_order_id}`,
         jobOrderEdit
       );
+
       setModalOpen(false);
       fetchJobOrders();
+      showSnackbar(
+        `Job order ${jobOrderEdit.job_order_id} updated successfully!`,
+        "success"
+      );
     } catch (err) {
-      alert("Failed to update job order");
+      console.error("Error updating job order:", err);
+      showSnackbar(
+        "Failed to update job order: " + (err.response?.data?.detail || err.message),
+        "error"
+      );
     }
   };
-
+  
   return (
     <>
       <Navbar1 />
@@ -244,9 +257,8 @@ export default function VTCChennaiPage() {
                   {currentRows.map((order, index) => (
                     <TableRow
                       key={order.job_order_id || index}
-                      className={`${
-                        index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                      } hover:bg-gray-100`}
+                      className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                        } hover:bg-gray-100`}
                     >
                       <TableCell
                         className="text-xs text-blue-600 underline cursor-pointer px-4 py-2"
@@ -297,14 +309,14 @@ export default function VTCChennaiPage() {
                       <TableCell className="text-xs text-gray-600 px-4 py-2">
                         {order.updated_on
                           ? new Date(order.updated_on).toLocaleString("en-IN", {
-                              timeZone: "Asia/Kolkata",
-                              hour12: true,
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
+                            timeZone: "Asia/Kolkata",
+                            hour12: true,
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
                           : "N/A"}
                       </TableCell>
                     </TableRow>
@@ -346,11 +358,10 @@ export default function VTCChennaiPage() {
                     variant={currentPage === page ? "default" : "outline"}
                     size="sm"
                     onClick={() => handlePageChange(page)}
-                    className={`${
-                      currentPage === page
-                        ? "bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black"
-                        : "text-gray-600 dark:text-white dark:border-gray-600"
-                    } px-3 py-1`}
+                    className={`${currentPage === page
+                      ? "bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black"
+                      : "text-gray-600 dark:text-white dark:border-gray-600"
+                      } px-3 py-1`}
                   >
                     {page}
                   </Button>

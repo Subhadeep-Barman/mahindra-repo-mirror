@@ -6,6 +6,8 @@ import Navbar1 from "@/components/UI/navbar";
 import { useNavigate } from "react-router-dom";
 import useStore from "@/store/useStore";
 import { useAuth } from "@/context/AuthContext";
+import showSnackbar from "@/utils/showSnackbar";
+
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function VehicleEngineForm({ onSubmit, onClear }) {
@@ -185,9 +187,9 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       }
     }
     if (missingFields.length > 0) {
-      alert(
-        "Please fill all fields.\nMissing: " +
-        missingFields.join(", ")
+      showSnackbar(
+        "Please fill all fields. Missing: " + missingFields.join(", "),
+        "warning"
       );
       return;
     }
@@ -198,10 +200,11 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         headers: { "Content-Type": "application/json" },
       });
       if (onSubmit) onSubmit(response.data);
-      else alert("Vehicle added successfully!");
+      else showSnackbar("Vehicle added successfully!", "success");
     } catch (err) {
-      alert(
-        "Error adding vehicle: " + (err.response?.data?.detail || err.message)
+      showSnackbar(
+        "Error adding vehicle: " + (err.response?.data?.detail || err.message),
+        "error"
       );
     }
   };

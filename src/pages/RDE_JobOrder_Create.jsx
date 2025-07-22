@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/UI/button";
 import { Input } from "@/components/UI/input";
@@ -13,11 +11,12 @@ import {
 } from "@/components/UI/select";
 import Navbar1 from "@/components/UI/navbar";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Switch } from "@/components/UI/switch";
 import useStore from "@/store/useStore";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import CFTMembers from "@/components/CFTMembers";
+import showSnackbar from "@/utils/showSnackbar";
+
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
@@ -662,13 +661,17 @@ export default function RDECreateJobOrder() {
         await axios.post(`${apiURL}/coastdown`, coastDownPayload);
       }
 
-      alert("RDE Job Order Created! ID: " + jobOrderRes.data.job_order_id);
+      showSnackbar(
+        "RDE Job Order Created! ID: " + jobOrderRes.data.job_order_id,
+        "success"
+      );
       // Optionally, reset form or navigate
     } catch (err) {
       console.error("Error creating RDE job order:", err);
-      alert(
+      showSnackbar(
         "Failed to create RDE job order: " +
-        (err.response?.data?.detail || err.message)
+        (err.response?.data?.detail || err.message),
+        "error"
       );
     }
   };
@@ -679,8 +682,9 @@ export default function RDECreateJobOrder() {
 
     // Validate required fields
     if (!test.objective) {
-      alert(
-        "Please fill in the objective of the test before creating test order."
+      showSnackbar(
+        "Please fill in the objective of the test before creating test order.",
+        "warning"
       );
       return;
     }
@@ -750,9 +754,10 @@ export default function RDECreateJobOrder() {
         console.log("Test-specific coast down data created:", CoastDownData_id);
       } catch (err) {
         console.error("Error creating test-specific coast down data:", err);
-        alert(
+        showSnackbar(
           "Failed to create coast down data for test: " +
-          (err.response?.data?.detail || err.message)
+          (err.response?.data?.detail || err.message),
+          "error"
         );
         return;
       }
@@ -809,19 +814,21 @@ export default function RDECreateJobOrder() {
         )
       );
 
-      alert(
+      showSnackbar(
         "Test Order Created! ID: " +
         response.data.test_order_id +
         (hasTestSpecificCoastDownData
-          ? "\nCoast Down Data ID: " + CoastDownData_id
-          : "")
+          ? " | Coast Down Data ID: " + CoastDownData_id
+          : ""),
+        "success"
       );
       navigate("/rde-chennai");
     } catch (err) {
       console.error("Error creating test order:", err);
-      alert(
+      showSnackbar(
         "Failed to create test order: " +
-        (err.response?.data?.detail || err.message)
+        (err.response?.data?.detail || err.message),
+        "error"
       );
     }
   };
@@ -1013,7 +1020,7 @@ export default function RDECreateJobOrder() {
   const handleUpdateTestOrder = async (idx) => {
     const test = tests[idx];
     if (!test.testOrderId) {
-      alert("No test order selected for update.");
+      showSnackbar("No test order selected for update.", "warning");
       return;
     }
     // Prepare payload matching API schema
@@ -1054,13 +1061,14 @@ export default function RDECreateJobOrder() {
     };
     try {
       await updateTestOrder(test.testOrderId, testOrderPayload);
-      alert("Test Order updated successfully!");
+      showSnackbar("Test Order updated successfully!", "success");
       fetchAllTestOrders();
       setEditingTestOrderIdx(null);
     } catch (err) {
-      alert(
+      showSnackbar(
         "Failed to update test order: " +
-        (err.response?.data?.detail || err.message)
+        (err.response?.data?.detail || err.message),
+        "error"
       );
     }
   };
@@ -1094,7 +1102,10 @@ export default function RDECreateJobOrder() {
       setRemarkInput("");
       setRemarkModalOpen(false);
     } catch (err) {
-      alert("Failed to update status: " + (err.response?.data?.detail || err.message));
+      showSnackbar(
+        "Failed to update status: " + (err.response?.data?.detail || err.message),
+        "error"
+      );
     }
   };
 
@@ -1735,11 +1746,12 @@ export default function RDECreateJobOrder() {
                 onClick={async () => {
                   try {
                     await handleUpdateCoastDownData(existingCoastDownId);
-                    alert("Coast Down Data updated successfully!");
+                    showSnackbar("Coast Down Data updated successfully!", "success");
                   } catch (err) {
-                    alert(
+                    showSnackbar(
                       "Failed to update coast down data: " +
-                      (err.response?.data?.detail || err.message)
+                      (err.response?.data?.detail || err.message),
+                      "error"
                     );
                   }
                 }}
