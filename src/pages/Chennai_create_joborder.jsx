@@ -613,6 +613,51 @@ export default function CreateJobOrder() {
     }));
   };
 
+  // 1. Add handleSendMail function
+  const [mailLoading, setMailLoading] = useState(false);
+
+  const handleSendMail = async (caseId, useBackendJobOrderID = false) => {
+    setMailLoading(true);
+    try {
+      // Use backendJobOrderID from store if requested, else use jobOrderId from form/state
+      const resolvedJobOrderId = useBackendJobOrderID
+        ? useStore.getState().backendJobOrderID
+        : jobOrderId || useStore.getState().backendJobOrderID;
+
+      if (!resolvedJobOrderId) {
+        showSnackbar("Job Order ID is missing. Cannot send mail.", "error");
+        setMailLoading(false);
+        return;
+      }
+
+      // Compose payload as per new API
+      const payload = {
+        user_name: userName,
+        token_id: userId,
+        jobOrderId: resolvedJobOrderId,
+        caseId: String(caseId),
+        cft_members: cftMembers,
+      };
+
+      // Debug: log payload before sending
+      console.log("Sending mail with payload:", payload);
+
+      const response = await axios.post(`${apiURL}/mail/send`, payload);
+
+      if (response.status === 200) {
+        showSnackbar("Mail sent successfully", "success");
+      } else {
+        showSnackbar("Failed to send mail", "error");
+        console.error("Mail API responded with status:", response.status, response.data);
+      }
+    } catch (error) {
+      showSnackbar("Error sending mail: " + (error?.message || "Unknown error"), "warning");
+      console.error("Error sending mail", error);
+    } finally {
+      setMailLoading(false);
+    }
+  };
+
   // Handler for creating job order
   const handleCreateJobOrder = async (e) => {
     e.preventDefault();
@@ -703,7 +748,7 @@ export default function CreateJobOrder() {
         "Job Order Created! ID: " + jobOrderRes.data.job_order_id,
         "success"
       );
-      
+      await handleSendMail(1);
       navigate("vtc-chennai");
     } catch (err) {
       console.error("Error creating job order:", err);
