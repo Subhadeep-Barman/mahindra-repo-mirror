@@ -22,14 +22,14 @@ import RDEnginePage from "./pages/RDE_C_engine_page";
 
 // VTC Nashik
 import VTCNashikPage from "./pages/VTC_Nashik";
-import NashikJobOrder from "./pages/Nashik_joborder";
+import NashikJobOrder from "./pages/Nashik_create_joborder";
 import VTCNashikVehicle from "./pages/VTC_N_vehicle";
 import NEngine from "./pages/VTC_N_Engine";
 import VTCNashikVehicleForm from "./pages/VTC_N_Vehicle_form";
 
 // RDE
 import RDEChennaiPage from "./pages/RDE_Chennai_Page";
-import RDE_JobOrder_Create from "./pages/RDE_JobOrder_Create";
+import RDE_JobOrder_Create from "./pages/RDE_create_joborder";
 // import RDEJobOrder from "./pages/RDE_JOBORDER";
 import RDEVehicle from "./pages/RDE_C_vehicle";
 import RDEEngine from "./pages/RDE_Engine";

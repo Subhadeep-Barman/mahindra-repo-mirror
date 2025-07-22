@@ -1465,29 +1465,29 @@ export default function RDECreateJobOrder() {
             </Select>
           </div>
           {/* Show manual entry field only if 'Manual Entry' is selected */}
-            {form.vehicleTestPayloadCriteria === "Manual Entry" && (
-              <div className="flex flex-col">
-                <Label htmlFor="requestedPayloadKg">
-                  Requested Payload in kgs <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="requestedPayloadKg"
-                  value={form.requestedPayloadKg}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      requestedPayloadKg: e.target.value,
-                    }))
-                  }
-                  required
-                  disabled={formDisabled}
-                  className="w-44"
-                  placeholder="Enter Requested Payload"
-                  type="number"
-                  min="0"
-                />
-              </div>
-            )}
+          {form.vehicleTestPayloadCriteria === "Manual Entry" && (
+            <div className="flex flex-col">
+              <Label htmlFor="requestedPayloadKg">
+                Requested Payload in kgs <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="requestedPayloadKg"
+                value={form.requestedPayloadKg}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    requestedPayloadKg: e.target.value,
+                  }))
+                }
+                required
+                disabled={formDisabled}
+                className="w-44"
+                placeholder="Enter Requested Payload"
+                type="number"
+                min="0"
+              />
+            </div>
+          )}
           {/* Idle Exhaust Mass Flow */}
           <div className="flex flex-col">
             <Label htmlFor="idleExhaustMassFlow">
@@ -1540,7 +1540,7 @@ export default function RDECreateJobOrder() {
                         }
                         className="mt-1"
                         disabled={!vehicleEditMode || isTestEngineer}
-                        // disabled={formDisabled}
+                      // disabled={formDisabled}
                       />
                     </div>
                   ))}
@@ -1609,7 +1609,7 @@ export default function RDECreateJobOrder() {
             className="w-80 mt-1"
             value={form.cdReportRef}
             onChange={(e) => handleCDNumberInput("cdReportRef", e.target.value)}
-            disabled={formDisabled}
+            disabled={formDisabled || isTestEngineer}
           />
           {cdFieldErrors.cdReportRef && (
             <div className="text-red-600 text-xs mt-1">{cdFieldErrors.cdReportRef}</div>
@@ -1627,7 +1627,7 @@ export default function RDECreateJobOrder() {
                 className="mt-1"
                 value={form.vehicleRefMass}
                 onChange={(e) => handleCDNumberInput("vehicleRefMass", e.target.value)}
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.vehicleRefMass && (
                 <div className="text-red-600 text-xs mt-1">{cdFieldErrors.vehicleRefMass}</div>
@@ -1643,7 +1643,7 @@ export default function RDECreateJobOrder() {
                 className="mt-1"
                 value={form.aN}
                 onChange={(e) => handleCDNumberInput("aN", e.target.value)}
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.aN && (
                 <div className="text-red-600 text-xs mt-1">{cdFieldErrors.aN}</div>
@@ -1659,7 +1659,7 @@ export default function RDECreateJobOrder() {
                 className="mt-1"
                 value={form.bNkmph}
                 onChange={(e) => handleCDNumberInput("bNkmph", e.target.value)}
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.bNkmph && (
                 <div className="text-red-600 text-xs mt-1">{cdFieldErrors.bNkmph}</div>
@@ -1675,7 +1675,7 @@ export default function RDECreateJobOrder() {
                 className="mt-1"
                 value={form.cNkmph2}
                 onChange={(e) => handleCDNumberInput("cNkmph2", e.target.value)}
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.cNkmph2 && (
                 <div className="text-red-600 text-xs mt-1">{cdFieldErrors.cNkmph2}</div>
@@ -1691,7 +1691,7 @@ export default function RDECreateJobOrder() {
                 className="mt-1"
                 value={form.f0N}
                 onChange={(e) => handleCDNumberInput("f0N", e.target.value)}
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.f0N && (
                 <div className="text-red-600 text-xs mt-1">{cdFieldErrors.vehicleRefMass}</div>
@@ -1707,7 +1707,7 @@ export default function RDECreateJobOrder() {
                 className="mt-1"
                 value={form.f1Nkmph}
                 onChange={(e) => handleCDNumberInput("f1Nkmph", e.target.value)}
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.f1Nkmph && (
                 <div className="text-red-600 text-xs mt-1">{cdFieldErrors.f1Nkmph}</div>
@@ -1723,7 +1723,7 @@ export default function RDECreateJobOrder() {
                 className="mt-1"
                 value={form.f2Nkmph2}
                 onChange={(e) => handleCDNumberInput("f2Nkmph2", e.target.value)}
-                disabled={formDisabled}
+                disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.f2Nkmph2 && (
                 <div className="text-red-600 text-xs mt-1">{cdFieldErrors.f2Nkmph2}</div>

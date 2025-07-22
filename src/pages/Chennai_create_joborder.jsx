@@ -69,6 +69,7 @@ export default function CreateJobOrder() {
   const [engineFormData, setEngineFormData] = useState(null);
   const [showCFTPanel, setShowCFTPanel] = useState(false);
   const [cdFieldErrors, setCdFieldErrors] = useState({});
+  const [cdError, setCdError] = useState("");
 
   // State to control pre-filling mode to prevent useEffect conflicts
   const [isPreFilling, setIsPreFilling] = useState(false);
@@ -1250,13 +1251,13 @@ export default function CreateJobOrder() {
         setTests((prev) =>
           prev.map((t, i) =>
             i === testIdx
-              ? { 
-                  ...t, 
-                  status,
-                  // Store remarks based on status type
-                  ...(status === "Re-edit" && { re_edit_remarks: remark }),
-                  ...(status === "Rejected" && { rejection_remarks: remark })
-                }
+              ? {
+                ...t,
+                status,
+                // Store remarks based on status type
+                ...(status === "Re-edit" && { re_edit_remarks: remark }),
+                ...(status === "Rejected" && { rejection_remarks: remark })
+              }
               : t
           )
         );
@@ -1332,13 +1333,13 @@ export default function CreateJobOrder() {
   const areTestFieldsEditable = (test, idx) => {
     // If test is disabled globally, don't allow editing
     if (test.disabled) return false;
-    
+
     // If test order is already created and not in edit mode, don't allow editing
     if (!!test.testOrderId && editingTestOrderIdx !== idx) return false;
-    
+
     // TestEngineer cannot edit fields
     if (isTestEngineer) return false;
-    
+
     // ProjectTeam can edit if:
     // 1. Test order is being created (no testOrderId)
     // 2. Test order is in Re-edit status and currently being edited
@@ -1347,7 +1348,7 @@ export default function CreateJobOrder() {
       if (test.status === "Re-edit" && editingTestOrderIdx === idx) return true; // Editing re-edit test
       return false;
     }
-    
+
     // For other roles, follow existing logic
     return !test.disabled && (!test.testOrderId || editingTestOrderIdx === idx);
   };
@@ -1654,9 +1655,7 @@ export default function CreateJobOrder() {
             placeholder="Enter Coast Test Report Ref."
             className="w-80 mt-1"
             value={form.cdReportRef}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, cdReportRef: e.target.value }))
-            }
+            onChange={(e) => handleCDNumberInput("cdReportRef", e.target.value)}
             disabled={formDisabled || isTestEngineer}
           />
           {cdFieldErrors.cdReportRef && (
@@ -1674,12 +1673,7 @@ export default function CreateJobOrder() {
                 placeholder="Enter Vehicle Reference mass (Kg)"
                 className="mt-1"
                 value={form.vehicleRefMass}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    vehicleRefMass: e.target.value,
-                  }))
-                }
+                onChange={(e) => handleCDNumberInput("vehicleRefMass", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.vehicleRefMass && (
@@ -1695,9 +1689,7 @@ export default function CreateJobOrder() {
                 placeholder="Enter A (N)"
                 className="mt-1"
                 value={form.aN}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, aN: e.target.value }))
-                }
+                onChange={(e) => handleCDNumberInput("aN", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.aN && (
@@ -1713,9 +1705,7 @@ export default function CreateJobOrder() {
                 placeholder="Enter B (N/kmph)"
                 className="mt-1"
                 value={form.bNkmph}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, bNkmph: e.target.value }))
-                }
+                onChange={(e) => handleCDNumberInput("bNkmph", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.bNkmph && (
@@ -1731,9 +1721,7 @@ export default function CreateJobOrder() {
                 placeholder="Enter C (N/kmph^2)"
                 className="mt-1"
                 value={form.cNkmph2}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, cNkmph2: e.target.value }))
-                }
+                onChange={(e) => handleCDNumberInput("cNkmph2", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.cNkmph2 && (
@@ -1749,9 +1737,7 @@ export default function CreateJobOrder() {
                 placeholder="Enter F0 (N)"
                 className="mt-1"
                 value={form.f0N}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, f0N: e.target.value }))
-                }
+                onChange={(e) => handleCDNumberInput("f0N", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.f0N && (
@@ -1767,9 +1753,7 @@ export default function CreateJobOrder() {
                 placeholder="Enter F1 (N/kmph)"
                 className="mt-1"
                 value={form.f1Nkmph}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, f1Nkmph: e.target.value }))
-                }
+                onChange={(e) => handleCDNumberInput("f1Nkmph", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.f1Nkmph && (
@@ -1785,13 +1769,11 @@ export default function CreateJobOrder() {
                 placeholder="Enter F2 (N/kmph^2)"
                 className="mt-1"
                 value={form.f2Nkmph2}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, f2Nkmph2: e.target.value }))
-                }
+                onChange={(e) => handleCDNumberInput("f2Nkmph2", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
-              {cdFieldErrors.f2Nkmph2 && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.f2Nkmph2}</div>
+              {cdError && (
+                <div className="text-red-600 text-xs mt-2">{cdError}</div>
               )}
             </div>
           </div>
@@ -2343,7 +2325,7 @@ export default function CreateJobOrder() {
                 <div>
                   <Label>Emission Check Attachment</Label>
                   <DropzoneFileList
-                    buttonText="Emission Check Attachment"  
+                    buttonText="Emission Check Attachment"
                     name="Emission_check"
                     maxFiles={5}
                     formData={{
@@ -2546,7 +2528,7 @@ export default function CreateJobOrder() {
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => {}}
+                    setSubmitted={() => { }}
                     openModal={!!pdfReportModals[idx]}
                     handleOpenModal={() =>
                       setpdfReportModals((prev) => ({ ...prev, [idx]: true }))
@@ -2579,7 +2561,7 @@ export default function CreateJobOrder() {
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => {}}
+                    setSubmitted={() => { }}
                     openModal={!!excelReportModals[idx]}
                     handleOpenModal={() =>
                       setexcelReportModals((prev) => ({ ...prev, [idx]: true }))
@@ -2611,7 +2593,7 @@ export default function CreateJobOrder() {
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => {}}
+                    setSubmitted={() => { }}
                     openModal={!!datFileModals[idx]}
                     handleOpenModal={() =>
                       setDATModals((prev) => ({ ...prev, [idx]: true }))
@@ -2643,7 +2625,7 @@ export default function CreateJobOrder() {
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => {}}
+                    setSubmitted={() => { }}
                     openModal={!!othersModals[idx]}
                     handleOpenModal={() =>
                       setOthersModals((prev) => ({ ...prev, [idx]: true }))
@@ -2967,13 +2949,13 @@ export default function CreateJobOrder() {
                           return (
                             <Button
                               className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
-                              onClick={() => navigate('/editTestOrder', { 
-                                state: { 
-                                  testOrder: to, 
+                              onClick={() => navigate('/editTestOrder', {
+                                state: {
+                                  testOrder: to,
                                   jobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id,
                                   returnPath: location.pathname,
                                   returnState: location.state
-                                } 
+                                }
                               })}
                             >
                               Edit
@@ -2985,13 +2967,13 @@ export default function CreateJobOrder() {
                           return (
                             <Button
                               className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
-                              onClick={() => navigate('/editTestOrder', { 
-                                state: { 
-                                  testOrder: to, 
+                              onClick={() => navigate('/editTestOrder', {
+                                state: {
+                                  testOrder: to,
                                   jobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id,
                                   returnPath: location.pathname,
                                   returnState: location.state
-                                } 
+                                }
                               })}
                             >
                               Edit
