@@ -6,7 +6,8 @@ import json
 import uuid
 import aiofiles
 from fastapi import APIRouter, HTTPException, Depends, Body, UploadFile, File, Form
-from typing import List, Optional
+from typing import List, Optional, Union
+from fastapi import Query
 from datetime import datetime, date
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -84,15 +85,15 @@ class TestOrderSchema(BaseModel):
     preferred_date: Optional[date] = None
     emission_check_date: Optional[date] = None
     emission_check_attachment: Optional[str] = None
-    dataset_attachment: Optional[str] = None
-    a2l_attachment: Optional[str] = None
-    experiment_attachment: Optional[str] = None
-    dbc_attachment: Optional[str] = None
-    wltp_attachment: Optional[str] = None
-    pdf_report: Optional[str] = None
-    excel_report: Optional[str] = None
-    dat_file_attachment: Optional[str] = None
-    others_attachement: Optional[str] = None
+    dataset_attachment: Optional[List[dict]] = None
+    a2l_attachment: Optional[List[dict]] = None
+    experiment_attachment: Optional[List[dict]] = None
+    dbc_attachment: Optional[List[dict]] = None
+    wltp_attachment: Optional[List[dict]] = None
+    pdf_report: Optional[List[dict]] = None
+    excel_report: Optional[List[dict]] = None
+    dat_file_attachment: Optional[List[dict]] = None
+    others_attachement: Optional[List[dict]] = None
     specific_instruction: Optional[str] = None
     remarks: Optional[str] = None
     rejection_remarks: Optional[str] = None
@@ -105,8 +106,35 @@ class TestOrderSchema(BaseModel):
     name_of_updater: Optional[str] = None
     updated_on: Optional[datetime] = None
 
+def extract_filename(value):
+    if isinstance(value, list):
+        # If list of dicts, extract all 'path' values and join with comma
+        return ",".join([v["path"] for v in value if isinstance(v, dict) and "path" in v])
+    if isinstance(value, dict) and "path" in value:
+        return value["path"]
+    return value
+
+def extract_attachment_list(value):
+    # Normalize to a list of dicts or None
+    if value is None:
+        return None
+    if isinstance(value, list):
+        # Only keep dicts
+        return [v for v in value if isinstance(v, dict)]
+    if isinstance(value, dict):
+        return [value]
+    # If it's a string, wrap as dict with 'path'
+    if isinstance(value, str):
+        return [{"path": value}]
+    return None
+
 def testorder_to_dict(testorder: TestOrder):
-    return {
+    # List of attachment fields that should always be lists in the response
+    attachment_fields = [
+        "dataset_attachment", "a2l_attachment", "experiment_attachment", "dbc_attachment",
+        "wltp_attachment", "pdf_report", "excel_report", "dat_file_attachment", "others_attachement"
+    ]
+    result = {
         "test_order_id": testorder.test_order_id,
         "job_order_id": testorder.job_order_id,
         "CoastDownData_id": testorder.CoastDownData_id,
@@ -149,17 +177,68 @@ def testorder_to_dict(testorder: TestOrder):
         "name_of_updater": testorder.name_of_updater,
         "updated_on": testorder.updated_on,
     }
+    # Ensure all attachment fields are lists (never empty string or None)
+    for key in attachment_fields:
+        val = result.get(key)
+        if val == "" or val is None:
+            result[key] = []
+    return result
 
 @router.post("/testorders", response_model=TestOrderSchema)
 def create_testorder_api(
-    testorder: TestOrderSchema = Body(...),
+    testorder: dict = Body(...),  # Accept as dict to preprocess
     db: Session = Depends(get_db)
 ):
-    testorder_data = testorder.dict(exclude_unset=True)
+    # List of attachment fields that should always be lists
+    attachment_fields = [
+        "dataset_attachment", "a2l_attachment", "experiment_attachment", "dbc_attachment",
+        "wltp_attachment", "pdf_report", "excel_report", "dat_file_attachment", "others_attachement"
+    ]
+    # Convert empty string values to empty lists for attachment fields
+    for key in attachment_fields:
+        if key in testorder and testorder[key] == "":
+            testorder[key] = []
+    # Now parse with Pydantic
+    testorder_obj = TestOrderSchema(**testorder)
+    testorder_data = testorder_obj.dict(exclude_unset=True)
+    # Normalize all attachment fields to list of dicts
+    for key in attachment_fields:
+        if key in testorder_data:
+            testorder_data[key] = extract_attachment_list(testorder_data[key])
     new_testorder = TestOrder(**testorder_data)
     db.add(new_testorder)
     db.commit()
     db.refresh(new_testorder)
+
+    # --- Debug and always check for any GCP folders with a "temporary" test_order_id and rename them ---
+    print("DEBUG: Entering GCP folder rename logic after test order creation")
+    # Add all likely temp IDs (test0, test1, test2, ..., test9) and the one sent by frontend
+    possible_temp_ids = set()
+    # Add the test_order_id sent in the request, if any (could be a temp or real)
+    if testorder.get("test_order_id"):
+        possible_temp_ids.add(str(testorder.get("test_order_id")))
+    # Add common temp IDs used by frontend (test0, test1, ..., test9)
+    for i in range(10):
+        possible_temp_ids.add(f"test{i}")
+    # Optionally, add more logic if your frontend uses other temp IDs
+    print(f"DEBUG: Possible temp IDs to check for renaming: {list(possible_temp_ids)}")
+
+    new_test_order_id = str(getattr(new_testorder, "test_order_id", ""))
+    job_order_id = str(getattr(new_testorder, "job_order_id", ""))
+    print(f"DEBUG: New test_order_id: {new_test_order_id}, job_order_id: {job_order_id}")
+
+    for temp_id in possible_temp_ids:
+        # Only rename if temp_id is not empty and not already the new id
+        if temp_id and temp_id != new_test_order_id:
+            print(f"DEBUG: Attempting to rename GCP folder from {temp_id} to {new_test_order_id}")
+            try:
+                rename_gcp_test_order_id(temp_id, new_test_order_id, job_order_id)
+                print(f"DEBUG: Rename function called for {temp_id} -> {new_test_order_id}")
+            except Exception as e:
+                print(f"DEBUG: Exception during GCP folder rename: {e}")
+                # Don't block creation if rename fails
+                pass
+
     return testorder_to_dict(new_testorder)
 
 @router.get("/testorders", response_model=List[TestOrderSchema])
@@ -185,6 +264,13 @@ def update_testorder(
         raise HTTPException(status_code=404, detail="TestOrder not found")
     update_data = testorder_update.dict(exclude_unset=True)
     update_data.pop("test_order_id", None)
+    # Normalize all attachment fields to list of dicts
+    for key in [
+        "dataset_attachment", "a2l_attachment", "experiment_attachment", "dbc_attachment",
+        "wltp_attachment", "pdf_report", "excel_report", "dat_file_attachment", "others_attachement"
+    ]:
+        if key in update_data:
+            update_data[key] = extract_attachment_list(update_data[key])
     for key, value in update_data.items():
         setattr(testorder, key, value)
     testorder.updated_on = datetime.utcnow()
@@ -402,4 +488,109 @@ async def merge_chunks(sess_idt, folder_path, file_name, attachment_type, file):
     finally:
         if os.path.exists(final_file_path):
             os.remove(final_file_path)
-    return
+    return upload_results
+
+# If you have a logger, import it; otherwise, use print as fallback
+try:
+    from backend.storage.api.api_utils import dbmrs_logger
+except ImportError:
+    import logging
+    dbmrs_logger = logging.getLogger("dbmrs_logger")
+
+def build_prefix(job_order_id: str, test_order_id: str = None, attachment_type: str = None):
+    prefix = f"{UPLOAD_PATH}/{job_order_id}"
+    if test_order_id:
+        prefix += f"/{test_order_id}"
+    if attachment_type:
+        prefix += f"/{attachment_type}"
+    return prefix
+
+@router.get("/check_files_GCP")
+# Remove @limiter.limit if you don't have a limiter instance
+def check_files_GCP(
+    request: Request,
+    job_order_id: str = Query(...),
+    test_order_id: str = Query(None),
+    attachment_type: str = Query(None)
+):
+    """
+    Endpoint to check if files exist in GCP bucket based on job_order_id and test_order_id.
+
+    Args:
+    - job_order_id (str): The job order ID, which is the prefix for the blobs.
+    - test_order_id (str): The test order ID to narrow down the files inside job_order_id.
+    - attachment_type (str): The type of attachment to further narrow down the files.
+
+    Returns:
+    - dict: A dictionary containing the status of files and the list of file names.
+    """
+    try:
+        client = storage.Client.from_service_account_json(CREDENTIALS_PATH)
+        bucket = client.bucket(BUCKET_NAME)
+        prefix = build_prefix(job_order_id, test_order_id, attachment_type)
+        # Debug: log the prefix being used
+        print(f"Checking GCP files with prefix: {prefix}")
+        blobs = list(bucket.list_blobs(prefix=prefix))
+        print(f"Found {len(blobs)} blobs for prefix: {prefix}")
+        if not blobs:
+            print(f"No files found in bucket '{BUCKET_NAME}' with prefix '{prefix}'")
+            return {"status": False, "files": []}
+        file_names = [blob.name.split("/")[-1] for blob in blobs]
+        print(f"Files found for prefix '{prefix}': {file_names}")
+        return {"status": True, "files": file_names}
+    except Exception as e:
+        print("Error checking files in GCP.")
+        print(f"Error details: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error checking files in GCP: please try again later",
+        )
+
+def rename_gcp_test_order_id(
+    old_test_order_id: str, new_test_order_id: str, job_order_id: str
+):
+    """
+    Function to rename a test order ID in Google Cloud Storage.
+
+    @param old_test_order_id: The old test order ID to be replaced.
+    @param new_test_order_id: The new test order ID to be used.
+    @param job_order_id: The job order ID associated with the test order.
+
+    @return: None (renames the test order ID in GCP storage with new nomenclature name)
+    """
+    try:
+        client = storage.Client.from_service_account_json(CREDENTIALS_PATH)
+        bucket = client.bucket(BUCKET_NAME)
+
+        old_prefix = f"{UPLOAD_PATH}/{job_order_id}/{old_test_order_id}/"
+        blobs = bucket.list_blobs(prefix=old_prefix)
+        # Move all blobs to the new prefix
+        for blob in blobs:
+            new_blob_name = blob.name.replace(
+                f"{old_test_order_id}/", f"{new_test_order_id}/"
+            )
+            # Log new blob name if logger available
+            try:
+                dbmrs_logger.info(f"New blob name is: {new_blob_name}")
+            except Exception:
+                pass
+            new_blob = bucket.blob(new_blob_name)
+            new_blob.rewrite(blob)
+            blob.delete()
+
+        try:
+            dbmrs_logger.info(
+                f"Test Order ID '{old_test_order_id}' renamed to '{new_test_order_id}' successfully."
+            )
+        except Exception:
+            pass
+    except Exception as e:
+        try:
+            dbmrs_logger.error("Error renaming test order ID.")
+            dbmrs_logger.debug(f"Error details:\n", exc_info=True)
+        except Exception:
+            pass
+        raise HTTPException(
+            status_code=400,
+            detail="Error renaming test order ID. Please try again later.",
+        )
