@@ -7,8 +7,8 @@
             "receivers": "TestEngineer",
             "case": "Job Order Creation",
             "body": {
-                "subject": "New Job Order Created",
-                "message": "A new job order has been created. Please review it at your earliest convenience."
+                "subject": "New Job Order {{job_order_id}} Created",
+                "message": "A new job order {{job_order_id}} has been created. Please review it at your earliest convenience."
             }
         },
         {
@@ -16,8 +16,8 @@
             "receivers": "ProjectTeam",
             "case": "Test Order Started",
             "body": {
-                "subject": "Job Order Updated",
-                "message": "A job order has been updated. Please check the details."
+                "subject": "Job Order {{job_order_id}} Updated",
+                "message": "Job order {{job_order_id}} has been updated. Please check the details."
             }
         },
         {
@@ -25,8 +25,8 @@
             "receivers": "ProjectTeam",
             "case": "Test Re-edit Request",
             "body": {
-                "subject": "Job Order Rejected",
-                "message": "A job order has been rejected. Please review the rejection remarks."
+                "subject": "Job Order {{job_order_id}} Rejected",
+                "message": "Job order {{job_order_id}} has been rejected. Please review the rejection remarks."
             }
         },
         {
@@ -34,8 +34,8 @@
             "receivers": "ProjectTeam",
             "case": "Test Order Rejection",
             "body": {
-                "subject": "Job Order Approved",
-                "message": "A job order has been approved. You can proceed with the next steps."
+                "subject": "Job Order {{job_order_id}} Approved",
+                "message": "Job order {{job_order_id}} has been approved. You can proceed with the next steps."
             }
         },
         {
@@ -43,8 +43,8 @@
             "receivers": "TestEngineer",
             "case": "Test Order Updated",
             "body": {
-                "subject": "New Test Order Created",
-                "message": "A new test order has been created. Please review it at your earliest convenience."
+                "subject": "New Test Order {{test_order_id}} Created",
+                "message": "A new test order {{test_order_id}} for job order {{job_order_id}} has been created. Please review it at your earliest convenience."
             }
         },
         {
@@ -52,8 +52,8 @@
             "receivers": "ProjectTeam",
             "case": "Test Order Completed",
             "body": {
-                "subject": "Test Order Completed",
-                "message": "A test order has been completed. Please check the results."
+                "subject": "Test Order {{test_order_id}} Completed",
+                "message": "Test order {{test_order_id}} for job order {{job_order_id}} has been completed. Please check the results."
             }
         }
     ]

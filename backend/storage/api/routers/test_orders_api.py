@@ -12,7 +12,7 @@ from datetime import datetime, date
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.storage.api.api_utils import get_db
-from backend.storage.models.models import TestOrder
+from backend.storage.models.models import TestOrder, JobOrder
 from google.cloud import storage
 router = APIRouter()
 
@@ -594,3 +594,39 @@ def rename_gcp_test_order_id(
             status_code=400,
             detail="Error renaming test order ID. Please try again later.",
         )
+
+@router.get("/testorders/info")
+def get_job_and_test_order_info(
+    job_order_id: str,
+    test_order_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Fetch information for a given job_order_id and test_order_id.
+    """
+    job_order = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
+    test_order = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
+    if not job_order or not test_order:
+        raise HTTPException(status_code=404, detail="JobOrder or TestOrder not found")
+    return {
+        "job_order": {
+            "job_order_id": job_order.job_order_id,
+            "project_code": job_order.project_code,
+            "vehicle_serial_number": job_order.vehicle_serial_number,
+            "vehicle_body_number": job_order.vehicle_body_number,
+            "engine_serial_number": job_order.engine_serial_number,
+            "department": job_order.department,
+            "domain": job_order.domain,
+            "job_order_status": job_order.job_order_status,
+            "created_on": job_order.created_on,
+            "updated_on": job_order.updated_on,
+        },
+        "test_order": {
+            "test_order_id": test_order.test_order_id,
+            "job_order_id": test_order.job_order_id,
+            "test_type": test_order.test_type,
+            "status": test_order.status,
+            "created_on": test_order.created_on,
+            "updated_on": test_order.updated_on,
+        }
+    }
