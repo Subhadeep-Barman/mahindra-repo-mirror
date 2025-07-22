@@ -17,7 +17,6 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import Spinner from "./UI/spinner"; // Ensure the path is correct
-import showSnackbar from "../utils/showSnackbar";
 import useStore from "../store/useStore";
 import {
   CloudUpload,
@@ -27,6 +26,7 @@ import {
   CheckCircle,
   HighlightOff
 } from "@mui/icons-material";
+import showSnackbar from "../utils/showSnackbar";
 
 const formatSize = (bytes) => {
   if (bytes === 0) return "0 Bytes";
@@ -421,7 +421,7 @@ const Dropzone = ({
           }
         } catch (error) {
           console.error(`Error uploading chunk ${chunkIndex}:`, error);
-          alert(`Upload failed for ${file.name}. Please try again.`);
+          showSnackbar(`Upload failed for ${file.name}: ${error.message}`, "error");
           // Remove progress bar on error
           setUploadProgress((prev) => {
             const updated = { ...prev };

@@ -17,20 +17,22 @@ import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import showSnackbar from "@/utils/showSnackbar";
+
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function EditTestOrder() {
   const navigate = useNavigate();
   const location = useLocation();
   const { userRole, userId, userName } = useAuth();
-  
+
   // Get test order and job order ID from location state
   const { testOrder, jobOrderId, returnPath, returnState } = location.state || {};
 
   // State to check if user is a Test Engineer
   const isTestEngineer = userRole === "TestEngineer";
   const isProjectTeam = userRole === "ProjectTeam";
-  
+
   // State for test data
   const [test, setTest] = useState({
     testOrderId: testOrder?.test_order_id || "",
@@ -41,8 +43,8 @@ export default function EditTestOrder() {
     datasetName: testOrder?.dataset_name || "",
     inertiaClass: testOrder?.inertia_class || "",
     dpf: testOrder?.dpf || "",
-    datasetflashed: testOrder?.dataset_flashed === true ? "Yes" : 
-                   testOrder?.dataset_flashed === false ? "No" : "",
+    datasetflashed: testOrder?.dataset_flashed === true ? "Yes" :
+      testOrder?.dataset_flashed === false ? "No" : "",
     ess: testOrder?.ess || "",
     mode: testOrder?.mode || "",
     hardwareChange: testOrder?.hardware_change || "",
@@ -83,7 +85,7 @@ export default function EditTestOrder() {
   const [inertiaClasses, setInertiaClasses] = useState([]);
   const [modes, setModes] = useState([]);
   const [fuelTypes, setFuelTypes] = useState([]);
-  
+
   // States for file modals
   const [emissionCheckModal, setEmissionCheckModal] = useState(false);
   const [datasetModal, setDatasetModal] = useState(false);
@@ -95,7 +97,7 @@ export default function EditTestOrder() {
   const [excelReportModal, setExcelReportModal] = useState(false);
   const [datFileModal, setDatFileModal] = useState(false);
   const [othersModal, setOthersModal] = useState(false);
-  
+
   // State for remarks modals
   const [mailRemarksModal, setMailRemarksModal] = useState(false);
   const [mailRemarks, setMailRemarks] = useState("");
@@ -121,7 +123,7 @@ export default function EditTestOrder() {
         setTestTypes([]);
       }
     };
-    
+
     // Fetch inertia classes
     const fetchInertiaClasses = async () => {
       try {
@@ -132,7 +134,7 @@ export default function EditTestOrder() {
         setInertiaClasses([]);
       }
     };
-    
+
     // Fetch modes
     const fetchModes = async () => {
       try {
@@ -143,7 +145,7 @@ export default function EditTestOrder() {
         setModes([]);
       }
     };
-    
+
     // Fetch fuel types
     const fetchFuelTypes = async () => {
       try {
@@ -170,7 +172,7 @@ export default function EditTestOrder() {
       if (isProjectTeam && newStatus === "Re-edit") {
         newStatus = "Started";
       }
-      
+
       const testOrderPayload = {
         test_order_id: test.testOrderId,
         job_order_id: jobOrderId || null,
@@ -215,12 +217,12 @@ export default function EditTestOrder() {
         name_of_updater: userName || "",
         updated_on: new Date().toISOString(),
       };
-      
+
       await axios.put(`${apiURL}/testorders/${test.testOrderId}`, testOrderPayload);
-      alert("Test Order updated successfully!");
+      showSnackbar("Test Order updated successfully!", "success");
       handleBack();
     } catch (err) {
-      alert("Failed to update test order: " + (err.response?.data?.detail || err.message));
+      showSnackbar("Failed to update test order: " + (err.response?.data?.detail || err.message), "error");
     }
   };
 
@@ -233,10 +235,10 @@ export default function EditTestOrder() {
         remark,
       };
       await axios.post(`${apiURL}/testorders/status`, payload);
-      alert(`Test order status updated to ${status}`);
+      showSnackbar(`Test order status updated to ${status}`, "success");
       handleBack();
     } catch (err) {
-      alert("Failed to update status: " + (err.response?.data?.detail || err.message));
+      showSnackbar("Failed to update status: " + (err.response?.data?.detail || err.message), "error");
     }
   };
 
@@ -248,20 +250,20 @@ export default function EditTestOrder() {
       if (isProjectTeam && newStatus === "Re-edit") {
         newStatus = "Started";
       }
-      
+
       const payload = {
         ...test,
         mail_remarks: mailRemarks,
         test_order_id: test.testOrderId,
         status: newStatus,
       };
-      
+
       await axios.put(`${apiURL}/testorders/${test.testOrderId}`, payload);
       setMailRemarksModal(false);
-      alert("Test order updated successfully!");
+      showSnackbar("Test order updated successfully!", "success");
       handleBack();
     } catch (err) {
-      alert("Failed to submit mail remarks: " + (err.response?.data?.detail || err.message));
+      showSnackbar("Failed to submit mail remarks: " + (err.response?.data?.detail || err.message), "error");
     }
   };
 
@@ -269,12 +271,12 @@ export default function EditTestOrder() {
   const areFieldsEditable = () => {
     // TestEngineer cannot edit fields
     if (isTestEngineer) return false;
-    
+
     // ProjectTeam can only edit if test is in Re-edit status
     if (isProjectTeam) {
       return test.status === "Re-edit";
     }
-    
+
     // For admin or other roles, allow editing
     return true;
   };
@@ -696,7 +698,7 @@ export default function EditTestOrder() {
               <div>
                 <Label>Emission Check Attachment</Label>
                 <DropzoneFileList
-                  buttonText="Emission Check Attachment"  
+                  buttonText="Emission Check Attachment"
                   name="Emission_check"
                   maxFiles={5}
                   formData={{
@@ -708,7 +710,7 @@ export default function EditTestOrder() {
                   }}
                   id="test-edit"
                   submitted={false}
-                  setSubmitted={() => {}}
+                  setSubmitted={() => { }}
                   openModal={emissionCheckModal}
                   handleOpenModal={() => setEmissionCheckModal(true)}
                   handleCloseModal={() => setEmissionCheckModal(false)}
@@ -731,7 +733,7 @@ export default function EditTestOrder() {
                   }}
                   id="test-edit"
                   submitted={false}
-                  setSubmitted={() => {}}
+                  setSubmitted={() => { }}
                   openModal={datasetModal}
                   handleOpenModal={() => setDatasetModal(true)}
                   handleCloseModal={() => setDatasetModal(false)}
@@ -755,7 +757,7 @@ export default function EditTestOrder() {
                   }}
                   id="test-edit"
                   submitted={false}
-                  setSubmitted={() => {}}
+                  setSubmitted={() => { }}
                   openModal={a2lModal}
                   handleOpenModal={() => setA2LModal(true)}
                   handleCloseModal={() => setA2LModal(false)}
@@ -779,7 +781,7 @@ export default function EditTestOrder() {
                   }}
                   id="test-edit"
                   submitted={false}
-                  setSubmitted={() => {}}
+                  setSubmitted={() => { }}
                   openModal={experimentModal}
                   handleOpenModal={() => setExperimentModal(true)}
                   handleCloseModal={() => setExperimentModal(false)}
@@ -803,7 +805,7 @@ export default function EditTestOrder() {
                   }}
                   id="test-edit"
                   submitted={false}
-                  setSubmitted={() => {}}
+                  setSubmitted={() => { }}
                   openModal={dbcModal}
                   handleOpenModal={() => setDBCModal(true)}
                   handleCloseModal={() => setDBCModal(false)}
@@ -827,7 +829,7 @@ export default function EditTestOrder() {
                   }}
                   id="test-edit"
                   submitted={false}
-                  setSubmitted={() => {}}
+                  setSubmitted={() => { }}
                   openModal={wltpModal}
                   handleOpenModal={() => setWLTPModal(true)}
                   handleCloseModal={() => setWLTPModal(false)}
@@ -860,7 +862,7 @@ export default function EditTestOrder() {
                   }}
                   id="test-edit"
                   submitted={false}
-                  setSubmitted={() => {}}
+                  setSubmitted={() => { }}
                   openModal={pdfReportModal}
                   handleOpenModal={() => setPdfReportModal(true)}
                   handleCloseModal={() => setPdfReportModal(false)}
@@ -884,7 +886,7 @@ export default function EditTestOrder() {
                   }}
                   id="test-edit"
                   submitted={false}
-                  setSubmitted={() => {}}
+                  setSubmitted={() => { }}
                   openModal={excelReportModal}
                   handleOpenModal={() => setExcelReportModal(true)}
                   handleCloseModal={() => setExcelReportModal(false)}
@@ -908,7 +910,7 @@ export default function EditTestOrder() {
                   }}
                   id="test-edit"
                   submitted={false}
-                  setSubmitted={() => {}}
+                  setSubmitted={() => { }}
                   openModal={datFileModal}
                   handleOpenModal={() => setDatFileModal(true)}
                   handleCloseModal={() => setDatFileModal(false)}
@@ -932,7 +934,7 @@ export default function EditTestOrder() {
                   }}
                   id="test-edit"
                   submitted={false}
-                  setSubmitted={() => {}}
+                  setSubmitted={() => { }}
                   openModal={othersModal}
                   handleOpenModal={() => setOthersModal(true)}
                   handleCloseModal={() => setOthersModal(false)}
@@ -1121,18 +1123,18 @@ export default function EditTestOrder() {
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-white rounded shadow-lg p-6 w-96">
               <div className="font-semibold mb-2">
-                {isProjectTeam ? "Update Comments" : 
-                 isTestEngineer && test.status === "Started" ? "Re-edit Reason" : 
-                 "Rejection Reason"}
+                {isProjectTeam ? "Update Comments" :
+                  isTestEngineer && test.status === "Started" ? "Re-edit Reason" :
+                    "Rejection Reason"}
               </div>
               <textarea
                 className="w-full border rounded p-2 mb-4"
                 rows={3}
                 value={mailRemarks}
                 onChange={(e) => setMailRemarks(e.target.value)}
-                placeholder={isProjectTeam ? "Enter update comments..." : 
-                             isTestEngineer && test.status === "Started" ? "Enter reason for re-edit..." :
-                             "Enter reason for rejection..."}
+                placeholder={isProjectTeam ? "Enter update comments..." :
+                  isTestEngineer && test.status === "Started" ? "Enter reason for re-edit..." :
+                    "Enter reason for rejection..."}
               />
               <div className="flex justify-end gap-2">
                 <Button
@@ -1143,11 +1145,10 @@ export default function EditTestOrder() {
                   Cancel
                 </Button>
                 <Button
-                  className={`${
-                    isTestEngineer && test.status !== "Started"
-                      ? "bg-red-600"
-                      : "bg-blue-600"
-                  } text-white px-4 py-1 rounded`}
+                  className={`${isTestEngineer && test.status !== "Started"
+                    ? "bg-red-600"
+                    : "bg-blue-600"
+                    } text-white px-4 py-1 rounded`}
                   type="button"
                   onClick={() => {
                     if (isProjectTeam) {
