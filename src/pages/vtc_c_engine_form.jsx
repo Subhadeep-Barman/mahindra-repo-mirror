@@ -18,6 +18,7 @@ import { Card, CardContent } from "@/components/UI/card";
 import { ArrowBack } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
+import showSnackbar from "@/utils/showSnackbar";
 
 export default function VTCCEngineForm() {
   const [activeTab, setActiveTab] = useState("Engine");
@@ -153,6 +154,7 @@ export default function VTCCEngineForm() {
       evMotorPower: "",
       department: department, // Reset department as well
     });
+    showSnackbar("Form cleared successfully!", "info");
   };
 
   const handleBack = () => {
@@ -237,13 +239,16 @@ export default function VTCCEngineForm() {
     const enginePayload = mapFormDataToEngineSchema(formData);
     try {
       const res = await axios.post(`${apiUrl}/engines`, enginePayload);
-      alert("Engine added successfully!");
+      showSnackbar(
+        `Engine added successfully! Engine Serial Number: ${res.data.engine_serial_number || formData.engineSerialNumber}`,
+        "success"
+      );
       handleClear();
     } catch (err) {
       if (err.response && err.response.data && err.response.data.detail) {
-        alert("Failed to add engine: " + err.response.data.detail);
+        showSnackbar("Failed to add engine: " + err.response.data.detail, "error");
       } else {
-        alert("Failed to add engine. Please try again.");
+        showSnackbar("Failed to add engine. Please try again.", "error");
       }
     }
   };

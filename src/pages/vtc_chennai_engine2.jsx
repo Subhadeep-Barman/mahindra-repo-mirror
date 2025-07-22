@@ -143,13 +143,12 @@ export default function VTCEnginePage() {
                     key={tab}
                     variant={activeTab === tab ? "default" : "outline"}
                     onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${
-                      tab === "Job Order"
+                    className={`rounded-xl ${tab === "Job Order"
                         ? "bg-red-500 text-white hover:bg-red-600"
                         : tab === "Vehicle" || tab === "Engine"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "text-red-500 border-red-500 hover:bg-red-50"
-                    }`}
+                          ? "bg-red-500 text-white hover:bg-red-600"
+                          : "text-red-500 border-red-500 hover:bg-red-50"
+                      }`}
                   >
                     {tab}
                   </Button>

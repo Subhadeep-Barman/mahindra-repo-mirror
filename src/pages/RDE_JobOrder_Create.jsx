@@ -599,7 +599,7 @@ export default function RDECreateJobOrder() {
 
     // Require at least one CFT member
     if (!cftMembers || cftMembers.length === 0) {
-      alert("Please add at least one CFT member before creating a job order.");
+      showSnackbar("Please add at least one CFT member before creating a job order.", "error");
       return;
     }
 
@@ -636,7 +636,7 @@ export default function RDECreateJobOrder() {
       id_of_updater: "",
       name_of_updater: "",
       updated_on: new Date().toISOString(),
-      cft_members: cftMembers, 
+      cft_members: cftMembers,
     };
 
     // Coast Down Data payload (unchanged)

@@ -619,7 +619,7 @@ export default function CreateJobOrder() {
 
     // Require at least one CFT member
     if (!cftMembers || cftMembers.length === 0) {
-      alert("Please add at least one CFT member before creating a job order.");
+      showSnackbar("Please add at least one CFT member before creating a job order.", "error");
       return;
     }
 
@@ -703,7 +703,8 @@ export default function CreateJobOrder() {
         "Job Order Created! ID: " + jobOrderRes.data.job_order_id,
         "success"
       );
-      // Optionally, reset form or navigate
+      
+      navigate("vtc-chennai");
     } catch (err) {
       console.error("Error creating job order:", err);
       showSnackbar(
@@ -714,8 +715,6 @@ export default function CreateJobOrder() {
     }
   };
 
-  // Handler for creating test order
-  // Handler for creating test order
   const handleCreateTestOrder = async (testIndex) => {
     const test = tests[testIndex];
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { User, Users, Trash2 } from "lucide-react";
 import axios from "axios";
+import showSnackbar from "@/utils/showSnackbar";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -34,7 +35,7 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                 prev.map((m, i) => (i === idx ? updatedMember : m))
             );
         } catch (err) {
-            alert("Failed to update member");
+            showSnackbar("Failed to update member", "error", 3000);
         }
     };
 
@@ -48,7 +49,7 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
             await axios.delete(`${apiURL}/cft_members/delete`, { params: { job_order_id: jobOrderId, member_index: idx } });
             setMembers((prev) => prev.filter((_, i) => i !== idx));
         } catch (err) {
-            alert("Failed to delete member");
+            showSnackbar("Failed to delete member", "error", 3000);
         }
     };
 

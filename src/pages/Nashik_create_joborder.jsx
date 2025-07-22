@@ -19,6 +19,7 @@ import useStore from "@/store/useStore";
 import axios from "axios";
 import CFTMembers from "@/components/CFTMembers";
 import { useAuth } from "@/context/AuthContext";
+import showSnackbar from "@/utils/showSnackbar";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -615,7 +616,7 @@ export default function NashikCreateJobOrder() {
 
     // Require at least one CFT member
     if (!cftMembers || cftMembers.length === 0) {
-      alert("Please add at least one CFT member before creating a job order.");
+      showSnackbar("Please add at least one CFT member before creating a job order.", "error");
       return;
     }
 
@@ -643,7 +644,7 @@ export default function NashikCreateJobOrder() {
       id_of_updater: "",
       name_of_updater: "",
       updated_on: new Date().toISOString(),
-      cft_members: cftMembers, 
+      cft_members: cftMembers,
     };
 
     // Coast Down Data payload
@@ -687,14 +688,13 @@ export default function NashikCreateJobOrder() {
       if (hasCoastDownData) {
         await axios.post(`${apiURL}/coastdown`, coastDownPayload);
       }
-
-      alert("Job Order Created! ID: " + jobOrderRes.data.job_order_id);
+      showSnackbar("Job Order Created! ID: " + jobOrderRes.data.job_order_id, "success");
       // Optionally, reset form or navigate
     } catch (err) {
       console.error("Error creating job order:", err);
-      alert(
-        "Failed to create job order: " +
-        (err.response?.data?.detail || err.message)
+      showSnackbar(
+        "Failed to create job order: " + (err.response?.data?.detail || err.message),
+        "error"
       );
     }
   };
@@ -705,9 +705,7 @@ export default function NashikCreateJobOrder() {
 
     // Validate required fields
     if (!test.objective) {
-      alert(
-        "Please fill in the objective of the test before creating test order."
-      );
+      showSnackbar("Please fill in the objective of the test before creating test order.", "error");
       return;
     }
 
@@ -776,10 +774,7 @@ export default function NashikCreateJobOrder() {
         console.log("Test-specific coast down data created:", CoastDownData_id);
       } catch (err) {
         console.error("Error creating test-specific coast down data:", err);
-        alert(
-          "Failed to create coast down data for test: " +
-          (err.response?.data?.detail || err.message)
-        );
+        showSnackbar("Failed to create coast down data for test: " + (err.response?.data?.detail || err.message), "error");
         return;
       }
     }
@@ -835,20 +830,18 @@ export default function NashikCreateJobOrder() {
             : t
         )
       );
-
-      alert(
-        "Test Order Created! ID: " +
-        response.data.test_order_id +
+      showSnackbar(
+        "Test Order Created! ID: " + response.data.test_order_id +
         (hasTestSpecificCoastDownData
           ? "\nCoast Down Data ID: " + CoastDownData_id
           : "")
       );
-      navigate("/vtc-nashik")
+      navigate("/vtc-nashik");
     } catch (err) {
       console.error("Error creating test order:", err);
-      alert(
-        "Failed to create test order: " +
-        (err.response?.data?.detail || err.message)
+      showSnackbar(
+        "Failed to create test order: " + (err.response?.data?.detail || err.message),
+        "error"
       );
     }
   };
@@ -1041,7 +1034,7 @@ export default function NashikCreateJobOrder() {
   const handleUpdateTestOrder = async (idx) => {
     const test = tests[idx];
     if (!test.testOrderId) {
-      alert("No test order selected for update.");
+      showSnackbar("No test order selected for update.", "error");
       return;
     }
     // Prepare payload matching API schema
@@ -1083,11 +1076,11 @@ export default function NashikCreateJobOrder() {
     };
     try {
       await updateTestOrder(test.testOrderId, testOrderPayload);
-      alert("Test Order updated successfully!");
+      showSnackbar("Test Order updated successfully!");
       fetchAllTestOrders();
       setEditingTestOrderIdx(null);
     } catch (err) {
-      alert(
+      showSnackbar(
         "Failed to update test order: " +
         (err.response?.data?.detail || err.message)
       );
@@ -1122,7 +1115,7 @@ export default function NashikCreateJobOrder() {
       setRemarkInput("");
       setRemarkModalOpen(false);
     } catch (err) {
-      alert("Failed to update status: " + (err.response?.data?.detail || err.message));
+      showSnackbar("Failed to update status: " + (err.response?.data?.detail || err.message), "error");
     }
   };
 
@@ -1605,11 +1598,12 @@ export default function NashikCreateJobOrder() {
                 onClick={async () => {
                   try {
                     await handleUpdateCoastDownData(existingCoastDownId);
-                    alert("Coast Down Data updated successfully!");
+                    showSnackbar("Coast Down Data updated successfully!", "success");
                   } catch (err) {
-                    alert(
+                    showSnackbar(
                       "Failed to update coast down data: " +
-                      (err.response?.data?.detail || err.message)
+                      (err.response?.data?.detail || err.message),
+                      "error"
                     );
                   }
                 }}
