@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Body
 from sqlalchemy.orm import Session
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Union, Dict
 from pydantic import BaseModel
 from backend.storage.api.api_utils import get_db
 from backend.storage.models.models import RDEJobOrder, TestOrder  # Import TestOrder model
@@ -33,7 +33,19 @@ class RDEJobOrderSchema(BaseModel):
     id_of_updater: Optional[str] = None
     name_of_updater: Optional[str] = None
     updated_on: Optional[datetime] = None
-    cft_members: Optional[List[str]] = None
+    cft_members: Optional[List[Union[str, Dict]]] = None  # Accept both str and dict
+
+def normalize_cft_members(cft_members):
+    # Convert all items to dicts with at least a 'name' key
+    if not cft_members:
+        return []
+    normalized = []
+    for m in cft_members:
+        if isinstance(m, dict):
+            normalized.append(m)
+        elif isinstance(m, str):
+            normalized.append({"name": m})
+    return normalized
 
 def rde_joborder_to_dict(rde_joborder: RDEJobOrder, db: Session = None):
     total_test_orders = 0
@@ -71,7 +83,7 @@ def rde_joborder_to_dict(rde_joborder: RDEJobOrder, db: Session = None):
         "id_of_updater": rde_joborder.id_of_updater,
         "name_of_updater": rde_joborder.name_of_updater,
         "updated_on": rde_joborder.updated_on,
-        "cft_members": rde_joborder.cft_members if rde_joborder.cft_members else []
+        "cft_members": normalize_cft_members(rde_joborder.cft_members)
     }
 
 @router.post("/rde_joborders", response_model=RDEJobOrderSchema)
@@ -80,6 +92,8 @@ def create_rde_joborder(
     db: Session = Depends(get_db)
 ):
     rde_joborder_data = rde_joborder.dict(exclude_unset=True)
+    if "cft_members" in rde_joborder_data:
+        rde_joborder_data["cft_members"] = normalize_cft_members(rde_joborder_data["cft_members"])
     new_rde_joborder = RDEJobOrder(**rde_joborder_data)
     db.add(new_rde_joborder)
     db.commit()
@@ -109,6 +123,8 @@ def update_rde_joborder(
         raise HTTPException(status_code=404, detail="RDEJobOrder not found")
     update_data = rde_joborder_update.dict(exclude_unset=True)
     update_data.pop("job_order_id", None)
+    if "cft_members" in update_data:
+        update_data["cft_members"] = normalize_cft_members(update_data["cft_members"])
     for key, value in update_data.items():
         setattr(rde_joborder, key, value)
     rde_joborder.updated_on = datetime.utcnow()
