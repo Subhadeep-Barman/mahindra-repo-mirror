@@ -103,6 +103,7 @@ export default function CreateJobOrder() {
         datasetName: "",
         inertiaClass: "",
         dpf: "",
+        dpfRegenOccurs: "",
         datasetflashed: "",
         ess: "",
         mode: "",
@@ -770,6 +771,7 @@ export default function CreateJobOrder() {
       inertia_class: test.inertiaClass || "",
       dataset_name: test.datasetName || "",
       dpf: test.dpf || "",
+      dpfRegenOccurs: test.dpfRegenOccurs || "",
       dataset_flashed:
         test.datasetflashed === "Yes"
           ? true
@@ -778,10 +780,10 @@ export default function CreateJobOrder() {
             : null,
       ess: test.ess || "",
       mode: test.mode || "",
+      fuel_type: test.fuelType || "",
       hardware_change: test.hardwareChange || "",
       equipment_required: test.equipmentRequired || "",
       shift: test.shift || "",
-      fuel_type: test.fuelType || "",
       preferred_date: test.preferredDate || null,
       emission_check_date: test.emissionCheckDate || null,
       emission_check_attachment: test.emissionCheckAttachment || "",
@@ -825,6 +827,9 @@ export default function CreateJobOrder() {
         (err.response?.data?.detail || err.message)
       );
     }
+
+    console.log("Test data before creating order:", test);
+    console.log("Fuel Type value:", test.fuelType);
   };
 
   // Handler for updating coast down data when editing existing job order
@@ -979,6 +984,7 @@ export default function CreateJobOrder() {
         datasetName: testOrder.dataset_name || "",
         inertiaClass: testOrder.inertia_class || "",
         dpf: testOrder.dpf || "",
+        dpfRegenOccurs: testOrder.dpfRegenOccurs || "",
         datasetflashed:
           testOrder.dataset_flashed === true
             ? "Yes"
@@ -987,10 +993,10 @@ export default function CreateJobOrder() {
               : "",
         ess: testOrder.ess || "",
         mode: testOrder.mode || "",
+        fuelType: testOrder.fuel_type || "",
         hardwareChange: testOrder.hardware_change || "",
         equipmentRequired: testOrder.equipment_required || "",
         shift: testOrder.shift || "",
-        fuelType: testOrder.fuel_type || "",
         preferredDate: testOrder.preferred_date || "",
         emissionCheckDate: testOrder.emission_check_date || "",
         emissionCheckAttachment: testOrder.emission_check_attachment || "",
@@ -1032,6 +1038,7 @@ export default function CreateJobOrder() {
       inertia_class: test.inertiaClass || "",
       dataset_name: test.datasetName || "",
       dpf: test.dpf || "",
+      dpfRegenOccurs: test.dpfRegenOccurs || "",
       dataset_flashed:
         test.datasetflashed === "Yes"
           ? true
@@ -1040,10 +1047,10 @@ export default function CreateJobOrder() {
             : null,
       ess: test.ess || "",
       mode: test.mode || "",
+      fuel_type: test.fuelType || "",
       hardware_change: test.hardwareChange || "",
       equipment_required: test.equipmentRequired || "",
       shift: test.shift || "",
-      fuel_type: test.fuelType || "",
       preferred_date: test.preferredDate || null,
       emission_check_date: test.emissionCheckDate || null,
       emission_check_attachment: test.emissionCheckAttachment || "",
@@ -2145,8 +2152,13 @@ export default function CreateJobOrder() {
               <div>
                 <Label>Fuel Type</Label>
                 <Select
-                  value={test.fuelType}
-                  onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
+                  value={test.fuelType || ""}
+                  onValueChange={(v) => {
+                    console.log(`🔍 Fuel type dropdown changed to: "${v}" for test ${idx}`);
+                    console.log(`🔍 Type of selected value:`, typeof v);
+                    console.log(`🔍 Current test state before change:`, test);
+                    handleTestChange(idx, "fuelType", v);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />

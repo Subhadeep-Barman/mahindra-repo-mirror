@@ -42,7 +42,7 @@ const truncateFilename = (filename) => {
 };
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
-const CHUNK_SIZE = 1024 * 1024; 
+const CHUNK_SIZE = 1024 * 1024;
 
 // Add allowed file extensions mapping for different upload types
 const ALLOWED_EXTENSIONS_MAP = {
@@ -313,8 +313,6 @@ const Dropzone = ({
       setIsValidated?.(false);
     }
   };
-
-  console.log("Form Data:", formData);
   // Helper to get correct job_order_id and test_order_id for upload
   const getJobAndTestOrderId = () => {
     // Prefer originalJobOrderId if provided
@@ -563,7 +561,7 @@ const Dropzone = ({
       window.open(url, "_blank");
       // logger.info(`Redirecting to data validation URL: ${url}`);
       console.log(`Redirecting to data validation URL: ${url}`);
-      
+
     } catch (error) {
       console.error("Validation error:", error);
       showSnackbar("Validation failed", "warning");
@@ -1076,10 +1074,10 @@ const Dropzone = ({
                                 />
                               }
                               label={
-                                <Typography 
-                                  variant="body2" 
-                                  sx={{ 
-                                    fontWeight: 600, 
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: 600,
                                     color: '#4caf50'
                                   }}
                                 >
@@ -1100,10 +1098,10 @@ const Dropzone = ({
                                 />
                               }
                               label={
-                                <Typography 
-                                  variant="body2" 
-                                  sx={{ 
-                                    fontWeight: 600, 
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: 600,
                                     color: '#f44336'
                                   }}
                                 >
