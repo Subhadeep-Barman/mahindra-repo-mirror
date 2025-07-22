@@ -1199,7 +1199,7 @@ export default function RDECreateJobOrder() {
         <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 px-8 py-6">
           {/* Project Code */}
           <div className="flex flex-col">
-            <Label htmlFor="projectCode">
+            <Label htmlFor="projectCode" className="mb-2">
               Project <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1222,7 +1222,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Vehicle Body Number */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleBodyNumber">
+            <Label htmlFor="vehicleBodyNumber" className="mb-2">
               Vehicle Body Number <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1248,7 +1248,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Vehicle Number (auto) */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleSerialNumber">
+            <Label htmlFor="vehicleSerialNumber" className="mb-2">
               Vehicle Number <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -1263,7 +1263,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Engine Number (dropdown) */}
           <div className="flex flex-col">
-            <Label htmlFor="engineNumber">
+            <Label htmlFor="engineNumber" className="mb-2">
               Engine Number <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1286,7 +1286,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Type of Engine */}
           <div className="flex flex-col">
-            <Label htmlFor="engineType">
+            <Label htmlFor="engineType" className="mb-2">
               Type of Engine <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1309,7 +1309,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Domain */}
           <div className="flex flex-col">
-            <Label htmlFor="domain">
+            <Label htmlFor="domain" className="mb-2">
               Domain <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1332,7 +1332,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Department */}
           <div className="flex flex-col">
-            <Label htmlFor="department">
+            <Label htmlFor="department" className="mb-2">
               Department <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1359,7 +1359,7 @@ export default function RDECreateJobOrder() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 px-8 pb-4">
           {/* WBS Code */}
           <div className="flex flex-col">
-            <Label htmlFor="wbsCode">
+            <Label htmlFor="wbsCode" className="mb-2">
               WBS Code <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -1376,7 +1376,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Vehicle GVW */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleGVW">
+            <Label htmlFor="vehicleGVW" className="mb-2">
               Vehicle GVW (Kg) <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -1395,7 +1395,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Vehicle Kerb weight */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleKerbWeight">
+            <Label htmlFor="vehicleKerbWeight" className="mb-2">
               Vehicle Kerb weight (Kg) <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -1417,7 +1417,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Vehicle Test Payload criteria */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleTestPayloadCriteria">
+            <Label htmlFor="vehicleTestPayloadCriteria" className="mb-2">
               Vehicle Test Payload criteria (Kg){" "}
               <span className="text-red-500">*</span>
             </Label>
@@ -1445,7 +1445,7 @@ export default function RDECreateJobOrder() {
           {/* Show manual entry field only if 'Manual Entry' is selected */}
             {form.vehicleTestPayloadCriteria === "Manual Entry" && (
               <div className="flex flex-col">
-                <Label htmlFor="requestedPayloadKg">
+                <Label htmlFor="requestedPayloadKg" className="mb-2">
                   Requested Payload in kgs <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -1468,7 +1468,7 @@ export default function RDECreateJobOrder() {
             )}
           {/* Idle Exhaust Mass Flow */}
           <div className="flex flex-col">
-            <Label htmlFor="idleExhaustMassFlow">
+            <Label htmlFor="idleExhaustMassFlow" className="mb-2">
               Idle Exhaust Mass Flow (Kg/hr){" "}
               <span className="text-red-500">*</span>
             </Label>
@@ -1595,7 +1595,7 @@ export default function RDECreateJobOrder() {
           <div className="grid grid-cols-7 gap-4">
             <div>
               <Label htmlFor="vehicleRefMass" className="text-xs">
-                Vehicle Reference mass (Kg)
+                Vehicle Reference Mass (Kg)
               </Label>
               <Input
                 id="vehicleRefMass"

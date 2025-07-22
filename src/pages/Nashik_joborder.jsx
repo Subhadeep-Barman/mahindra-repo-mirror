@@ -1188,7 +1188,7 @@ export default function NashikCreateJobOrder() {
         <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 px-8 py-6">
           {/* Project Code */}
           <div className="flex flex-col">
-            <Label htmlFor="projectCode">
+            <Label htmlFor="projectCode" className="mb-2">
               Project <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1211,7 +1211,7 @@ export default function NashikCreateJobOrder() {
           </div>
           {/* Vehicle Body Number */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleBodyNumber">
+            <Label htmlFor="vehicleBodyNumber" className="mb-2">
               Vehicle Body Number <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1237,7 +1237,7 @@ export default function NashikCreateJobOrder() {
           </div>
           {/* Vehicle Number (auto) */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleSerialNumber">
+            <Label htmlFor="vehicleSerialNumber" className="mb-2">
               Vehicle Number <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -1252,7 +1252,7 @@ export default function NashikCreateJobOrder() {
           </div>
           {/* Engine Number (dropdown) */}
           <div className="flex flex-col">
-            <Label htmlFor="engineSerialNumber">
+            <Label htmlFor="engineSerialNumber" className="mb-2">
               Engine Number <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1275,7 +1275,7 @@ export default function NashikCreateJobOrder() {
           </div>
           {/* Type of Engine */}
           <div className="flex flex-col">
-            <Label htmlFor="engineType">
+            <Label htmlFor="engineType" className="mb-2">
               Type of Engine <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1298,7 +1298,7 @@ export default function NashikCreateJobOrder() {
           </div>
           {/* Domain */}
           <div className="flex flex-col">
-            <Label htmlFor="domain">
+            <Label htmlFor="domain" className="mb-2">
               Domain <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1321,7 +1321,7 @@ export default function NashikCreateJobOrder() {
           </div>
           {/* Department */}
           <div className="flex flex-col">
-            <Label htmlFor="department">
+            <Label htmlFor="department" className="mb-2">
               Department <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1446,7 +1446,7 @@ export default function NashikCreateJobOrder() {
           <div className="grid grid-cols-7 gap-4">
             <div>
               <Label htmlFor="vehicleRefMass" className="text-xs">
-                Vehicle Reference mass (Kg)
+                Vehicle Reference Mass (Kg)
               </Label>
               <Input
                 id="vehicleRefMass"
