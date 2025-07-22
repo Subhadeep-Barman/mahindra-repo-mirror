@@ -73,9 +73,11 @@ class TestOrderSchema(BaseModel):
     inertia_class: Optional[str] = None
     dataset_name: Optional[str] = None
     dpf: Optional[str] = None
+    dpfRegenOccurs: Optional[str] = None
     dataset_flashed: Optional[bool] = None
     ess: Optional[str] = None
     mode: Optional[str] = None
+    fuel_type: Optional[str] = None
     hardware_change: Optional[str] = None
     equipment_required: Optional[str] = None
     shift: Optional[str] = None
@@ -115,9 +117,11 @@ def testorder_to_dict(testorder: TestOrder):
         "inertia_class": testorder.inertia_class,
         "dataset_name": testorder.dataset_name,
         "dpf": testorder.dpf,
+        "dpfRegenOccurs": testorder.dpf_regen_occurs,
         "dataset_flashed": testorder.dataset_flashed,
         "ess": testorder.ess,
         "mode": testorder.mode,
+        "fuel_type": testorder.fuel_type,
         "hardware_change": testorder.hardware_change,
         "equipment_required": testorder.equipment_required,
         "shift": testorder.shift,

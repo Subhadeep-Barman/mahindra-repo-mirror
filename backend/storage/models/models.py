@@ -184,6 +184,7 @@ class TestOrder(Base):
     inertia_class = Column(String, nullable=True)
     dataset_name = Column(String, nullable=True)
     dpf = Column(String, nullable=True)
+    dpf_regen_occurs =Column(String, nullable=True)
     dataset_flashed = Column(Boolean, nullable=True)
     ess = Column(String, nullable=True)
     mode = Column(String, nullable=True)
