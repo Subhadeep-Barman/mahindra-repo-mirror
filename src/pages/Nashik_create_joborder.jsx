@@ -18,6 +18,7 @@ import { Switch } from "@/components/UI/switch";
 import useStore from "@/store/useStore";
 import axios from "axios";
 import CFTMembers from "@/components/CFTMembers";
+import { ArrowBack } from "@mui/icons-material";
 import { useAuth } from "@/context/AuthContext";
 import showSnackbar from "@/utils/showSnackbar";
 
@@ -602,6 +603,10 @@ export default function NashikCreateJobOrder() {
     else if (tab === "Engine") navigate("/chennai/engine");
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   // Add this function to handle dropdown changes
   const handleChange = (field, value) => {
     setForm((prev) => ({
@@ -1182,6 +1187,14 @@ export default function NashikCreateJobOrder() {
         <div className="flex items-center justify-between px-8 pt-6">
           <div className="flex items-center gap-4">
             <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBack}
+              className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:border-red-500 dark:hover:bg-red-950 rounded-full border border-red-500"
+            >
+              <ArrowBack className="h-5 w-5" />
+            </Button>
+            <Button
               variant="outline"
               className="bg-red-600 text-white px-3 py-1 rounded"
             >
@@ -1197,23 +1210,12 @@ export default function NashikCreateJobOrder() {
               )}
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button className="bg-red-600 text-white px-4 py-1 rounded">
-              Job Order
-            </Button>
-            <Button className="bg-white text-red-600 border border-red-600 px-4 py-1 rounded">
-              Vehicle
-            </Button>
-            <Button className="bg-white text-red-600 border border-red-600 px-4 py-1 rounded">
-              Engine
-            </Button>
-          </div>
         </div>
         {/* Form Row */}
-        <form className="flex flex-row gap-6 px-8 py-6 items-end">
+        <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 px-8 py-6">
           {/* Project Code */}
           <div className="flex flex-col">
-            <Label htmlFor="projectCode">
+            <Label htmlFor="projectCode" className="mb-2">
               Project <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1222,7 +1224,7 @@ export default function NashikCreateJobOrder() {
               required
               disabled={formDisabled || isTestEngineer}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1236,7 +1238,7 @@ export default function NashikCreateJobOrder() {
           </div>
           {/* Vehicle Body Number */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleBodyNumber">
+            <Label htmlFor="vehicleBodyNumber" className="mb-2">
               Vehicle Body Number <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1245,7 +1247,7 @@ export default function NashikCreateJobOrder() {
               required
               disabled={formDisabled || isTestEngineer}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1262,14 +1264,14 @@ export default function NashikCreateJobOrder() {
           </div>
           {/* Vehicle Number (auto) */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleSerialNumber">
+            <Label htmlFor="vehicleSerialNumber" className="mb-2">
               Vehicle Number <span className="text-red-500">*</span>
             </Label>
             <Input
               id="vehicleSerialNumber"
               value={form.vehicleSerialNumber}
               readOnly
-              className="w-44"
+              className="w-full"
               placeholder="Auto-fetched"
               required
               disabled={formDisabled || isTestEngineer}
@@ -1277,7 +1279,7 @@ export default function NashikCreateJobOrder() {
           </div>
           {/* Engine Number (dropdown) */}
           <div className="flex flex-col">
-            <Label htmlFor="engineSerialNumber">
+            <Label htmlFor="engineSerialNumber" className="mb-2">
               Engine Number <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1286,7 +1288,7 @@ export default function NashikCreateJobOrder() {
               required
               disabled={formDisabled || isTestEngineer}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1300,7 +1302,7 @@ export default function NashikCreateJobOrder() {
           </div>
           {/* Type of Engine */}
           <div className="flex flex-col">
-            <Label htmlFor="engineType">
+            <Label htmlFor="engineType" className="mb-2">
               Type of Engine <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1309,7 +1311,7 @@ export default function NashikCreateJobOrder() {
               required
               disabled={formDisabled || isTestEngineer}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1323,7 +1325,7 @@ export default function NashikCreateJobOrder() {
           </div>
           {/* Domain */}
           <div className="flex flex-col">
-            <Label htmlFor="domain">
+            <Label htmlFor="domain" className="mb-2">
               Domain <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1332,7 +1334,7 @@ export default function NashikCreateJobOrder() {
               required
               disabled={formDisabled || isTestEngineer}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1346,7 +1348,7 @@ export default function NashikCreateJobOrder() {
           </div>
           {/* Department */}
           <div className="flex flex-col">
-            <Label htmlFor="department">
+            <Label htmlFor="department" className="mb-2">
               Department <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1355,7 +1357,7 @@ export default function NashikCreateJobOrder() {
               required
               disabled={true}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1473,7 +1475,7 @@ export default function NashikCreateJobOrder() {
           <div className="grid grid-cols-7 gap-4">
             <div>
               <Label htmlFor="vehicleRefMass" className="text-xs">
-                Vehicle Reference mass (Kg)
+                Vehicle Reference Mass (Kg)
               </Label>
               <Input
                 id="vehicleRefMass"

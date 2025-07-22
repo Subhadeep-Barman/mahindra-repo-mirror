@@ -19,6 +19,7 @@ import { Switch } from "@/components/UI/switch";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+import { ArrowBack } from "@mui/icons-material";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
@@ -723,6 +724,10 @@ export default function RDECreateJobOrder() {
     else if (tab === "Engine") navigate("/chennai/engine");
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   // Add this function to handle dropdown changes
   const handleChange = (field, value) => {
     setForm((prev) => ({
@@ -1356,6 +1361,14 @@ export default function RDECreateJobOrder() {
         <div className="flex items-center justify-between px-8 pt-6">
           <div className="flex items-center gap-4">
             <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBack}
+              className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:border-red-500 dark:hover:bg-red-950 rounded-full border border-red-500"
+            >
+              <ArrowBack className="h-5 w-5" />
+            </Button>
+            <Button
               variant="outline"
               className="bg-red-600 text-white px-3 py-1 rounded"
             >
@@ -1371,23 +1384,12 @@ export default function RDECreateJobOrder() {
               )}
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button className="bg-red-600 text-white px-4 py-1 rounded">
-              Job Order
-            </Button>
-            <Button className="bg-white text-red-600 border border-red-600 px-4 py-1 rounded">
-              Vehicle
-            </Button>
-            <Button className="bg-white text-red-600 border border-red-600 px-4 py-1 rounded">
-              Engine
-            </Button>
-          </div>
         </div>
         {/* Form Row */}
-        <form className="flex flex-row gap-6 px-8 py-6 items-end">
+        <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 px-8 py-6">
           {/* Project Code */}
           <div className="flex flex-col">
-            <Label htmlFor="projectCode">
+            <Label htmlFor="projectCode" className="mb-2">
               Project <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1396,7 +1398,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1410,7 +1412,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Vehicle Body Number */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleBodyNumber">
+            <Label htmlFor="vehicleBodyNumber" className="mb-2">
               Vehicle Body Number <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1419,7 +1421,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1436,14 +1438,14 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Vehicle Number (auto) */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleSerialNumber">
+            <Label htmlFor="vehicleSerialNumber" className="mb-2">
               Vehicle Number <span className="text-red-500">*</span>
             </Label>
             <Input
               id="vehicleSerialNumber"
               value={form.vehicleSerialNumber}
               readOnly
-              className="w-44"
+              className="w-full"
               placeholder="Auto-fetched"
               required
               disabled={formDisabled}
@@ -1451,7 +1453,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Engine Number (dropdown) */}
           <div className="flex flex-col">
-            <Label htmlFor="engineNumber">
+            <Label htmlFor="engineNumber" className="mb-2">
               Engine Number <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1460,7 +1462,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1474,7 +1476,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Type of Engine */}
           <div className="flex flex-col">
-            <Label htmlFor="engineType">
+            <Label htmlFor="engineType" className="mb-2">
               Type of Engine <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1483,7 +1485,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1497,7 +1499,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Domain */}
           <div className="flex flex-col">
-            <Label htmlFor="domain">
+            <Label htmlFor="domain" className="mb-2">
               Domain <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1506,7 +1508,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1520,7 +1522,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Department */}
           <div className="flex flex-col">
-            <Label htmlFor="department">
+            <Label htmlFor="department" className="mb-2">
               Department <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1529,7 +1531,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={true}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1544,10 +1546,10 @@ export default function RDECreateJobOrder() {
         </form>
 
         {/* New fields below the main form row */}
-        <div className="flex flex-row gap-6 px-8 pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 px-8 pb-4">
           {/* WBS Code */}
           <div className="flex flex-col">
-            <Label htmlFor="wbsCode">
+            <Label htmlFor="wbsCode" className="mb-2">
               WBS Code <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -1556,7 +1558,7 @@ export default function RDECreateJobOrder() {
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, wbsCode: e.target.value }))
               }
-              className="w-44"
+              className="w-full"
               required
               disabled={formDisabled}
               placeholder="Enter WBS Code"
@@ -1564,7 +1566,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Vehicle GVW */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleGVW">
+            <Label htmlFor="vehicleGVW" className="mb-2">
               Vehicle GVW (Kg) <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -1573,7 +1575,7 @@ export default function RDECreateJobOrder() {
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, vehicleGVW: e.target.value }))
               }
-              className="w-44"
+              className="w-full"
               required
               disabled={formDisabled}
               placeholder="Enter GVW"
@@ -1583,7 +1585,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Vehicle Kerb weight */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleKerbWeight">
+            <Label htmlFor="vehicleKerbWeight" className="mb-2">
               Vehicle Kerb weight (Kg) <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -1595,7 +1597,7 @@ export default function RDECreateJobOrder() {
                   vehicleKerbWeight: e.target.value,
                 }))
               }
-              className="w-44"
+              className="w-full"
               required
               disabled={formDisabled}
               placeholder="Enter Kerb Weight"
@@ -1605,7 +1607,7 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Vehicle Test Payload criteria */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleTestPayloadCriteria">
+            <Label htmlFor="vehicleTestPayloadCriteria" className="mb-2">
               Vehicle Test Payload criteria (Kg){" "}
               <span className="text-red-500">*</span>
             </Label>
@@ -1620,9 +1622,8 @@ export default function RDECreateJobOrder() {
               }}
               required
               disabled={formDisabled}
-              className="w-44"
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1632,32 +1633,32 @@ export default function RDECreateJobOrder() {
             </Select>
           </div>
           {/* Show manual entry field only if 'Manual Entry' is selected */}
-          {form.vehicleTestPayloadCriteria === "Manual Entry" && (
-            <div className="flex flex-col">
-              <Label htmlFor="requestedPayloadKg">
-                Requested Payload in kgs <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="requestedPayloadKg"
-                value={form.requestedPayloadKg}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    requestedPayloadKg: e.target.value,
-                  }))
-                }
-                required
-                disabled={formDisabled}
-                className="w-44"
-                placeholder="Enter Requested Payload"
-                type="number"
-                min="0"
-              />
-            </div>
-          )}
+            {form.vehicleTestPayloadCriteria === "Manual Entry" && (
+              <div className="flex flex-col">
+                <Label htmlFor="requestedPayloadKg" className="mb-2">
+                  Requested Payload in kgs <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="requestedPayloadKg"
+                  value={form.requestedPayloadKg}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      requestedPayloadKg: e.target.value,
+                    }))
+                  }
+                  required
+                  disabled={formDisabled}
+                  className="w-full"
+                  placeholder="Enter Requested Payload"
+                  type="number"
+                  min="0"
+                />
+              </div>
+            )}
           {/* Idle Exhaust Mass Flow */}
           <div className="flex flex-col">
-            <Label htmlFor="idleExhaustMassFlow">
+            <Label htmlFor="idleExhaustMassFlow" className="mb-2">
               Idle Exhaust Mass Flow (Kg/hr){" "}
               <span className="text-red-500">*</span>
             </Label>
@@ -1670,7 +1671,7 @@ export default function RDECreateJobOrder() {
                   idleExhaustMassFlow: e.target.value,
                 }))
               }
-              className="w-44"
+              className="w-full"
               required
               disabled={formDisabled}
               placeholder="Enter Idle Exhaust Mass Flow"
@@ -1786,7 +1787,7 @@ export default function RDECreateJobOrder() {
           <div className="grid grid-cols-7 gap-4">
             <div>
               <Label htmlFor="vehicleRefMass" className="text-xs">
-                Vehicle Reference mass (Kg)
+                Vehicle Reference Mass (Kg)
               </Label>
               <Input
                 id="vehicleRefMass"

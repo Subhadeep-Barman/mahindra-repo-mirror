@@ -1479,7 +1479,7 @@ export default function CreateJobOrder() {
         <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 px-8 py-6">
           {/* Project Code */}
           <div className="flex flex-col">
-            <Label htmlFor="projectCode">
+            <Label htmlFor="projectCode" className="mb-2">
               Project <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1502,7 +1502,7 @@ export default function CreateJobOrder() {
           </div>
           {/* Vehicle Body Number */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleBodyNumber">
+            <Label htmlFor="vehicleBodyNumber" className="mb-2">
               Vehicle Body No. <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1528,7 +1528,7 @@ export default function CreateJobOrder() {
           </div>
           {/* vehicle_serial_number (auto) */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleSerialNumber">
+            <Label htmlFor="vehicleSerialNumber" className="mb-2">
               Vehicle Serial Number <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -1543,7 +1543,7 @@ export default function CreateJobOrder() {
           </div>
           {/* Engine Number (dropdown) */}
           <div className="flex flex-col">
-            <Label htmlFor="engineSerialNumber">
+            <Label htmlFor="engineSerialNumber" className="mb-2">
               Engine Serial Number <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1571,7 +1571,7 @@ export default function CreateJobOrder() {
           </div>
           {/* Type of Engine */}
           <div className="flex flex-col">
-            <Label htmlFor="engineType">
+            <Label htmlFor="engineType" className="mb-2">
               Type of Engine <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1594,7 +1594,7 @@ export default function CreateJobOrder() {
           </div>
           {/* Domain */}
           <div className="flex flex-col">
-            <Label htmlFor="domain">
+            <Label htmlFor="domain" className="mb-2">
               Domain <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1617,7 +1617,7 @@ export default function CreateJobOrder() {
           </div>
           {/* Department */}
           <div className="flex flex-col">
-            <Label htmlFor="department">
+            <Label htmlFor="department" className="mb-2">
               Department <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1716,7 +1716,7 @@ export default function CreateJobOrder() {
         <div className="mx-8 mb-4 border rounded shadow px-6 py-4">
           <div className="flex items-center justify-between mb-2">
             <div>
-              <Label htmlFor="cdReportRef">
+              <Label htmlFor="cdReportRef" className="mb-2">
                 Coast Down Test Report Reference
               </Label>
               {location.state?.isEdit && existingCoastDownId && (
@@ -1741,8 +1741,8 @@ export default function CreateJobOrder() {
 
           <div className="grid grid-cols-7 gap-4">
             <div>
-              <Label htmlFor="vehicleRefMass" className="text-xs">
-                Vehicle Reference mass (Kg)
+              <Label htmlFor="vehicleRefMass" className="text-xs mb-2">
+                Vehicle Reference Mass (Kg)
               </Label>
               <Input
                 id="vehicleRefMass"
@@ -1757,7 +1757,7 @@ export default function CreateJobOrder() {
               )}
             </div>
             <div>
-              <Label htmlFor="aN" className="text-xs">
+              <Label htmlFor="aN" className="text-xs mb-2">
                 A (N)
               </Label>
               <Input
@@ -1773,7 +1773,7 @@ export default function CreateJobOrder() {
               )}
             </div>
             <div>
-              <Label htmlFor="bNkmph" className="text-xs">
+              <Label htmlFor="bNkmph" className="text-xs mb-2">
                 B (N/kmph)
               </Label>
               <Input
@@ -1789,7 +1789,7 @@ export default function CreateJobOrder() {
               )}
             </div>
             <div>
-              <Label htmlFor="cNkmph2" className="text-xs">
+              <Label htmlFor="cNkmph2" className="text-xs mb-2">
                 C (N/kmph^2)
               </Label>
               <Input
@@ -1805,7 +1805,7 @@ export default function CreateJobOrder() {
               )}
             </div>
             <div>
-              <Label htmlFor="f0N" className="text-xs">
+              <Label htmlFor="f0N" className="text-xs mb-2">
                 F0 (N)
               </Label>
               <Input
@@ -1821,7 +1821,7 @@ export default function CreateJobOrder() {
               )}
             </div>
             <div>
-              <Label htmlFor="f1Nkmph" className="text-xs">
+              <Label htmlFor="f1Nkmph" className="text-xs mb-2">
                 F1 (N/kmph)
               </Label>
               <Input
@@ -1837,7 +1837,7 @@ export default function CreateJobOrder() {
               )}
             </div>
             <div>
-              <Label htmlFor="f2Nkmph2" className="text-xs">
+              <Label htmlFor="f2Nkmph2" className="text-xs mb-2">
                 F2 (N/kmph^2)
               </Label>
               <Input
