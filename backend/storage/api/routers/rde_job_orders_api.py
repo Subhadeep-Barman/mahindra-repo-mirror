@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Body
 from sqlalchemy.orm import Session
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 from backend.storage.api.api_utils import get_db
 from backend.storage.models.models import RDEJobOrder, TestOrder  # Import TestOrder model
@@ -9,31 +9,31 @@ from backend.storage.models.models import RDEJobOrder, TestOrder  # Import TestO
 router = APIRouter()
 
 class RDEJobOrderSchema(BaseModel):
-    job_order_id: str
-    project_code: str = None
-    vehicle_serial_number: str = None
-    vehicle_body_number: str = None
-    engine_serial_number: str = None
-    CoastDownData_id: str = None
-    type_of_engine: str = None
-    department: str = None
-    domain: str = None
-    test_status: str = None
-    completed_test_count: str = None
-    wbs_code: str = None
-    vehicle_gwv: str = None
-    vehicle_kerb_weight: str = None
-    vehicle_test_payload_criteria: str = None
-    requested_payload: str = None
-    idle_exhaust_mass_flow: str = None
-    job_order_status: str = None
-    id_of_creator: str = None
-    name_of_creator: str = None
-    created_on: datetime = None
-    id_of_updater: str = None
-    name_of_updater: str = None
-    updated_on: datetime = None
-    cft_members: List[str] = None
+    job_order_id: Optional[str] = None
+    project_code: Optional[str] = None
+    vehicle_serial_number: Optional[str] = None
+    vehicle_body_number: Optional[str] = None
+    engine_serial_number: Optional[str] = None
+    CoastDownData_id: Optional[str] = None
+    type_of_engine: Optional[str] = None
+    department: Optional[str] = None
+    domain: Optional[str] = None
+    test_status: Optional[str] = None
+    completed_test_count: Optional[str] = None
+    wbs_code: Optional[str] = None
+    vehicle_gwv: Optional[str] = None
+    vehicle_kerb_weight: Optional[str] = None
+    vehicle_test_payload_criteria: Optional[str] = None
+    requested_payload: Optional[str] = None
+    idle_exhaust_mass_flow: Optional[str] = None
+    job_order_status: Optional[str] = None
+    id_of_creator: Optional[str] = None
+    name_of_creator: Optional[str] = None
+    created_on: Optional[datetime] = None
+    id_of_updater: Optional[str] = None
+    name_of_updater: Optional[str] = None
+    updated_on: Optional[datetime] = None
+    cft_members: Optional[List[str]] = None
 
 def rde_joborder_to_dict(rde_joborder: RDEJobOrder, db: Session = None):
     total_test_orders = 0

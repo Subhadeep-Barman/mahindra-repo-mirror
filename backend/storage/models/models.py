@@ -43,6 +43,7 @@ class Vehicle(Base):
     gear_ratio_4 = Column(String, nullable=True)
     gear_ratio_5 = Column(String, nullable=True)
     reverse_gear_ratio = Column(String, nullable=True)
+    department = Column(String, nullable=True)
     id_of_creator = Column(String, nullable=True)
     created_on = Column(TIMESTAMP, nullable=True)
     id_of_updater = Column(String, nullable=True)
@@ -98,6 +99,7 @@ class Engine(Base):
     hv_battery_voltage = Column(Float, nullable=True)
     hv_battery_current = Column(Float, nullable=True)
     ev_motor_power_kw = Column(Float, nullable=True)
+    department = Column(String, nullable=True)
     id_of_creator = Column(String, nullable=True)
     created_on = Column(TIMESTAMP, nullable=True)
     id_of_updater = Column(String, nullable=True)
@@ -147,9 +149,10 @@ class JobOrder(Base):
 class RDEJobOrder(Base):
     __tablename__ = "RDEJobOrders"
     job_order_id = Column(String, primary_key=True)
+    project_code = Column(String, nullable=True)
     vehicle_serial_number = Column(String, nullable=True)
     vehicle_body_number = Column(String, nullable=True)
-    engine_id = Column(String, nullable=True)
+    engine_serial_number = Column(String, nullable=True)
     CoastDownData_id = Column(String, nullable=True)
     type_of_engine = Column(String, nullable=True)
     department = Column(String, nullable=True)

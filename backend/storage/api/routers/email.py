@@ -6,6 +6,10 @@ from sqlalchemy.orm import Session
 from backend.storage.api.api_utils import get_db
 import os
 import json
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import re
 
 router = APIRouter()
 
@@ -20,20 +24,51 @@ def get_mail_template(caseid: str, data: dict) -> Dict[str, str]:
     """
     with open(JSON_DATA_PATH, "r", encoding="utf-8") as f:
         templates = json.load(f)
-    if caseid not in templates:
+    # Find the case in the email_cases list
+    email_cases = templates.get("email_cases", [])
+    template = next((case for case in email_cases if case["id"] == caseid), None)
+    if not template:
         raise HTTPException(status_code=400, detail="Invalid caseid")
-    template = templates[caseid]
-    subject = template["subject"].format(**data)
-    body = template["body"].format(**data)
-    return {"subject": subject, "body": body}
+    subject = template["body"]["subject"].format(**data)
+    message = template["body"]["message"].format(**data)
+    # Optionally, you can add redirect_link or button_style if needed
+    return {"subject": subject, "body": message}
 
 
-def send_email(db: Session, to_email: str, subject: str, body: str):
+def send_email(to_email: str, subject: str, body: str):
     """
-    Placeholder for actual email sending logic.
+    Send an email using SMTP.
     """
-    # Implement your email sending logic here (e.g., SMTP, SendGrid, etc.)
-    pass
+    smtp_host = os.environ.get("SMTP_SERVER", "")
+    smtp_port = int(os.environ.get("SMTP_PORT", 587))
+    smtp_user = os.environ.get("SENDER_EMAIL", "")
+    smtp_pass = os.environ.get("SENDER_PASSWORD", "")
+    from_email = smtp_user
+
+    if not smtp_host or not smtp_user or not smtp_pass:
+        raise HTTPException(
+            status_code=500,
+            detail="SMTP_SERVER, SENDER_EMAIL, or SENDER_PASSWORD environment variable is not set. Please configure your SMTP settings."
+        )
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = from_email
+    msg["To"] = to_email
+
+    # Attach HTML body
+    msg.attach(MIMEText(body, "html"))
+
+    # try:
+    with smtplib.SMTP(smtp_host, smtp_port) as server:
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.sendmail(from_email, to_email, msg.as_string())
+    # except Exception as e:
+    #     raise HTTPException(
+    #         status_code=500,
+    #         detail=f"Email sending failed: {str(e)}. Check your SMTP configuration."
+    #     )
 
 
 @router.post("/send")
@@ -41,23 +76,20 @@ async def send_email_endpoint(
     caseid: str = Body(...),
     to_email: str = Body(...),
     data: dict = Body(...),
-    db: Session = Depends(get_db),
 ):
     """
     Endpoint to send an email based on caseid and data.
     """
-    try:
-        mail_content = get_mail_template(caseid, data)
-        send_email(
-            db=db,
-            to_email=to_email,
-            subject=mail_content["subject"],
-            body=mail_content["body"],
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to send email: please try again later"
-        )
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", to_email):
+        raise HTTPException(status_code=400, detail="Invalid recipient email address.")
+
+    mail_content = get_mail_template(caseid, data)
+    send_email(
+        to_email=to_email,
+        subject=mail_content["subject"],
+        body=mail_content["body"],
+    )
+    return {"detail": "Email sent successfully"}
 
 
 @router.post("/cft_members/add")
@@ -122,6 +154,9 @@ async def delete_cft_member(
         raise HTTPException(status_code=404, detail="JobOrder not found")
     if member_index >= len(job_order.cft_members):
         raise HTTPException(status_code=404, detail="CFT member not found")
+    job_order.cft_members.pop(member_index)
+    db.commit()
+    return job_order
     job_order.cft_members.pop(member_index)
     db.commit()
     return job_order

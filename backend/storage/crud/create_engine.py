@@ -59,6 +59,7 @@ def engine_to_dict(engine):
         "hv_battery_voltage": engine.hv_battery_voltage,
         "hv_battery_current": engine.hv_battery_current,
         "ev_motor_power_kw": engine.ev_motor_power_kw,
+        "department": engine.department,
         "id_of_creator": engine.id_of_creator,
         "created_on": engine.created_on,
         "id_of_updater": engine.id_of_updater,
