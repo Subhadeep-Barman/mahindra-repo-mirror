@@ -599,10 +599,10 @@ export default function CreateJobOrder() {
     e.preventDefault();
 
     // Require at least one CFT member
-    // if (!cftMembers || cftMembers.length === 0) {
-    //   showError("Please add at least one CFT member before creating a job order.");
-    //   return;
-    // }
+    if (!cftMembers || cftMembers.length === 0) {
+      alert("Please add at least one CFT member before creating a job order.");
+      return;
+    }
 
     // Generate job_order_id and CoastDownData_id based on timestamp
     const job_order_id = "JO" + Date.now();
@@ -2486,8 +2486,10 @@ export default function CreateJobOrder() {
                     }
                     // Disable upload for ProjectTeam unless they're editing a Re-edit status test, allow only view/download
                     // disabled={!areTestFieldsEditable(test, idx)}
+                    disabled={userRole === "ProjectTeam"}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                    viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
+                    // viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
+                    viewOnly={userRole === "ProjectTeam"}
                   />
                 </div>
                 <div>
@@ -2517,7 +2519,9 @@ export default function CreateJobOrder() {
                     }
                     // disabled={!areTestFieldsEditable(test, idx)}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                    viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
+                    // viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
+                    disabled={userRole === "ProjectTeam"}
+                    viewOnly={userRole === "ProjectTeam"}
                   />
                 </div>
                 <div>
@@ -2547,7 +2551,9 @@ export default function CreateJobOrder() {
                     }
                     // disabled={!areTestFieldsEditable(test, idx)}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                    viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
+                    // viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
+                    disabled={userRole === "ProjectTeam"}
+                    viewOnly={userRole === "ProjectTeam"}
                   />
                 </div>
                 <div>
@@ -2577,7 +2583,9 @@ export default function CreateJobOrder() {
                     }
                     // disabled={!areTestFieldsEditable(test, idx)}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                    viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
+                    // viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
+                    disabled={userRole === "ProjectTeam"}
+                    viewOnly={userRole === "ProjectTeam"}
                   />
                 </div>
               </div>

@@ -72,17 +72,26 @@ export default function RDEChennaiPage() {
 
   // Handler for clicking job order number
   const handleJobOrderClick = (job_order_id) => {
-    axios
-      .get(`${apiURL}/rde_joborders/${job_order_id}`)
-      .then((res) => {
-        setJobOrderEdit(res.data);
-        setModalOpen(true);
-      })
-      .catch(() => {
-        setJobOrderEdit(null);
-        setModalOpen(false);
-      });
-  };
+      // Fetch job order details from backend and redirect to /createJobOrder with all data
+      axios
+        .get(`${apiURL}/rde_joborders/${job_order_id}`)
+        .then((res) => {
+          // Pass the complete job order data to create job order page
+          // This will allow the form to be pre-filled with existing values
+          navigate("/createJobOrder", {
+            state: {
+              jobOrder: res.data,
+              isEdit: true, // Flag to indicate this is for editing/creating test orders
+              originalJobOrderId: job_order_id, // Keep reference to original job order
+            },
+          });
+        })
+        .catch((error) => {
+          console.error("Failed to fetch job order details:", error);
+          // Still navigate but without pre-filled data
+          navigate("/createJobOrder");
+        });
+    };
 
   // Handler for editing fields in the modal
   const handleEditChange = (field, value) => {
@@ -184,7 +193,7 @@ export default function RDEChennaiPage() {
                       Job Order Number
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
-                      Project
+                      Project Code
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Vehicle Number
@@ -230,13 +239,17 @@ export default function RDEChennaiPage() {
                         </span>
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
-                        {order.project_id}
+                        {order.project_code}
                       </TableCell>
+
                       <TableCell className="text-xs text-gray-600">
                         {order.vehicle_serial_number}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
                         {order.vehicle_body_number}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-900">
+                        {order.engine_serial_number}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
                         {order.domain}

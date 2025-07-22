@@ -38,7 +38,10 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
         }
     };
 
-    // Remove member
+    // View state: "single" or "group"
+    const [viewType, setViewType] = useState("single");
+
+    // Remove member (single or group)
     const removeMember = async (idx) => {
         if (!jobOrderId) return;
         try {
@@ -130,18 +133,23 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
         setGroupsModalOpen(false);
     };
 
+    // Add Group to members (with group: true and members array)
     const handleAddGroup = () => {
         if (!groupName.trim()) {
             setGroupError("Group name required");
             return;
         }
-        setGroups(prev => [...prev, { name: groupName.trim() }]);
+        // Add group object to members
+        setMembers(prev => [
+            ...prev,
+            { group: true, name: groupName.trim(), members: [] }
+        ]);
         setGroupsModalOpen(false);
     };
 
-    const handleGroupsClick = () => {        
-        openGroupsModal();
-    };
+    // Filtered lists
+    const singleMembers = members.filter(m => !m.group);
+    const groupMembers = members.filter(m => m.group);
 
     return (
         <div className="relative h-72 flex flex-col">
@@ -154,32 +162,25 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
             <div className="p-4 flex-1">
                 {/* Action Buttons */}
                 <div className="flex gap-2 mb-4">
-                    <button className="flex items-center gap-2 px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-700 transition-colors" disabled>
+                    <button
+                        className={`flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors ${viewType === "single" ? "bg-red-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                        onClick={() => setViewType("single")}
+                        disabled={viewType === "single"}
+                    >
                         <User size={16} />
                     </button>
                     <button
-                        onClick={handleGroupsClick}
-                        className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition-colors"
+                        onClick={() => setViewType("group")}
+                        className={`flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors ${viewType === "group" ? "bg-red-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                        disabled={viewType === "group"}
                     >
                         <Users size={16} />
                     </button>
                 </div>
 
-                {/* Groups List */}
-                {groups.length > 0 && (
-                    <div className="mb-4">
-                        <div className="font-semibold text-gray-700 text-xs mb-1">Groups:</div>
-                        {groups.map((g, i) => (
-                            <div key={i} className="text-xs text-gray-800 mb-1 border rounded px-2 py-1 bg-gray-50">
-                                <span className="font-bold">{g.name}</span>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
                 {/* Members List */}
                 <div className="mb-2">
-                    {members.map((member, idx) => (
+                    {viewType === "single" && singleMembers.map((member, idx) => (
                         <div key={idx} className="flex items-center justify-between py-2 bg-gray-50 rounded-lg mb-2">
                             <div className="flex-1">
                                 <div className="text-sm font-medium text-gray-900 border-2 p-1">
@@ -187,9 +188,29 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                                 </div>
                             </div>
                             <button
-                                onClick={() => removeMember(idx)}
+                                onClick={() => removeMember(members.indexOf(member))}
                                 className="text-gray-400 hover:text-red-500 transition-colors ml-2"
-                                // disabled={disabled}
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
+                    ))}
+                    {viewType === "group" && groupMembers.map((group, idx) => (
+                        <div key={idx} className="flex items-center justify-between py-2 bg-gray-50 rounded-lg mb-2">
+                            <div className="flex-1">
+                                <div className="text-sm font-bold text-gray-900 border-2 p-1">
+                                    Group: {group.name}
+                                </div>
+                                {/* Optionally, show group members here */}
+                                {/* <div className="text-xs text-gray-700 ml-2">
+                                    {group.members.map((m, i) => (
+                                        <span key={i}>{m.code} - {m.name}{i < group.members.length - 1 ? ", " : ""}</span>
+                                    ))}
+                                </div> */}
+                            </div>
+                            <button
+                                onClick={() => removeMember(members.indexOf(group))}
+                                className="text-gray-400 hover:text-red-500 transition-colors ml-2"
                             >
                                 <Trash2 size={16} />
                             </button>
@@ -198,13 +219,22 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                 </div>
 
                 {/* Add CFT Button */}
-                <button
-                    onClick={openAddModal}
-                    className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center mt-2"
-                    // disabled={disabled}
-                >
-                    + ADD CFT
-                </button>
+                {viewType === "single" && (
+                    <button
+                        onClick={openAddModal}
+                        className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center mt-2"
+                    >
+                        + ADD CFT
+                    </button>
+                )}
+                {viewType === "group" && (
+                    <button
+                        onClick={openGroupsModal}
+                        className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center mt-2"
+                    >
+                        + ADD GROUP
+                    </button>
+                )}
 
                 {/* Add Member Modal */}
                 {addModalOpen && (

@@ -182,7 +182,7 @@ export default function VTCNashikPage() {
                       Job Order Number
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
-                      Project
+                      Project Code
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Vehicle Number
@@ -233,6 +233,9 @@ export default function VTCNashikPage() {
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
                         {order.vehicle_body_number || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-900">
+                        {order.engine_serial_number || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
                         {order.domain || "N/A"}

@@ -864,9 +864,9 @@ export default function EditTestOrder() {
                   openModal={pdfReportModal}
                   handleOpenModal={() => setPdfReportModal(true)}
                   handleCloseModal={() => setPdfReportModal(false)}
-                  disabled={isProjectTeam && test.status !== "Re-edit"}
+                  disabled={userRole === "ProjectTeam"}
                   originalJobOrderId={jobOrderId || ""}
-                  viewOnly={isProjectTeam && test.status !== "Re-edit"}
+                  viewOnly={userRole === "ProjectTeam"}
                 />
               </div>
               <div>
@@ -888,9 +888,9 @@ export default function EditTestOrder() {
                   openModal={excelReportModal}
                   handleOpenModal={() => setExcelReportModal(true)}
                   handleCloseModal={() => setExcelReportModal(false)}
-                  disabled={isProjectTeam && test.status !== "Re-edit"}
                   originalJobOrderId={jobOrderId || ""}
-                  viewOnly={isProjectTeam && test.status !== "Re-edit"}
+                  disabled={userRole === "ProjectTeam"}
+                  viewOnly={userRole === "ProjectTeam"}
                 />
               </div>
               <div>
@@ -912,9 +912,9 @@ export default function EditTestOrder() {
                   openModal={datFileModal}
                   handleOpenModal={() => setDatFileModal(true)}
                   handleCloseModal={() => setDatFileModal(false)}
-                  disabled={isProjectTeam && test.status !== "Re-edit"}
                   originalJobOrderId={jobOrderId || ""}
-                  viewOnly={isProjectTeam && test.status !== "Re-edit"}
+                  disabled={userRole === "ProjectTeam"}
+                  viewOnly={userRole === "ProjectTeam"}
                 />
               </div>
               <div>
@@ -936,9 +936,9 @@ export default function EditTestOrder() {
                   openModal={othersModal}
                   handleOpenModal={() => setOthersModal(true)}
                   handleCloseModal={() => setOthersModal(false)}
-                  disabled={isProjectTeam && test.status !== "Re-edit"}
                   originalJobOrderId={jobOrderId || ""}
-                  viewOnly={isProjectTeam && test.status !== "Re-edit"}
+                  disabled={userRole === "ProjectTeam"}
+                  viewOnly={userRole === "ProjectTeam"}
                 />
               </div>
             </div>

@@ -804,6 +804,7 @@ export default function NashikCreateJobOrder() {
           ? "\nCoast Down Data ID: " + CoastDownData_id
           : "")
       );
+      navigate("/vtc-nashik")
     } catch (err) {
       console.error("Error creating test order:", err);
       alert(
