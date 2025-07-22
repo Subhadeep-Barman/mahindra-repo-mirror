@@ -28,7 +28,7 @@ import VTCNashikVehicleForm from "./pages/VTC_N_Vehicle_form";
 // RDE
 import RDEChennaiPage from "./pages/RDE_Chennai_Page";
 import RDE_JobOrder_Create from "./pages/RDE_JobOrder_Create";
-import RDEJobOrder from "./pages/RDE_JOBORDER";
+// import RDEJobOrder from "./pages/RDE_JOBORDER";
 import RDEVehicle from "./pages/RDE_C_vehicle";
 import RDEEngine from "./pages/RDE_Engine";
 
@@ -36,6 +36,9 @@ import RDEEngine from "./pages/RDE_Engine";
 import CreateJobOrder from "./pages/Chennai_create_joborder";
 import AuthSuccess from "./pages/AuthSuccess";
 import DefaultLogin from "./pages/defaultlogin";
+
+// Import EditTestOrder component
+import EditTestOrder from "./pages/EditTestOrder";
 
 const ProtectedRoute = ({ element }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -84,7 +87,7 @@ function App() {
 
           {/* VTC Nashik */}
           <Route path="/vtc-nashik" element={<ProtectedRoute element={<VTCNashikPage />} />} />
-          <Route path="/nashik/joborder" element={<ProtectedRoute element={<NashikJobOrder />} />} />
+          <Route path="/NashikCreateJobOrder" element={<ProtectedRoute element={<NashikJobOrder />} />} />
           <Route path="/nashik/vehicle" element={<ProtectedRoute element={<VTCNashikVehicle />} />} />
           <Route path="/nashik/engine" element={<ProtectedRoute element={<RDEnginePage />} />} />
           <Route path="/nashik/vehicle/new" element={<ProtectedRoute element={<VTCNashikVehicleForm />} />} />
@@ -92,13 +95,14 @@ function App() {
 
           {/* RDE */}
           <Route path="/rde-chennai" element={<ProtectedRoute element={<RDEChennaiPage />} />} />
-          <Route path="/rde/joborder" element={<ProtectedRoute element={<RDEJobOrder />} />} />
+          {/* <Route path="/rde/joborder" element={<ProtectedRoute element={<RDEJobOrder />} />} /> */}
           <Route path="/rde/vehicle" element={<ProtectedRoute element={<RDEVehicle />} />} />
           <Route path="/rde/engine" element={<ProtectedRoute element={<RDEEngine />} />} />
 
           {/* Misc */}
           <Route path="/RDECreateJobOrder" element={<ProtectedRoute element={<RDE_JobOrder_Create />} />} />
           <Route path="/createJobOrder" element={<ProtectedRoute element={<CreateJobOrder />} />} />
+          <Route path="/editTestOrder" element={<ProtectedRoute element={<EditTestOrder />} />} />
           <Route path="/authSuccess" element={<AuthSuccess />} />
         </Routes>
       </div>

@@ -28,7 +28,7 @@ export default function RDECreateJobOrder() {
     vehicleBuildLevel: "",
     vehicleModel: "",
     vehicleBodyNumber: "",
-    vehicleNumber: "",
+    vehicleSerialNumber: "",
     transmissionType: "",
     finalDriveAxleRatio: "",
     engineNumber: "",
@@ -64,6 +64,7 @@ export default function RDECreateJobOrder() {
     vehicleGVW: "",
     vehicleKerbWeight: "",
     vehicleTestPayloadCriteria: "",
+    requestedPayloadKg: "", // <-- new field for manual entry
     idleExhaustMassFlow: "",
   });
 
@@ -269,10 +270,11 @@ export default function RDECreateJobOrder() {
   }, []);
 
   // Accordion state for vehicle details
-  const [vehicleAccordionOpen, setVehicleAccordionOpen] = useState(true);
+  const [vehicleAccordionOpen, setVehicleAccordionOpen] = useState(false);
 
   // Editable vehicle form state
   const [vehicleEditable, setVehicleEditable] = useState(null);
+  const [vehicleEditMode, setVehicleEditMode] = useState(false);
 
   // Fetch vehicle details using the new API when body number changes
   const handleVehicleBodyChange = (value) => {
@@ -285,7 +287,7 @@ export default function RDECreateJobOrder() {
     setForm((prev) => ({
       ...prev,
       vehicleBodyNumber: value,
-      vehicleNumber: found?.vehicle_number || "",
+      vehicleSerialNumber: found?.vehicle_serial_number || "",
       engineNumber: "",
       engineType: "",
     }));
@@ -329,10 +331,11 @@ export default function RDECreateJobOrder() {
   };
 
   // Accordion state for engine details
-  const [engineAccordionOpen, setEngineAccordionOpen] = useState(true);
+  const [engineAccordionOpen, setEngineAccordionOpen] = useState(false);
 
   // Editable engine form state
   const [engineEditable, setEngineEditable] = useState(null);
+  const [engineEditMode, setEngineEditMode] = useState(false);
 
   // Fetch engine details using the new API when engine number changes
   const handleEngineNumberChange = (value) => {
@@ -459,7 +462,7 @@ export default function RDECreateJobOrder() {
             jobOrder.vehicle_build_level || jobOrder.vehicleBuildLevel || "",
           vehicleModel: jobOrder.vehicle_model || jobOrder.vehicleModel || "",
           vehicleBodyNumber: jobOrder.vehicle_body_number || "",
-          vehicleNumber: jobOrder.vehicle_serial_number || "",
+          vehicleSerialNumber: jobOrder.vehicle_serial_number || "",
           transmissionType:
             jobOrder.transmission_type || jobOrder.transmissionType || "",
           finalDriveAxleRatio:
@@ -600,7 +603,10 @@ export default function RDECreateJobOrder() {
       wbs_code: form.wbsCode || null,
       vehicle_gwv: form.vehicleGVW || null,
       vehicle_kerb_weight: form.vehicleKerbWeight || null,
-      vehicle_test_payload_criteria: form.vehicleTestPayloadCriteria || null,
+      vehicle_test_payload_criteria:
+        form.vehicleTestPayloadCriteria === "Manual Entry"
+          ? form.requestedPayloadKg
+          : form.vehicleTestPayloadCriteria || null,
       idle_exhaust_mass_flow: form.idleExhaustMassFlow || null,
       job_order_status: "Created",
       remarks: "",
@@ -810,6 +816,7 @@ export default function RDECreateJobOrder() {
           ? "\nCoast Down Data ID: " + CoastDownData_id
           : "")
       );
+      navigate("/rde-chennai");
     } catch (err) {
       console.error("Error creating test order:", err);
       alert(
@@ -1145,7 +1152,22 @@ export default function RDECreateJobOrder() {
     );
   };
 
-  const { apiUserRole } = useAuth();
+  const { apiUserRole: userRole } = useAuth();
+  const isTestEngineer = userRole === "TestEngineer";
+  const isProjectTeam = userRole === "ProjectTeam";
+
+  // Helper function to determine if test fields should be editable
+  const areTestFieldsEditable = (test, idx) => {
+    if (test.disabled) return false;
+    if (!!test.testOrderId && editingTestOrderIdx !== idx) return false;
+    if (isTestEngineer) return false;
+    if (isProjectTeam) {
+      if (!test.testOrderId) return true;
+      if (test.status === "Re-edit" && editingTestOrderIdx === idx) return true;
+      return false;
+    }
+    return !test.disabled && (!test.testOrderId || editingTestOrderIdx === idx);
+  };
 
   return (
     <>
@@ -1236,12 +1258,12 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Vehicle Number (auto) */}
           <div className="flex flex-col">
-            <Label htmlFor="vehicleNumber">
+            <Label htmlFor="vehicleSerialNumber">
               Vehicle Number <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="vehicleNumber"
-              value={form.vehicleNumber}
+              id="vehicleSerialNumber"
+              value={form.vehicleSerialNumber}
               readOnly
               className="w-44"
               placeholder="Auto-fetched"
@@ -1409,22 +1431,52 @@ export default function RDECreateJobOrder() {
               Vehicle Test Payload criteria (Kg){" "}
               <span className="text-red-500">*</span>
             </Label>
-            <Input
-              id="vehicleTestPayloadCriteria"
+            <Select
               value={form.vehicleTestPayloadCriteria}
-              onChange={(e) =>
+              onValueChange={(value) => {
                 setForm((prev) => ({
                   ...prev,
-                  vehicleTestPayloadCriteria: e.target.value,
-                }))
-              }
+                  vehicleTestPayloadCriteria: value,
+                  requestedPayloadKg: value === "Manual Entry" ? prev.requestedPayloadKg : "",
+                }));
+              }}
               required
               disabled={formDisabled}
               className="w-44"
-              placeholder="Enter Vehicle Test Payload criteria"
-              type="text"
-            />
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Legislation">Legislation</SelectItem>
+                <SelectItem value="Manual Entry">Manual Entry</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+          {/* Show manual entry field only if 'Manual Entry' is selected */}
+            {form.vehicleTestPayloadCriteria === "Manual Entry" && (
+              <div className="flex flex-col">
+                <Label htmlFor="requestedPayloadKg">
+                  Requested Payload in kgs <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="requestedPayloadKg"
+                  value={form.requestedPayloadKg}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      requestedPayloadKg: e.target.value,
+                    }))
+                  }
+                  required
+                  disabled={formDisabled}
+                  className="w-44"
+                  placeholder="Enter Requested Payload"
+                  type="number"
+                  min="0"
+                />
+              </div>
+            )}
           {/* Idle Exhaust Mass Flow */}
           <div className="flex flex-col">
             <Label htmlFor="idleExhaustMassFlow">
@@ -1458,7 +1510,7 @@ export default function RDECreateJobOrder() {
               onClick={() => setVehicleAccordionOpen((prev) => !prev)}
             >
               <span className="font-semibold text-sm">
-                Vehicle Details (Editable)
+                Vehicle Details
               </span>
               <span>{vehicleAccordionOpen ? "▲" : "▼"}</span>
             </div>
@@ -1476,7 +1528,8 @@ export default function RDECreateJobOrder() {
                           handleVehicleEditableChange(label, e.target.value)
                         }
                         className="mt-1"
-                        disabled={formDisabled}
+                        disabled={!vehicleEditMode || isTestEngineer}
+                        // disabled={formDisabled}
                       />
                     </div>
                   ))}
@@ -1495,7 +1548,7 @@ export default function RDECreateJobOrder() {
               onClick={() => setEngineAccordionOpen((prev) => !prev)}
             >
               <span className="font-semibold text-sm">
-                Engine Details (Editable)
+                Engine Details
               </span>
               <span>{engineAccordionOpen ? "▲" : "▼"}</span>
             </div>
@@ -1513,7 +1566,8 @@ export default function RDECreateJobOrder() {
                           handleEngineEditableChange(label, e.target.value)
                         }
                         className="mt-1"
-                        disabled={formDisabled}
+                        disabled={!engineEditMode || isTestEngineer}
+
                       />
                     </div>
                   ))}
@@ -2007,6 +2061,8 @@ export default function RDECreateJobOrder() {
                   <SelectContent>
                     <SelectItem value="Shift1">Shift1</SelectItem>
                     <SelectItem value="Shift2">Shift2</SelectItem>
+                    <SelectItem value="Shift3">Shift3</SelectItem>
+                    <SelectItem value="General">General</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

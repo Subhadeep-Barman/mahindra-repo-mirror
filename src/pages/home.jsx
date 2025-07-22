@@ -8,7 +8,7 @@ import {
   LayoutDashboard as Dashboard,
 } from "lucide-react";
 import useStore from "@/store/useStore";
-
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/UI/button";
 import {
   Card,
@@ -19,7 +19,7 @@ import {
   CardTitle,
 } from "@/components/UI/card";
 
-const services = [
+const servicesBase = [
   {
     id: 1,
     title: "RDE Chennai",
@@ -38,16 +38,32 @@ const services = [
     icon: Flag,
     href: "/vtc-nashik",
   },
-  {
-    id: 4,
-    title: "ADMIN Portal",
-    icon: Dashboard,
-    href: "/admin-portal",
-  },
 ];
 
 // Change the export to default and rename the component
 export default function HomePage() {
+  // Move useAuth hook call inside the component
+  const { userRole, userId, userName } = useAuth();
+
+  // Conditionally add ADMIN Portal only if user is not Test Engineer or Project Team
+  const services = [
+    ...servicesBase,
+    ...(userRole !== "TestEngineer" && userRole !== "ProjectTeam"
+      ? [{
+          id: 4,
+          title: "ADMIN Portal",
+          icon: Dashboard,
+          href: "/admin-portal",
+        }]
+      : []),
+  ];
+
+  // Determine grid columns based on number of services
+  const gridCols =
+    services.length === 4
+      ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
+      : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 justify-center";
+
   // Fetch dropdown options globally on home page mount
   const fetchProjects = useStore((state) => state.fetchProjects);
   const fetchDomains = useStore((state) => state.fetchDomains);
@@ -70,7 +86,7 @@ export default function HomePage() {
           </h1>
         </div>
         <div className="flex justify-center flex-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 w-full max-w-7xl mx-auto">
+          <div className={`grid ${gridCols} gap-8 lg:gap-10 w-full max-w-7xl mx-auto`}>
             {services.map((service) => {
               const Icon = service.icon;
               return (

@@ -644,14 +644,14 @@ export default function VTCCEngineForm() {
               </div>
               {/* CATCON Mass */}
               <div className="space-y-2">
-                <Label htmlFor="catconMass">CATCON Mass</Label>
+                <Label htmlFor="catconMass">CATCON Make</Label>
                 <Input
                   id="catconMass"
                   value={formData.catconMass}
                   onChange={(e) =>
                     handleInputChange("catconMass", e.target.value)
                   }
-                  placeholder="Enter CATCON Mass"
+                  placeholder="Enter CATCON Make"
                 />
               </div>
               {/* CATCON Type */}

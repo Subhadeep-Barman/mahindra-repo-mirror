@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/UI/button";
 import { Input } from "@/components/UI/input";
 import { Label } from "@/components/UI/label";
+import DropzoneFileList from "@/components/UI/DropzoneFileList";
 import {
   Select,
   SelectContent,
@@ -17,12 +18,13 @@ import { Switch } from "@/components/UI/switch";
 import useStore from "@/store/useStore";
 import axios from "axios";
 import CFTMembers from "@/components/CFTMembers";
+import { useAuth } from "@/context/AuthContext";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
 
-export default function CreateJobOrder() {
+export default function NashikCreateJobOrder() {
   const [form, setForm] = useState({
     projectCode: "",
     vehicleBuildLevel: "",
@@ -88,6 +90,18 @@ export default function CreateJobOrder() {
   const [modes, setModes] = useState([]);
 
   const [fuelTypes, setFuelTypes] = useState([]);
+
+  const [emissionCheckModals, setEmissionCheckModals] = useState({});
+    const [datasetModals, setDatasetModals] = useState({});
+    const [a2lModals, setA2LModals] = useState({});
+    const [experimentModals, setExperimentModals] = useState({});
+    const [dbcModals, setDBCModals] = useState({});
+    const [wltpModals, setWLTPModals] = useState({});
+
+    const [pdfReportModals, setpdfReportModals] = useState({});
+      const [excelReportModals, setexcelReportModals] = useState({});
+      const [datFileModals, setDATModals] = useState({});
+      const [othersModals, setOthersModals] = useState({});
 
   // Handler to add a new test
   const handleAddTest = () => {
@@ -808,6 +822,7 @@ export default function CreateJobOrder() {
           ? "\nCoast Down Data ID: " + CoastDownData_id
           : "")
       );
+      navigate("/vtc-nashik")
     } catch (err) {
       console.error("Error creating test order:", err);
       alert(
@@ -1126,6 +1141,23 @@ export default function CreateJobOrder() {
     );
   };
 
+  const { userRole } = useAuth();
+  const isTestEngineer = userRole === "TestEngineer";
+  const isProjectTeam = userRole === "ProjectTeam";
+
+  // Helper function to determine if test fields should be editable
+  const areTestFieldsEditable = (test, idx) => {
+    if (test.disabled) return false;
+    if (!!test.testOrderId && editingTestOrderIdx !== idx) return false;
+    if (isTestEngineer) return false;
+    if (isProjectTeam) {
+      if (!test.testOrderId) return true;
+      if (test.status === "Re-edit" && editingTestOrderIdx === idx) return true;
+      return false;
+    }
+    return !test.disabled && (!test.testOrderId || editingTestOrderIdx === idx);
+  };
+
   return (
     <>
       <Navbar1 />
@@ -1172,7 +1204,7 @@ export default function CreateJobOrder() {
               value={form.projectCode}
               onValueChange={(value) => handleChange("projectCode", value)}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Select" />
@@ -1195,7 +1227,7 @@ export default function CreateJobOrder() {
               value={form.vehicleBodyNumber}
               onValueChange={handleVehicleBodyChange}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Select" />
@@ -1224,7 +1256,7 @@ export default function CreateJobOrder() {
               className="w-44"
               placeholder="Auto-fetched"
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             />
           </div>
           {/* Engine Number (dropdown) */}
@@ -1236,7 +1268,7 @@ export default function CreateJobOrder() {
               value={form.engineSerialNumber}
               onValueChange={handleEngineNumberChange}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Select" />
@@ -1259,7 +1291,7 @@ export default function CreateJobOrder() {
               value={form.engineType}
               onValueChange={(value) => handleChange("engineType", value)}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Select" />
@@ -1282,7 +1314,7 @@ export default function CreateJobOrder() {
               value={form.domain}
               onValueChange={(value) => handleChange("domain", value)}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || isTestEngineer}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Select" />
@@ -1347,7 +1379,7 @@ export default function CreateJobOrder() {
                           handleVehicleEditableChange(label, e.target.value)
                         }
                         className="mt-1"
-                        disabled={formDisabled}
+                        disabled={formDisabled || isTestEngineer}
                       />
                     </div>
                   ))}
@@ -1384,7 +1416,7 @@ export default function CreateJobOrder() {
                           handleEngineEditableChange(label, e.target.value)
                         }
                         className="mt-1"
-                        disabled={formDisabled}
+                        disabled={formDisabled || isTestEngineer}
                       />
                     </div>
                   ))}
@@ -1414,8 +1446,10 @@ export default function CreateJobOrder() {
             placeholder="Enter Coast Test Report Ref."
             className="w-80 mt-1"
             value={form.cdReportRef}
-            onChange={(e) => handleCDNumberInput("cdReportRef", e.target.value)}
-            disabled={formDisabled}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, cdReportRef: e.target.value }))
+            }
+            disabled={formDisabled || isTestEngineer}
           />
           {cdFieldErrors.cdReportRef && (
             <div className="text-red-600 text-xs mt-1">{cdFieldErrors.cdReportRef}</div>
@@ -1432,8 +1466,13 @@ export default function CreateJobOrder() {
                 placeholder="Enter Vehicle Reference mass (Kg)"
                 className="mt-1"
                 value={form.vehicleRefMass}
-                onChange={(e) => handleCDNumberInput("vehicleRefMass", e.target.value)}
-                disabled={formDisabled}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    vehicleRefMass: e.target.value,
+                  }))
+                }
+                disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.vehicleRefMass && (
                 <div className="text-red-600 text-xs mt-1">{cdFieldErrors.vehicleRefMass}</div>
@@ -1448,8 +1487,10 @@ export default function CreateJobOrder() {
                 placeholder="Enter A (N)"
                 className="mt-1"
                 value={form.aN}
-                onChange={(e) => handleCDNumberInput("aN", e.target.value)}
-                disabled={formDisabled}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, aN: e.target.value }))
+                }
+                disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.aN && (
                 <div className="text-red-600 text-xs mt-1">{cdFieldErrors.aN}</div>
@@ -1464,8 +1505,10 @@ export default function CreateJobOrder() {
                 placeholder="Enter B (N/kmph)"
                 className="mt-1"
                 value={form.bNkmph}
-                onChange={(e) => handleCDNumberInput("bNkmph", e.target.value)}
-                disabled={formDisabled}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, bNkmph: e.target.value }))
+                }
+                disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.bNkmph && (
                 <div className="text-red-600 text-xs mt-1">{cdFieldErrors.bNkmph}</div>
@@ -1480,8 +1523,10 @@ export default function CreateJobOrder() {
                 placeholder="Enter C (N/kmph^2)"
                 className="mt-1"
                 value={form.cNkmph2}
-                onChange={(e) => handleCDNumberInput("cNkmph2", e.target.value)}
-                disabled={formDisabled}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, cNkmph2: e.target.value }))
+                }
+                disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.cNkmph2 && (
                 <div className="text-red-600 text-xs mt-1">{cdFieldErrors.cNkmph2}</div>
@@ -1496,8 +1541,10 @@ export default function CreateJobOrder() {
                 placeholder="Enter F0 (N)"
                 className="mt-1"
                 value={form.f0N}
-                onChange={(e) => handleCDNumberInput("f0N", e.target.value)}
-                disabled={formDisabled}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, f0N: e.target.value }))
+                }
+                disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.f0N && (
                 <div className="text-red-600 text-xs mt-1">{cdFieldErrors.vehicleRefMass}</div>
@@ -1512,8 +1559,10 @@ export default function CreateJobOrder() {
                 placeholder="Enter F1 (N/kmph)"
                 className="mt-1"
                 value={form.f1Nkmph}
-                onChange={(e) => handleCDNumberInput("f1Nkmph", e.target.value)}
-                disabled={formDisabled}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, f1Nkmph: e.target.value }))
+                }
+                disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.f1Nkmph && (
                 <div className="text-red-600 text-xs mt-1">{cdFieldErrors.f1Nkmph}</div>
@@ -1528,8 +1577,10 @@ export default function CreateJobOrder() {
                 placeholder="Enter F2 (N/kmph^2)"
                 className="mt-1"
                 value={form.f2Nkmph2}
-                onChange={(e) => handleCDNumberInput("f2Nkmph2", e.target.value)}
-                disabled={formDisabled}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, f2Nkmph2: e.target.value }))
+                }
+                disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.f2Nkmph2 && (
                 <div className="text-red-600 text-xs mt-1">{cdFieldErrors.f2Nkmph2}</div>
@@ -1540,6 +1591,7 @@ export default function CreateJobOrder() {
             <Button
               className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
               onClick={handleCreateJobOrder}
+              disabled={isTestEngineer}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
@@ -1589,6 +1641,7 @@ export default function CreateJobOrder() {
             variant="ghost"
             className="text-xs text-blue-700 px-0"
             onClick={handleAddTest}
+            disabled={isTestEngineer}
           >
             + ADD TEST
           </Button>
@@ -1599,6 +1652,7 @@ export default function CreateJobOrder() {
               setShowCFTPanel((prev) => !prev);
               console.log("Toggled CFT panel");
             }}
+            disabled={isTestEngineer}
           >
             {showCFTPanel ? "− CFT MEMBERS" : "+ CFT MEMBERS"}
           </Button>
@@ -1625,6 +1679,7 @@ export default function CreateJobOrder() {
                 className="text-xs text-red-600 px-2 py-0"
                 type="button"
                 onClick={() => handleDeleteTest(idx)}
+                disabled={isTestEngineer}
               >
                 Delete
               </Button>
@@ -1635,6 +1690,7 @@ export default function CreateJobOrder() {
                 <Select
                   value={test.testType}
                   onValueChange={(v) => handleTestChange(idx, "testType", v)}
+                  disabled={!areTestFieldsEditable(test, idx)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -1658,6 +1714,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "objective", e.target.value)
                   }
                   placeholder="TESTING"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
               <div>
@@ -1668,6 +1725,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "vehicleLocation", e.target.value)
                   }
                   placeholder="Enter Vehicle Location"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
               <div>
@@ -1677,6 +1735,7 @@ export default function CreateJobOrder() {
                   onChange={(e) =>
                     handleTestChange(idx, "uploadDocuments", e.target.files[0])
                   }
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
             </div>
@@ -1689,6 +1748,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "cycleGearShift", e.target.value)
                   }
                   placeholder="Enter Cycle Gear Shift"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
               <div>
@@ -1699,6 +1759,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "datasetName", e.target.value)
                   }
                   placeholder="Enter Dataset Name"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
               <div>
@@ -1708,6 +1769,7 @@ export default function CreateJobOrder() {
                   onValueChange={(v) =>
                     handleTestChange(idx, "inertiaClass", v)
                   }
+                  disabled={!areTestFieldsEditable(test, idx)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -1830,6 +1892,7 @@ export default function CreateJobOrder() {
                 <Select
                   value={test.mode}
                   onValueChange={(v) => handleTestChange(idx, "mode", v)}
+                  disabled={!areTestFieldsEditable(test, idx)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -1851,6 +1914,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "hardwareChange", e.target.value)
                   }
                   placeholder="Enter Hardware Change"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
             </div>
@@ -1860,6 +1924,7 @@ export default function CreateJobOrder() {
                 <Select
                   value={test.shift}
                   onValueChange={(v) => handleTestChange(idx, "shift", v)}
+                  disabled={!areTestFieldsEditable(test, idx)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -1867,6 +1932,8 @@ export default function CreateJobOrder() {
                   <SelectContent>
                     <SelectItem value="Shift1">Shift1</SelectItem>
                     <SelectItem value="Shift2">Shift2</SelectItem>
+                    <SelectItem value="Shift3">Shift3</SelectItem>
+                    <SelectItem value="General">General</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1878,6 +1945,7 @@ export default function CreateJobOrder() {
                   onChange={(e) =>
                     handleTestChange(idx, "preferredDate", e.target.value)
                   }
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
               <div>
@@ -1885,6 +1953,7 @@ export default function CreateJobOrder() {
                 <Select
                   value={test.fuelType}
                   onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
+                  disabled={!areTestFieldsEditable(test, idx)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -1906,6 +1975,7 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "equipmentRequired", e.target.value)
                   }
                   placeholder="Enter Equipment Required"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
               <div>
@@ -1916,6 +1986,7 @@ export default function CreateJobOrder() {
                   onChange={(e) =>
                     handleTestChange(idx, "emissionCheckDate", e.target.value)
                   }
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
             </div>
@@ -1932,6 +2003,7 @@ export default function CreateJobOrder() {
                     )
                   }
                   placeholder="Enter Attachment Path/URL"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
               <div>
@@ -1942,9 +2014,318 @@ export default function CreateJobOrder() {
                     handleTestChange(idx, "specificInstruction", e.target.value)
                   }
                   placeholder="Enter Specific Instructions"
+                  disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
             </div>
+
+            {/* Attachments Card */}
+                        <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+                          <div className="font-semibold text-sm text-gray-700 mb-2">
+                            Attachments
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <Label>Emission Check Attachment</Label>
+                              <DropzoneFileList
+                                buttonText="Emission Check Attachment"
+                                name="Emission_check"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                                       originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!emissionCheckModals[idx]}
+                                handleOpenModal={() =>
+                                  setEmissionCheckModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setEmissionCheckModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>Dataset Attachment</Label>
+                              <DropzoneFileList
+                                buttonText="Dataset Attachment"
+                                name="Dataset_attachment"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!datasetModals[idx]}
+                                handleOpenModal={() =>
+                                  setDatasetModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setDatasetModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>A2L Attachment</Label>
+                              <DropzoneFileList
+                                buttonText="A2L Attachment"
+                                name="A2L"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!a2lModals[idx]}
+                                handleOpenModal={() =>
+                                  setA2LModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setA2LModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>Experiment Attachment</Label>
+                              <DropzoneFileList
+                                buttonText="Experiment Attachment"
+                                name="Experiment_attachment"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!experimentModals[idx]}
+                                handleOpenModal={() =>
+                                  setExperimentModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setExperimentModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>DBC Attachment</Label>
+                              <DropzoneFileList
+                                buttonText="DBC Attachment"
+                                name="DBC_attachment"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                                               submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!dbcModals[idx]}
+                                handleOpenModal={() =>
+                                  setDBCModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setDBCModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                                   disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>WLTP Input Sheet</Label>
+                              <DropzoneFileList
+                                buttonText="WLTP Input Sheet"
+                                name="WLTP_input_sheet"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!wltpModals[idx]}
+                                handleOpenModal={() =>
+                                  setWLTPModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setWLTPModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+            {/* Testbed Engineers Attachments Card */}
+                        <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+                          <div className="font-semibold text-sm text-gray-700 mb-2">
+                            Test Engineers Attachments
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <Label>PDF Reprt</Label>
+                              <DropzoneFileList
+                                buttonText="PDF Report"
+                                name="PDF_report"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!pdfReportModals[idx]}
+                                handleOpenModal={() =>
+                                  setpdfReportModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setpdfReportModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>Excel Report</Label>
+                              <DropzoneFileList
+                                buttonText="Excel Report"
+                                name="Excel_report"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!excelReportModals[idx]}
+                                handleOpenModal={() =>
+                                  setexcelReportModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setexcelReportModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>DAT File Attachment</Label>
+                              <DropzoneFileList
+                                buttonText="DAT File Attachment"
+                                name="DAT_file_attachment"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!datFileModals[idx]}
+                                handleOpenModal={() =>
+                                  setDATModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setDATModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                            <div>
+                              <Label>Others Attachment</Label>
+                              <DropzoneFileList
+                                buttonText="Others Attachment"
+                                name="Others_attachment"
+                                maxFiles={5}
+                                formData={{
+                                  ...test,
+                                  originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                                }}
+                                setFormData={(updatedTest) => {
+                                  setTests((prev) =>
+                                    prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                                  );
+                                }}
+                                id={`test${idx}`}
+                                submitted={false}
+                                setSubmitted={() => {}}
+                                openModal={!!othersModals[idx]}
+                                handleOpenModal={() =>
+                                  setOthersModals((prev) => ({ ...prev, [idx]: true }))
+                                }
+                                handleCloseModal={() =>
+                                  setOthersModals((prev) => ({ ...prev, [idx]: false }))
+                                }
+                                disabled={false}
+                                originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                              />
+                            </div>
+                          </div>
+                        </div>
 
             {/* Coast Down Data Section for Test */}
             <div className="mt-4 border rounded shadow px-4 py-3 bg-blue-50">
@@ -2104,7 +2485,7 @@ export default function CreateJobOrder() {
               <Button
                 className="bg-red-600 text-white text-xs px-6 py-2 rounded"
                 onClick={() => handleCreateTestOrder(idx)}
-                disabled={editingTestOrderIdx === idx}
+                disabled={editingTestOrderIdx === idx || isTestEngineer}
               >
                 ✓ CREATE TEST ORDER
               </Button>
@@ -2112,6 +2493,7 @@ export default function CreateJobOrder() {
                 <Button
                   className="bg-blue-600 text-white text-xs px-6 py-2 rounded ml-2"
                   onClick={() => handleUpdateTestOrder(idx)}
+                  disabled={isTestEngineer}
                 >
                   UPDATE TEST ORDER
                 </Button>

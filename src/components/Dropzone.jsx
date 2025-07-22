@@ -359,11 +359,10 @@ const Dropzone = ({
         formDataPayload.append("test_order_id", testOrderId);
         formDataPayload.append("attachment_type", name);
         formDataPayload.append("user", userCookies?.userName || "unknown");
-        // if (sess_idt) {
-        //   if (typeof sess_idt === 'string' && /^[\w\-]+$/.test(sess_idt)) {
-        //     formDataPayload.append("sess_idt", sess_idt);
-        //   }
-        // }
+        // Always send sess_idt after first chunk
+        if (sess_idt) {
+          formDataPayload.append("sess_idt", sess_idt);
+        }
 
         try {
           const response = await axios.post(
@@ -376,9 +375,15 @@ const Dropzone = ({
               },
             }
           );
-          sess_idt = response.data.sess_idt;
+          console.log(`[Chunk Response] chunkIndex: ${chunkIndex}, completed: ${response.data.completed}, sess_idt: ${response.data.sess_idt}`);
+          // Set sess_idt after first response
+          if (!sess_idt && response.data.sess_idt) {
+            sess_idt = response.data.sess_idt;
+            console.log(`[sess_idt assigned] ${sess_idt}`);
+          }
 
           if (response.data.completed) {
+            console.log(`[Upload Completed] file: ${file.name}, chunkIndex: ${chunkIndex}`);
             const uploadedFile = [{
               path: file.name,
               size: file.size,
@@ -426,6 +431,7 @@ const Dropzone = ({
           return;
         }
       }
+      console.log(`[All Chunks Uploaded] file: ${file.name}`);
     } catch (error) {
       console.error(`Error uploading file ${file.name}:`, error);
       showSnackbar(`Upload failed for ${file.name}: ${error.message}`, "error");
