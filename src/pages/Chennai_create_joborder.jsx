@@ -715,6 +715,7 @@ export default function CreateJobOrder() {
   };
 
   // Handler for creating test order
+  // Handler for creating test order
   const handleCreateTestOrder = async (testIndex) => {
     const test = tests[testIndex];
 
@@ -733,6 +734,12 @@ export default function CreateJobOrder() {
     // Get job_order_id from location state or create a new one if not available
     // Ensure job_order_id is a string (not null)
     const job_order_id = location.state?.jobOrder?.job_order_id || location.state?.originalJobOrderId || "";
+
+    // 🆕 Add this line to define formattedISTTime
+    const currentISTTime = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+    const formattedISTTime = new Date(currentISTTime).toISOString();
 
     // Create or update coast down data for this specific test
     let CoastDownData_id =
@@ -783,9 +790,8 @@ export default function CreateJobOrder() {
             ? parseFloat(test.f2Nkmph2 || form.f2Nkmph2)
             : null,
         id_of_creator: userId || "",
-        created_on: formattedISTTime, // Send created_on in ISO 8601 format
+        created_on: formattedISTTime, // Now this is defined
         id_of_updater: "",
-        // updated_on: null, // Do not send updated_on during creation
       };
 
       try {
@@ -834,10 +840,10 @@ export default function CreateJobOrder() {
       status: "Created",
       id_of_creator: userId || "",
       name_of_creator: userName || "",
-      created_on: new Date().toISOString(),
+      created_on: formattedISTTime, // Use formattedISTTime instead of new Date().toISOString()
       id_of_updater: "",
       name_of_updater: "",
-      updated_on: new Date().toISOString(),
+      updated_on: formattedISTTime, // Use formattedISTTime instead of new Date().toISOString()
       // Add all required attachment fields as strings
       dataset_attachment: test.dataset_attachment || "",
       a2l_attachment: test.a2l_attachment || "",
@@ -864,13 +870,17 @@ export default function CreateJobOrder() {
             : t
         )
       );
+
       showSnackbar(
         "Test Order Created! ID: " +
         response.data.test_order_id +
         (hasTestSpecificCoastDownData
-          ? "\nCoast Down Data ID: " + CoastDownData_id
-          : "")
-      );// Redirect based on department
+          ? " | Coast Down Data ID: " + CoastDownData_id
+          : ""),
+        "success"
+      );
+
+      // Redirect based on department
       const dept = form.department || (location.state?.jobOrder?.department) || "";
       if (dept === "RDE JO") {
         navigate("/rde-chennai");
