@@ -41,6 +41,7 @@ class VehicleSchema(BaseModel):
     gear_ratio_4: Optional[str] = None
     gear_ratio_5: Optional[str] = None
     reverse_gear_ratio: Optional[str] = None
+    department: Optional[str] = None
     id_of_creator: Optional[str] = None
     created_on: Optional[datetime] = None
     id_of_updater: Optional[str] = None
@@ -79,8 +80,14 @@ def create_vehicle_api(
     return vehicle_to_dict(new_vehicle)
 
 @router.get("/vehicles", response_model=List[VehicleSchema])
-def read_vehicles(db: Session = Depends(get_db)):
-    vehicles = db.query(Vehicle).all()
+def read_vehicles(
+    db: Session = Depends(get_db),
+    department: Optional[str] = None
+):
+    query = db.query(Vehicle)
+    if department:
+        query = query.filter(Vehicle.department == department)
+    vehicles = query.all()
     return [vehicle_to_dict(v) for v in vehicles]
 
 @router.get("/vehicles/{vehicle_serial_number}", response_model=VehicleSchema)
@@ -118,8 +125,14 @@ def delete_vehicle(vehicle_serial_number: str, db: Session = Depends(get_db)):
     return {"detail": "Vehicle deleted successfully"}
 
 @router.get("/vehicle-body-numbers")
-def get_vehicle_body_numbers(db: Session = Depends(get_db)):
-    results = db.query(Vehicle.vehicle_body_number, Vehicle.vehicle_serial_number).all()
+def get_vehicle_body_numbers(
+    db: Session = Depends(get_db),
+    department: Optional[str] = None
+):
+    query = db.query(Vehicle.vehicle_body_number, Vehicle.vehicle_serial_number)
+    if department:
+        query = query.filter(Vehicle.department == department)
+    results = query.all()
     # Return list of dicts with both body number and vehicle number
     return [
         {"vehicle_body_number": bn, "vehicle_serial_number": vn}

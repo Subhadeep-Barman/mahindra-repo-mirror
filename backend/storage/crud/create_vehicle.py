@@ -41,6 +41,7 @@ def vehicle_to_dict(vehicle):
         "gear_ratio_4": vehicle.gear_ratio_4,
         "gear_ratio_5": vehicle.gear_ratio_5,
         "reverse_gear_ratio": vehicle.reverse_gear_ratio,
+        "department": vehicle.department,
         "id_of_creator": vehicle.id_of_creator,
         "created_on": vehicle.created_on,
         "id_of_updater": vehicle.id_of_updater,

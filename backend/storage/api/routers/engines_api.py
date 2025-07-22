@@ -61,6 +61,7 @@ class EngineSchema(BaseModel):
     hv_battery_voltage: Optional[float] = None
     hv_battery_current: Optional[float] = None
     ev_motor_power_kw: Optional[float] = None
+    department: Optional[str] = None
     id_of_creator: Optional[str] = None
     created_on: Optional[datetime] = None
     id_of_updater: Optional[str] = None
@@ -101,9 +102,15 @@ def create_engine_api(
         raise HTTPException(status_code=500, detail="Failed to create engine: " + str(e))
 
 @router.get("/engines", response_model=List[EngineSchema])
-def read_engines(db: Session = Depends(get_db)):
+def read_engines(
+    db: Session = Depends(get_db),
+    department: Optional[str] = None
+):
     try:
-        engines = db.query(Engine).all()
+        query = db.query(Engine)
+        if department:
+            query = query.filter(Engine.department == department)
+        engines = query.all()
         return [engine_to_dict(e) for e in engines]
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to fetch engines: " + str(e))
@@ -157,8 +164,14 @@ def delete_engine(engine_serial_number: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Failed to delete engine: " + str(e))
 
 @router.get("/engine-numbers")
-def get_engine_serial_numbers(db: Session = Depends(get_db)):
-    engine_serial_numbers = db.query(Engine.engine_serial_number).all()
+def get_engine_serial_numbers(
+    db: Session = Depends(get_db),
+    department: Optional[str] = None
+):
+    query = db.query(Engine.engine_serial_number)
+    if department:
+        query = query.filter(Engine.department == department)
+    engine_serial_numbers = query.all()
     # Flatten list of tuples and filter out None values
     return [en[0] for en in engine_serial_numbers if en[0] is not None]
 
