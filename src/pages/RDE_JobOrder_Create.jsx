@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import CFTMembers from "@/components/CFTMembers";
 import { Button } from "@/components/UI/button";
+import DropzoneFileList from "@/components/UI/DropzoneFileList";
 import { Input } from "@/components/UI/input";
 import { Label } from "@/components/UI/label";
+import Navbar1 from "@/components/UI/navbar";
 import {
   Select,
   SelectContent,
@@ -9,13 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/UI/select";
-import Navbar1 from "@/components/UI/navbar";
-import { useNavigate, useLocation } from "react-router-dom";
-import useStore from "@/store/useStore";
-import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
-import CFTMembers from "@/components/CFTMembers";
+import useStore from "@/store/useStore";
 import showSnackbar from "@/utils/showSnackbar";
+import axios from "axios";
+import { Switch } from "@/components/UI/switch";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -99,7 +101,131 @@ export default function RDECreateJobOrder() {
 
   const [fuelTypes, setFuelTypes] = useState([]);
 
-  // Handler to add a new test
+  // Add attachment modal states (copied from Nashik)
+  const [emissionCheckModals, setEmissionCheckModals] = useState({});
+  const [datasetModals, setDatasetModals] = useState({});
+  const [a2lModals, setA2LModals] = useState({});
+  const [experimentModals, setExperimentModals] = useState({});
+  const [dbcModals, setDBCModals] = useState({});
+  const [wltpModals, setWLTPModals] = useState({});
+  const [pdfReportModals, setpdfReportModals] = useState({});
+  const [excelReportModals, setexcelReportModals] = useState({});
+  const [datFileModals, setDATModals] = useState({});
+  const [othersModals, setOthersModals] = useState({});
+
+  const [remarkModalOpen, setRemarkModalOpen] = useState(false);
+    const [remarkType, setRemarkType] = useState("");
+    const [remarkInput, setRemarkInput] = useState("");
+  
+    // Add state for re-edit and rejection remarks
+    const [reEditRemarks, setReEditRemarks] = useState({});
+    const [rejectionRemarks, setRejectionRemarks] = useState({});
+    const [mailRemarks, setMailRemarks] = useState("");
+  
+    // Add modal state for re-edit, rejection, and mail remarks
+    const [reEditModalOpen, setReEditModalOpen] = useState(false);
+    const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
+    const [mailRemarksModalOpen, setMailRemarksModalOpen] = useState(false);
+  
+    // Add handler to open re-edit modal
+    const handleOpenReEditModal = (idx) => {
+      setReEditModalOpen(idx);
+    };
+  
+    // Add handler to open rejection modal
+    const handleOpenRejectionModal = (idx) => {
+      setRejectionModalOpen(idx);
+    };
+  
+    // Add handler to open mail remarks modal
+    const handleOpenMailRemarksModal = () => {
+      setMailRemarksModalOpen(true);
+    };
+  
+    // Add handler to submit re-edit remarks
+    const handleSubmitReEditRemarks = async (idx) => {
+      const testOrderId = tests[idx]?.testOrderId;
+      try {
+        await handleStatusUpdate("Re-edit", reEditRemarks[idx], testOrderId, idx);
+        setReEditModalOpen(false);
+        // Clear the re-edit remarks from local state
+        setReEditRemarks((prev) => ({ ...prev, [idx]: "" }));
+      } catch (err) {
+        showSnackbar("Failed to submit re-edit remarks: " + err.message, "error");
+      }
+    };
+  
+    // Add handler to submit rejection remarks
+    const handleSubmitRejectionRemarks = async (idx) => {
+      const testOrderId = tests[idx]?.testOrderId;
+      try {
+        await handleStatusUpdate("Rejected", rejectionRemarks[idx], testOrderId, idx);
+        setRejectionModalOpen(false);
+      } catch (err) {
+        showSnackbar("Failed to submit rejection remarks: " + err.message, "error");
+      }
+    };
+  
+    // Add handler to submit mail remarks
+    const handleSubmitMailRemarks = async (idx) => {
+      const testOrderId = tests[idx]?.testOrderId;
+      try {
+        // If ProjectTeam is updating a test in Re-edit status, set status to 'Started'
+        let newStatus = tests[idx]?.status;
+        if (isProjectTeam && newStatus === "Re-edit") {
+          newStatus = "Started";
+        }
+        await updateTestOrder(testOrderId, {
+          ...tests[idx],
+          mailRemarks,
+          test_order_id: testOrderId,
+          status: newStatus,
+        });
+        setMailRemarksModalOpen(false);
+        showSnackbar("Test order updated successfully!", "success");
+      } catch (err) {
+        showSnackbar("Failed to submit mail remarks: " + err.message, "error");
+      }
+    };
+  
+    // Handler to send status update to backend
+    const handleStatusUpdate = async (status, remark = "", testOrderId = null, testIdx = null) => {
+      try {
+        // Only send test_order_id, status, and remark
+        const payload = {
+          test_order_id: testOrderId,
+          status,
+          remark,
+        };
+        await axios.post(`${apiURL}/testorders/status`, payload);
+        // Update test status and remarks in UI if testIdx is provided
+        if (typeof testIdx === "number") {
+          setTests((prev) =>
+            prev.map((t, i) =>
+              i === testIdx
+                ? {
+                  ...t,
+                  status,
+                  // Store remarks based on status type
+                  ...(status === "Re-edit" && { re_edit_remarks: remark }),
+                  ...(status === "Rejected" && { rejection_remarks: remark })
+                }
+                : t
+            )
+          );
+        }
+        setRemarkInput("");
+        setRemarkModalOpen(false);
+      } catch (err) {
+        showSnackbar(
+          "Failed to update status: " + (err.response?.data?.detail || err.message),
+          "error"
+        );
+      }
+    };
+  
+
+  // Handler to add a new test (add all Nashik fields)
   const handleAddTest = () => {
     setTests((prev) => [
       ...prev,
@@ -122,8 +248,8 @@ export default function RDECreateJobOrder() {
         emissionCheckAttachment: "",
         specificInstruction: "",
         uploadDocuments: null,
-        testOrderId: null, // Track created test order ID
-        showCoastDownData: false, // Toggle for coast down data section
+        testOrderId: null,
+        showCoastDownData: false,
         // Coast down data fields for individual test
         cdReportRef: "",
         vehicleRefMass: "",
@@ -133,8 +259,20 @@ export default function RDECreateJobOrder() {
         f0N: "",
         f1Nkmph: "",
         f2Nkmph2: "",
-        // New field for DPF Regen Occurs (g)
+        // Nashik attachment fields
         dpfRegenOccurs: "",
+        fuelType: "",
+        // Attachments for DropzoneFileList
+        Emission_check: [],
+        Dataset_attachment: [],
+        A2L: [],
+        Experiment_attachment: [],
+        DBC_attachment: [],
+        WLTP_input_sheet: [],
+        PDF_report: [],
+        Excel_report: [],
+        DAT_file_attachment: [],
+        Others_attachment: [],
       },
     ]);
   };
@@ -1096,41 +1234,37 @@ export default function RDECreateJobOrder() {
     }
   };
 
-  // Add modal state for remark and modal type
-  const [remarkModalOpen, setRemarkModalOpen] = useState(false);
-  const [remarkType, setRemarkType] = useState(""); // "Reject" or "Edit"
-  const [remarkInput, setRemarkInput] = useState("");
   const [cdError, setCdError] = useState("");
 
   // Handler to send status update to backend
-  const handleStatusUpdate = async (status, remark = "", testOrderId = null, testIdx = null) => {
-    try {
-      // Only send test_order_id, status, and remark
-      const payload = {
-        test_order_id: testOrderId,
-        status,
-        remark,
-      };
-      await axios.post(`${apiURL}/testorders/status`, payload);
-      // Update test status in UI if testIdx is provided
-      if (typeof testIdx === "number") {
-        setTests((prev) =>
-          prev.map((t, i) =>
-            i === testIdx
-              ? { ...t, status }
-              : t
-          )
-        );
-      }
-      setRemarkInput("");
-      setRemarkModalOpen(false);
-    } catch (err) {
-      showSnackbar(
-        "Failed to update status: " + (err.response?.data?.detail || err.message),
-        "error"
-      );
-    }
-  };
+  // const handleStatusUpdate = async (status, remark = "", testOrderId = null, testIdx = null) => {
+  //   try {
+  //     // Only send test_order_id, status, and remark
+  //     const payload = {
+  //       test_order_id: testOrderId,
+  //       status,
+  //       remark,
+  //     };
+  //     await axios.post(`${apiURL}/testorders/status`, payload);
+  //     // Update test status in UI if testIdx is provided
+  //     if (typeof testIdx === "number") {
+  //       setTests((prev) =>
+  //         prev.map((t, i) =>
+  //           i === testIdx
+  //             ? { ...t, status }
+  //             : t
+  //         )
+  //       );
+  //     }
+  //     setRemarkInput("");
+  //     setRemarkModalOpen(false);
+  //   } catch (err) {
+  //     showSnackbar(
+  //       "Failed to update status: " + (err.response?.data?.detail || err.message),
+  //       "error"
+  //     );
+  //   }
+  // };
 
   const handleCDNumberInput = (field, value) => {
     // Allow empty value
@@ -1190,16 +1324,27 @@ export default function RDECreateJobOrder() {
   const isTestEngineer = userRole === "TestEngineer";
   const isProjectTeam = userRole === "ProjectTeam";
 
-  // Helper function to determine if test fields should be editable
+   // Helper function to determine if test fields should be editable
   const areTestFieldsEditable = (test, idx) => {
+    // If test is disabled globally, don't allow editing
     if (test.disabled) return false;
+
+    // If test order is already created and not in edit mode, don't allow editing
     if (!!test.testOrderId && editingTestOrderIdx !== idx) return false;
+
+    // TestEngineer cannot edit fields
     if (isTestEngineer) return false;
+
+    // ProjectTeam can edit if:
+    // 1. Test order is being created (no testOrderId)
+    // 2. Test order is in Re-edit status and currently being edited
     if (isProjectTeam) {
-      if (!test.testOrderId) return true;
-      if (test.status === "Re-edit" && editingTestOrderIdx === idx) return true;
+      if (!test.testOrderId) return true; // Creating new test order
+      if (test.status === "Re-edit" && editingTestOrderIdx === idx) return true; // Editing re-edit test
       return false;
     }
+
+    // For other roles, follow existing logic
     return !test.disabled && (!test.testOrderId || editingTestOrderIdx === idx);
   };
 
@@ -1856,519 +2001,912 @@ export default function RDECreateJobOrder() {
                 Delete
               </Button>
             </div>
-            <div className="grid grid-cols-4 gap-4 mb-2">
-              <div>
-                <Label>Test Type</Label>
-                <Select
-                  value={test.testType}
-                  onValueChange={(v) => handleTestChange(idx, "testType", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/* Always show these three at the top */}
-                    <SelectItem value="PEMS Correlation">
-                      PEMS Correlation
-                    </SelectItem>
-                    <SelectItem value="COLD IRDE">COLD IRDE</SelectItem>
-                    <SelectItem value="HOT IRDE">HOT IRDE</SelectItem>
-                    {/* Show all API options (including duplicates) */}
-                    {testTypes.map((testType, index) => (
-                      <SelectItem key={`${testType}-${index}`} value={testType}>
-                        {testType}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
+                          {/* All test fields disabled for TestEngineer except status actions */}
+                          <div>
+                            <Label>Test Type</Label>
+                            <Select
+                              value={test.testType}
+                              onValueChange={(v) => handleTestChange(idx, "testType", v)}
+                              disabled={!areTestFieldsEditable(test, idx)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {testTypes.map((testType, index) => (
+                                  <SelectItem key={`${testType}-${index}`} value={testType}>
+                                    {testType}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>
+                              Objective of the Test <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                              value={test.objective}
+                              onChange={(e) =>
+                                handleTestChange(idx, "objective", e.target.value)
+                              }
+                              placeholder="TESTING"
+                              disabled={!areTestFieldsEditable(test, idx)}
+                            />
+                          </div>
+                          <div>
+                            <Label>Vehicle Location</Label>
+                            <Input
+                              value={test.vehicleLocation}
+                              onChange={(e) =>
+                                handleTestChange(idx, "vehicleLocation", e.target.value)
+                              }
+                              placeholder="Enter Vehicle Location"
+                              disabled={!areTestFieldsEditable(test, idx)}
+                            />
+                          </div>
+                          <div>
+                            <Label>Cycle Gear Shift</Label>
+                            <Input
+                              value={test.cycleGearShift}
+                              onChange={(e) =>
+                                handleTestChange(idx, "cycleGearShift", e.target.value)
+                              }
+                              placeholder="Enter Cycle Gear Shift"
+                              disabled={!areTestFieldsEditable(test, idx)}
+                            />
+                          </div>
+                          <div>
+                            <Label>Inertia Class</Label>
+                            <Select
+                              value={test.inertiaClass}
+                              onValueChange={(v) =>
+                                handleTestChange(idx, "inertiaClass", v)
+                              }
+                              disabled={!areTestFieldsEditable(test, idx)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {inertiaClasses.map((inertiaClass, index) => (
+                                  <SelectItem
+                                    key={`${inertiaClass}-${index}`}
+                                    value={inertiaClass}
+                                  >
+                                    {inertiaClass}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Dataset Name</Label>
+                            <Input
+                              value={test.datasetName}
+                              onChange={(e) =>
+                                handleTestChange(idx, "datasetName", e.target.value)
+                              }
+                              placeholder="Enter Dataset Name"
+                              disabled={!areTestFieldsEditable(test, idx)}
+                            />
+                          </div>
+                          <div>
+                            <Label>DPF</Label>
+                            <div className="flex gap-2 mt-2">
+                              <label>
+                                <input
+                                  type="radio"
+                                  name={`dpf${idx}`}
+                                  value="Yes"
+                                  checked={test.dpf === "Yes"}
+                                  onChange={() => handleTestChange(idx, "dpf", "Yes")}
+                                  disabled={!areTestFieldsEditable(test, idx)}
+                                />{" "}
+                                Yes
+                              </label>
+                              <label>
+                                <input
+                                  type="radio"
+                                  name={`dpf${idx}`}
+                                  value="No"
+                                  checked={test.dpf === "No"}
+                                  onChange={() => handleTestChange(idx, "dpf", "No")}
+                                  disabled={!areTestFieldsEditable(test, idx)}
+                                />{" "}
+                                No
+                              </label>
+                              <label>
+                                <input
+                                  type="radio"
+                                  name={`dpf${idx}`}
+                                  value="NA"
+                                  checked={test.dpf === "NA"}
+                                  onChange={() => handleTestChange(idx, "dpf", "NA")}
+                                  disabled={!areTestFieldsEditable(test, idx)}
+                                />{" "}
+                                NA
+                              </label>
+                            </div>
+                          </div>
+                          {test.dpf === "Yes" && (
+                            <div>
+                              <Label>DPF Regen Occurs (g)*</Label>
+                              <Input
+                                value={test.dpfRegenOccurs || ""}
+                                onChange={(e) => handleTestChange(idx, "dpfRegenOccurs", e.target.value)}
+                                placeholder="Enter DPF Regen Occurs (g)"
+                                disabled={!areTestFieldsEditable(test, idx)}
+                              />
+                            </div>
+                          )}
+                          <div>
+                            <Label>Dataset flashed</Label>
+                            <div className="flex gap-2 mt-2">
+                              <label>
+                                <input
+                                  type="radio"
+                                  name={`datasetflashed${idx}`}
+                                  value="Yes"
+                                  checked={test.datasetflashed === "Yes"}
+                                  onChange={() =>
+                                    handleTestChange(idx, "datasetflashed", "Yes")
+                                  }
+                                  disabled={!areTestFieldsEditable(test, idx)}
+                                />{" "}
+                                Yes
+                              </label>
+                              <label>
+                                <input
+                                  type="radio"
+                                  name={`datasetflashed${idx}`}
+                                  value="No"
+                                  checked={test.datasetflashed === "No"}
+                                  onChange={() =>
+                                    handleTestChange(idx, "datasetflashed", "No")
+                                  }
+                                  disabled={!areTestFieldsEditable(test, idx)}
+                                />{" "}
+                                No
+                              </label>
+                            </div>
+                          </div>
+                          <div>
+                            <Label>ESS</Label>
+                            <div className="flex gap-2 mt-2">
+                              <label>
+                                <input
+                                  type="radio"
+                                  name={`ess${idx}`}
+                                  value="On"
+                                  checked={test.ess === "On"}
+                                  onChange={() => handleTestChange(idx, "ess", "On")}
+                                  disabled={!areTestFieldsEditable(test, idx)}
+                                />{" "}
+                                On
+                              </label>
+                              <label>
+                                <input
+                                  type="radio"
+                                  name={`ess${idx}`}
+                                  value="Off"
+                                  checked={test.ess === "Off"}
+                                  onChange={() => handleTestChange(idx, "ess", "Off")}
+                                  disabled={!areTestFieldsEditable(test, idx)}
+                                />{" "}
+                                Off
+                              </label>
+                              <label>
+                                <input
+                                  type="radio"
+                                  name={`ess${idx}`}
+                                  value="NA"
+                                  checked={test.ess === "NA"}
+                                  onChange={() => handleTestChange(idx, "ess", "NA")}
+                                  disabled={!areTestFieldsEditable(test, idx)}
+                                />{" "}
+                                NA
+                              </label>
+                            </div>
+                          </div>
+                          <div>
+                            <Label>Mode</Label>
+                            <Select
+                              value={test.mode}
+                              onValueChange={(v) => handleTestChange(idx, "mode", v)}
+                              disabled={!areTestFieldsEditable(test, idx)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {modes.map((mode, index) => (
+                                  <SelectItem key={`${mode}-${index}`} value={mode}>
+                                    {mode}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Hardware Change</Label>
+                            <Input
+                              value={test.hardwareChange}
+                              onChange={(e) =>
+                                handleTestChange(idx, "hardwareChange", e.target.value)
+                              }
+                              placeholder="Enter Hardware Change"
+                              disabled={!areTestFieldsEditable(test, idx)}
+                            />
+                          </div>
+                          <div>
+                            <Label>Shift</Label>
+                            <Select
+                              value={test.shift}
+                              onValueChange={(v) => handleTestChange(idx, "shift", v)}
+                              disabled={!areTestFieldsEditable(test, idx)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Shift1">Shift1</SelectItem>
+                                <SelectItem value="Shift2">Shift2</SelectItem>
+                                <SelectItem value="Shift3">Shift3</SelectItem>
+                                <SelectItem value="General">General</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Fuel Type</Label>
+                            <Select
+                              value={test.fuelType}
+                              onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
+                              disabled={!areTestFieldsEditable(test, idx)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {fuelTypes.map((fuelType, index) => (
+                                  <SelectItem key={`${fuelType}-${index}`} value={fuelType}>
+                                    {fuelType}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Equipment Required</Label>
+                            <Input
+                              value={test.equipmentRequired}
+                              onChange={(e) =>
+                                handleTestChange(idx, "equipmentRequired", e.target.value)
+                              }
+                              placeholder="Enter Equipment Required"
+                              disabled={!areTestFieldsEditable(test, idx)}
+                            />
+                          </div>
+                          <div>
+                            <Label>Preferred Date</Label>
+                            <Input
+            
+                              type="date"
+                              value={test.preferredDate}
+                              onChange={(e) =>
+                                handleTestChange(idx, "preferredDate", e.target.value)
+                              }
+                              disabled={!areTestFieldsEditable(test, idx)}
+                            />
+                          </div>
+                          <div>
+                            <Label>Emission Check Date</Label>
+                            <Input
+                              type="date"
+                              value={test.emissionCheckDate}
+                              onChange={(e) =>
+                                handleTestChange(idx, "emissionCheckDate", e.target.value)
+                              }
+                              disabled={!areTestFieldsEditable(test, idx)}
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <Label>Specific Instruction</Label>
+                            <textarea
+                              value={test.specificInstruction}
+                              onChange={(e) =>
+                                handleTestChange(idx, "specificInstruction", e.target.value)
+                              }
+                              placeholder="Enter Specific Instructions"
+                              disabled={!areTestFieldsEditable(test, idx)}
+                              className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical"
+                              style={{ minWidth: "100%", fontSize: "1rem" }}
+                              rows={3}
+                            />
+                          </div>
+                        </div>
+
+            {/* Attachments Card */}
+            <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+              <div className="font-semibold text-sm text-gray-700 mb-2">
+                Attachments
               </div>
-              <div>
-                <Label>
-                  Objective of the Test <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  value={test.objective}
-                  onChange={(e) =>
-                    handleTestChange(idx, "objective", e.target.value)
-                  }
-                  placeholder="TESTING"
-                />
-              </div>
-              <div>
-                <Label>Vehicle Location</Label>
-                <Input
-                  value={test.vehicleLocation}
-                  onChange={(e) =>
-                    handleTestChange(idx, "vehicleLocation", e.target.value)
-                  }
-                  placeholder="Enter Vehicle Location"
-                />
-              </div>
-              <div>
-                <Label>Upload Documents</Label>
-                <Input
-                  type="file"
-                  onChange={(e) =>
-                    handleTestChange(idx, "uploadDocuments", e.target.files[0])
-                  }
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-4 gap-4 mb-2">
-              <div>
-                <Label>Cycle Gear Shift</Label>
-                <Input
-                  value={test.cycleGearShift}
-                  onChange={(e) =>
-                    handleTestChange(idx, "cycleGearShift", e.target.value)
-                  }
-                  placeholder="Enter Cycle Gear Shift"
-                />
-              </div>
-              <div>
-                <Label>Dataset Name</Label>
-                <Input
-                  value={test.datasetName}
-                  onChange={(e) =>
-                    handleTestChange(idx, "datasetName", e.target.value)
-                  }
-                  placeholder="Enter Dataset Name"
-                />
-              </div>
-              <div>
-                <Label>Inertia Class</Label>
-                <Select
-                  value={test.inertiaClass}
-                  onValueChange={(v) =>
-                    handleTestChange(idx, "inertiaClass", v)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {inertiaClasses.map((inertiaClass, index) => (
-                      <SelectItem
-                        key={`${inertiaClass}-${index}`}
-                        value={inertiaClass}
-                      >
-                        {inertiaClass}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>DPF</Label>
-                <div className="flex gap-2 mt-2">
-                  <label>
-                    <input
-                      type="radio"
-                      name={`dpf${idx}`}
-                      value="Yes"
-                      checked={test.dpf === "Yes"}
-                      onChange={() => handleTestChange(idx, "dpf", "Yes")}
-                    />{" "}
-                    Yes
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name={`dpf${idx}`}
-                      value="No"
-                      checked={test.dpf === "No"}
-                      onChange={() => handleTestChange(idx, "dpf", "No")}
-                    />{" "}
-                    No
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name={`dpf${idx}`}
-                      value="NA"
-                      checked={test.dpf === "NA"}
-                      onChange={() => handleTestChange(idx, "dpf", "NA")}
-                    />{" "}
-                    NA
-                  </label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label>Emission Check Attachment</Label>
+                  <DropzoneFileList
+                    buttonText="Emission Check Attachment"
+                    name="Emission_check"
+                    maxFiles={5}
+                    formData={{
+                      ...test,
+                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                    }}
+                    setFormData={(updatedTest) => {
+                      setTests((prev) =>
+                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                      );
+                    }}
+                    id={`test${idx}`}
+                    submitted={false}
+                    setSubmitted={() => { }}
+                    openModal={!!emissionCheckModals[idx]}
+                    handleOpenModal={() =>
+                      setEmissionCheckModals((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    handleCloseModal={() =>
+                      setEmissionCheckModals((prev) => ({ ...prev, [idx]: false }))
+                    }
+                    disabled={false}
+                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                  />
+                </div>
+                <div>
+                  <Label>Dataset Attachment</Label>
+                  <DropzoneFileList
+                    buttonText="Dataset Attachment"
+                    name="Dataset_attachment"
+                    maxFiles={5}
+                    formData={{
+                      ...test,
+                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                    }}
+                    setFormData={(updatedTest) => {
+                      setTests((prev) =>
+                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                      );
+                    }}
+                    id={`test${idx}`}
+                    submitted={false}
+                    setSubmitted={() => { }}
+                    openModal={!!datasetModals[idx]}
+                    handleOpenModal={() =>
+                      setDatasetModals((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    handleCloseModal={() =>
+                      setDatasetModals((prev) => ({ ...prev, [idx]: false }))
+                    }
+                    disabled={false}
+                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                  />
+                </div>
+                <div>
+                  <Label>A2L Attachment</Label>
+                  <DropzoneFileList
+                    buttonText="A2L Attachment"
+                    name="A2L"
+                    maxFiles={5}
+                    formData={{
+                      ...test,
+                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                    }}
+                    setFormData={(updatedTest) => {
+                      setTests((prev) =>
+                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                      );
+                    }}
+                    id={`test${idx}`}
+                    submitted={false}
+                    setSubmitted={() => { }}
+                    openModal={!!a2lModals[idx]}
+                    handleOpenModal={() =>
+                      setA2LModals((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    handleCloseModal={() =>
+                      setA2LModals((prev) => ({ ...prev, [idx]: false }))
+                    }
+                    disabled={false}
+                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                  />
+                </div>
+                <div>
+                  <Label>Experiment Attachment</Label>
+                  <DropzoneFileList
+                    buttonText="Experiment Attachment"
+                    name="Experiment_attachment"
+                    maxFiles={5}
+                    formData={{
+                      ...test,
+                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                    }}
+                    setFormData={(updatedTest) => {
+                      setTests((prev) =>
+                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                      );
+                    }}
+                    id={`test${idx}`}
+                    submitted={false}
+                    setSubmitted={() => { }}
+                    openModal={!!experimentModals[idx]}
+                    handleOpenModal={() =>
+                      setExperimentModals((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    handleCloseModal={() =>
+                      setExperimentModals((prev) => ({ ...prev, [idx]: false }))
+                    }
+                    disabled={false}
+                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                  />
+                </div>
+                <div>
+                  <Label>DBC Attachment</Label>
+                  <DropzoneFileList
+                    buttonText="DBC Attachment"
+                    name="DBC_attachment"
+                    maxFiles={5}
+                    formData={{
+                      ...test,
+                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                    }}
+                    setFormData={(updatedTest) => {
+                      setTests((prev) =>
+                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                      );
+                    }}
+                    id={`test${idx}`}
+                    submitted={false}
+                    setSubmitted={() => { }}
+                    openModal={!!dbcModals[idx]}
+                    handleOpenModal={() =>
+                      setDBCModals((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    handleCloseModal={() =>
+                      setDBCModals((prev) => ({ ...prev, [idx]: false }))
+                    }
+                    disabled={false}
+                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                  />
+                </div>
+                <div>
+                  <Label>WLTP Input Sheet</Label>
+                  <DropzoneFileList
+                    buttonText="WLTP Input Sheet"
+                    name="WLTP_input_sheet"
+                    maxFiles={5}
+                    formData={{
+                      ...test,
+                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                    }}
+                    setFormData={(updatedTest) => {
+                      setTests((prev) =>
+                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                      );
+                    }}
+                    id={`test${idx}`}
+                    submitted={false}
+                    setSubmitted={() => { }}
+                    openModal={!!wltpModals[idx]}
+                    handleOpenModal={() =>
+                      setWLTPModals((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    handleCloseModal={() =>
+                      setWLTPModals((prev) => ({ ...prev, [idx]: false }))
+                    }
+                    disabled={false}
+                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                  />
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-4 mb-2">
-              <div>
-                <Label>Dataset Refreshed</Label>
-                <div className="flex gap-2 mt-2">
-                  <label>
-                    <input
-                      type="radio"
-                      name={`datasetRefreshed${idx}`}
-                      value="Yes"
-                      checked={test.datasetRefreshed === "Yes"}
-                      onChange={() =>
-                        handleTestChange(idx, "datasetRefreshed", "Yes")
-                      }
-                    />{" "}
-                    Yes
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name={`datasetRefreshed${idx}`}
-                      value="No"
-                      checked={test.datasetRefreshed === "No"}
-                      onChange={() =>
-                        handleTestChange(idx, "datasetRefreshed", "No")
-                      }
-                    />{" "}
-                    No
-                  </label>
+
+            {/* Testbed Engineers Attachments Card */}
+            <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+              <div className="font-semibold text-sm text-gray-700 mb-2">
+                Test Engineers Attachments
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label>PDF Report</Label>
+                  <DropzoneFileList
+                    buttonText="PDF Report"
+                    name="PDF_report"
+                    maxFiles={5}
+                    formData={{
+                      ...test,
+                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                    }}
+                    setFormData={(updatedTest) => {
+                      setTests((prev) =>
+                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                      );
+                    }}
+                    id={`test${idx}`}
+                    submitted={false}
+                    setSubmitted={() => { }}
+                    openModal={!!pdfReportModals[idx]}
+                    handleOpenModal={() =>
+                      setpdfReportModals((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    handleCloseModal={() =>
+                      setpdfReportModals((prev) => ({ ...prev, [idx]: false }))
+                    }
+                    disabled={false}
+                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                  />
                 </div>
-              </div>
-              <div>
-                <Label>ESS</Label>
-                <div className="flex gap-2 mt-2">
-                  <label>
-                    <input
-                      type="radio"
-                      name={`ess${idx}`}
-                      value="On"
-                      checked={test.ess === "On"}
-                      onChange={() => handleTestChange(idx, "ess", "On")}
-                    />{" "}
-                    On
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name={`ess${idx}`}
-                      value="Off"
-                      checked={test.ess === "Off"}
-                      onChange={() => handleTestChange(idx, "ess", "Off")}
-                    />{" "}
-                    Off
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name={`ess${idx}`}
-                      value="NA"
-                      checked={test.ess === "NA"}
-                      onChange={() => handleTestChange(idx, "ess", "NA")}
-                    />{" "}
-                    NA
-                  </label>
+                <div>
+                  <Label>Excel Report</Label>
+                  <DropzoneFileList
+                    buttonText="Excel Report"
+                    name="Excel_report"
+                    maxFiles={5}
+                    formData={{
+                      ...test,
+                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                    }}
+                    setFormData={(updatedTest) => {
+                      setTests((prev) =>
+                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                      );
+                    }}
+                    id={`test${idx}`}
+                    submitted={false}
+                    setSubmitted={() => { }}
+                    openModal={!!excelReportModals[idx]}
+                    handleOpenModal={() =>
+                      setexcelReportModals((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    handleCloseModal={() =>
+                      setexcelReportModals((prev) => ({ ...prev, [idx]: false }))
+                    }
+                    disabled={false}
+                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                  />
                 </div>
-              </div>
-              <div>
-                <Label>Mode</Label>
-                <Select
-                  value={test.mode}
-                  onValueChange={(v) => handleTestChange(idx, "mode", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {modes.map((mode, index) => (
-                      <SelectItem key={`${mode}-${index}`} value={mode}>
-                        {mode}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Hardware Change</Label>
-                <Input
-                  value={test.hardwareChange}
-                  onChange={(e) =>
-                    handleTestChange(idx, "hardwareChange", e.target.value)
-                  }
-                  placeholder="Enter Hardware Change"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-4 gap-4 mb-2">
-              <div>
-                <Label>Shift</Label>
-                <Select
-                  value={test.shift}
-                  onValueChange={(v) => handleTestChange(idx, "shift", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Shift1">Shift1</SelectItem>
-                    <SelectItem value="Shift2">Shift2</SelectItem>
-                    <SelectItem value="Shift3">Shift3</SelectItem>
-                    <SelectItem value="General">General</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Preferred Date</Label>
-                <Input
-                  type="date"
-                  value={test.preferredDate}
-                  onChange={(e) =>
-                    handleTestChange(idx, "preferredDate", e.target.value)
-                  }
-                />
-              </div>
-              <div>
-                <Label>Fuel Type</Label>
-                <Select
-                  value={test.fuelType}
-                  onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fuelTypes.map((fuelType, index) => (
-                      <SelectItem key={`${fuelType}-${index}`} value={fuelType}>
-                        {fuelType}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Equipment Required</Label>
-                <Input
-                  value={test.equipmentRequired}
-                  onChange={(e) =>
-                    handleTestChange(idx, "equipmentRequired", e.target.value)
-                  }
-                  placeholder="Enter Equipment Required"
-                />
-              </div>
-              <div>
-                <Label>Emission Check Date</Label>
-                <Input
-                  type="date"
-                  value={test.emissionCheckDate}
-                  onChange={(e) =>
-                    handleTestChange(idx, "emissionCheckDate", e.target.value)
-                  }
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-4 gap-4 mb-2">
-              <div>
-                <Label>Emission Check Attachment</Label>
-                <Input
-                  value={test.emissionCheckAttachment}
-                  onChange={(e) =>
-                    handleTestChange(
-                      idx,
-                      "emissionCheckAttachment",
-                      e.target.value
-                    )
-                  }
-                  placeholder="Enter Attachment Path/URL"
-                />
-              </div>
-              <div>
-                <Label>Specific Instruction</Label>
-                <Input
-                  value={test.specificInstruction}
-                  onChange={(e) =>
-                    handleTestChange(idx, "specificInstruction", e.target.value)
-                  }
-                  placeholder="Enter Specific Instructions"
-                />
+                <div>
+                  <Label>DAT File Attachment</Label>
+                  <DropzoneFileList
+                    buttonText="DAT File Attachment"
+                    name="DAT_file_attachment"
+                    maxFiles={5}
+                    formData={{
+                      ...test,
+                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                    }}
+                    setFormData={(updatedTest) => {
+                      setTests((prev) =>
+                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                      );
+                    }}
+                    id={`test${idx}`}
+                    submitted={false}
+                    setSubmitted={() => { }}
+                    openModal={!!datFileModals[idx]}
+                    handleOpenModal={() =>
+                      setDATModals((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    handleCloseModal={() =>
+                      setDATModals((prev) => ({ ...prev, [idx]: false }))
+                    }
+                    disabled={false}
+                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                  />
+                </div>
+                <div>
+                  <Label>Others Attachment</Label>
+                  <DropzoneFileList
+                    buttonText="Others Attachment"
+                    name="Others_attachment"
+                    maxFiles={5}
+                    formData={{
+                      ...test,
+                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                    }}
+                    setFormData={(updatedTest) => {
+                      setTests((prev) =>
+                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                      );
+                    }}
+                    id={`test${idx}`}
+                    submitted={false}
+                    setSubmitted={() => { }}
+                    openModal={!!othersModals[idx]}
+                    handleOpenModal={() =>
+                      setOthersModals((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    handleCloseModal={() =>
+                      setOthersModals((prev) => ({ ...prev, [idx]: false }))
+                    }
+                    disabled={false}
+                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Coast Down Data Section for Test */}
-            <div className="mt-4 border rounded shadow px-4 py-3 bg-blue-50">
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-semibold text-sm text-blue-700">
-                  Coast Down Data for Test {idx + 1}
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="text-xs text-blue-600 px-2 py-1"
-                  onClick={() => {
-                    const updatedTests = [...tests];
-                    updatedTests[idx].showCoastDownData =
-                      !updatedTests[idx].showCoastDownData;
-                    setTests(updatedTests);
-                  }}
-                >
-                  {test.showCoastDownData ? "Hide" : "Show"} Coast Down Data
-                </Button>
-              </div>
+                        <div className="mt-6 border rounded shadow px-4 py-3 bg-blue-50">
+                          <div className="flex items-center gap-3 mb-3">
+                            <span className="font-semibold text-sm text-blue-700">
+                              Coast Down Data for Test {idx + 1}
+                            </span>
+                            <Switch
+                              checked={!!test.showCoastDownData}
+                              onCheckedChange={(checked) => {
+                                const updatedTests = [...tests];
+                                updatedTests[idx].showCoastDownData = checked;
+                                setTests(updatedTests);
+                              }}
+                              disabled={!areTestFieldsEditable(test, idx)}
+                              className="data-[state=checked]:bg-red-500"
+                            />
+                          </div>
+                          {test.showCoastDownData && (
+                            <div>
+                              <div className="mb-3">
+                                <Label className="text-xs">
+                                  Coast Down Test Report Reference
+                                </Label>
+                                <Input
+                                  value={test.cdReportRef || form.cdReportRef}
+                                  onChange={(e) =>
+                                    handleTestChange(idx, "cdReportRef", e.target.value)
+                                  }
+                                  placeholder="Enter Coast Test Report Ref."
+                                  className="mt-1"
+                                  disabled={!areTestFieldsEditable(test, idx)}
+                                />
+                              </div>
+                              <div className="mb-2 font-semibold text-xs">CD Values</div>
+                              <div className="grid grid-cols-4 gap-3 text-xs">
+                                <div>
+                                  <Label className="text-xs">
+                                    Vehicle Reference mass (Kg)
+                                  </Label>
+                                  <Input
+                                    value={test.vehicleRefMass || form.vehicleRefMass}
+                                    onChange={(e) =>
+                                      handleTestChange(
+                                        idx,
+                                        "vehicleRefMass",
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="Enter Vehicle Reference mass"
+                                    className="mt-1"
+                                    disabled={!areTestFieldsEditable(test, idx)}
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">A (N)</Label>
+                                  <Input
+                                    value={test.aN || form.aN}
+                                    onChange={(e) =>
+                                      handleTestChange(idx, "aN", e.target.value)
+                                    }
+                                    placeholder="Enter A (N)"
+                                    className="mt-1"
+                                    disabled={!areTestFieldsEditable(test, idx)}
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">B (N/kmph)</Label>
+                                  <Input
+                                    value={test.bNkmph || form.bNkmph}
+                                    onChange={(e) =>
+                                      handleTestChange(idx, "bNkmph", e.target.value)
+                                    }
+                                    placeholder="Enter B (N/kmph)"
+                                    className="mt-1"
+                                    disabled={!areTestFieldsEditable(test, idx)}
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">C (N/kmph^2)</Label>
+                                  <Input
+                                    value={test.cNkmph2 || form.cNkmph2}
+                                    onChange={(e) =>
+                                      handleTestChange(idx, "cNkmph2", e.target.value)
+                                    }
+                                    placeholder="Enter C (N/kmph^2)"
+                                    className="mt-1"
+                                    disabled={!areTestFieldsEditable(test, idx)}
+                                  />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-3 gap-3 text-xs mt-3">
+                                <div>
+                                  <Label className="text-xs">F0 (N)</Label>
+                                  <Input
+                                    value={test.f0N || form.f0N}
+                                    onChange={(e) =>
+                                      handleTestChange(idx, "f0N", e.target.value)
+                                    }
+                                    placeholder="Enter F0 (N)"
+                                    className="mt-1"
+                                    disabled={!areTestFieldsEditable(test, idx)}
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">F1 (N/kmph)</Label>
+                                  <Input
+                                    value={test.f1Nkmph || form.f1Nkmph}
+                                    onChange={(e) =>
+                                      handleTestChange(idx, "f1Nkmph", e.target.value)
+                                    }
+                                    placeholder="Enter F1 (N/kmph)"
+                                    className="mt-1"
+                                    disabled={!areTestFieldsEditable(test, idx)}
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">F2 (N/kmph^2)</Label>
+                                  <Input
+                                    value={test.f2Nkmph2 || form.f2Nkmph2}
+                                    onChange={(e) =>
+                                      handleTestChange(idx, "f2Nkmph2", e.target.value)
+                                    }
+                                    placeholder="Enter F2 (N/kmph^2)"
+                                    className="mt-1"
+                                    disabled={!areTestFieldsEditable(test, idx)}
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex justify-end mt-3">
+                                <Button
+                                  type="button"
+                                  className="bg-blue-600 text-white text-xs px-4 py-1 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                  disabled={!areTestFieldsEditable(test, idx)}
+                                  onClick={() => {
+                                    // Copy coast down data from main form to this test
+                                    handleTestChange(idx, "cdReportRef", form.cdReportRef);
+                                    handleTestChange(idx, "vehicleRefMass", form.vehicleRefMass);
+                                    handleTestChange(idx, "aN", form.aN);
+                                    handleTestChange(idx, "bNkmph", form.bNkmph);
+                                    handleTestChange(idx, "cNkmph2", form.cNkmph2);
+                                    handleTestChange(idx, "f0N", form.f0N);
+                                    handleTestChange(idx, "f1Nkmph", form.f1Nkmph);
+                                    handleTestChange(idx, "f2Nkmph2", form.f2Nkmph2);
+                                  }}
+                                >
+                                  Load from Main Form
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+            
+            <div className="flex justify-end mt-6">
+                          <Button
+                            className="bg-red-600 text-white text-xs px-6 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            onClick={() => handleCreateTestOrder(idx)}
+                            disabled={!!test.testOrderId || test.disabled}
+                          >
+                            {test.testOrderId ? "✓ TEST ORDER CREATED" : "✓ CREATE TEST ORDER"}
+                          </Button>
+                          {editingTestOrderIdx === idx && (
+                            <Button
+                              className="bg-blue-600 text-white text-xs px-6 py-2 rounded ml-2"
+                              onClick={() => {
+                                if (isProjectTeam) {
+                                  handleOpenMailRemarksModal(idx);
+                                } else {
+                                  handleUpdateTestOrder(idx);
+                                }
+                              }}
+                            >
+                              UPDATE TEST ORDER
+                            </Button>
+                          )}
+                        </div>
 
-              {test.showCoastDownData && (
-                <div>
-                  <div className="mb-3">
-                    <Label className="text-xs">
-                      Coast Down Test Report Reference
-                    </Label>
-                    <Input
-                      value={test.cdReportRef || form.cdReportRef}
-                      onChange={(e) =>
-                        handleTestChange(idx, "cdReportRef", e.target.value)
-                      }
-                      placeholder="Enter Coast Test Report Ref."
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div className="mb-2 font-semibold text-xs">CD Values</div>
-                  <div className="grid grid-cols-4 gap-3 text-xs">
-                    <div>
-                      <Label className="text-xs">
-                        Vehicle Reference mass (Kg)
-                      </Label>
-                      <Input
-                        value={test.vehicleRefMass || form.vehicleRefMass}
-                        onChange={(e) =>
-                          handleTestChange(
-                            idx,
-                            "vehicleRefMass",
-                            e.target.value
-                          )
-                        }
-                        placeholder="Enter Vehicle Reference mass"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">A (N)</Label>
-                      <Input
-                        value={test.aN || form.aN}
-                        onChange={(e) =>
-                          handleTestChange(idx, "aN", e.target.value)
-                        }
-                        placeholder="Enter A (N)"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">B (N/kmph)</Label>
-                      <Input
-                        value={test.bNkmph || form.bNkmph}
-                        onChange={(e) =>
-                          handleTestChange(idx, "bNkmph", e.target.value)
-                        }
-                        placeholder="Enter B (N/kmph)"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">C (N/kmph^2)</Label>
-                      <Input
-                        value={test.cNkmph2 || form.cNkmph2}
-                        onChange={(e) =>
-                          handleTestChange(idx, "cNkmph2", e.target.value)
-                        }
-                        placeholder="Enter C (N/kmph^2)"
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3 text-xs mt-3">
-                    <div>
-                      <Label className="text-xs">F0 (N)</Label>
-                      <Input
-                        value={test.f0N || form.f0N}
-                        onChange={(e) =>
-                          handleTestChange(idx, "f0N", e.target.value)
-                        }
-                        placeholder="Enter F0 (N)"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">F1 (N/kmph)</Label>
-                      <Input
-                        value={test.f1Nkmph || form.f1Nkmph}
-                        onChange={(e) =>
-                          handleTestChange(idx, "f1Nkmph", e.target.value)
-                        }
-                        placeholder="Enter F1 (N/kmph)"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">F2 (N/kmph^2)</Label>
-                      <Input
-                        value={test.f2Nkmph2 || form.f2Nkmph2}
-                        onChange={(e) =>
-                          handleTestChange(idx, "f2Nkmph2", e.target.value)
-                        }
-                        placeholder="Enter F2 (N/kmph^2)"
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end mt-3">
-                    <Button
-                      type="button"
-                      className="bg-blue-600 text-white text-xs px-4 py-1 rounded"
-                      onClick={() => {
-                        // Copy coast down data from main form to this test
-                        handleTestChange(idx, "cdReportRef", form.cdReportRef);
-                        handleTestChange(
-                          idx,
-                          "vehicleRefMass",
-                          form.vehicleRefMass
-                        );
-                        handleTestChange(idx, "aN", form.aN);
-                        handleTestChange(idx, "bNkmph", form.bNkmph);
-                        handleTestChange(idx, "cNkmph2", form.cNkmph2);
-                        handleTestChange(idx, "f0N", form.f0N);
-                        handleTestChange(idx, "f1Nkmph", form.f1Nkmph);
-                        handleTestChange(idx, "f2Nkmph2", form.f2Nkmph2);
-                      }}
-                    >
-                      Load from Main Form
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end mt-4">
-              <Button
-                className="bg-red-600 text-white text-xs px-6 py-2 rounded"
-                onClick={() => handleCreateTestOrder(idx)}
-                disabled={editingTestOrderIdx === idx}
-              >
-                ✓ CREATE TEST ORDER
-              </Button>
-              {editingTestOrderIdx === idx && (
-                <Button
-                  className="bg-blue-600 text-white text-xs px-6 py-2 rounded ml-2"
-                  onClick={() => handleUpdateTestOrder(idx)}
-                >
-                  UPDATE TEST ORDER
-                </Button>
-              )}
-              {test.testOrderId && (
-                <div className="flex items-center gap-2 ml-4">
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span className="text-xs text-gray-600">Start</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                    <span className="text-xs text-gray-600">Finish</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-xs text-gray-600">Close</span>
-                  </div>
-                </div>
-              )}
-            </div>
+                        {/* Re-edit remarks modal */}
+                                    {reEditModalOpen === idx && (
+                                      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                                        <div className="bg-white rounded shadow-lg p-6 w-96">
+                                          <div className="font-semibold mb-2">Reason for Re-edit</div>
+                                          <textarea
+                                            className="w-full border rounded p-2 mb-4"
+                                            rows={3}
+                                            value={reEditRemarks[idx] || ""}
+                                            onChange={(e) => setReEditRemarks((prev) => ({ ...prev, [idx]: e.target.value }))}
+                                            placeholder="Enter reason for re-edit..."
+                                          />
+                                          <div className="flex justify-end gap-2">
+                                            <Button
+                                              className="bg-gray-300 text-black px-4 py-1 rounded"
+                                              type="button"
+                                              onClick={() => setReEditModalOpen(false)}
+                                            >
+                                              Cancel
+                                            </Button>
+                                            <Button
+                                              className="bg-blue-600 text-white px-4 py-1 rounded"
+                                              type="button"
+                                              onClick={() => handleSubmitReEditRemarks(idx)}
+                                              disabled={!reEditRemarks[idx]?.trim()}
+                                            >
+                                              Submit
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {/* Rejection remarks modal */}
+                                    {rejectionModalOpen === idx && (
+                                      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                                        <div className="bg-white rounded shadow-lg p-6 w-96">
+                                          <div className="font-semibold mb-2">Reason for Rejection</div>
+                                          <textarea
+                                            className="w-full border rounded p-2 mb-4"
+                                            rows={3}
+                                            value={rejectionRemarks[idx] || ""}
+                                            onChange={(e) => setRejectionRemarks((prev) => ({ ...prev, [idx]: e.target.value }))}
+                                            placeholder="Enter reason for rejection..."
+                                          />
+                                          <div className="flex justify-end gap-2">
+                                            <Button
+                                              className="bg-gray-300 text-black px-4 py-1 rounded"
+                                              type="button"
+                                              onClick={() => setRejectionModalOpen(false)}
+                                            >
+                                              Cancel
+                                            </Button>
+                                            <Button
+                                              className="bg-red-600 text-white px-4 py-1 rounded"
+                                              type="button"
+                                              onClick={() => handleSubmitRejectionRemarks(idx)}
+                                              disabled={!rejectionRemarks[idx]?.trim()}
+                                            >
+                                              Submit
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {/* mail remarks modal */}
+                                    {mailRemarksModalOpen && (
+                                      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                                        <div className="bg-white rounded shadow-lg p-6 w-96">
+                                          <div className="font-semibold mb-2">mail remarks</div>
+                                          <textarea
+                                            className="w-full border rounded p-2 mb-4"
+                                            rows={3}
+                                            value={mailRemarks}
+                                            onChange={(e) => setMailRemarks(e.target.value)}
+                                            placeholder="Enter mail remarks..."
+                                          />
+                                          <div className="flex justify-end gap-2">
+                                            <Button
+                                              className="bg-gray-300 text-black px-4 py-1 rounded"
+                                              type="button"
+                                              onClick={() => setMailRemarksModalOpen(false)}
+                                            >
+                                              Cancel
+                                            </Button>
+                                            <Button
+                                              className="bg-blue-600 text-white px-4 py-1 rounded"
+                                              type="button"
+                                              onClick={() => handleSubmitMailRemarks(idx)}
+                                              disabled={!mailRemarks.trim()}
+                                            >
+                                              Submit
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
           </div>
         ))}
 
@@ -2390,19 +2928,60 @@ export default function RDECreateJobOrder() {
                 {(allTestOrders[location.state?.originalJobOrderId] || []).map(
                   (to) => (
                     <tr key={to.test_order_id}>
-                      <td className="border px-2 py-1">{to.test_order_id}</td>
-                      <td className="border px-2 py-1">{to.test_type}</td>
-                      <td className="border px-2 py-1">{to.test_objective}</td>
-                      <td className="border px-2 py-1">{to.status}</td>
-                      <td className="border px-2 py-1">
-                        <Button
-                          className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
-                          onClick={() => handleEditTestOrder(to, 0)}
-                        >
-                          Edit
-                        </Button>
-                      </td>
-                    </tr>
+                                        <td className="border px-2 py-1">{to.job_order_id}</td> {/* New data */}
+                                        <td className="border px-2 py-1">{to.test_order_id}</td>
+                                        <td className="border px-2 py-1">{to.test_type}</td>
+                                        <td className="border px-2 py-1">{to.test_objective}</td>
+                                        <td className="border px-2 py-1">{to.fuel_type}</td>
+                                        <td className="border px-2 py-1">{to.status}</td>
+                                        <td className="border px-2 py-1">
+                                          {/* Show Edit button based on user role and test status */}
+                                          {(() => {
+                                            // For ProjectTeam: Show edit button when status is "Re-edit" 
+                                            if (isProjectTeam && to.status === "Re-edit") {
+                                              return (
+                                                <Button
+                                                  className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
+                                                  onClick={() => navigate('/editTestOrder', {
+                                                    state: {
+                                                      testOrder: to,
+                                                      jobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id,
+                                                      returnPath: location.pathname,
+                                                      returnState: location.state
+                                                    }
+                                                  })}
+                                                >
+                                                  Edit
+                                                </Button>
+                                              );
+                                            }
+                                            // For other roles (but not TestEngineer when status is "Re-edit"): Show edit button
+                                            else if (!isTestEngineer || (isTestEngineer && to.status !== "Re-edit")) {
+                                              return (
+                                                <Button
+                                                  className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
+                                                  onClick={() => navigate('/editTestOrder', {
+                                                    state: {
+                                                      testOrder: to,
+                                                      jobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id,
+                                                      returnPath: location.pathname,
+                                                      returnState: location.state
+                                                    }
+                                                  })}
+                                                >
+                                                  Edit
+                                                </Button>
+                                              );
+                                            }
+                                            // Hide edit button for TestEngineer when status is "Re-edit"
+                                            else {
+                                              return (
+                                                <span className="text-gray-400 text-xs">No action</span>
+                                              );
+                                            }
+                                          })()}
+                                        </td>
+                                      </tr>
                   )
                 )}
                 {(allTestOrders[location.state?.originalJobOrderId] || [])

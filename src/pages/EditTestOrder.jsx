@@ -166,6 +166,53 @@ export default function EditTestOrder() {
     fetchFuelTypes();
   }, []);
 
+  // Helper to build the test order payload
+  const getTestOrderPayload = (overrideStatus) => ({
+    test_order_id: test.testOrderId,
+    job_order_id: jobOrderId || null,
+    CoastDownData_id: testOrder?.CoastDownData_id || null,
+    test_type: test.testType || "",
+    test_objective: test.objective || "",
+    vehicle_location: test.vehicleLocation || "",
+    cycle_gear_shift: test.cycleGearShift || "",
+    inertia_class: test.inertiaClass || "",
+    dataset_name: test.datasetName || "",
+    dpf: test.dpf || "",
+    dpf_regen_occurs: test.dpfRegenOccurs || "",
+    dataset_flashed:
+      test.datasetflashed === "Yes"
+        ? true
+        : test.datasetflashed === "No"
+          ? false
+          : null,
+    ess: test.ess || "",
+    mode: test.mode || "",
+    hardware_change: test.hardwareChange || "",
+    equipment_required: test.equipmentRequired || "",
+    shift: test.shift || "",
+    fuel_type: test.fuelType || "",
+    preferred_date: test.preferredDate || null,
+    emission_check_date: test.emissionCheckDate || null,
+    emission_check_attachment: test.emissionCheckAttachment || "",
+    dataset_attachment: test.dataset_attachment || "",
+    a2l_attachment: test.a2l_attachment || "",
+    experiment_attachment: test.experiment_attachment || "",
+    dbc_attachment: test.dbc_attachment || "",
+    wltp_attachment: test.wltp_attachment || "",
+    pdf_report: test.pdf_report || "",
+    excel_report: test.excel_report || "",
+    dat_file_attachment: test.dat_file_attachment || "",
+    others_attachment: test.others_attachment || "",
+    specific_instruction: test.specificInstruction || "",
+    status: overrideStatus ?? test.status,
+    id_of_creator: testOrder?.id_of_creator || "",
+    name_of_creator: testOrder?.name_of_creator || "",
+    created_on: testOrder?.created_on || new Date().toISOString(),
+    id_of_updater: userId || "",
+    name_of_updater: userName || "",
+    updated_on: new Date().toISOString(),
+  });
+
   // Handler to update the test order
   const handleUpdateTestOrder = async () => {
     try {
@@ -174,53 +221,7 @@ export default function EditTestOrder() {
       if (isProjectTeam && newStatus === "Re-edit") {
         newStatus = "Started";
       }
-
-      const testOrderPayload = {
-        test_order_id: test.testOrderId,
-        job_order_id: jobOrderId || null,
-        CoastDownData_id: testOrder?.CoastDownData_id || null,
-        test_type: test.testType || "",
-        test_objective: test.objective || "",
-        vehicle_location: test.vehicleLocation || "",
-        cycle_gear_shift: test.cycleGearShift || "",
-        inertia_class: test.inertiaClass || "",
-        dataset_name: test.datasetName || "",
-        dpf: test.dpf || "",
-        dpf_regen_occurs: test.dpfRegenOccurs || "",
-        dataset_flashed:
-          test.datasetflashed === "Yes"
-            ? true
-            : test.datasetflashed === "No"
-              ? false
-              : null,
-        ess: test.ess || "",
-        mode: test.mode || "",
-        hardware_change: test.hardwareChange || "",
-        equipment_required: test.equipmentRequired || "",
-        shift: test.shift || "",
-        fuel_type: test.fuelType || "",
-        preferred_date: test.preferredDate || null,
-        emission_check_date: test.emissionCheckDate || null,
-        emission_check_attachment: test.emissionCheckAttachment || "",
-        dataset_attachment: test.dataset_attachment || "",
-        a2l_attachment: test.a2l_attachment || "",
-        experiment_attachment: test.experiment_attachment || "",
-        dbc_attachment: test.dbc_attachment || "",
-        wltp_attachment: test.wltp_attachment || "",
-        pdf_report: test.pdf_report || "",
-        excel_report: test.excel_report || "",
-        dat_file_attachment: test.dat_file_attachment || "",
-        others_attachment: test.others_attachment || "",
-        specific_instruction: test.specificInstruction || "",
-        status: newStatus,
-        id_of_creator: testOrder?.id_of_creator || "",
-        name_of_creator: testOrder?.name_of_creator || "",
-        created_on: testOrder?.created_on || new Date().toISOString(),
-        id_of_updater: userId || "",
-        name_of_updater: userName || "",
-        updated_on: new Date().toISOString(),
-      };
-
+      const testOrderPayload = getTestOrderPayload(newStatus);
       await axios.put(`${apiURL}/testorders/${test.testOrderId}`, testOrderPayload);
       showSnackbar("Test Order updated successfully!", "success");
       handleBack();
@@ -229,9 +230,13 @@ export default function EditTestOrder() {
     }
   };
 
-  // Handler to update status
+  // Handler to update status (now always updates test order first)
   const handleStatusUpdate = async (status, remark = "") => {
     try {
+      // Always update test order with latest form data and new status
+      const testOrderPayload = getTestOrderPayload(status);
+      await axios.put(`${apiURL}/testorders/${test.testOrderId}`, testOrderPayload);
+
       const payload = {
         test_order_id: test.testOrderId,
         status,
@@ -270,6 +275,17 @@ export default function EditTestOrder() {
       handleBack();
     } catch (err) {
       showSnackbar("Failed to submit mail remarks: " + (err.response?.data?.detail || err.message), "error");
+    }
+  };
+
+  // Handler to start the test order (update with form data, then update status)
+  const handleStartTestOrder = async () => {
+    try {
+      const testOrderPayload = getTestOrderPayload("Started");
+      await axios.put(`${apiURL}/testorders/${test.testOrderId}`, testOrderPayload);
+      await handleStatusUpdate("Started");
+    } catch (err) {
+      showSnackbar("Failed to start test order: " + (err.response?.data?.detail || err.message), "error");
     }
   };
 
@@ -705,7 +721,7 @@ export default function EditTestOrder() {
                 <Label>Emission Check Attachment</Label>
                 <DropzoneFileList
                   buttonText="Emission Check Attachment"
-                  name="Emission_check"
+                  name="emmission_check_attachment"
                   maxFiles={5}
                   formData={{
                     ...test,
@@ -728,7 +744,7 @@ export default function EditTestOrder() {
                 <Label>Dataset Attachment</Label>
                 <DropzoneFileList
                   buttonText="Dataset Attachment"
-                  name="Dataset_attachment"
+                  name="dataset_attachment"
                   maxFiles={5}
                   formData={{
                     ...test,
@@ -752,7 +768,7 @@ export default function EditTestOrder() {
                 <Label>A2L Attachment</Label>
                 <DropzoneFileList
                   buttonText="A2L Attachment"
-                  name="A2L"
+                  name="a2l_attachment"
                   maxFiles={5}
                   formData={{
                     ...test,
@@ -776,7 +792,7 @@ export default function EditTestOrder() {
                 <Label>Experiment Attachment</Label>
                 <DropzoneFileList
                   buttonText="Experiment Attachment"
-                  name="Experiment_attachment"
+                  name="experiment_attachment"
                   maxFiles={5}
                   formData={{
                     ...test,
@@ -800,7 +816,7 @@ export default function EditTestOrder() {
                 <Label>DBC Attachment</Label>
                 <DropzoneFileList
                   buttonText="DBC Attachment"
-                  name="DBC_attachment"
+                  name="dbc_attachment"
                   maxFiles={5}
                   formData={{
                     ...test,
@@ -824,7 +840,7 @@ export default function EditTestOrder() {
                 <Label>WLTP Input Sheet</Label>
                 <DropzoneFileList
                   buttonText="WLTP Input Sheet"
-                  name="WLTP_input_sheet"
+                  name="wltp_attachment"
                   maxFiles={5}
                   formData={{
                     ...test,
@@ -857,7 +873,7 @@ export default function EditTestOrder() {
                 <Label>PDF Report</Label>
                 <DropzoneFileList
                   buttonText="PDF Report"
-                  name="PDF_report"
+                  name="pdf_report"
                   maxFiles={5}
                   formData={{
                     ...test,
@@ -881,7 +897,7 @@ export default function EditTestOrder() {
                 <Label>Excel Report</Label>
                 <DropzoneFileList
                   buttonText="Excel Report"
-                  name="Excel_report"
+                  name="excel_report"
                   maxFiles={5}
                   formData={{
                     ...test,
@@ -905,7 +921,7 @@ export default function EditTestOrder() {
                 <Label>DAT File Attachment</Label>
                 <DropzoneFileList
                   buttonText="DAT File Attachment"
-                  name="DAT_file_attachment"
+                  name="dat_file_attachment"
                   maxFiles={5}
                   formData={{
                     ...test,
@@ -929,7 +945,7 @@ export default function EditTestOrder() {
                 <Label>Others Attachment</Label>
                 <DropzoneFileList
                   buttonText="Others Attachment"
-                  name="Others_attachment"
+                  name="others_attachement"
                   maxFiles={5}
                   formData={{
                     ...test,
@@ -1070,7 +1086,7 @@ export default function EditTestOrder() {
                 <Button
                   className="bg-green-600 text-white text-xs px-3 py-1 rounded"
                   type="button"
-                  onClick={() => handleStatusUpdate("Started")}
+                  onClick={handleStartTestOrder}
                 >
                   Start
                 </Button>

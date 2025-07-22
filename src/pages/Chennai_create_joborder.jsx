@@ -126,7 +126,7 @@ export default function CreateJobOrder() {
         pdf_report: "",
         excel_report: "",
         dat_file_attachment: "",
-        others_attachement: "",
+        others_attachment: "",
         specificInstruction: "",
         uploadDocuments: null,
         testOrderId: null, // Track created test order ID
@@ -852,7 +852,7 @@ export default function CreateJobOrder() {
       pdf_report: test.pdf_report || "",
       excel_report: test.excel_report || "",
       dat_file_attachment: test.dat_file_attachment || "",
-      others_attachement: test.others_attachement || "",
+      others_attachment: test.others_attachment || "",
     };
 
     try {
@@ -1037,6 +1037,9 @@ export default function CreateJobOrder() {
 
   // Handler to load a test order into the test form for editing
   const handleEditTestOrder = async (testOrder, idx) => {
+    // Helper to ensure attachment fields are always arrays
+    const ensureArray = (val) => Array.isArray(val) ? val : (val ? [val] : []);
+
     // Find the test in the tests array or add a new one if not present
     let testIdx = idx;
     if (typeof testIdx !== "number" || testIdx >= tests.length) {
@@ -1071,15 +1074,16 @@ export default function CreateJobOrder() {
         preferredDate: testOrder.preferred_date || "",
         emissionCheckDate: testOrder.emission_check_date || "",
         emissionCheckAttachment: testOrder.emission_check_attachment || "",
-        dataset_attachment: testOrder.dataset_attachment || "",
-        a2l_attachment: testOrder.a2l_attachment || "",
-        experiment_attachment: testOrder.experiment_attachment || "",
-        dbc_attachment: testOrder.dbc_attachment || "",
-        wltp_attachment: testOrder.wltp_attachment || "",
-        pdf_report: testOrder.pdf_report || "",
-        excel_report: testOrder.excel_report || "",
-        dat_file_attachment: testOrder.dat_file_attachment || "",
-        others_attachment: testOrder.others_attachment || "",
+        // Ensure all attachment fields are arrays
+        dataset_attachment: ensureArray(testOrder.dataset_attachment),
+        a2l_attachment: ensureArray(testOrder.a2l_attachment),
+        experiment_attachment: ensureArray(testOrder.experiment_attachment),
+        dbc_attachment: ensureArray(testOrder.dbc_attachment),
+        wltp_attachment: ensureArray(testOrder.wltp_attachment),
+        pdf_report: ensureArray(testOrder.pdf_report),
+        excel_report: ensureArray(testOrder.excel_report),
+        dat_file_attachment: ensureArray(testOrder.dat_file_attachment),
+        others_attachment: ensureArray(testOrder.others_attachment || testOrder.others_attachement),
         specificInstruction: testOrder.specific_instruction || "",
         testOrderId: testOrder.test_order_id,
         status: testOrder.status || "Created", // Use current status if present
@@ -1094,6 +1098,8 @@ export default function CreateJobOrder() {
         f0N: testOrder.f0N || "",
         f1Nkmph: testOrder.f1Nkmph || "",
         f2Nkmph2: testOrder.f2Nkmph2 || "",
+        // Add originalJobOrderId for DropzoneFileList
+        originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || "",
       };
       return updated;
     });
@@ -2351,7 +2357,7 @@ export default function CreateJobOrder() {
                   <Label>Emission Check Attachment</Label>
                   <DropzoneFileList
                     buttonText="Emission Check Attachment"
-                    name="Emission_check"
+                    name="emission_check_attachment"
                     maxFiles={5}
                     formData={{
                       ...test,
@@ -2381,7 +2387,7 @@ export default function CreateJobOrder() {
                   <Label>Dataset Attachment</Label>
                   <DropzoneFileList
                     buttonText="Dataset Attachment"
-                    name="Dataset_attachment"
+                    name="dataset_attachment"
                     maxFiles={5}
                     formData={{
                       ...test,
@@ -2411,7 +2417,7 @@ export default function CreateJobOrder() {
                   <Label>A2L Attachment</Label>
                   <DropzoneFileList
                     buttonText="A2L Attachment"
-                    name="A2L"
+                    name="a2l_attachment"
                     maxFiles={5}
                     formData={{
                       ...test,
@@ -2441,7 +2447,7 @@ export default function CreateJobOrder() {
                   <Label>Experiment Attachment</Label>
                   <DropzoneFileList
                     buttonText="Experiment Attachment"
-                    name="Experiment_attachment"
+                    name="experiment_attachment"
                     maxFiles={5}
                     formData={{
                       ...test,
@@ -2471,7 +2477,7 @@ export default function CreateJobOrder() {
                   <Label>DBC Attachment</Label>
                   <DropzoneFileList
                     buttonText="DBC Attachment"
-                    name="DBC_attachment"
+                    name="dbc_attachment"
                     maxFiles={5}
                     formData={{
                       ...test,
@@ -2501,7 +2507,7 @@ export default function CreateJobOrder() {
                   <Label>WLTP Input Sheet</Label>
                   <DropzoneFileList
                     buttonText="WLTP Input Sheet"
-                    name="WLTP_input_sheet"
+                    name="wltp_attachment"
                     maxFiles={5}
                     formData={{
                       ...test,

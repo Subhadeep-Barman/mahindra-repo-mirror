@@ -326,6 +326,7 @@ const Dropzone = ({
     const testOrderId =
       formData?.test_id ||
       formData?.test_order_id ||
+      formData?.testOrderId ||
       (id.startsWith("test") ? id : "");
     return { jobOrderId, testOrderId };
   };
@@ -652,28 +653,22 @@ const Dropzone = ({
   };
 
   const checkFilesExist = async () => {
-    const jobId = formData?.form_id
-      ? formData?.form_id
-      : formData?.job_order_id || (!id.startsWith("test") && id) || "";
-    const testId = formData?.test_id
-      ? formData?.test_id
-      : id.startsWith("test")
-        ? id
-        : "";
+    // Use the helper to get correct IDs
+    const { jobOrderId, testOrderId } = getJobAndTestOrderId();
 
     // logger.info(
-    //   `Checking if files exist for job order ${jobId} and test order ${testId} in attachment type ${name}`
+    //   `Checking if files exist for job order ${jobOrderId} and test order ${testOrderId} in attachment type ${name}`
     // );
     console.log(
-      `Checking if files exist for job order ${jobId} and test order ${testId} in attachment type ${name}`
+      `Checking if files exist for job order ${jobOrderId} and test order ${testOrderId} in attachment type ${name}`
     );
 
     try {
       setLoading(true);
-      const response = await axios.get(`${apiURL}/testorders/check_files_GCP`, {
+      const response = await axios.get(`${apiURL}/check_files_GCP`, {
         params: {
-          job_order_id: jobId,
-          test_order_id: testId,
+          job_order_id: jobOrderId,
+          test_order_id: testOrderId,
           attachment_type: name,
         },
         responseType: "json",
