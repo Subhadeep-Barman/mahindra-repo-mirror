@@ -23,6 +23,7 @@ const apiURL = import.meta.env.VITE_BACKEND_URL;
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
 
 export default function RDECreateJobOrder() {
+  const [cftMembers, setCftMembers] = useState([]);
   const [form, setForm] = useState({
     projectCode: "",
     vehicleBuildLevel: "",
@@ -559,6 +560,11 @@ export default function RDECreateJobOrder() {
           setVehicleEditable(jobOrder.vehicleDetails);
         if (jobOrder.engineDetails) setEngineEditable(jobOrder.engineDetails);
 
+        // Prefill CFT members if present in job order
+        if (Array.isArray(jobOrder.cft_members)) {
+          setCftMembers(jobOrder.cft_members);
+        }
+
         // Use setTimeout to allow form state to settle before enabling other useEffects
         setTimeout(() => {
           console.log("Pre-filling completed, enabling other useEffects");
@@ -590,6 +596,12 @@ export default function RDECreateJobOrder() {
   // Handler for creating job order
   const handleRDECreateJobOrder = async (e) => {
     e.preventDefault();
+
+    // Require at least one CFT member
+    if (!cftMembers || cftMembers.length === 0) {
+      alert("Please add at least one CFT member before creating a job order.");
+      return;
+    }
 
     // Generate job_order_id and CoastDownData_id based on timestamp
     const job_order_id = "JO" + Date.now();
@@ -624,6 +636,7 @@ export default function RDECreateJobOrder() {
       id_of_updater: "",
       name_of_updater: "",
       updated_on: new Date().toISOString(),
+      cft_members: cftMembers, 
     };
 
     // Coast Down Data payload (unchanged)
@@ -1765,14 +1778,20 @@ export default function RDECreateJobOrder() {
               setShowCFTPanel((prev) => !prev);
               console.log("Toggled CFT panel");
             }}
+            disabled={isTestEngineer}
           >
             {showCFTPanel ? "− CFT MEMBERS" : "+ CFT MEMBERS"}
           </Button>
           <div className="flex-1"></div>
         </div>
-        {showCFTPanel && (
+        {showCFTPanel && !isTestEngineer && (
           <div className="mt-4 mx-8 mb-8 bg-white border rounded-lg">
-            <CFTMembers />
+            <CFTMembers
+              jobOrderId={null} // Pass job_order_id if available after creation
+              members={cftMembers}
+              setMembers={setCftMembers}
+              disabled={formDisabled}
+            />
           </div>
         )}
 
