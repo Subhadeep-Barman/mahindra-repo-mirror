@@ -92,16 +92,32 @@ const DropzoneFileList = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
+  // Helper to get correct job_order_id and test_order_id for API calls
+  const getJobAndTestOrderId = () => {
+    const jobOrderId =
+      formData?.originalJobOrderId ||
+      formData?.form_id ||
+      formData?.job_order_id ||
+      (!id.startsWith("test") && id) ||
+      "";
+    const testOrderId =
+      formData?.test_id ||
+      formData?.test_order_id ||
+      formData?.testOrderId ||
+      (id.startsWith("test") ? id : "");
+    return { jobOrderId, testOrderId };
+  };
+
   // Check if files exist both in GCP and formData
   const checkFilesExist = async () => {
-    if (!myJobOrderId) return;
+    const { jobOrderId, testOrderId } = getJobAndTestOrderId();
 
     try {
       setLoading(true);
-      const response = await axios.get(`${apiURL}/testorders/check_files_GCP`, {
+      const response = await axios.get(`${apiURL}/check_files_GCP`, {
         params: {
-          job_order_id: myJobOrderId,
-          test_order_id: myTestOrderId,
+          job_order_id: jobOrderId,
+          test_order_id: testOrderId,
           attachment_type: name,
         },
         responseType: "json",

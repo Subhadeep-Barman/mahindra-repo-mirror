@@ -3,12 +3,19 @@ import axios from "axios";
 import { Button } from "@/components/UI/button";
 import { ArrowBack } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import useStore from "@/store/useStore";
 import { useAuth } from "@/context/AuthContext";
+import showSnackbar from "@/utils/showSnackbar";
+
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
+const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
+
 export default function VehicleEngineForm({ onSubmit, onClear }) {
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const department = queryParams.get("department") || "VTC_JO Chennai";
   // Use global store for dropdowns
   const projectOptions = useStore((state) => state.projectOptions);
   const setProjectOptions = useStore((state) => state.setProjectOptions);
@@ -53,6 +60,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     gearRatio4: { numerator: "", denominator: "" },
     gearRatio5: { numerator: "", denominator: "" },
     reverseGearRatio: { numerator: "", denominator: "" },
+    department: department,
   });
 
   const handleChange = (e) => {
@@ -69,6 +77,12 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       [field]: { ...form[field], [part]: e.target.value },
     });
   };
+
+  // Convert current time to IST and format as ISO 8601
+    const currentISTTime = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+    const formattedISTTime = new Date(currentISTTime).toISOString();
 
   // Map form state to API schema
   function mapFormToApi(form) {
@@ -127,10 +141,11 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           ? `${form.reverseGearRatio.numerator}:${form.reverseGearRatio.denominator}`
           : "",
       id_of_creator: userId || "", // id_of_creator handled by backend
-      // created_on: "", // created_on handled by backend
+      created_on: formattedISTTime,
       id_of_updater: "", // id_of_updater handled by backend
       // updated_on: "",
       // id_of_creator, created_on, id_of_updater, updated_on handled by backend
+      department: form.department, // <-- add department to payload
     };
   }
 
@@ -166,6 +181,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       gearRatio4: "4th Gear Ratio",
       gearRatio5: "5th Gear Ratio",
       reverseGearRatio: "Reverse Gear Ratio",
+      department: "Department", // <-- add department to fieldNames
     };
 
     // Check for missing fields
@@ -185,9 +201,9 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       }
     }
     if (missingFields.length > 0) {
-      alert(
-        "Please fill all fields.\nMissing: " +
-        missingFields.join(", ")
+      showSnackbar(
+        "Please fill all fields. Missing: " + missingFields.join(", "),
+        "warning"
       );
       return;
     }
@@ -198,10 +214,12 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         headers: { "Content-Type": "application/json" },
       });
       if (onSubmit) onSubmit(response.data);
-      else alert("Vehicle added successfully!");
+      else showSnackbar("Vehicle added successfully!", "success");
+      navigate(-1);
     } catch (err) {
-      alert(
-        "Error adding vehicle: " + (err.response?.data?.detail || err.message)
+      showSnackbar(
+        "Error adding vehicle: " + (err.response?.data?.detail || err.message),
+        "error"
       );
     }
   };
@@ -237,6 +255,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       gearRatio4: { numerator: "", denominator: "" },
       gearRatio5: { numerator: "", denominator: "" },
       reverseGearRatio: { numerator: "", denominator: "" },
+      department: department
     });
     if (onClear) onClear();
   };
@@ -278,7 +297,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     <>
       <Navbar1 />
       {/* Header */}
-      <div className="bg-white dark:bg-gray-900 shadow-md">
+      <div className="">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
@@ -292,7 +311,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               </Button>
               <div>
                 <h1 className="text-lg font-semibold text-gray-800 dark:text-red-500">
-                  VTC CHENNAI
+                  NEW VEHICLE
                 </h1>
               </div>
             </div>
@@ -889,6 +908,19 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
                 placeholder="Enter denominator"
               />
             </div>
+          </div>
+          {/* Department */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Department <span className="text-red-500">*</span>
+            </label>
+            <input
+              name="department"
+              value={form.department}
+              readOnly
+              className="border rounded-lg px-3 py-2 w-full bg-gray-100 text-gray-500"
+              placeholder="Department"
+            />
           </div>
         </div>
         {/* Buttons */}

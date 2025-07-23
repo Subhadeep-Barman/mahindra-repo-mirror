@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/UI/button";
 import { Input } from "@/components/UI/input";
 import { Label } from "@/components/UI/label";
@@ -18,9 +18,13 @@ import { Card, CardContent } from "@/components/UI/card";
 import { ArrowBack } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
+import showSnackbar from "@/utils/showSnackbar";
 
 export default function VTCCEngineForm() {
   const [activeTab, setActiveTab] = useState("Engine");
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const department = queryParams.get("department") || "VTC_JO Chennai";
   const [formData, setFormData] = useState({
     engineBuildLevel: "",
     engineSerialNumber: "",
@@ -70,6 +74,7 @@ export default function VTCCEngineForm() {
     hvBatteryVoltage: "",
     hvBatteryCurrent: "",
     evMotorPower: "",
+    department: department, // Add department to formData
   });
   const [engineFamilies, setEngineFamilies] = useState([]);
   const [vehicleSerialNumbers, setVehicleSerialNumbers] = useState([]);
@@ -147,7 +152,9 @@ export default function VTCCEngineForm() {
       hvBatteryVoltage: "",
       hvBatteryCurrent: "",
       evMotorPower: "",
+      department: department, // Reset department as well
     });
+    showSnackbar("Engine created successfully!", "info");
   };
 
   const handleBack = () => {
@@ -223,6 +230,7 @@ export default function VTCCEngineForm() {
       hv_battery_voltage: parseFloatOrUndefined(formData.hvBatteryVoltage),
       hv_battery_current: parseFloatOrUndefined(formData.hvBatteryCurrent),
       ev_motor_power_kw: parseFloatOrUndefined(formData.evMotorPower),
+      department: formData.department, // Add department to payload
       // id_of_creator, created_on, id_of_updater, updated_on are handled by backend
     };
   };
@@ -231,13 +239,17 @@ export default function VTCCEngineForm() {
     const enginePayload = mapFormDataToEngineSchema(formData);
     try {
       const res = await axios.post(`${apiUrl}/engines`, enginePayload);
-      alert("Engine added successfully!");
+      showSnackbar(
+        `Engine added successfully! Engine Serial Number: ${res.data.engine_serial_number || formData.engineSerialNumber}`,
+        "success"
+      );
+      navigate(-1);
       handleClear();
     } catch (err) {
       if (err.response && err.response.data && err.response.data.detail) {
-        alert("Failed to add engine: " + err.response.data.detail);
+        showSnackbar("Failed to add engine: " + err.response.data.detail, "error");
       } else {
-        alert("Failed to add engine. Please try again.");
+        showSnackbar("Failed to add engine. Please try again.", "error");
       }
     }
   };
@@ -284,7 +296,7 @@ export default function VTCCEngineForm() {
                 </Button>
                 <div>
                   <h1 className="text-sm font-medium text-black-600 dark:text-red-500 ">
-                    VTC CHENNAI
+                    NEW ENGINE
                   </h1>
                 </div>
               </div>
@@ -644,14 +656,14 @@ export default function VTCCEngineForm() {
               </div>
               {/* CATCON Mass */}
               <div className="space-y-2">
-                <Label htmlFor="catconMass">CATCON Mass</Label>
+                <Label htmlFor="catconMass">CATCON Make</Label>
                 <Input
                   id="catconMass"
                   value={formData.catconMass}
                   onChange={(e) =>
                     handleInputChange("catconMass", e.target.value)
                   }
-                  placeholder="Enter CATCON Mass"
+                  placeholder="Enter CATCON Make"
                 />
               </div>
               {/* CATCON Type */}
@@ -971,6 +983,17 @@ export default function VTCCEngineForm() {
                     handleInputChange("evMotorPower", e.target.value)
                   }
                   placeholder="Enter EV Motor Power (KW)"
+                />
+              </div>
+              {/* Department (fixed, read-only) */}
+              <div className="space-y-2">
+                <Label htmlFor="department">Department <span className="text-red-500">*</span></Label>
+                <Input
+                  id="department"
+                  value={formData.department}
+                  readOnly
+                  className="bg-gray-100 text-gray-500"
+                  placeholder="Department"
                 />
               </div>
             </div>

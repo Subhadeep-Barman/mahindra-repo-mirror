@@ -1,4 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
+import { Snackbar, Alert } from '@mui/material';
+import useStore from '@/store/useStore';
 
 // Auth & Home
 import Login from "./pages/login";
@@ -18,15 +22,15 @@ import RDEnginePage from "./pages/RDE_C_engine_page";
 
 // VTC Nashik
 import VTCNashikPage from "./pages/VTC_Nashik";
-import NashikJobOrder from "./pages/Nashik_joborder";
+import NashikJobOrder from "./pages/Nashik_create_joborder";
 import VTCNashikVehicle from "./pages/VTC_N_vehicle";
 import NEngine from "./pages/VTC_N_Engine";
-import VTCNashikVehicleForm from "./pages/VTC_N_Vehicle_form";
+// import VTCNashikVehicleForm from "./pages/VTC_N_Vehicle_form";
 
 // RDE
 import RDEChennaiPage from "./pages/RDE_Chennai_Page";
 import RDE_JobOrder_Create from "./pages/RDE_JobOrder_Create";
-import RDEJobOrder from "./pages/RDE_JOBORDER";
+// import RDEJobOrder from "./pages/RDE_JOBORDER";
 import RDEVehicle from "./pages/RDE_C_vehicle";
 import RDEEngine from "./pages/RDE_Engine";
 
@@ -35,12 +39,25 @@ import CreateJobOrder from "./pages/Chennai_create_joborder";
 import AuthSuccess from "./pages/AuthSuccess";
 import DefaultLogin from "./pages/defaultlogin";
 
+// Import EditTestOrder component
+import EditTestOrder from "./pages/EditTestOrder";
+
 function App() {
+  // Move snackbar state to App component where Snackbar is rendered
+  const {
+    snackbarOpen,
+    snackbarMessage,
+    snackbarSeverity,
+    snackbarDuration,
+    setSnackbarOpen
+  } = useStore();
+
   return (
     <Router>
-      <div className="p-4">
+      <div className="px-4">
         <Routes>
           {/* Auth & Home */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/default-login" element={<DefaultLogin />} />
@@ -58,27 +75,42 @@ function App() {
 
           {/* VTC Nashik */}
           <Route path="/vtc-nashik" element={<VTCNashikPage />} />
-          <Route path="/nashik/joborder" element={<NashikJobOrder />} />
+          <Route path="/NashikCreateJobOrder" element={<NashikJobOrder />} />
           <Route path="/nashik/vehicle" element={<VTCNashikVehicle />} />
           <Route path="/nashik/engine" element={<RDEnginePage />} />
-          <Route path="/nashik/vehicle/new" element={<VTCNashikVehicleForm />} />
+          {/* <Route path="/nashik/vehicle/new" element={<VTCNashikVehicleForm />} /> */}
           <Route path="/nashik/engine/new" element={<NEngine />} />
 
           {/* RDE */}
           <Route path="/rde-chennai" element={<RDEChennaiPage />} />
-          <Route path="/rde/joborder" element={<RDEJobOrder />} />
+          {/* <Route path="/rde/joborder" element={<RDEJobOrder />} /> */}
           <Route path="/rde/vehicle" element={<RDEVehicle />} />
           <Route path="/rde/engine" element={<RDEEngine />} />
 
           {/* Misc */}
           <Route path="/RDECreateJobOrder" element={<RDE_JobOrder_Create />} />
           <Route path="/createJobOrder" element={<CreateJobOrder />} />
+          <Route path="/editTestOrder" element={<EditTestOrder />} />
           <Route path="/authSuccess" element={<AuthSuccess />} />
         </Routes>
+
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={snackbarDuration}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <Alert
+            onClose={() => setSnackbarOpen(false)}
+            severity={snackbarSeverity}
+            sx={{ width: '100%' }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
       </div>
     </Router>
   );
 }
 
 export default App;
-          

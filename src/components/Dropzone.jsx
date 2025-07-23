@@ -17,7 +17,6 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import Spinner from "./UI/spinner"; // Ensure the path is correct
-import showSnackbar from "../utils/showSnackbar";
 import useStore from "../store/useStore";
 import {
   CloudUpload,
@@ -27,6 +26,7 @@ import {
   CheckCircle,
   HighlightOff
 } from "@mui/icons-material";
+import showSnackbar from "../utils/showSnackbar";
 
 const formatSize = (bytes) => {
   if (bytes === 0) return "0 Bytes";
@@ -42,7 +42,7 @@ const truncateFilename = (filename) => {
 };
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
-const CHUNK_SIZE = 1024 * 1024; 
+const CHUNK_SIZE = 64 * 1024 * 1024;
 
 // Add allowed file extensions mapping for different upload types
 const ALLOWED_EXTENSIONS_MAP = {
@@ -313,22 +313,24 @@ const Dropzone = ({
       setIsValidated?.(false);
     }
   };
-
-  console.log("Form Data:", formData);
   // Helper to get correct job_order_id and test_order_id for upload
   const getJobAndTestOrderId = () => {
-    // Prefer originalJobOrderId if provided
     const jobOrderId =
       originalJobOrderId ||
       formData?.form_id ||
+      formData?.originalJobOrderId ||
       formData?.job_order_id ||
       (!id.startsWith("test") && id) ||
       "";
-    // Prefer test_order_id from formData, else from id prop if it's a test
+
+    // Prefer test_order_id from formData
     const testOrderId =
       formData?.test_id ||
       formData?.test_order_id ||
+      formData?.testOrderId ||
       (id.startsWith("test") ? id : "");
+
+    console.log("getJobAndTestOrderId - jobOrderId:", jobOrderId, "testOrderId:", testOrderId);
     return { jobOrderId, testOrderId };
   };
 
@@ -361,11 +363,10 @@ const Dropzone = ({
         formDataPayload.append("test_order_id", testOrderId);
         formDataPayload.append("attachment_type", name);
         formDataPayload.append("user", userCookies?.userName || "unknown");
-        // if (sess_idt) {
-        //   if (typeof sess_idt === 'string' && /^[\w\-]+$/.test(sess_idt)) {
-        //     formDataPayload.append("sess_idt", sess_idt);
-        //   }
-        // }
+        // Always send sess_idt after first chunk
+        if (sess_idt) {
+          formDataPayload.append("sess_idt", sess_idt);
+        }
 
         try {
           const response = await axios.post(
@@ -378,9 +379,15 @@ const Dropzone = ({
               },
             }
           );
-          sess_idt = response.data.sess_idt;
+          console.log(`[Chunk Response] chunkIndex: ${chunkIndex}, completed: ${response.data.completed}, sess_idt: ${response.data.sess_idt}`);
+          // Set sess_idt after first response
+          if (!sess_idt && response.data.sess_idt) {
+            sess_idt = response.data.sess_idt;
+            console.log(`[sess_idt assigned] ${sess_idt}`);
+          }
 
           if (response.data.completed) {
+            console.log(`[Upload Completed] file: ${file.name}, chunkIndex: ${chunkIndex}`);
             const uploadedFile = [{
               path: file.name,
               size: file.size,
@@ -390,20 +397,19 @@ const Dropzone = ({
 
             let updatedFormData = { ...formData };
             if (team) {
-              const existing = useStore.getState().jobOrderFormData || {};
-              const allAttachments = useStore.getState().jobOrderFormData[team]?.[name] || [];
+              const existing = formData[team]?.[name] || [];
               updatedFormData = {
-                ...existing,
+                ...formData,
                 [team]: {
-                  ...existing[team],
-                  [name]: [...uploadedFile, ...allAttachments],
+                  ...formData[team],
+                  [name]: [...existing, ...uploadedFile],
                 },
               };
             } else {
-              const existing = useStore.getState().testOrderFormData[name] || [];
+              const existing = formData[name] || [];
               updatedFormData = {
                 ...formData,
-                [name]: [...uploadedFile, ...existing],
+                [name]: [...existing, ...uploadedFile],
               };
             }
             setFormData(updatedFormData);
@@ -418,7 +424,7 @@ const Dropzone = ({
           }
         } catch (error) {
           console.error(`Error uploading chunk ${chunkIndex}:`, error);
-          alert(`Upload failed for ${file.name}. Please try again.`);
+          showSnackbar(`Upload failed for ${file.name}: ${error.message}`, "error");
           // Remove progress bar on error
           setUploadProgress((prev) => {
             const updated = { ...prev };
@@ -428,6 +434,7 @@ const Dropzone = ({
           return;
         }
       }
+      console.log(`[All Chunks Uploaded] file: ${file.name}`);
     } catch (error) {
       console.error(`Error uploading file ${file.name}:`, error);
       showSnackbar(`Upload failed for ${file.name}: ${error.message}`, "error");
@@ -563,7 +570,7 @@ const Dropzone = ({
       window.open(url, "_blank");
       // logger.info(`Redirecting to data validation URL: ${url}`);
       console.log(`Redirecting to data validation URL: ${url}`);
-      
+
     } catch (error) {
       console.error("Validation error:", error);
       showSnackbar("Validation failed", "warning");
@@ -648,28 +655,22 @@ const Dropzone = ({
   };
 
   const checkFilesExist = async () => {
-    const jobId = formData?.form_id
-      ? formData?.form_id
-      : formData?.job_order_id || (!id.startsWith("test") && id) || "";
-    const testId = formData?.test_id
-      ? formData?.test_id
-      : id.startsWith("test")
-        ? id
-        : "";
+    // Use the helper to get correct IDs
+    const { jobOrderId, testOrderId } = getJobAndTestOrderId();
 
     // logger.info(
-    //   `Checking if files exist for job order ${jobId} and test order ${testId} in attachment type ${name}`
+    //   `Checking if files exist for job order ${jobOrderId} and test order ${testOrderId} in attachment type ${name}`
     // );
     console.log(
-      `Checking if files exist for job order ${jobId} and test order ${testId} in attachment type ${name}`
+      `Checking if files exist for job order ${jobOrderId} and test order ${testOrderId} in attachment type ${name}`
     );
 
     try {
       setLoading(true);
-      const response = await axios.get(`${apiURL}/testorders/check_files_GCP`, {
+      const response = await axios.get(`${apiURL}/check_files_GCP`, {
         params: {
-          job_order_id: jobId,
-          test_order_id: testId,
+          job_order_id: jobOrderId,
+          test_order_id: testOrderId,
           attachment_type: name,
         },
         responseType: "json",
@@ -1076,10 +1077,10 @@ const Dropzone = ({
                                 />
                               }
                               label={
-                                <Typography 
-                                  variant="body2" 
-                                  sx={{ 
-                                    fontWeight: 600, 
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: 600,
                                     color: '#4caf50'
                                   }}
                                 >
@@ -1100,10 +1101,10 @@ const Dropzone = ({
                                 />
                               }
                               label={
-                                <Typography 
-                                  variant="body2" 
-                                  sx={{ 
-                                    fontWeight: 600, 
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: 600,
                                     color: '#f44336'
                                   }}
                                 >

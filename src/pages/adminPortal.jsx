@@ -39,6 +39,7 @@ import { PersonAdd as PersonAddIcon } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import showSnackbar from "@/utils/showSnackbar";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -73,7 +74,7 @@ export default function SystemUsersPage() {
         setUsers([]); // No users found
       } else {
         console.error("Error fetching users:", error);
-        alert("Failed to fetch users");
+        showSnackbar("Failed to fetch users", "error");
       }
     } finally {
       setLoading(false);
@@ -217,7 +218,7 @@ export default function SystemUsersPage() {
       !newUser.username ||
       !newUser.role
     ) {
-      alert("Please fill in all fields");
+      showSnackbar("Please fill in all fields", "error");
       return;
     }
 
@@ -526,7 +527,7 @@ export default function SystemUsersPage() {
                   <SelectValue placeholder="Select Role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Project Team">Project Team</SelectItem>
+                  <SelectItem value="ProjectTeam">Project Team</SelectItem>
                   <SelectItem value="TestEngineer">Test Engineer</SelectItem>
                   <SelectItem value="Admin">Admin</SelectItem>
                 </SelectContent>

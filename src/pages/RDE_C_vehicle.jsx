@@ -37,7 +37,11 @@ export default function VTCVehiclePage() {
   useEffect(() => {
     async function fetchVehicles() {
       try {
-        const response = await axios.get(`${apiURL}/vehicles`);
+        // Add department as query parameter
+        const department = "RDE JO";
+        const response = await axios.get(
+          `${apiURL}/vehicles?department=${encodeURIComponent(department)}`
+        );
         // Only keep necessary fields for each vehicle
         const minimalVehicles = (response.data || []).map((v) => ({
           vehicle_serial_number: v.vehicle_serial_number,
@@ -84,7 +88,7 @@ export default function VTCVehiclePage() {
   };
 
   const handleAddNewVehicle = () => {
-    navigate("/vtcvehicle/new");
+    navigate("/vtcvehicle/new?department=RDE%20JO");
   };
 
   const handlePageChange = (pageNumber) => {
@@ -101,9 +105,10 @@ export default function VTCVehiclePage() {
       setEditForm(response.data); // full vehicle data
       setEditOpen(true);
     } catch (err) {
-      alert(
+      showSnackbar(
         "Error fetching vehicle details: " +
-          (err.response?.data?.detail || err.message)
+        (err.response?.data?.detail || err.message),
+        "error"
       );
     }
   };
@@ -129,6 +134,10 @@ export default function VTCVehiclePage() {
       setEditOpen(false);
       setEditVehicle(null);
       setEditForm(null);
+
+      showSnackbar("Vehicle updated successfully!", "success");
+      navigate(-1);
+
       // Refresh list
       const response = await axios.get(`${apiURL}/vehicles`);
       const minimalVehicles = (response.data || []).map((v) => ({
@@ -142,8 +151,9 @@ export default function VTCVehiclePage() {
       }));
       setVehicles(minimalVehicles);
     } catch (err) {
-      alert(
-        "Error updating vehicle: " + (err.response?.data?.detail || err.message)
+      showSnackbar(
+        "Error updating vehicle: " + (err.response?.data?.detail || err.message),
+        "error"
       );
     }
   };
@@ -165,12 +175,9 @@ export default function VTCVehiclePage() {
                 <ArrowBack className="h-5 w-5" />
               </Button>
               <div>
-                <h1 className="text-sm font-medium text-gray-600 dark:text-red-500">
-                  VTC CHENNAI
+                <h1 className="text-sm font-medium text-black-600 dark:text-red-500">
+                  RDE CHENNAI
                 </h1>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
-                  NEW VEHICLE
-                </h2>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -180,10 +187,9 @@ export default function VTCVehiclePage() {
                   key={tab}
                   onClick={() => handleTabClick(tab)}
                   className={`rounded-xl px-4 py-2 font-semibold border
-                    ${
-                      activeTab === tab
-                        ? "bg-red-500 text-white border-red-500"
-                        : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                    ${activeTab === tab
+                      ? "bg-red-500 text-white border-red-500"
+                      : "bg-white text-red-500 border-red-500 hover:bg-red-50"
                     }
                   `}
                 >
@@ -260,9 +266,17 @@ export default function VTCVehiclePage() {
                     <TableCell className="text-sm text-gray-600">
                       {vehicle.id_of_creator}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {vehicle.created_on}
-                    </TableCell>
+                    <TableCell className="text-xs text-gray-600 px-4 py-2">
+                        {new Date(vehicle.created_on).toLocaleString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          hour12: true,
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </TableCell>
                     <TableCell className="text-sm text-gray-600">
                       {vehicle.id_of_updater}
                     </TableCell>

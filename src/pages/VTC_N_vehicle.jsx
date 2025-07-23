@@ -13,16 +13,43 @@ import {
   TableRow,
 } from "@/components/UI/table";
 import { Card } from "@/components/UI/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar1 from "@/components/UI/navbar";
-
-const vehicles = [];
+import axios from "axios";
 
 export default function VTCNashikVehicle() {
   const navigate = useNavigate();
+  const [vehicles, setVehicles] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
   const [activeTab, setActiveTab] = useState("Vehicle");
+
+  // Fetch vehicles from API on mount
+  useEffect(() => {
+    async function fetchVehicles() {
+      try {
+        const department = "VTC_JO Nashik";
+        const apiURL = import.meta.env.VITE_BACKEND_URL;
+        const response = await axios.get(
+          `${apiURL}/vehicles?department=${encodeURIComponent(department)}`
+        );
+        // Map API fields to UI fields
+        const minimalVehicles = (response.data || []).map((v) => ({
+          vehicleSerialNumber: v.vehicle_serial_number,
+          vehicleBodyNumber: v.vehicle_body_number,
+          vehicleModel: v.vehicle_model,
+          createdBy: v.id_of_creator,
+          createdOn: v.created_on,
+          lastUpdatedBy: v.id_of_updater,
+          lastUpdatedOn: v.updated_on,
+        }));
+        setVehicles(minimalVehicles);
+      } catch (err) {
+        setVehicles([]);
+      }
+    }
+    fetchVehicles();
+  }, []);
 
   // Pagination calculations
   const totalItems = vehicles.length;
@@ -41,13 +68,13 @@ export default function VTCNashikVehicle() {
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
-    if (tab === "Job Order") navigate("/nashik/joborder");
+    if (tab === "Job Order") navigate("/vtc-nashik");
     else if (tab === "Vehicle") navigate("/nashik/vehicle");
     else if (tab === "Engine") navigate("/nashik/engine");
   };
 
   const handleAddNewVehicle = () => {
-    navigate("/nashik/vehicle/new");
+    navigate("/vtcvehicle/new?department=VTC_JO%20Nashik");
   };
 
   return (

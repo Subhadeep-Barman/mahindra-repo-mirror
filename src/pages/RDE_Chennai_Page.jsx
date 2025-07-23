@@ -12,11 +12,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/UI/table";
+import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/UI/card";
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
 import Navbar1 from "@/components/UI/navbar";
+import showSnackbar from "@/utils/showSnackbar";
+
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function RDEChennaiPage() {
@@ -29,6 +32,7 @@ export default function RDEChennaiPage() {
   const [selectedJobOrder, setSelectedJobOrder] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [jobOrderEdit, setJobOrderEdit] = useState(null);
+    const { userRole, userId, userName } = useAuth();
 
   useEffect(() => {
     fetchJobOrders();
@@ -58,7 +62,7 @@ export default function RDEChennaiPage() {
   };
 
   const handleCreateJobOrder = () => {
-    console.log("Create new job order");
+    navigate("/RDECreateJobOrder");
   };
 
   const handleTabClick = (tab) => {
@@ -70,17 +74,26 @@ export default function RDEChennaiPage() {
 
   // Handler for clicking job order number
   const handleJobOrderClick = (job_order_id) => {
-    axios
-      .get(`${apiURL}/rde_joborders/${job_order_id}`)
-      .then((res) => {
-        setJobOrderEdit(res.data);
-        setModalOpen(true);
-      })
-      .catch(() => {
-        setJobOrderEdit(null);
-        setModalOpen(false);
-      });
-  };
+      // Fetch job order details from backend and redirect to /createJobOrder with all data
+      axios
+        .get(`${apiURL}/rde_joborders/${job_order_id}`)
+        .then((res) => {
+          // Pass the complete job order data to create job order page
+          // This will allow the form to be pre-filled with existing values
+          navigate("/createJobOrder", {
+            state: {
+              jobOrder: res.data,
+              isEdit: true, // Flag to indicate this is for editing/creating test orders
+              originalJobOrderId: job_order_id, // Keep reference to original job order
+            },
+          });
+        })
+        .catch((error) => {
+          console.error("Failed to fetch job order details:", error);
+          // Still navigate but without pre-filled data
+          navigate("/createJobOrder");
+        });
+    };
 
   // Handler for editing fields in the modal
   const handleEditChange = (field, value) => {
@@ -94,14 +107,25 @@ export default function RDEChennaiPage() {
   const handleSaveJobOrder = async () => {
     if (!jobOrderEdit?.job_order_id) return;
     try {
+      showSnackbar("Updating job order...", "info");
+
       await axios.put(
         `${apiURL}/rde_joborders/${jobOrderEdit.job_order_id}`,
         jobOrderEdit
       );
+
       setModalOpen(false);
       fetchJobOrders();
+      showSnackbar(
+        `Job order ${jobOrderEdit.job_order_id} updated successfully!`,
+        "success"
+      );
     } catch (err) {
-      alert("Failed to update job order");
+      console.error("Error updating job order:", err);
+      showSnackbar(
+        "Failed to update job order: " + (err.response?.data?.detail || err.message),
+        "error"
+      );
     }
   };
 
@@ -123,32 +147,29 @@ export default function RDEChennaiPage() {
                   <ArrowBack className="h-5 w-5" />
                 </Button>
                 <div>
-                  <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
+                  <h1 className="text-sm font-medium text-black-600 dark:text-red-500 ">
                     RDE CHENNAI
                   </h1>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
-                    NEW JOB ORDER
-                  </h2>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 {/* Tab Buttons */}
-                {["Job Order", "Vehicle", "Engine"].map((tab) => (
-                  <Button
-                    key={tab}
-                    variant={activeTab === tab ? "default" : "outline"}
-                    onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${
-                      tab === "Job Order"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : tab === "Vehicle" || tab === "Engine"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "text-red-500 border-red-500 hover:bg-red-50"
-                    }`}
-                  >
-                    {tab}
-                  </Button>
-                ))}
+                  {userRole !== "TestEngineer" &&
+                  ["Job Order", "Vehicle", "Engine"].map((tab) => (
+                    <Button
+                      key={tab}
+                      onClick={() => handleTabClick(tab)}
+                      className={`rounded-xl px-4 py-2 font-semibold border
+                        ${
+                          activeTab === tab
+                            ? "bg-red-500 text-white border-red-500"
+                            : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                        }
+                      `}
+                    >
+                      {tab}
+                    </Button>
+                  ))}
               </div>
             </div>
           </div>
@@ -159,13 +180,16 @@ export default function RDEChennaiPage() {
           <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
             Current Job Orders
           </Badge>
-          <Button
-            onClick={() => navigate("/RDECreateJobOrder")}
-            className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
-          >
-            <Add className="h-4 w-4 mr-1" />
-            CREATE JOB ORDER
-          </Button>
+          {/* Hide CREATE JOB ORDER button for TEST ENGINEER */}
+          {userRole !== "TestEngineer" && (
+            <Button
+              onClick={handleCreateJobOrder}
+              className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
+            >
+              <Add className="h-4 w-4 mr-1" />
+              CREATE JOB ORDER
+            </Button>
+          )}
         </div>
 
         {/* Main Content */}
@@ -179,7 +203,7 @@ export default function RDEChennaiPage() {
                       Job Order Number
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
-                      Project
+                      Project Code
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Vehicle Number
@@ -196,6 +220,9 @@ export default function RDEChennaiPage() {
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Test Status
                     </TableHead>
+                                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                                          Completed Tests
+                                        </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Created By
                     </TableHead>
@@ -225,8 +252,9 @@ export default function RDEChennaiPage() {
                         </span>
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
-                        {order.project_id}
+                        {order.project_code}
                       </TableCell>
+
                       <TableCell className="text-xs text-gray-600">
                         {order.vehicle_serial_number}
                       </TableCell>
@@ -234,16 +262,32 @@ export default function RDEChennaiPage() {
                         {order.vehicle_body_number}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
+                        {order.engine_serial_number}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-900">
                         {order.domain}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
                         {order.test_status}
                       </TableCell>
+                      <TableCell className="text-xs text-gray-900 px-4 py-2">
+                                              {order.completed_test_count == 0
+                                                ? "0"
+                                                : `${order.completed_test_count}/${order.test_status}`}
+                                            </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.created_by}
+                        {order.name_of_creator}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-600">
-                        {order.created_on?.slice(0, 10)}
+                      <TableCell className="text-xs text-gray-600 px-4 py-2">
+                        {new Date(order.created_on).toLocaleString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          hour12: true,
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
                         {order.last_updated_by}

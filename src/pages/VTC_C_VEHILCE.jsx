@@ -23,6 +23,7 @@ import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import { useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
+import showSnackbar from "@/utils/showSnackbar";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -39,7 +40,11 @@ export default function VTCVehiclePage() {
   useEffect(() => {
     async function fetchVehicles() {
       try {
-        const response = await axios.get(`${apiURL}/vehicles`);
+        // Add department as query parameter
+        const department = "VTC_JO Chennai";
+        const response = await axios.get(
+          `${apiURL}/vehicles?department=${encodeURIComponent(department)}`
+        );
         // Only keep necessary fields for each vehicle
         const minimalVehicles = (response.data || []).map((v) => ({
           vehicle_serial_number: v.vehicle_serial_number,
@@ -86,7 +91,7 @@ export default function VTCVehiclePage() {
   };
 
   const handleAddNewVehicle = () => {
-    navigate("/vtcvehicle/new");
+    navigate("/vtcvehicle/new?department=VTC_JO%20Chennai");
   };
 
   const handlePageChange = (pageNumber) => {
@@ -103,9 +108,9 @@ export default function VTCVehiclePage() {
       setEditForm(response.data); // full vehicle data
       setEditOpen(true);
     } catch (err) {
-      alert(
-        "Error fetching vehicle details: " +
-          (err.response?.data?.detail || err.message)
+      showSnackbar(
+        "Error fetching vehicle details: " + (err.response?.data?.detail || err.message),
+        "error"
       );
     }
   };
@@ -144,8 +149,9 @@ export default function VTCVehiclePage() {
       }));
       setVehicles(minimalVehicles);
     } catch (err) {
-      alert(
-        "Error updating vehicle: " + (err.response?.data?.detail || err.message)
+      showSnackbar(
+        "Error updating vehicle: " + (err.response?.data?.detail || err.message),
+        "error"
       );
     }
   };
@@ -179,10 +185,9 @@ export default function VTCVehiclePage() {
                   key={tab}
                   onClick={() => handleTabClick(tab)}
                   className={`rounded-xl px-4 py-2 font-semibold border
-                    ${
-                      activeTab === tab
-                        ? "bg-red-500 text-white border-red-500"
-                        : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                    ${activeTab === tab
+                      ? "bg-red-500 text-white border-red-500"
+                      : "bg-white text-red-500 border-red-500 hover:bg-red-50"
                     }
                   `}
                 >
@@ -245,9 +250,8 @@ export default function VTCVehiclePage() {
                 {currentItems.map((vehicle, index) => (
                   <TableRow
                     key={vehicle.vehicle_serial_number || index}
-                    className={`${
-                      index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                    } hover:bg-gray-100`}
+                    className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                      } hover:bg-gray-100`}
                   >
                     <TableCell className="text-xs text-gray-900 font-medium px-4 py-2">
                       {vehicle.vehicle_serial_number}
@@ -262,30 +266,30 @@ export default function VTCVehiclePage() {
                       {vehicle.id_of_creator}
                     </TableCell>
                     <TableCell className="text-xs text-gray-600 px-4 py-2">
-                        {new Date(vehicle.created_on).toLocaleString("en-IN", {
-                          timeZone: "Asia/Kolkata",
-                          hour12: true,
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </TableCell>
+                      {new Date(vehicle.created_on).toLocaleString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                        hour12: true,
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </TableCell>
                     <TableCell className="text-xs text-gray-600 px-4 py-2">
                       {vehicle.id_of_updater}
                     </TableCell>
                     <TableCell className="text-xs text-gray-600 px-4 py-2">
-                        {new Date(vehicle.updated_on).toLocaleString("en-IN", {
-                          timeZone: "Asia/Kolkata",
-                          hour12: true,
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </TableCell>
+                      {new Date(vehicle.updated_on).toLocaleString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                        hour12: true,
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </TableCell>
                     <TableCell className="px-4 py-2">
                       <button
                         onClick={() => handleEditClick(vehicle)}
@@ -333,11 +337,10 @@ export default function VTCVehiclePage() {
                 variant={currentPage === page ? "default" : "outline"}
                 size="sm"
                 onClick={() => handlePageChange(page)}
-                className={`${
-                  currentPage === page
+                className={`${currentPage === page
                     ? "bg-black text-white hover:bg-gray-800"
                     : "text-gray-600"
-                } px-3 py-1`}
+                  } px-3 py-1`}
               >
                 {page}
               </Button>

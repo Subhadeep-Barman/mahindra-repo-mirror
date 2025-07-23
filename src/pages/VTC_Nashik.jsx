@@ -12,10 +12,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/UI/table";
+import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/UI/card";
 import { useState, useEffect } from "react";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
+import showSnackbar from "@/utils/showSnackbar";
+
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function VTCNashikPage() {
@@ -26,6 +29,7 @@ export default function VTCNashikPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [jobOrderEdit, setJobOrderEdit] = useState(null);
   const rowsPerPage = 8;
+  const { userRole, userId, userName } = useAuth();
 
   // Fetch job orders from backend on mount
   useEffect(() => {
@@ -57,7 +61,7 @@ export default function VTCNashikPage() {
   };
 
   const handleCreateJobOrder = () => {
-    console.log("Create new job order");
+    navigate("/NashikCreateJobOrder")
   };
 
   const handleTabClick = (tab) => {
@@ -92,17 +96,29 @@ export default function VTCNashikPage() {
     }));
   };
 
+  // Handler for saving the updated job order
   const handleSaveJobOrder = async () => {
     if (!jobOrderEdit?.job_order_id) return;
     try {
+      showSnackbar("Updating job order...", "info");
+
       await axios.put(
-        `${apiURL}/joborders/${jobOrderEdit.job_order_id}`,
+        `${apiURL}/rde_joborders/${jobOrderEdit.job_order_id}`,
         jobOrderEdit
       );
+
       setModalOpen(false);
       fetchJobOrders();
+      showSnackbar(
+        `Job order ${jobOrderEdit.job_order_id} updated successfully!`,
+        "success"
+      );
     } catch (err) {
-      alert("Failed to update job order");
+      console.error("Error updating job order:", err);
+      showSnackbar(
+        "Failed to update job order: " + (err.response?.data?.detail || err.message),
+        "error"
+      );
     }
   };
 
@@ -131,22 +147,22 @@ export default function VTCNashikPage() {
               </div>
               <div className="flex items-center space-x-3">
                 {/* Tab Buttons */}
-                {["Job Order", "Vehicle", "Engine"].map((tab) => (
-                  <Button
-                    key={tab}
-                    variant={activeTab === tab ? "default" : "outline"}
-                    onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${
-                      tab === "Job Order"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : tab === "Vehicle" || tab === "Engine"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "text-red-500 border-red-500 hover:bg-red-50"
-                    }`}
-                  >
-                    {tab}
-                  </Button>
-                ))}
+                  {userRole !== "TestEngineer" &&
+                  ["Job Order", "Vehicle", "Engine"].map((tab) => (
+                    <Button
+                      key={tab}
+                      onClick={() => handleTabClick(tab)}
+                      className={`rounded-xl px-4 py-2 font-semibold border
+                        ${
+                          activeTab === tab
+                            ? "bg-red-500 text-white border-red-500"
+                            : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                        }
+                      `}
+                    >
+                      {tab}
+                    </Button>
+                  ))}
               </div>
             </div>
           </div>
@@ -157,13 +173,16 @@ export default function VTCNashikPage() {
           <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
             Current Job Orders
           </Badge>
-          <Button
-            onClick={() => navigate("/nashik/joborder")}
-            className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
-          >
-            <Add className="h-4 w-4 mr-1" />
-            CREATE JOB ORDER
-          </Button>
+          {/* Hide CREATE JOB ORDER button for TEST ENGINEER */}
+          {userRole !== "TestEngineer" && (
+            <Button
+              onClick={handleCreateJobOrder}
+              className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
+            >
+              <Add className="h-4 w-4 mr-1" />
+              CREATE JOB ORDER
+            </Button>
+          )}
         </div>
 
         {/* Main Content */}
@@ -177,7 +196,7 @@ export default function VTCNashikPage() {
                       Job Order Number
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
-                      Project
+                      Project Code
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Vehicle Number
@@ -196,6 +215,9 @@ export default function VTCNashikPage() {
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Completed Test Orders
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Creadted by
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Created on
@@ -230,6 +252,9 @@ export default function VTCNashikPage() {
                         {order.vehicle_body_number || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
+                        {order.engine_serial_number || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-900">
                         {order.domain || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
@@ -239,7 +264,18 @@ export default function VTCNashikPage() {
                         {order.completed_test_count || "0"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.created_on?.slice(0, 10) || "N/A"}
+                        {order.name_of_creator || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600 px-4 py-2">
+                        {new Date(order.created_on).toLocaleString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          hour12: true,
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
                         {order.name_of_updater || "N/A"}

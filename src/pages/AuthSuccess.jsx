@@ -5,6 +5,7 @@ import Spinner from "../components/UI/spinner";
 import showSnackbar from "../utils/showSnackbar";
 import useStore from "../store/useStore";
 import { jwtDecode } from "jwt-decode";
+import Cookies from 'js-cookie';
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 function isValidUserRole(role) {
@@ -56,6 +57,35 @@ export default function AuthSuccess() {
           navigate("/login");
           return;
         }
+
+        const expirationDate = new Date();
+        expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000); // 1 hour from now
+
+        Cookies.set("token", jwtToken, {
+          expires: expirationDate,
+          secure: true,
+        });
+
+        Cookies.set("userRole", user.role, {
+          expires: expirationDate,
+          secure: true,
+        });
+        Cookies.set("userId", userDetails.user, {
+          expires: expirationDate,
+          secure: true,
+        });
+        Cookies.set("userName", userDetails.displayname, {
+          expires: expirationDate,
+          secure: true,
+        });
+        Cookies.set("userEmail", userDetails.emailaddress, {
+          expires: expirationDate,
+          secure: true,
+        });
+        Cookies.set("LoggedIn", "true", {
+          expires: expirationDate,
+          secure: true,
+        });
 
         useStore.getState().setUserCookieData({
           token: jwtToken,
