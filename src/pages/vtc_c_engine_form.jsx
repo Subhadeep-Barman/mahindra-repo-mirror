@@ -154,7 +154,7 @@ export default function VTCCEngineForm() {
       evMotorPower: "",
       department: department, // Reset department as well
     });
-    showSnackbar("Form cleared successfully!", "info");
+    showSnackbar("Engine created successfully!", "info");
   };
 
   const handleBack = () => {
