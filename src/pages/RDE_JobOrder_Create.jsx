@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/UI/select";
-import { useAuth } from "@/context/AuthContext";
+import { Switch } from "@/components/UI/switch";
 import useStore from "@/store/useStore";
 import showSnackbar from "@/utils/showSnackbar";
 import axios from "axios";
@@ -828,6 +828,7 @@ export default function RDECreateJobOrder() {
         "RDE Job Order Created! ID: " + jobOrderRes.data.job_order_id,
         "success"
       );
+      navigate(-1);
       // Optionally, reset form or navigate
     } catch (err) {
       console.error("Error creating RDE job order:", err);

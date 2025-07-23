@@ -243,6 +243,7 @@ export default function VTCCEngineForm() {
         `Engine added successfully! Engine Serial Number: ${res.data.engine_serial_number || formData.engineSerialNumber}`,
         "success"
       );
+      navigate(-1);
       handleClear();
     } catch (err) {
       if (err.response && err.response.data && err.response.data.detail) {

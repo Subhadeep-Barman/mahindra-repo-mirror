@@ -209,6 +209,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       });
       if (onSubmit) onSubmit(response.data);
       else showSnackbar("Vehicle added successfully!", "success");
+      navigate(-1);
     } catch (err) {
       showSnackbar(
         "Error adding vehicle: " + (err.response?.data?.detail || err.message),
