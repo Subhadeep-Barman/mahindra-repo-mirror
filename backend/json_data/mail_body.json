@@ -1,0 +1,70 @@
+{
+    "redirect_link": "https://dbmrs-vtc.m-devsecops.com/login",
+    "button_style": "background-color: #4CAF50; /* Green */ border: none; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 5px;",
+    "email_cases": [
+        {  
+            "id": "1",
+            "receivers": "TestEngineer",
+            "case": "Job Order Creation",
+            "body": {
+                "subject": "New Job Order {{job_order_id}} Created",
+                "message": "A new job order {{job_order_id}} has been created. Test Order creations process can be started now."
+            }
+        },
+        {
+            "id": "1.1",
+            "receivers": "ProjectTeam",
+            "case": "Test Started",
+            "body": {
+                "subject": "Test Order {{test_order_id}} Started",
+                "message": "Test order {{test_order_id}} has been started. Please check the details."
+            }
+
+        },
+        {
+            "id": "2",
+            "receivers": "TestEngineer",
+            "case": "Test Order Created",
+            "body": {
+                "subject": "Test Order {{test_order_id}} Created",
+                "message": "A new test order {{test_order_id}} for job order {{job_order_id}} has been created. Please start the Testing Process."
+            }
+        },
+        {
+            "id": "3",
+            "receivers": "ProjectTeam",
+            "case": "Test Re-edit Request",
+            "body": {
+                "subject": "Test Order {{test_order_id}} Re-edit Request",
+                "message": "A re-edit request has been made for test order {{test_order_id}}. Please review the changes and take necessary actions."
+            }
+        },
+        {
+            "id": "4",
+            "receivers": "ProjectTeam",
+            "case": "Test Order Rejection",
+            "body": {
+                "subject": "Test Order {{test_order_id}} Rejected",
+                "message": "Test order {{test_order_id}} has been rejected. Please review the rejection remarks."
+            }
+        },
+        {
+            "id": "5",
+            "receivers": "TestEngineer",
+            "case": "Test Order Updated",
+            "body": {
+                "subject": "Test Order {{test_order_id}} Updated",
+                "message": "Test order {{test_order_id}} has been updated. Please check the details."
+            }
+        },
+        {
+            "id": "6",
+            "receivers": "ProjectTeam",
+            "case": "Test Order Completed",
+            "body": {
+                "subject": "Test Order {{test_order_id}} Completed",
+                "message": "Test order {{test_order_id}} has been completed. Please review the results and proceed with the next steps."
+            }
+        }
+    ]
+}
