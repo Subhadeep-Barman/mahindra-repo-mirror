@@ -54,10 +54,10 @@ function App() {
 
   return (
     <Router>
-      <div className="p-4">
+      <div className="px-4">
         <Routes>
           {/* Auth & Home */}
-          <Route path="/home" element={<HomePage />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/default-login" element={<DefaultLogin />} />
 
