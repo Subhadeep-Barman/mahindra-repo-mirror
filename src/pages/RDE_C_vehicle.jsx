@@ -136,6 +136,7 @@ export default function VTCVehiclePage() {
       setEditForm(null);
 
       showSnackbar("Vehicle updated successfully!", "success");
+      navigate(-1);
 
       // Refresh list
       const response = await axios.get(`${apiURL}/vehicles`);

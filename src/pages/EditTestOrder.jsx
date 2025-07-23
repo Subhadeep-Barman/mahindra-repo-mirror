@@ -44,8 +44,8 @@ export default function EditTestOrder() {
     inertiaClass: testOrder?.inertia_class || "",
     dpf: testOrder?.dpf || "",
     dpfRegenOccurs: testOrder?.dpf_regen_occurs || "",
-    datasetflashed: testOrder?.dataset_flashed === true ? "Yes" : 
-                   testOrder?.dataset_flashed === false ? "No" : "",
+    datasetflashed: testOrder?.dataset_flashed === true ? "Yes" :
+      testOrder?.dataset_flashed === false ? "No" : "",
     ess: testOrder?.ess || "",
     mode: testOrder?.mode || "",
     hardwareChange: testOrder?.hardware_change || "",
@@ -224,7 +224,7 @@ export default function EditTestOrder() {
       const testOrderPayload = getTestOrderPayload(newStatus);
       await axios.put(`${apiURL}/testorders/${test.testOrderId}`, testOrderPayload);
       showSnackbar("Test Order updated successfully!", "success");
-      handleBack();
+      navigate(-1);
     } catch (err) {
       showSnackbar("Failed to update test order: " + (err.response?.data?.detail || err.message), "error");
     }
@@ -293,7 +293,7 @@ export default function EditTestOrder() {
   const areFieldsEditable = () => {
     // TestEngineer cannot edit fields
     if (isTestEngineer) return false;
-    
+
     // ProjectTeam can edit if test is in Re-edit or Rejected status
     if (isProjectTeam) {
       return test.status === "Re-edit" || test.status === "Rejected";
@@ -1156,8 +1156,8 @@ export default function EditTestOrder() {
                 {modalActionType === "re-edit"
                   ? "Re-edit Reason"
                   : modalActionType === "reject"
-                  ? "Rejection Reason"
-                  : "Update Comments"}
+                    ? "Rejection Reason"
+                    : "Update Comments"}
               </div>
               <textarea
                 className="w-full border rounded p-2 mb-4"
@@ -1168,8 +1168,8 @@ export default function EditTestOrder() {
                   modalActionType === "re-edit"
                     ? "Enter reason for re-edit..."
                     : modalActionType === "reject"
-                    ? "Enter reason for rejection..."
-                    : "Enter update comments..."
+                      ? "Enter reason for rejection..."
+                      : "Enter update comments..."
                 }
               />
               <div className="flex justify-end gap-2">
@@ -1181,13 +1181,12 @@ export default function EditTestOrder() {
                   Cancel
                 </Button>
                 <Button
-                  className={`${
-                    modalActionType === "re-edit"
+                  className={`${modalActionType === "re-edit"
                       ? "bg-blue-600"
                       : modalActionType === "reject"
-                      ? "bg-red-600"
-                      : "bg-blue-600"
-                  } text-white px-4 py-1 rounded`}
+                        ? "bg-red-600"
+                        : "bg-blue-600"
+                    } text-white px-4 py-1 rounded`}
                   type="button"
                   onClick={() => {
                     if (isProjectTeam) {

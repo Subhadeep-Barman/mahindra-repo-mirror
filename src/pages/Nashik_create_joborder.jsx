@@ -695,6 +695,7 @@ export default function NashikCreateJobOrder() {
       }
       showSnackbar("Job Order Created! ID: " + jobOrderRes.data.job_order_id, "success");
       // Optionally, reset form or navigate
+      navigate(-1);
     } catch (err) {
       console.error("Error creating job order:", err);
       showSnackbar(
@@ -841,7 +842,7 @@ export default function NashikCreateJobOrder() {
           ? "\nCoast Down Data ID: " + CoastDownData_id
           : "")
       );
-      navigate("/vtc-nashik");
+      navigate(-1);
     } catch (err) {
       console.error("Error creating test order:", err);
       showSnackbar(

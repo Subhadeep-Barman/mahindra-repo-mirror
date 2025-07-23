@@ -77,29 +77,28 @@ export default function CreateJobOrder() {
   const [showCFTPanel, setShowCFTPanel] = useState(false);
   const [cdFieldErrors, setCdFieldErrors] = useState({});
   const [cdError, setCdError] = useState("");
-
-  // State to control pre-filling mode to prevent useEffect conflicts
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [jobOrderId, setJobOrderId] = useState();
+  const [vehicleList, setVehicleList] = useState([]);
+  const [engineList, setEngineList] = useState([]);
+  const [vehicleBodyNumbers, setVehicleBodyNumbers] = useState([]);
+  const [engineNumbers, setEngineNumbers] = useState([]);
+  const { userRole, userId, userName } = useAuth();
   const [isPreFilling, setIsPreFilling] = useState(false);
-
-  // State to show loading during pre-fill
+  const [vehicleAccordionOpen, setVehicleAccordionOpen] = useState(false);
+  const [vehicleEditable, setVehicleEditable] = useState(null);
+  const [vehicleEditMode, setVehicleEditMode] = useState(false); // New state for vehicle edit mode
+  const [engineAccordionOpen, setEngineAccordionOpen] = useState(false);
+  const [engineEditable, setEngineEditable] = useState(null);
+  const [engineEditMode, setEngineEditMode] = useState(false); // New state for engine edit mode
+  const [mailLoading, setMailLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Test state
   const [tests, setTests] = useState([]);
-
-  // State to track existing CoastDownData_id for updates
   const [existingCoastDownId, setExistingCoastDownId] = useState(null);
-
-  // State for test types from API
   const [testTypes, setTestTypes] = useState([]);
-
-  // State for inertia classes from API
   const [inertiaClasses, setInertiaClasses] = useState([]);
-
-  // State for modes from API
   const [modes, setModes] = useState([]);
-
-  // State for fuel types from API
   const [fuelTypes, setFuelTypes] = useState([]);
 
   // Handler to add a new test
@@ -136,9 +135,9 @@ export default function CreateJobOrder() {
         others_attachment: "",
         specificInstruction: "",
         uploadDocuments: null,
-        testOrderId: null, // Track created test order ID
-        job_order_id: null, // Track job order ID for this test
-        showCoastDownData: false, // Toggle for coast down data section
+        testOrderId: null,
+        job_order_id: null,
+        showCoastDownData: false,
         // Coast down data fields for individual test
         cdReportRef: "",
         vehicleRefMass: "",
@@ -248,14 +247,6 @@ export default function CreateJobOrder() {
     fetchFuelTypes();
   }, []);
 
-  // New: State for fetched vehicles and engines
-  const [vehicleList, setVehicleList] = useState([]);
-  const [engineList, setEngineList] = useState([]);
-  // New: State for vehicle body numbers
-  const [vehicleBodyNumbers, setVehicleBodyNumbers] = useState([]);
-  // New: State for engine numbers from API
-  const [engineNumbers, setEngineNumbers] = useState([]);
-
   // Fetch vehicle and engine lists from API on mount
   useEffect(() => {
     // Replace with your actual API endpoints
@@ -265,40 +256,40 @@ export default function CreateJobOrder() {
     fetch("/api/engines")
       .then((res) => res.json())
       .then((data) => setEngineList(data || []));
+
+    // Determine department - check if we have job order data first
+    const currentDepartment = location.state?.jobOrder?.department || form.department || "VTC_JO Chennai";
+
     // Fetch vehicle body numbers (now returns both body number and vehicle_serial_number)
     (async () => {
       try {
         // Pass department as query param for filtering
         const res = await axios.get(
           `${apiURL}/vehicle-body-numbers`,
-          { params: { department: form.department || "VTC_JO Chennai" } }
+          { params: { department: currentDepartment } }
         );
         setVehicleBodyNumbers(res.data || []);
       } catch (err) {
         setVehicleBodyNumbers([]);
       }
     })();
+
     // Fetch engine numbers from FastAPI endpoint
     (async () => {
       try {
         // Pass department as query param for filtering
         const res = await axios.get(
           `${apiURL}/engine-numbers`,
-          { params: { department: form.department || "VTC_JO Chennai" } }
+          { params: { department: currentDepartment } }
         );
         setEngineNumbers(res.data || []);
       } catch (err) {
         setEngineNumbers([]);
       }
     })();
-  }, []);
+  }, [location.state?.jobOrder?.department]); // Add dependency on job order department
 
-  // Accordion state for vehicle details
-  const [vehicleAccordionOpen, setVehicleAccordionOpen] = useState(false);
 
-  // Editable vehicle form state
-  const [vehicleEditable, setVehicleEditable] = useState(null);
-  const [vehicleEditMode, setVehicleEditMode] = useState(false); // New state for vehicle edit mode
 
   // Fetch vehicle details using the new API when body number changes
   const handleVehicleBodyChange = (value) => {
@@ -323,7 +314,6 @@ export default function CreateJobOrder() {
           setVehicleEditable(res.data);
         })
         .catch((error) => {
-          console.log("Could not fetch vehicle details:", error);
           setVehicleEditable(null);
         });
     }
@@ -354,13 +344,6 @@ export default function CreateJobOrder() {
     }));
   };
 
-  // Accordion state for engine details
-  const [engineAccordionOpen, setEngineAccordionOpen] = useState(false);
-
-  // Editable engine form state
-  const [engineEditable, setEngineEditable] = useState(null);
-  const [engineEditMode, setEngineEditMode] = useState(false); // New state for engine edit mode
-
   // Fetch engine details using the new API when engine number changes
   const handleEngineNumberChange = (value) => {
     // Don't interfere if we're currently pre-filling
@@ -382,7 +365,6 @@ export default function CreateJobOrder() {
           }));
         })
         .catch((error) => {
-          console.log("Could not fetch engine details:", error);
           setEngineEditable(null);
         });
     }
@@ -413,17 +395,13 @@ export default function CreateJobOrder() {
     }));
   };
 
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [jobOrderId, setJobOrderId] = useState();
-  const { userRole, userId, userName } = useAuth();
-
   // Prefill form if jobOrder is passed via navigation state
+  // In the useEffect that handles pre-filling (around line 490-600), update this part:
+
   useEffect(() => {
     // Only run once when component mounts and we have job order data
     if (location.state?.jobOrder && !hasPreFilledRef.current) {
       const jobOrder = location.state.jobOrder;
-      console.log("Pre-filling form with job order data:", jobOrder);
 
       // Mark that we've started pre-filling to prevent multiple executions
       hasPreFilledRef.current = true;
@@ -434,10 +412,6 @@ export default function CreateJobOrder() {
 
       // Show success message if this is for creating test orders
       if (location.state.isEdit) {
-        console.log(
-          "Loading job order for creating test orders based on:",
-          location.state.originalJobOrderId
-        );
       }
 
       // Function to fetch and pre-fill coast down data
@@ -448,7 +422,6 @@ export default function CreateJobOrder() {
               `${apiURL}/coastdown/${coastDownDataId}`
             );
             const coastDownData = response.data;
-            console.log("Fetched coast down data:", coastDownData);
 
             return {
               cdReportRef: coastDownData.coast_down_reference || "",
@@ -485,6 +458,28 @@ export default function CreateJobOrder() {
         const coastDownFields = await fetchAndFillCoastDownData(
           jobOrder.CoastDownData_id
         );
+
+        // Update department-specific data based on job order department
+        const departmentFromJobOrder = jobOrder.department || "VTC_JO Chennai";
+
+        // Fetch vehicle body numbers and engine numbers for the specific department
+        try {
+          const [vehicleBodyRes, engineNumberRes] = await Promise.all([
+            axios.get(`${apiURL}/vehicle-body-numbers`, {
+              params: { department: departmentFromJobOrder }
+            }),
+            axios.get(`${apiURL}/engine-numbers`, {
+              params: { department: departmentFromJobOrder }
+            })
+          ]);
+
+          setVehicleBodyNumbers(vehicleBodyRes.data || []);
+          setEngineNumbers(engineNumberRes.data || []);
+        } catch (error) {
+          console.error("Error fetching department-specific data:", error);
+          setVehicleBodyNumbers([]);
+          setEngineNumbers([]);
+        }
 
         const newFormData = {
           ...form, // Preserve existing form state first
@@ -583,7 +578,6 @@ export default function CreateJobOrder() {
           idleExhaustMassFlow: jobOrder.idleExhaustMassFlow || "",
         };
 
-        console.log("Setting form data to:", newFormData);
         setForm(newFormData);
 
         // Prefill vehicleEditable and engineEditable if present
@@ -598,7 +592,6 @@ export default function CreateJobOrder() {
 
         // Use setTimeout to allow form state to settle before enabling other useEffects
         setTimeout(() => {
-          console.log("Pre-filling completed, enabling other useEffects");
           setIsPreFilling(false);
           setIsLoading(false);
         }, 1000); // Increased timeout to 1 second
@@ -612,7 +605,7 @@ export default function CreateJobOrder() {
       }
     }
   }, []); // Empty dependency array - only run once on mount
-  // Add these handlers
+
   const handleTabClick = (tab) => {
     if (tab === "Job Order") navigate("/chennai/joborder");
     else if (tab === "Vehicle") navigate("/chennai/vehicle");
@@ -626,9 +619,6 @@ export default function CreateJobOrder() {
       [field]: value,
     }));
   };
-
-  // 1. Add handleSendMail function
-  const [mailLoading, setMailLoading] = useState(false);
 
   const handleSendMail = async (caseId, useBackendJobOrderID = false) => {
     setMailLoading(true);
@@ -654,7 +644,6 @@ export default function CreateJobOrder() {
       };
 
       // Debug: log payload before sending
-      console.log("Sending mail with payload:", payload);
 
       const response = await axios.post(`${apiURL}/mail/send`, payload);
 
@@ -762,6 +751,7 @@ export default function CreateJobOrder() {
         "Job Order Created! ID: " + jobOrderRes.data.job_order_id,
         "success"
       );
+      navigate(-1);
       await handleSendMail(1);
       navigate("vtc-chennai");
     } catch (err) {
@@ -777,7 +767,6 @@ export default function CreateJobOrder() {
   const handleCreateTestOrder = async (testIndex) => {
     const test = tests[testIndex];
 
-    // Validate required fields
     if (!test.objective) {
       showSnackbar(
         "Please fill in the objective of the test before creating test order.",
@@ -786,24 +775,18 @@ export default function CreateJobOrder() {
       return;
     }
 
-    // Generate test_order_id based on timestamp
     const test_order_id = "TO" + Date.now();
 
-    // Get job_order_id from location state or create a new one if not available
-    // Ensure job_order_id is a string (not null)
     const job_order_id = location.state?.jobOrder?.job_order_id || location.state?.originalJobOrderId || "";
 
-    // 🆕 Add this line to define formattedISTTime
     const currentISTTime = new Date().toLocaleString("en-US", {
       timeZone: "Asia/Kolkata",
     });
     const formattedISTTime = new Date(currentISTTime).toISOString();
 
-    // Create or update coast down data for this specific test
     let CoastDownData_id =
       location.state?.jobOrder?.CoastDownData_id || existingCoastDownId || "";
 
-    // If test has its own coast down data, create a new coast down entry
     const hasTestSpecificCoastDownData =
       test.cdReportRef ||
       test.vehicleRefMass ||
@@ -815,7 +798,6 @@ export default function CreateJobOrder() {
       test.f2Nkmph2;
 
     if (hasTestSpecificCoastDownData) {
-      // Generate new CoastDownData_id for this test
       CoastDownData_id = "CD" + Date.now() + "_T" + testIndex;
 
       // Create coast down data payload for this test
@@ -854,7 +836,6 @@ export default function CreateJobOrder() {
 
       try {
         await axios.post(`${apiURL}/coastdown`, testCoastDownPayload);
-        console.log("Test-specific coast down data created:", CoastDownData_id);
       } catch (err) {
         console.error("Error creating test-specific coast down data:", err);
         showSnackbar(
@@ -866,7 +847,6 @@ export default function CreateJobOrder() {
       }
     }
 
-    // Create test order payload matching the API schema
     const testOrderPayload = {
       test_order_id,
       job_order_id: job_order_id || "",
@@ -878,7 +858,7 @@ export default function CreateJobOrder() {
       inertia_class: test.inertiaClass || "",
       dataset_name: test.datasetName || "",
       dpf: test.dpf || "",
-      dpf_regen_occurs: test.dpfRegenOccurs || "",
+      dpfRegenOccurs: test.dpfRegenOccurs || "",
       dataset_flashed:
         test.datasetflashed === "Yes"
           ? true
@@ -893,12 +873,11 @@ export default function CreateJobOrder() {
       shift: test.shift || "",
       preferred_date: test.preferredDate || null,
       emission_check_date: test.emissionCheckDate || null,
-      emission_check_attachment: test.emissionCheckAttachment || "",
       specific_instruction: test.specificInstruction || "",
       status: "Created",
       id_of_creator: userId || "",
       name_of_creator: userName || "",
-      created_on: formattedISTTime, // Use formattedISTTime instead of new Date().toISOString()
+      created_on: formattedISTTime,
       id_of_updater: "",
       name_of_updater: "",
       updated_on: formattedISTTime, // Use formattedISTTime instead of new Date().toISOString()
@@ -912,11 +891,23 @@ export default function CreateJobOrder() {
       excel_report: test.excel_report || "",
       dat_file_attachment: test.dat_file_attachment || "",
       others_attachment: test.others_attachment || "",
+      updated_on: formattedISTTime,
+      // Fix: Ensure file attachments are properly mapped
+      emission_check_attachment: JSON.stringify(test.Emission_check || test.emissionCheckAttachment || []),
+      dataset_attachment: JSON.stringify(test.Dataset_attachment || test.dataset_attachment || []),
+      a2l_attachment: JSON.stringify(test.A2L || test.a2l_attachment || []),
+      experiment_attachment: JSON.stringify(test.Experiment_attachment || test.experiment_attachment || []),
+      dbc_attachment: JSON.stringify(test.DBC_attachment || test.dbc_attachment || []),
+      wltp_attachment: JSON.stringify(test.WLTP_input_sheet || test.wltp_attachment || []),
+      pdf_report: JSON.stringify(test.PDF_report || test.pdf_report || []),
+      excel_report: JSON.stringify(test.Excel_report || test.excel_report || []),
+      dat_file_attachment: JSON.stringify(test.DAT_file_attachment || test.dat_file_attachment || []),
+      others_attachement: JSON.stringify(test.Others_attachment || test.others_attachement || []),
     };
 
     try {
       const response = await axios.post(
-        `${apiURL}/testorders`,
+        `${apiURL}/testordersss`,
         testOrderPayload
       );
 
@@ -937,6 +928,7 @@ export default function CreateJobOrder() {
           : ""),
         "success"
       );
+      navigate(-1);
 
       // Redirect based on department
       const dept = form.department || (location.state?.jobOrder?.department) || "";
@@ -957,10 +949,12 @@ export default function CreateJobOrder() {
         "error"
       );
     }
-
-    console.log("Test data before creating order:", test);
-    console.log("Fuel Type value:", test.fuelType);
   };
+
+  useEffect(() => {
+    tests.forEach((test, idx) => {
+    });
+  }, [tests]);
 
   // Handler for updating coast down data when editing existing job order
   const handleUpdateCoastDownData = async (existingCoastDownId) => {
@@ -987,9 +981,7 @@ export default function CreateJobOrder() {
         `${apiURL}/coastdown/${existingCoastDownId}`,
         coastDownUpdatePayload
       );
-      console.log("Coast down data updated successfully");
     } catch (err) {
-      console.error("Error updating coast down data:", err);
       throw err; // Re-throw to handle in calling function
     }
   };
@@ -1001,17 +993,17 @@ export default function CreateJobOrder() {
 
   // Debug useEffect to monitor form state changes
   useEffect(() => {
-    console.log("Form state updated:", form);
-    console.log("Pre-filling state:", isPreFilling);
-    console.log("Loading state:", isLoading);
-    console.log("Has pre-filled:", hasPreFilledRef.current);
-
     // Check if form is being reset unexpectedly
     const hasValues = Object.values(form).some((value) => value !== "");
     if (!hasValues && hasPreFilledRef.current && !isPreFilling) {
       console.warn("⚠️ Form was reset unexpectedly after pre-filling!");
     }
   }, [form, isPreFilling, isLoading]);
+
+  useEffect(() => {
+    tests.forEach((test, idx) => {
+    });
+  }, [tests]);
 
   // Cleanup function to reset ref when component unmounts
   useEffect(() => {
@@ -1057,7 +1049,6 @@ export default function CreateJobOrder() {
         grouped[order.job_order_id].push(order);
       });
       setAllTestOrders(grouped);
-      console.log("Fetched all test orders:", grouped);
     } catch (err) {
       setAllTestOrders({});
       console.error("Failed to fetch test orders:", err);
@@ -1105,6 +1096,7 @@ export default function CreateJobOrder() {
       setTests((prev) => [...prev, {}]);
       testIdx = tests.length;
     }
+
     // Fill the test form with test order data
     setTests((prev) => {
       const updated = [...prev];
@@ -1117,7 +1109,7 @@ export default function CreateJobOrder() {
         datasetName: testOrder.dataset_name || "",
         inertiaClass: testOrder.inertia_class || "",
         dpf: testOrder.dpf || "",
-        dpfRegenOccurs: testOrder.dpf_regen_occurs || "",
+        dpfRegenOccurs: testOrder.dpfRegenOccurs || "",
         datasetflashed:
           testOrder.dataset_flashed === true
             ? "Yes"
@@ -1145,9 +1137,32 @@ export default function CreateJobOrder() {
         others_attachment: ensureArray(testOrder.others_attachment || testOrder.others_attachement),
         specificInstruction: testOrder.specific_instruction || "",
         testOrderId: testOrder.test_order_id,
-        status: testOrder.status || "Created", // Use current status if present
-        remark: testOrder.remark || "", // Load re-edit remarks
-        rejection_remarks: testOrder.rejection_remarks || "", // Load rejection remarks
+        status: testOrder.status || "Created",
+        remark: testOrder.remark || "",
+        rejection_remarks: testOrder.rejection_remarks || "",
+
+        // Fix: Properly parse and set attachment fields
+        Emission_check: parseAttachment(testOrder.emission_check_attachment),
+        emissionCheckAttachment: parseAttachment(testOrder.emission_check_attachment),
+        Dataset_attachment: parseAttachment(testOrder.dataset_attachment),
+        dataset_attachment: parseAttachment(testOrder.dataset_attachment),
+        A2L: parseAttachment(testOrder.a2l_attachment),
+        a2l_attachment: parseAttachment(testOrder.a2l_attachment),
+        Experiment_attachment: parseAttachment(testOrder.experiment_attachment),
+        experiment_attachment: parseAttachment(testOrder.experiment_attachment),
+        DBC_attachment: parseAttachment(testOrder.dbc_attachment),
+        dbc_attachment: parseAttachment(testOrder.dbc_attachment),
+        WLTP_input_sheet: parseAttachment(testOrder.wltp_attachment),
+        wltp_attachment: parseAttachment(testOrder.wltp_attachment),
+        PDF_report: parseAttachment(testOrder.pdf_report),
+        pdf_report: parseAttachment(testOrder.pdf_report),
+        Excel_report: parseAttachment(testOrder.excel_report),
+        excel_report: parseAttachment(testOrder.excel_report),
+        DAT_file_attachment: parseAttachment(testOrder.dat_file_attachment),
+        dat_file_attachment: parseAttachment(testOrder.dat_file_attachment),
+        Others_attachment: parseAttachment(testOrder.others_attachement),
+        others_attachement: parseAttachment(testOrder.others_attachement),
+
         // Coast down fields if present
         cdReportRef: testOrder.cdReportRef || "",
         vehicleRefMass: testOrder.vehicleRefMass || "",
@@ -1177,11 +1192,12 @@ export default function CreateJobOrder() {
     if (isProjectTeam && test.status === "Re-edit") {
       newStatus = "Started";
     }
+    // In handleCreateTestOrder function, around line 790-850
+    // Update the test order payload creation in handleCreateTestOrder function (around line 790-850)
     const testOrderPayload = {
-      test_order_id: test.testOrderId,
-      job_order_id: location.state?.jobOrder?.job_order_id || null,
-      CoastDownData_id:
-        location.state?.jobOrder?.CoastDownData_id || existingCoastDownId,
+      test_order_id,
+      job_order_id: job_order_id || "",
+      CoastDownData_id: CoastDownData_id || "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -1204,25 +1220,27 @@ export default function CreateJobOrder() {
       shift: test.shift || "",
       preferred_date: test.preferredDate || null,
       emission_check_date: test.emissionCheckDate || null,
-      emission_check_attachment: test.emissionCheckAttachment || "",
-      dataset_attachment: test.dataset_attachment || "",
-      a2l_attachment: test.a2l_attachment || "",
-      experiment_attachment: test.experiment_attachment || "",
-      dbc_attachment: test.dbc_attachment || "",
-      wltp_attachment: test.wltp_attachment || "",
-      pdf_report: test.pdf_report || "",
-      excel_report: test.excel_report || "",
-      dat_file_attachment: test.dat_file_attachment || "",
-      others_attachment: test.others_attachment || "",
       specific_instruction: test.specificInstruction || "",
-      status: newStatus || "Created", // <-- Use new status if changed
-      id_of_creator: "",
-      name_of_creator: "",
-      created_on: new Date().toISOString(),
+      status: "Created",
+      id_of_creator: userId || "",
+      name_of_creator: userName || "",
+      created_on: formattedISTTime,
       id_of_updater: "",
       name_of_updater: "",
-      updated_on: new Date().toISOString(),
+      updated_on: formattedISTTime,
+      // Fixed attachment field mapping to match database schema exactly
+      emission_check_attachment: test.Emission_check || test.emissionCheckAttachment || null,
+      dataset_attachment: test.Dataset_attachment || test.dataset_attachment || null,
+      a2l_attachment: test.A2L || test.a2l_attachment || null,
+      experiment_attachment: test.Experiment_attachment || test.experiment_attachment || null,
+      dbc_attachment: test.DBC_attachment || test.dbc_attachment || null,
+      wltp_attachment: test.WLTP_input_sheet || test.wltp_attachment || null,
+      pdf_report: test.PDF_report || test.pdf_report || null,
+      excel_report: test.Excel_report || test.excel_report || null,
+      dat_file_attachment: test.DAT_file_attachment || test.dat_file_attachment || null,
+      others_attachement: test.Others_attachment || test.others_attachement || null, // Note: keep "attachement" spelling as per database
     };
+
     try {
       await updateTestOrder(test.testOrderId, testOrderPayload);
       showSnackbar("Test Order updated successfully!", "success");
@@ -1237,8 +1255,6 @@ export default function CreateJobOrder() {
     }
   };
 
-  // Add state for remark modal
-  // Add these two lines to define the modal state for each test row
   const [emissionCheckModals, setEmissionCheckModals] = useState({});
   const [datasetModals, setDatasetModals] = useState({});
   const [a2lModals, setA2LModals] = useState({});
@@ -2069,7 +2085,6 @@ export default function CreateJobOrder() {
             className="text-xs text-blue-700 px-0"
             onClick={() => {
               setShowCFTPanel((prev) => !prev);
-              console.log("Toggled CFT panel");
             }}
             disabled={isTestEngineer}
           >
@@ -2551,13 +2566,23 @@ export default function CreateJobOrder() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label>Emission Check Attachment</Label>
+                  <Label>
+                    Emission Check Attachment
+                    {test.emissionCheckAttachment && test.emissionCheckAttachment.length > 0 && (
+                      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                        {Array.isArray(test.emissionCheckAttachment) ? test.emissionCheckAttachment.length : 1}
+                      </span>
+                    )}
+                  </Label>
                   <DropzoneFileList
                     buttonText="Emission Check Attachment"
                     name="emission_check_attachment"
                     maxFiles={5}
                     formData={{
                       ...test,
+                      // Ensure job_order_id and test_order_id are properly set
+                      job_order_id: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || "",
+                      test_order_id: test.testOrderId || "",
                       originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
                     }}
                     setFormData={(updatedTest) => {
@@ -2581,7 +2606,14 @@ export default function CreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>Dataset Attachment</Label>
+                  <Label>
+                    Dataset Attachment
+                    {test.dataset_attachment && test.dataset_attachment.length > 0 && (
+                      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                        {Array.isArray(test.dataset_attachment) ? test.dataset_attachment.length : 1}
+                      </span>
+                    )}
+                  </Label>
                   <DropzoneFileList
                     buttonText="Dataset Attachment"
                     name="dataset_attachment"
@@ -2611,7 +2643,14 @@ export default function CreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>A2L Attachment</Label>
+                  <Label>
+                    A2L Attachment
+                    {test.a2l_attachment && test.a2l_attachment.length > 0 && (
+                      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                        {Array.isArray(test.a2l_attachment) ? test.a2l_attachment.length : 1}
+                      </span>
+                    )}
+                  </Label>
                   <DropzoneFileList
                     buttonText="A2L Attachment"
                     name="a2l_attachment"
@@ -2641,7 +2680,14 @@ export default function CreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>Experiment Attachment</Label>
+                  <Label>
+                    Experiment Attachment
+                    {test.experiment_attachment && test.experiment_attachment.length > 0 && (
+                      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                        {Array.isArray(test.experiment_attachment) ? test.experiment_attachment.length : 1}
+                      </span>
+                    )}
+                  </Label>
                   <DropzoneFileList
                     buttonText="Experiment Attachment"
                     name="experiment_attachment"
@@ -2671,7 +2717,14 @@ export default function CreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>DBC Attachment</Label>
+                  <Label>
+                    DBC Attachment
+                    {test.dbc_attachment && test.dbc_attachment.length > 0 && (
+                      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                        {Array.isArray(test.dbc_attachment) ? test.dbc_attachment.length : 1}
+                      </span>
+                    )}
+                  </Label>
                   <DropzoneFileList
                     buttonText="DBC Attachment"
                     name="dbc_attachment"
@@ -2701,7 +2754,14 @@ export default function CreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>WLTP Input Sheet</Label>
+                  <Label>
+                    WLTP Input Sheet
+                    {test.wltp_attachment && test.wltp_attachment.length > 0 && (
+                      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                        {Array.isArray(test.wltp_attachment) ? test.wltp_attachment.length : 1}
+                      </span>
+                    )}
+                  </Label>
                   <DropzoneFileList
                     buttonText="WLTP Input Sheet"
                     name="wltp_attachment"

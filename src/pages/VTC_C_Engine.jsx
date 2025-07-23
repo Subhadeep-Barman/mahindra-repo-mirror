@@ -243,6 +243,7 @@ export default function EngineForm() {
         headers: { "Content-Type": "application/json" },
       });
       showSnackbar("Engine added successfully!", "success");
+      navigate(-1);
       // Optionally clear form or navigate
     } catch (err) {
       showSnackbar("Error adding engine: " + (err.response?.data?.detail || err.message), "error");

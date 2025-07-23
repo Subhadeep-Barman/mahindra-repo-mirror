@@ -315,19 +315,22 @@ const Dropzone = ({
   };
   // Helper to get correct job_order_id and test_order_id for upload
   const getJobAndTestOrderId = () => {
-    // Prefer originalJobOrderId if provided
     const jobOrderId =
       originalJobOrderId ||
       formData?.form_id ||
+      formData?.originalJobOrderId ||
       formData?.job_order_id ||
       (!id.startsWith("test") && id) ||
       "";
-    // Prefer test_order_id from formData, else from id prop if it's a test
+
+    // Prefer test_order_id from formData
     const testOrderId =
       formData?.test_id ||
       formData?.test_order_id ||
       formData?.testOrderId ||
       (id.startsWith("test") ? id : "");
+
+    console.log("getJobAndTestOrderId - jobOrderId:", jobOrderId, "testOrderId:", testOrderId);
     return { jobOrderId, testOrderId };
   };
 
@@ -394,20 +397,19 @@ const Dropzone = ({
 
             let updatedFormData = { ...formData };
             if (team) {
-              const existing = useStore.getState().jobOrderFormData || {};
-              const allAttachments = useStore.getState().jobOrderFormData[team]?.[name] || [];
+              const existing = formData[team]?.[name] || [];
               updatedFormData = {
-                ...existing,
+                ...formData,
                 [team]: {
-                  ...existing[team],
-                  [name]: [...uploadedFile, ...allAttachments],
+                  ...formData[team],
+                  [name]: [...existing, ...uploadedFile],
                 },
               };
             } else {
-              const existing = useStore.getState().testOrderFormData[name] || [];
+              const existing = formData[name] || [];
               updatedFormData = {
                 ...formData,
-                [name]: [...uploadedFile, ...existing],
+                [name]: [...existing, ...uploadedFile],
               };
             }
             setFormData(updatedFormData);
