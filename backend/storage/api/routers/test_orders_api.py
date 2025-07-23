@@ -194,9 +194,9 @@ def create_testorder_api(
         "dataset_attachment", "a2l_attachment", "experiment_attachment", "dbc_attachment",
         "wltp_attachment", "pdf_report", "excel_report", "dat_file_attachment", "others_attachement"
     ]
-    # Convert empty string values to empty lists for attachment fields
+    # Convert empty string values and string "[]" to empty lists for attachment fields
     for key in attachment_fields:
-        if key in testorder and testorder[key] == "":
+        if key in testorder and (testorder[key] == "" or testorder[key] == "[]"):
             testorder[key] = []
     # Now parse with Pydantic
     testorder_obj = TestOrderSchema(**testorder)

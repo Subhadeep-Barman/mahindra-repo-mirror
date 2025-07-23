@@ -32,9 +32,9 @@ def get_employee_email_by_role(db: Session, job_order_id: str, role: str):
     return [user.email]
 
 
-def load_email_template(caseid: str, data: dict):
+def get_role_for_caseid(caseid: str):
     """
-    Load and format the email template for the given caseid.
+    Get the role from mail_body.json for the given caseid.
     """
     with open(EMAIL_TEMPLATE_PATH, "r", encoding="utf-8") as f:
         templates = json.load(f)
@@ -42,8 +42,29 @@ def load_email_template(caseid: str, data: dict):
     template = next((case for case in email_cases if case["id"] == caseid), None)
     if not template:
         raise HTTPException(status_code=400, detail="Invalid caseid")
-    subject = template["body"]["subject"].format(**data)
-    message = template["body"]["message"].format(**data)
+    return template.get("receivers")
+
+
+def get_all_emails_by_role(db: Session, role: str):
+    """
+    Fetch all emails for users with the given role.
+    """
+    users = db.query(User).filter(User.role == role).all()
+    return [user.email for user in users if user.email]
+
+
+def load_email_template(caseid: str):
+    """
+    Load the email template for the given caseid.
+    """
+    with open(EMAIL_TEMPLATE_PATH, "r", encoding="utf-8") as f:
+        templates = json.load(f)
+    email_cases = templates.get("email_cases", [])
+    template = next((case for case in email_cases if case["id"] == caseid), None)
+    if not template:
+        raise HTTPException(status_code=400, detail="Invalid caseid")
+    subject = template["body"]["subject"]
+    message = template["body"]["message"]
     return subject, message
 
 
@@ -75,24 +96,28 @@ def send_email(to_emails, subject, body):
 @router.post("/send")
 async def send_email_endpoint(
     job_order_id: str = Body(...),
-    role: str = Body(..., description="ProjectTeam or TestEngineer"),
     caseid: str = Body(...),
-    data: dict = Body(...),
+    test_order_id: str = Body(None),
     db: Session = Depends(get_db),
 ):
     """
-    Send an email to ProjectTeam or TestEngineer for a job/test order.
+    Send an email to all users of the role specified in mail_body.json for the given caseid.
     """
-    role = role.strip()
-    if role not in ("ProjectTeam", "TestEngineer"):
-        raise HTTPException(status_code=400, detail="Role must be ProjectTeam or TestEngineer")
-    to_emails = get_employee_email_by_role(db, job_order_id, role)
+    role = get_role_for_caseid(caseid)
+    if not role:
+        raise HTTPException(status_code=400, detail="Role not found for caseid")
+    to_emails = get_all_emails_by_role(db, role)
     print(f"To Emails: {to_emails}")  # Debugging line to check email addresses
     if not to_emails:
-        raise HTTPException(status_code=404, detail="No recipient found for the given role/job_order_id")
-    subject, body = load_email_template(caseid, data)
+        raise HTTPException(status_code=404, detail="No recipient found for the given role")
+    subject, body = load_email_template(caseid)
+    # Replace placeholders with actual IDs
+    subject = subject.replace("{{job_order_id}}", str(job_order_id))
+    subject = subject.replace("{{test_order_id}}", str(test_order_id) if test_order_id else "")
+    body = body.replace("{{job_order_id}}", str(job_order_id))
+    body = body.replace("{{test_order_id}}", str(test_order_id) if test_order_id else "")
     send_email(to_emails, subject, body)
-    return {"detail": f"Email sent to {role} successfully"}
+    return {"detail": f"Email sent to all users with role {role} successfully"}
 
 
 @router.post("/cft_members/add")
@@ -157,9 +182,6 @@ async def delete_cft_member(
         raise HTTPException(status_code=404, detail="JobOrder not found")
     if member_index >= len(job_order.cft_members):
         raise HTTPException(status_code=404, detail="CFT member not found")
-    job_order.cft_members.pop(member_index)
-    db.commit()
-    return job_order
     job_order.cft_members.pop(member_index)
     db.commit()
     return job_order
