@@ -25,6 +25,7 @@ const apiURL = import.meta.env.VITE_BACKEND_URL;
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
 
 export default function RDECreateJobOrder() {
+  const [mailLoading, setMailLoading] = useState(false);
   const [cftMembers, setCftMembers] = useState([]);
   const [form, setForm] = useState({
     projectCode: "",
@@ -736,6 +737,51 @@ export default function RDECreateJobOrder() {
     }));
   };
 
+  const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = null) => {
+      setMailLoading(true);
+      try {
+        // First try to use the direct job order ID passed to this function
+        // Then fall back to other sources if not provided
+        const resolvedJobOrderId = directJobOrderId || 
+                                  jobOrderId || 
+                                  useStore.getState().backendJobOrderID;
+  
+        if (!resolvedJobOrderId) {
+          showSnackbar("Job Order ID is missing. Cannot send mail.", "error");
+          setMailLoading(false);
+          return;
+        }
+  
+        // Debug log to verify job order ID
+        console.log("Sending mail with job order ID:", resolvedJobOrderId);
+  
+        // Compose payload as per new API
+        const payload = {
+          user_name: userName,
+          token_id: userId,
+          role: userRole,
+          job_order_id: resolvedJobOrderId,
+          test_order_id: testOrderId || null, // Use testOrderId from parameter if available
+          caseid: String(caseId),
+          cft_members: cftMembers,
+        };
+  
+        const response = await axios.post(`${apiURL}/send`, payload);
+  
+        if (response.status === 200) {
+          showSnackbar("Mail sent successfully", "success");
+        } else {
+          showSnackbar("Failed to send mail", "error");
+          console.error("Mail API responded with status:", response.status, response.data);
+        }
+      } catch (error) {
+        showSnackbar("Error sending mail: " + (error?.message || "Unknown error"), "warning");
+        console.error("Error sending mail", error);
+      } finally {
+        setMailLoading(false);
+      }
+    };
+
   // Handler for creating job order
   const handleRDECreateJobOrder = async (e) => {
     e.preventDefault();
@@ -829,6 +875,7 @@ export default function RDECreateJobOrder() {
         "RDE Job Order Created! ID: " + jobOrderRes.data.job_order_id,
         "success"
       );
+      handleSendMail(1, jobOrderRes.data.job_order_id, null); // Assuming caseId is 1 for now
       navigate(-1);
       // Optionally, reset form or navigate
     } catch (err) {
@@ -988,6 +1035,7 @@ export default function RDECreateJobOrder() {
           : ""),
         "success"
       );
+      handleSendMail(2, job_order_id, response.data.test_order_id); // Assuming caseId is 2 for now
       navigate("/rde-chennai");
     } catch (err) {
       console.error("Error creating test order:", err);

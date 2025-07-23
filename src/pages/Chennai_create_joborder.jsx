@@ -620,13 +620,14 @@ export default function CreateJobOrder() {
     }));
   };
 
-  const handleSendMail = async (caseId, useBackendJobOrderID = false) => {
+  const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = null) => {
     setMailLoading(true);
     try {
-      // Use backendJobOrderID from store if requested, else use jobOrderId from form/state
-      const resolvedJobOrderId = useBackendJobOrderID
-        ? useStore.getState().backendJobOrderID
-        : jobOrderId || useStore.getState().backendJobOrderID;
+      // First try to use the direct job order ID passed to this function
+      // Then fall back to other sources if not provided
+      const resolvedJobOrderId = directJobOrderId || 
+                                jobOrderId || 
+                                useStore.getState().backendJobOrderID;
 
       if (!resolvedJobOrderId) {
         showSnackbar("Job Order ID is missing. Cannot send mail.", "error");
@@ -634,18 +635,21 @@ export default function CreateJobOrder() {
         return;
       }
 
+      // Debug log to verify job order ID
+      console.log("Sending mail with job order ID:", resolvedJobOrderId);
+
       // Compose payload as per new API
       const payload = {
         user_name: userName,
         token_id: userId,
-        jobOrderId: resolvedJobOrderId,
-        caseId: String(caseId),
+        role: userRole,
+        job_order_id: resolvedJobOrderId,
+        test_order_id: testOrderId || null, // Use testOrderId from parameter if available
+        caseid: String(caseId),
         cft_members: cftMembers,
       };
 
-      // Debug: log payload before sending
-
-      const response = await axios.post(`${apiURL}/mail/send`, payload);
+      const response = await axios.post(`${apiURL}/send`, payload);
 
       if (response.status === 200) {
         showSnackbar("Mail sent successfully", "success");
@@ -747,13 +751,23 @@ export default function CreateJobOrder() {
       }
       setJobOrderId(job_order_id);
 
+      // Get the job order ID from the API response
+      const createdJobOrderId = jobOrderRes.data.job_order_id || job_order_id;
+      
+      // Set the job order ID in state (for future reference)
+      setJobOrderId(createdJobOrderId);
+
       showSnackbar(
-        "Job Order Created! ID: " + jobOrderRes.data.job_order_id,
+        "Job Order Created! ID: " + createdJobOrderId,
         "success"
       );
+      
+      // Send mail with the job order ID directly from the API response
+      // BEFORE navigation
+      await handleSendMail(1, createdJobOrderId, null);
+      
+      // Navigate only after mail is sent
       navigate(-1);
-      await handleSendMail(1);
-      navigate("vtc-chennai");
     } catch (err) {
       console.error("Error creating job order:", err);
       showSnackbar(
@@ -896,7 +910,7 @@ export default function CreateJobOrder() {
 
     try {
       const response = await axios.post(
-        `${apiURL}/testordersss`,
+        `${apiURL}/testorders`,
         testOrderPayload
       );
 
@@ -917,6 +931,8 @@ export default function CreateJobOrder() {
           : ""),
         "success"
       );
+      // Send mail with the test order ID
+      await handleSendMail(2, job_order_id, response.data.test_order_id);
       navigate(-1);
 
       // Redirect based on department

@@ -27,6 +27,7 @@ const apiURL = import.meta.env.VITE_BACKEND_URL;
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
 
 export default function NashikCreateJobOrder() {
+  const [mailLoading, setMailLoading] = useState(false);
   const [cftMembers, setCftMembers] = useState([]);
   const [form, setForm] = useState({
     projectCode: "",
@@ -695,6 +696,7 @@ export default function NashikCreateJobOrder() {
       }
       showSnackbar("Job Order Created! ID: " + jobOrderRes.data.job_order_id, "success");
       // Optionally, reset form or navigate
+      handleSendMail(1, jobOrderRes.data.job_order_id,null);
       navigate(-1);
     } catch (err) {
       console.error("Error creating job order:", err);
@@ -842,6 +844,7 @@ export default function NashikCreateJobOrder() {
           ? "\nCoast Down Data ID: " + CoastDownData_id
           : "")
       );
+      handleSendMail(2, job_order_id, response.data.test_order_id);
       navigate(-1);
     } catch (err) {
       console.error("Error creating test order:", err);
@@ -1178,6 +1181,51 @@ export default function NashikCreateJobOrder() {
       return false;
     }
     return !test.disabled && (!test.testOrderId || editingTestOrderIdx === idx);
+  };
+
+const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = null) => {
+    setMailLoading(true);
+    try {
+      // First try to use the direct job order ID passed to this function
+      // Then fall back to other sources if not provided
+      const resolvedJobOrderId = directJobOrderId || 
+                                jobOrderId || 
+                                useStore.getState().backendJobOrderID;
+
+      if (!resolvedJobOrderId) {
+        showSnackbar("Job Order ID is missing. Cannot send mail.", "error");
+        setMailLoading(false);
+        return;
+      }
+
+      // Debug log to verify job order ID
+      console.log("Sending mail with job order ID:", resolvedJobOrderId);
+
+      // Compose payload as per new API
+      const payload = {
+        user_name: userName,
+        token_id: userId,
+        role: userRole,
+        job_order_id: resolvedJobOrderId,
+        test_order_id: testOrderId || null, // Use testOrderId from parameter if available
+        caseid: String(caseId),
+        cft_members: "",
+      };
+
+      const response = await axios.post(`${apiURL}/send`, payload);
+
+      if (response.status === 200) {
+        showSnackbar("Mail sent successfully", "success");
+      } else {
+        showSnackbar("Failed to send mail", "error");
+        console.error("Mail API responded with status:", response.status, response.data);
+      }
+    } catch (error) {
+      showSnackbar("Error sending mail: " + (error?.message || "Unknown error"), "warning");
+      console.error("Error sending mail", error);
+    } finally {
+      setMailLoading(false);
+    }
   };
 
   return (

@@ -22,6 +22,53 @@ import showSnackbar from "@/utils/showSnackbar";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function EditTestOrder() {
+  // State for mail loading indicator
+  const [mailLoading, setMailLoading] = useState(false);
+  // Function to send mail for test order status changes (logic taken from Chennai_create_joborder)
+  const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = null) => {
+    setMailLoading(true);
+    try {
+      // First try to use the direct job order ID passed to this function
+      // Then fall back to other sources if not provided
+      const resolvedJobOrderId = directJobOrderId || 
+                                jobOrderId || 
+                                useStore.getState().backendJobOrderID;
+
+      if (!resolvedJobOrderId) {
+        showSnackbar("Job Order ID is missing. Cannot send mail.", "error");
+        setMailLoading(false);
+        return;
+      }
+
+      // Debug log to verify job order ID
+      console.log("Sending mail with job order ID:", resolvedJobOrderId);
+
+      // Compose payload as per new API
+      const payload = {
+        user_name: userName,
+        token_id: userId,
+        role: userRole,
+        job_order_id: resolvedJobOrderId,
+        test_order_id: testOrderId || null, // Use testOrderId from parameter if available
+        caseid: String(caseId),
+        cft_members: "",
+      };
+
+      const response = await axios.post(`${apiURL}/send`, payload);
+
+      if (response.status === 200) {
+        showSnackbar("Mail sent successfully", "success");
+      } else {
+        showSnackbar("Failed to send mail", "error");
+        console.error("Mail API responded with status:", response.status, response.data);
+      }
+    } catch (error) {
+      showSnackbar("Error sending mail: " + (error?.message || "Unknown error"), "warning");
+      console.error("Error sending mail", error);
+    } finally {
+      setMailLoading(false);
+    }
+  };
   const navigate = useNavigate();
   const location = useLocation();
   const { userRole, userId, userName } = useAuth();
@@ -244,6 +291,8 @@ export default function EditTestOrder() {
       };
       await axios.post(`${apiURL}/testorders/status`, payload);
       showSnackbar(`Test order status updated to ${status}`, "success");
+
+
       handleBack();
     } catch (err) {
       showSnackbar("Failed to update status: " + (err.response?.data?.detail || err.message), "error");
@@ -1086,17 +1135,21 @@ export default function EditTestOrder() {
                 <Button
                   className="bg-green-600 text-white text-xs px-3 py-1 rounded"
                   type="button"
-                  onClick={handleStartTestOrder}
+                  onClick={async () => {
+                    await handleStartTestOrder();
+                    await handleSendMail("1.1", jobOrderId, test.testOrderId);
+                  }}
                 >
                   Start
                 </Button>
                 <Button
                   className="bg-red-600 text-white text-xs px-3 py-1 rounded"
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     setModalActionType("reject");
                     setMailRemarks("");
                     setMailRemarksModal(true);
+                    await handleSendMail("4", jobOrderId, test.testOrderId);
                   }}
                 >
                   Reject
@@ -1110,10 +1163,11 @@ export default function EditTestOrder() {
                 <Button
                   className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     setModalActionType("re-edit");
                     setMailRemarks("");
                     setMailRemarksModal(true);
+                    await handleSendMail("3", jobOrderId, test.testOrderId);
                   }}
                 >
                   Re-edit
@@ -1121,7 +1175,10 @@ export default function EditTestOrder() {
                 <Button
                   className="bg-green-600 text-white text-xs px-3 py-1 rounded"
                   type="button"
-                  onClick={() => handleStatusUpdate("Completed")}
+                  onClick={async () => {
+                    await handleStatusUpdate("Completed");
+                    await handleSendMail("6", jobOrderId, test.testOrderId);
+                  }}
                 >
                   Complete
                 </Button>
