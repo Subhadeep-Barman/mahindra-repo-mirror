@@ -232,6 +232,7 @@ export default function RDECreateJobOrder() {
     setTests((prev) => [
       ...prev,
       {
+        engineNumber: "", // New field for engine number
         testType: "",
         objective: "",
         vehicleLocation: "",
@@ -796,6 +797,13 @@ export default function RDECreateJobOrder() {
     const job_order_id = "JO" + Date.now();
     const CoastDownData_id = "CD" + Date.now();
 
+
+    // Convert current time to IST and format as ISO 8601
+    const currentISTTime = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+    const formattedISTTime = new Date(currentISTTime).toISOString();
+
     // Prepare payload as per RDEJobOrderSchema
     const rdeJobOrderPayload = {
       job_order_id,
@@ -820,12 +828,12 @@ export default function RDECreateJobOrder() {
       remarks: "",
       rejection_remarks: "",
       mail_remarks: "",
-      id_of_creator: "",
-      name_of_creator: "",
-      created_on: new Date().toISOString(),
+      id_of_creator: userId || "",
+      name_of_creator: userName || "",
+      created_on: formattedISTTime,
       id_of_updater: "",
       name_of_updater: "",
-      updated_on: new Date().toISOString(),
+      // updated_on: new Date().toISOString(),
       cft_members: cftMembers,
     };
 
@@ -980,6 +988,7 @@ export default function RDECreateJobOrder() {
       test_order_id,
       job_order_id,
       CoastDownData_id,
+      engine_number: test.engineNumber || "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -1192,6 +1201,7 @@ export default function RDECreateJobOrder() {
       const updated = [...prev];
       updated[testIdx] = {
         ...updated[testIdx],
+        engineNumber: testOrder.engine_number || "",
         testType: testOrder.test_type || "",
         objective: testOrder.test_objective || "",
         vehicleLocation: testOrder.vehicle_location || "",
@@ -1244,6 +1254,7 @@ export default function RDECreateJobOrder() {
       job_order_id: location.state?.jobOrder?.job_order_id || null,
       CoastDownData_id:
         location.state?.jobOrder?.CoastDownData_id || existingCoastDownId,
+      engine_number: test.engineNumber || "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -1376,6 +1387,7 @@ export default function RDECreateJobOrder() {
   };
 
   const { apiUserRole: userRole } = useAuth();
+  const { userId, userName } = useAuth();
   const isTestEngineer = userRole === "TestEngineer";
   const isProjectTeam = userRole === "ProjectTeam";
 
@@ -2054,6 +2066,33 @@ export default function RDECreateJobOrder() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
               {/* All test fields disabled for TestEngineer except status actions */}
+              <div className="flex flex-col">
+                <Label htmlFor={`engineNumber${idx}`} className="mb-2">
+                  Engine Number <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                    value={test.engineNumber || ""}
+                    onValueChange={(value) => {
+  if (value !== jobOrder.engine_serial_number) {
+    showSnackbar && showSnackbar("Warning: You are selecting a different engine number than the main form.", "warning");
+  }
+  handleTestChange(idx, "engineNumber", value);
+}}
+                    required
+                    disabled={!areTestFieldsEditable(test, idx)}
+                  >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {engineNumbers.map((engineNumber) => (
+                      <SelectItem key={engineNumber} value={engineNumber}>
+                        {engineNumber}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+          </div>
               <div>
                 <Label>Test Type</Label>
                 <Select
@@ -2844,7 +2883,7 @@ export default function RDECreateJobOrder() {
                 onClick={() => handleCreateTestOrder(idx)}
                 disabled={!!test.testOrderId || test.disabled}
               >
-                {test.testOrderId ? "✓ TEST ORDER CREATED" : "✓ CREATE TEST ORDER"}
+                {test.testOrderId ? " TEST ORDER CREATED" : " CREATE TEST ORDER"}
               </Button>
               {editingTestOrderIdx === idx && (
                 <Button

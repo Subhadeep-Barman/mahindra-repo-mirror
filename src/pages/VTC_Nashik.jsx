@@ -217,6 +217,9 @@ export default function VTCNashikPage() {
                       Completed Test Orders
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
+                      Creadted by
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
                       Created on
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
@@ -261,7 +264,18 @@ export default function VTCNashikPage() {
                         {order.completed_test_count || "0"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.created_on?.slice(0, 10) || "N/A"}
+                        {order.name_of_creator || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600 px-4 py-2">
+                        {new Date(order.created_on).toLocaleString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          hour12: true,
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
                         {order.name_of_updater || "N/A"}

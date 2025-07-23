@@ -220,6 +220,9 @@ export default function RDEChennaiPage() {
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Test Status
                     </TableHead>
+                                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                                          Completed Tests
+                                        </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Created By
                     </TableHead>
@@ -267,11 +270,24 @@ export default function RDEChennaiPage() {
                       <TableCell className="text-xs text-gray-900">
                         {order.test_status}
                       </TableCell>
+                      <TableCell className="text-xs text-gray-900 px-4 py-2">
+                                              {order.completed_test_count == 0
+                                                ? "0"
+                                                : `${order.completed_test_count}/${order.test_status}`}
+                                            </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.created_by}
+                        {order.name_of_creator}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-600">
-                        {order.created_on?.slice(0, 10)}
+                      <TableCell className="text-xs text-gray-600 px-4 py-2">
+                        {new Date(order.created_on).toLocaleString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          hour12: true,
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
                         {order.last_updated_by}

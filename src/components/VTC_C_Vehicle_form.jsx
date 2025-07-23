@@ -78,6 +78,12 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     });
   };
 
+  // Convert current time to IST and format as ISO 8601
+    const currentISTTime = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+    const formattedISTTime = new Date(currentISTTime).toISOString();
+
   // Map form state to API schema
   function mapFormToApi(form) {
     return {
@@ -135,7 +141,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           ? `${form.reverseGearRatio.numerator}:${form.reverseGearRatio.denominator}`
           : "",
       id_of_creator: userId || "", // id_of_creator handled by backend
-      // created_on: "", // created_on handled by backend
+      created_on: formattedISTTime,
       id_of_updater: "", // id_of_updater handled by backend
       // updated_on: "",
       // id_of_creator, created_on, id_of_updater, updated_on handled by backend

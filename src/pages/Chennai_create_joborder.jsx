@@ -106,6 +106,7 @@ export default function CreateJobOrder() {
     setTests((prev) => [
       ...prev,
       {
+        engineNumber: "",
         testType: "",
         objective: "",
         vehicleLocation: "",
@@ -865,6 +866,7 @@ export default function CreateJobOrder() {
       test_order_id,
       job_order_id: job_order_id || "",
       CoastDownData_id: CoastDownData_id || "",
+      engine_number: test.engineNumber || "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -1107,6 +1109,7 @@ export default function CreateJobOrder() {
       const updated = [...prev];
       updated[testIdx] = {
         ...updated[testIdx],
+        engineNumber: testOrder.engine_number || "",
         testType: testOrder.test_type || "",
         objective: testOrder.test_objective || "",
         vehicleLocation: testOrder.vehicle_location || "",
@@ -1180,6 +1183,7 @@ export default function CreateJobOrder() {
       test_order_id,
       job_order_id: job_order_id || "",
       CoastDownData_id: CoastDownData_id || "",
+      engine_number: test.engineNumber || "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -2218,6 +2222,33 @@ export default function CreateJobOrder() {
             {/* Inputs above attachments */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
               {/* All test fields disabled for TestEngineer except status actions */}
+               <div className="flex flex-col">
+                <Label htmlFor={`engineNumber${idx}`} className="mb-2">
+                  Engine Number <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                    value={test.engineNumber || ""}
+                    onValueChange={(value) => {
+  if (value !== form.engineSerialNumber) {
+    showSnackbar && showSnackbar("Warning: You are selecting a different engine number than the main form.", "warning");
+  }
+  handleTestChange(idx, "engineNumber", value);
+}}
+                    required
+                    disabled={!areTestFieldsEditable(test, idx)}
+                  >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {engineNumbers.map((engineNumber) => (
+                      <SelectItem key={engineNumber} value={engineNumber}>
+                        {engineNumber}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+          </div>
               <div>
                 <Label>Test Type</Label>
                 <Select
@@ -3069,7 +3100,7 @@ export default function CreateJobOrder() {
                 onClick={() => handleCreateTestOrder(idx)}
                 disabled={!!test.testOrderId || test.disabled}
               >
-                {test.testOrderId ? "✓ TEST ORDER CREATED" : "✓ CREATE TEST ORDER"}
+                {test.testOrderId ? " TEST ORDER CREATED" : " CREATE TEST ORDER"}
               </Button>
               {editingTestOrderIdx === idx && (
                 <Button

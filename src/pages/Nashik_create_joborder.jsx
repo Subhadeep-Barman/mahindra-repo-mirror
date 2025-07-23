@@ -112,6 +112,7 @@ export default function NashikCreateJobOrder() {
     setTests((prev) => [
       ...prev,
       {
+        engineNumber: "", // New field for engine number
         testType: "",
         objective: "",
         vehicleLocation: "",
@@ -630,6 +631,12 @@ export default function NashikCreateJobOrder() {
     const job_order_id = "JO" + Date.now();
     const CoastDownData_id = "CD" + Date.now();
 
+    // Convert current time to IST and format as ISO 8601
+    const currentISTTime = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+    const formattedISTTime = new Date(currentISTTime).toISOString();
+
     const jobOrderPayload = {
       job_order_id,
       project_code: form.projectCode || null,
@@ -644,12 +651,12 @@ export default function NashikCreateJobOrder() {
       remarks: "",
       rejection_remarks: "",
       mail_remarks: "",
-      id_of_creator: "",
-      name_of_creator: "",
-      created_on: new Date().toISOString(),
+      id_of_creator: userId || "",
+      name_of_creator: userName || "",
+      created_on: formattedISTTime,
       id_of_updater: "",
       name_of_updater: "",
-      updated_on: new Date().toISOString(),
+      // updated_on: new Date().toISOString(),
       cft_members: cftMembers,
     };
 
@@ -723,6 +730,8 @@ export default function NashikCreateJobOrder() {
     // Get job_order_id from location state or create a new one if not available
     const job_order_id = location.state?.jobOrder?.job_order_id || null;
 
+    
+
     // Create or update coast down data for this specific test
     let CoastDownData_id =
       location.state?.jobOrder?.CoastDownData_id || existingCoastDownId;
@@ -792,6 +801,7 @@ export default function NashikCreateJobOrder() {
       test_order_id,
       job_order_id,
       CoastDownData_id,
+      engine_number: test.engineNumber || "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -1000,6 +1010,7 @@ export default function NashikCreateJobOrder() {
       const updated = [...prev];
       updated[testIdx] = {
         ...updated[testIdx],
+        engineNumber: testOrder.engine_number || "",
         testType: testOrder.test_type || "",
         objective: testOrder.test_objective || "",
         vehicleLocation: testOrder.vehicle_location || "",
@@ -1052,6 +1063,7 @@ export default function NashikCreateJobOrder() {
       job_order_id: location.state?.jobOrder?.job_order_id || null,
       CoastDownData_id:
         location.state?.jobOrder?.CoastDownData_id || existingCoastDownId,
+      engine_number: test.engineNumber || "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -1166,7 +1178,7 @@ export default function NashikCreateJobOrder() {
     );
   };
 
-  const { userRole } = useAuth();
+  const { userRole, userId, userName } = useAuth();
   const isTestEngineer = userRole === "TestEngineer";
   const isProjectTeam = userRole === "ProjectTeam";
 
@@ -1739,6 +1751,28 @@ const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = nul
               </Button>
             </div>
             <div className="grid grid-cols-4 gap-4 mb-2">
+              <div className="flex flex-col">
+                                            <Label htmlFor={`engineNumber${idx}`} className="mb-2">
+                                              Engine Number <span className="text-red-500">*</span>
+                                            </Label>
+                                            <Select
+                                              value={test.engineNumber || ""}
+                                              onValueChange={(value) => handleTestChange(idx, "engineNumber", value)}
+                                              required
+                                              disabled={!areTestFieldsEditable(test, idx)}
+                                            >
+                                              <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Select" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                {engineNumbers.map((engineNumber) => (
+                                                  <SelectItem key={engineNumber} value={engineNumber}>
+                                                    {engineNumber}
+                                                  </SelectItem>
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
+                                      </div>
               <div>
                 <Label>Test Type</Label>
                 <Select
@@ -2541,7 +2575,7 @@ const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = nul
                 onClick={() => handleCreateTestOrder(idx)}
                 disabled={editingTestOrderIdx === idx || isTestEngineer}
               >
-                ✓ CREATE TEST ORDER
+                 CREATE TEST ORDER
               </Button>
               {editingTestOrderIdx === idx && (
                 <Button

@@ -83,6 +83,7 @@ export default function EditTestOrder() {
   // State for test data
   const [test, setTest] = useState({
     testOrderId: testOrder?.test_order_id || "",
+    engineNumber: testOrder?.engine_number || "",
     testType: testOrder?.test_type || "",
     objective: testOrder?.test_objective || "",
     vehicleLocation: testOrder?.vehicle_location || "",
@@ -125,7 +126,7 @@ export default function EditTestOrder() {
     f2Nkmph2: testOrder?.f2_value?.toString() || "",
     // Remarks
     rejection_remarks: testOrder?.rejection_remarks || "",
-    re_edit_remarks: testOrder?.re_edit_remarks || "",
+    re_edit_remarks: testOrder?.remark || "",
   });
 
   // States for API data
@@ -133,6 +134,7 @@ export default function EditTestOrder() {
   const [inertiaClasses, setInertiaClasses] = useState([]);
   const [modes, setModes] = useState([]);
   const [fuelTypes, setFuelTypes] = useState([]);
+  const [engineNumbers, setEngineNumbers] = useState([]);
 
   // States for file modals
   const [emissionCheckModal, setEmissionCheckModal] = useState(false);
@@ -206,11 +208,23 @@ export default function EditTestOrder() {
       }
     };
 
+    // Fetch engine numbers
+    const fetchEngineNumbers = async () => {
+      try {
+        const response = await axios.get(`${apiURL}/engine-numbers`);
+        setEngineNumbers(response.data || []);
+      } catch (error) {
+        console.error("Error fetching engine numbers:", error);
+        setEngineNumbers([]);
+      }
+    };
+
     // Execute fetch functions
     fetchTestTypes();
     fetchInertiaClasses();
     fetchModes();
     fetchFuelTypes();
+    fetchEngineNumbers();
   }, []);
 
   // Helper to build the test order payload
@@ -218,6 +232,7 @@ export default function EditTestOrder() {
     test_order_id: test.testOrderId,
     job_order_id: jobOrderId || null,
     CoastDownData_id: testOrder?.CoastDownData_id || null,
+    engine_number: test.engineNumber || "",
     test_type: test.testType || "",
     test_objective: test.objective || "",
     vehicle_location: test.vehicleLocation || "",
@@ -461,6 +476,28 @@ export default function EditTestOrder() {
 
           {/* Main form fields */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+            <div className="flex flex-col">
+              <Label htmlFor="engineNumber" className="mb-2">
+                Engine Number <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={test.engineNumber || ""}
+                onValueChange={(value) => handleTestChange("engineNumber", value)}
+                required
+                disabled={!areFieldsEditable()}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {engineNumbers?.map((engineNumber) => (
+                    <SelectItem key={engineNumber} value={engineNumber}>
+                      {engineNumber}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label>Test Type</Label>
               <Select
