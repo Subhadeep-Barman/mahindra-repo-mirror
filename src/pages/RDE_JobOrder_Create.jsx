@@ -17,6 +17,7 @@ import axios from "axios";
 import { Switch } from "@/components/UI/switch";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 import { ArrowBack } from "@mui/icons-material";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
@@ -767,6 +768,7 @@ export default function RDECreateJobOrder() {
         form.vehicleTestPayloadCriteria === "Manual Entry"
           ? form.requestedPayloadKg
           : form.vehicleTestPayloadCriteria || null,
+      requested_payload: form.requestedPayloadKg || null,
       idle_exhaust_mass_flow: form.idleExhaustMassFlow || null,
       job_order_status: "Created",
       remarks: "",
