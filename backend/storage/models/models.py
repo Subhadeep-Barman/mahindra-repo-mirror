@@ -181,6 +181,7 @@ class TestOrder(Base):
     job_order_id = Column(String, nullable=True)  # removed ForeignKey
     CoastDownData_id = Column(String, nullable=True)         # removed ForeignKey
     test_type = Column(String, nullable=True)
+    engine_number = Column(String, nullable=True)
     test_objective = Column(Text, nullable=True)
     vehicle_location = Column(String, nullable=True)
     cycle_gear_shift = Column(String, nullable=True)
@@ -207,7 +208,7 @@ class TestOrder(Base):
     excel_report = Column(JSON, nullable=True)
     dat_file_attachment = Column(JSON, nullable=True)
     others_attachement = Column(JSON, nullable=True)
-    remarks = Column(String, nullable=True)
+    remark = Column(String, nullable=True)
     rejection_remarks = Column(String, nullable=True)
     mail_remarks = Column(String, nullable=True)
     specific_instruction = Column(Text, nullable=True)

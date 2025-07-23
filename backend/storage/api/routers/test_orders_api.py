@@ -67,6 +67,7 @@ class TestOrderSchema(BaseModel):
     test_order_id: Optional[str] = None
     job_order_id: Optional[str] = None
     CoastDownData_id: Optional[str] = None
+    engine_number: Optional[str] = None
     test_type: Optional[str] = None
     test_objective: Optional[str] = None
     vehicle_location: Optional[str] = None
@@ -95,7 +96,7 @@ class TestOrderSchema(BaseModel):
     dat_file_attachment: Optional[List[dict]] = None
     others_attachement: Optional[List[dict]] = None
     specific_instruction: Optional[str] = None
-    remarks: Optional[str] = None
+    remark: Optional[str] = None
     rejection_remarks: Optional[str] = None
     mail_remarks: Optional[str] = None
     status: Optional[str] = None
@@ -138,6 +139,7 @@ def testorder_to_dict(testorder: TestOrder):
         "test_order_id": testorder.test_order_id,
         "job_order_id": testorder.job_order_id,
         "CoastDownData_id": testorder.CoastDownData_id,
+        "engine_number": testorder.engine_number,
         "test_type": testorder.test_type,
         "test_objective": testorder.test_objective,
         "vehicle_location": testorder.vehicle_location,
@@ -166,7 +168,7 @@ def testorder_to_dict(testorder: TestOrder):
         "dat_file_attachment": testorder.dat_file_attachment,
         "others_attachement": testorder.others_attachement,
         "specific_instruction": testorder.specific_instruction,
-        "remarks": testorder.remarks if testorder.remarks is not None else "",
+        "remark": testorder.remark if testorder.remark is not None else "",
         "rejection_remarks": testorder.rejection_remarks if testorder.rejection_remarks is not None else "",
         "mail_remarks": testorder.mail_remarks if testorder.mail_remarks is not None else "",
         "status": testorder.status,
