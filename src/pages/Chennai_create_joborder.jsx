@@ -895,17 +895,17 @@ export default function CreateJobOrder() {
       id_of_updater: "",
       name_of_updater: "",
       updated_on: formattedISTTime,
-      // Only one set of each attachment key, JSON-stringified
-      emission_check_attachment: JSON.stringify(test.Emission_check || test.emissionCheckAttachment || []),
-      dataset_attachment: JSON.stringify(test.Dataset_attachment || test.dataset_attachment || []),
-      a2l_attachment: JSON.stringify(test.A2L || test.a2l_attachment || []),
-      experiment_attachment: JSON.stringify(test.Experiment_attachment || test.experiment_attachment || []),
-      dbc_attachment: JSON.stringify(test.DBC_attachment || test.dbc_attachment || []),
-      wltp_attachment: JSON.stringify(test.WLTP_input_sheet || test.wltp_attachment || []),
-      pdf_report: JSON.stringify(test.PDF_report || test.pdf_report || []),
-      excel_report: JSON.stringify(test.Excel_report || test.excel_report || []),
-      dat_file_attachment: JSON.stringify(test.DAT_file_attachment || test.dat_file_attachment || []),
-      others_attachement: JSON.stringify(test.Others_attachment || test.others_attachement || []),
+      // Only one set of each attachment key, pass as array
+      emission_check_attachment: test.Emission_check || test.emissionCheckAttachment || [],
+      dataset_attachment: test.Dataset_attachment || test.dataset_attachment || [],
+      a2l_attachment: test.A2L || test.a2l_attachment || [],
+      experiment_attachment: test.Experiment_attachment || test.experiment_attachment || [],
+      dbc_attachment: test.DBC_attachment || test.dbc_attachment || [],
+      wltp_attachment: test.WLTP_input_sheet || test.wltp_attachment || [],
+      pdf_report: test.PDF_report || test.pdf_report || [],
+      excel_report: test.Excel_report || test.excel_report || [],
+      dat_file_attachment: test.DAT_file_attachment || test.dat_file_attachment || [],
+      others_attachement: test.Others_attachment || test.others_attachement || [],
     };
 
     try {
