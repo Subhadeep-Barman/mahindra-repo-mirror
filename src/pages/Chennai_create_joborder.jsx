@@ -63,6 +63,13 @@ export default function CreateJobOrder() {
     f0N: "",
     f1Nkmph: "",
     f2Nkmph2: "",
+    // New fields for RDE JO
+    wbsCode: "",
+    vehicleGVW: "",
+    vehicleKerbWeight: "",
+    vehicleTestPayloadCriteria: "",
+    requestedPayloadKg: "",
+    idleExhaustMassFlow: "",
   });
 
   const [vehicleFormData, setVehicleFormData] = useState(null);
@@ -567,6 +574,13 @@ export default function CreateJobOrder() {
             jobOrder.f2_n_kmph2 ||
             jobOrder.f2Nkmph2 ||
             "",
+          // Add new fields for RDE JO
+          wbsCode: jobOrder.wbsCode || "",
+          vehicleGVW: jobOrder.vehicleGVW || "",
+          vehicleKerbWeight: jobOrder.vehicleKerbWeight || "",
+          vehicleTestPayloadCriteria: jobOrder.vehicleTestPayloadCriteria || "",
+          requestedPayloadKg: jobOrder.requestedPayloadKg || "",
+          idleExhaustMassFlow: jobOrder.idleExhaustMassFlow || "",
         };
 
         console.log("Setting form data to:", newFormData);
@@ -1639,6 +1653,144 @@ export default function CreateJobOrder() {
             </Select>
           </div>
         </form>
+
+        {/* Extra fields for RDE JO */}
+        {form.department === "RDE JO" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 px-8 pb-4">
+            {/* WBS Code */}
+            <div className="flex flex-col">
+              <Label htmlFor="wbsCode" className="mb-2">
+                WBS Code <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="wbsCode"
+                value={form.wbsCode}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, wbsCode: e.target.value }))
+                }
+                className="w-full"
+                required
+                disabled={formDisabled}
+                placeholder="Enter WBS Code"
+              />
+            </div>
+            {/* Vehicle GVW */}
+            <div className="flex flex-col">
+              <Label htmlFor="vehicleGVW" className="mb-2">
+                Vehicle GVW (Kg) <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="vehicleGVW"
+                value={form.vehicleGVW}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, vehicleGVW: e.target.value }))
+                }
+                className="w-full"
+                required
+                disabled={formDisabled}
+                placeholder="Enter GVW"
+                type="number"
+                min="0"
+              />
+            </div>
+            {/* Vehicle Kerb weight */}
+            <div className="flex flex-col">
+              <Label htmlFor="vehicleKerbWeight" className="mb-2">
+                Vehicle Kerb weight (Kg) <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="vehicleKerbWeight"
+                value={form.vehicleKerbWeight}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    vehicleKerbWeight: e.target.value,
+                  }))
+                }
+                className="w-full"
+                required
+                disabled={formDisabled}
+                placeholder="Enter Kerb Weight"
+                type="number"
+                min="0"
+              />
+            </div>
+            {/* Vehicle Test Payload criteria */}
+            <div className="flex flex-col">
+              <Label htmlFor="vehicleTestPayloadCriteria" className="mb-2">
+                Vehicle Test Payload criteria (Kg){" "}
+                <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={form.vehicleTestPayloadCriteria}
+                onValueChange={(value) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    vehicleTestPayloadCriteria: value,
+                    requestedPayloadKg: value === "Manual Entry" ? prev.requestedPayloadKg : "",
+                  }));
+                }}
+                required
+                disabled={formDisabled}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Legislation">Legislation</SelectItem>
+                  <SelectItem value="Manual Entry">Manual Entry</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Show manual entry field only if 'Manual Entry' is selected */}
+            {form.vehicleTestPayloadCriteria === "Manual Entry" && (
+              <div className="flex flex-col">
+                <Label htmlFor="requestedPayloadKg" className="mb-2">
+                  Requested Payload in kgs <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="requestedPayloadKg"
+                  value={form.requestedPayloadKg}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      requestedPayloadKg: e.target.value,
+                    }))
+                  }
+                  required
+                  disabled={formDisabled}
+                  className="w-full"
+                  placeholder="Enter Requested Payload"
+                  type="number"
+                  min="0"
+                />
+              </div>
+            )}
+            {/* Idle Exhaust Mass Flow */}
+            <div className="flex flex-col">
+              <Label htmlFor="idleExhaustMassFlow" className="mb-2">
+                Idle Exhaust Mass Flow (Kg/hr){" "}
+                <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="idleExhaustMassFlow"
+                value={form.idleExhaustMassFlow}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    idleExhaustMassFlow: e.target.value,
+                  }))
+                }
+                className="w-full"
+                required
+                disabled={formDisabled}
+                placeholder="Enter Idle Exhaust Mass Flow"
+                type="number"
+                min="0"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Editable Vehicle Details Accordion */}
         {vehicleEditable && (
