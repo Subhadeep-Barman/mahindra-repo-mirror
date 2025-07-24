@@ -275,8 +275,6 @@ def update_testorder(
     if not testorder:
         raise HTTPException(status_code=404, detail="TestOrder not found")
     update_data = testorder_update.dict(exclude_unset=True)
-    update_data.pop("test_order_id", None)
-    # Normalize all attachment fields to list of dicts
     for key in [
         "dataset_attachment", "a2l_attachment", "experiment_attachment", "dbc_attachment",
         "wltp_attachment", "pdf_report", "excel_report", "dat_file_attachment", "others_attachement"
@@ -694,3 +692,48 @@ async def serve_single_file(blob: Blob) -> StreamingResponse:
             detail="Failed to serve the file. Please try again later.",
         )
 
+@router.delete("/delete-file")
+async def delete_file(
+    request: Request,
+    job_order_id: str = Form(...),
+    test_order_id: str = Form(None),
+    attachment_type: str = Form(...),
+    filename: str = Form(...),
+):
+    """
+    Delete a file from Google Cloud Storage (GCS).
+
+    @param:
+    job_order_id (str): The unique identifier of the folder where the file is stored.
+    test_order_id (str): The unique identifier of the test order folder.
+    attachment_type (str): The type of attachment.
+    file_name (str): The name of the file to delete.
+
+    @return:
+    dict: A dictionary indicating whether the file was successfully deleted or if it failed.
+    """
+    # Construct path to the file to be deleted
+    if test_order_id is None:
+        blob_name = f"{UPLOAD_PATH}/{job_order_id}/{attachment_type}/{filename}"
+    else:
+        blob_name = (
+            f"{UPLOAD_PATH}/{job_order_id}/{test_order_id}/{attachment_type}/{filename}"
+        )
+
+    try:
+        storage_client = storage.Client.from_service_account_json(CREDENTIALS_PATH)
+        bucket = storage_client.bucket(BUCKET_NAME)
+        blob = bucket.blob(blob_name)
+        if not blob.exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"File {filename} does not exist in the specified folder.",
+            )
+        blob.delete()
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=500, detail="Error deleting file. Please try again later."
+        )
+    else:
+        return {"status": True, "message": f"File {filename} deleted successfully."}
