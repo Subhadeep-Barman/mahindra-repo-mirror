@@ -161,15 +161,20 @@ const DropzoneFileList = ({
   }, [viewModalOpen]);
 
   const handleDownloadFiles = async (fileName = "") => {
-    logger.info(
-      `Downloading files for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
+    // Use the helper function to get correct job_order_id and test_order_id
+    const { jobOrderId, testOrderId } = getJobAndTestOrderId();
+
+    console.log(
+      `Downloading files for job order ${jobOrderId} and test order ${testOrderId} in attachment type ${name}`
     );
+    console.log('Filename to download:', fileName); // Add this debug log
+
     try {
       setLoading(true);
 
       const params = {
-        job_order_id: myJobOrderId,
-        test_order_id: myTestOrderId,
+        job_order_id: jobOrderId,
+        test_order_id: testOrderId,
         attachment_type: name,
       };
 
@@ -177,18 +182,24 @@ const DropzoneFileList = ({
         params.filename = fileName;
       }
 
+      console.log('Download params:', params); // Add this debug log
+
+      // Fix: Change the endpoint to match your curl command
       const response = await axios.get(
-        `${apiURL}/testorders/download_job_order_id/`,
+        `${apiURL}/download_job_order_id/`,
         {
           params,
           responseType: "blob",
+          headers: {
+            'accept': 'application/json',
+          },
         }
       );
 
       const disposition = response.headers["content-disposition"];
       const downloadedFileName = disposition
         ? disposition.split("filename=")[1].replace(/"/g, "")
-        : "downloaded_file";
+        : fileName || "downloaded_file";
 
       // Create blob URL safely
       const blob = new Blob([response.data], {
@@ -220,14 +231,25 @@ const DropzoneFileList = ({
       }
 
       showSnackbar("Download successful!", "success");
-      logger.info(
-        `Download success for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
+      console.log(
+        `Download success for job order ${jobOrderId} and test order ${testOrderId} in attachment type ${name}`
       );
     } catch (error) {
       console.error("Download error:", error);
-      showSnackbar("Download failed, please try again.", "warning");
-      logger.error(
-        `Download failed for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+
+      // More specific error messages
+      if (error.response?.status === 404) {
+        showSnackbar("File not found on server", "error");
+      } else if (error.response?.status === 403) {
+        showSnackbar("Access denied", "error");
+      } else {
+        showSnackbar("Download failed, please try again.", "warning");
+      }
+
+      console.error(
+        `Download failed for job order ${jobOrderId} and test order ${testOrderId} in attachment type ${name}`
       );
     } finally {
       setLoading(false);

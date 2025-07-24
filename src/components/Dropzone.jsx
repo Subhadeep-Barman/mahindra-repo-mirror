@@ -204,7 +204,6 @@ const Dropzone = ({
           );
 
           if (containsDangerousContent || containsMaliciousFormula) {
-            // logger.error(`Dangerous content detected in Excel file ${file.name}`);
             console.error(`Dangerous content detected in Excel file ${file.name}`);
             reject(new Error(`Excel file contains potentially malicious content`));
             return;
@@ -228,7 +227,6 @@ const Dropzone = ({
 
               if (dangerousPatterns.some(pattern => sampleString.toLowerCase().includes(pattern.toLowerCase())) ||
                 formulaRegexPatterns.some(regex => regex.test(sampleString.toLowerCase()))) {
-                // logger.error(`Dangerous content detected deeper in Excel file ${file.name}`);
                 console.error(`Dangerous content detected deeper in Excel file ${file.name}`);
                 reject(new Error(`Excel file contains potentially malicious content`));
                 return;
@@ -236,12 +234,9 @@ const Dropzone = ({
             }
           }
 
-          // If the file passes all checks, resolve with the file
-          // logger.info(`Excel file ${file.name} passed security checks`);
           console.log(`Excel file ${file.name} passed security checks`);
           resolve(file);
         } catch (error) {
-          // logger.error(`Error sanitizing Excel file: ${error}`);
           console.error(`Error sanitizing Excel file: ${error}`);
           reject(new Error(`Error validating Excel file: ${error.message}`));
         }
@@ -318,8 +313,8 @@ const Dropzone = ({
   const getJobAndTestOrderId = () => {
     const jobOrderId =
       originalJobOrderId ||
-      formData?.form_id ||
       formData?.originalJobOrderId ||
+      formData?.form_id ||
       formData?.job_order_id ||
       (!id.startsWith("test") && id) ||
       "";
@@ -332,6 +327,10 @@ const Dropzone = ({
       (id.startsWith("test") ? id : "");
 
     console.log("getJobAndTestOrderId - jobOrderId:", jobOrderId, "testOrderId:", testOrderId);
+    console.log("originalJobOrderId prop:", originalJobOrderId);
+    console.log("formData:", formData);
+    console.log("id:", id);
+
     return { jobOrderId, testOrderId };
   };
 
@@ -586,52 +585,54 @@ const Dropzone = ({
     }
   };
 
-  const handleDownloadFiles = async (filepath = "") => {
-    // logger.info(
-    //   `Downloading files for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
-    // );
+  const handleDownloadFiles = async (fileName = "") => {
     console.log(
       `Downloading files for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
     );
     try {
       setLoading(true);
 
+      const params = {
+        job_order_id: myJobOrderId,
+        test_order_id: myTestOrderId,
+        attachment_type: name,
+      };
+
+      if (fileName !== "") {
+        params.filename = fileName;
+      }
+
       const response = await axios.get(
         `${apiURL}/testorders/download_job_order_id/`,
         {
-          params:
-          {
-            job_order_id: myJobOrderId,
-            test_order_id: myTestOrderId,
-            attachment_type: name,
-            filename: filepath !== "" ? filepath : ""
-          },
+          params,
           responseType: "blob",
         }
       );
 
-      const fileName = response.headers["content-disposition"]
-        .split("filename=")[1]
-        .replace(/"/g, "");
+      const disposition = response.headers["content-disposition"];
+      const downloadedFileName = disposition
+        ? disposition.split("filename=")[1].replace(/"/g, "")
+        : "downloaded_file";
 
       // Create blob URL safely
       const blob = new Blob([response.data], {
-        type: response.headers['content-type'] || 'application/octet-stream'
+        type: response.headers["content-type"] || "application/octet-stream",
       });
 
       // Use more secure download method
       if (window.navigator && window.navigator.msSaveOrOpenBlob) {
         // For IE
-        window.navigator.msSaveOrOpenBlob(blob, fileName);
+        window.navigator.msSaveOrOpenBlob(blob, downloadedFileName);
       } else {
         // For modern browsers
         const blobUrl = URL.createObjectURL(blob);
-        const downloadLink = document.createElement('a');
+        const downloadLink = document.createElement("a");
 
         // Set link properties
         downloadLink.href = blobUrl;
-        downloadLink.download = fileName;
-        downloadLink.style.display = 'none';
+        downloadLink.download = downloadedFileName;
+        downloadLink.style.display = "none";
 
         // Download file and cleanup
         try {
@@ -644,13 +645,15 @@ const Dropzone = ({
       }
 
       showSnackbar("Download successful!", "success");
-      // logger.info(`Download success for job order ${myJobOrderId}`);
-      console.log(`Download success for job order ${myJobOrderId}`);
+      console.log(
+        `Download success for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
+      );
     } catch (error) {
       console.error("Download error:", error);
       showSnackbar("Download failed, please try again.", "warning");
-      // logger.error(`Download failed for job order ${myJobOrderId}`);
-      console.error(`Download failed for job order ${myJobOrderId}`);
+      console.error(
+        `Download failed for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
+      );
     } finally {
       setLoading(false);
     }
@@ -755,20 +758,19 @@ const Dropzone = ({
   useEffect(() => {
     // Only call checkFilesExist when modal is opened (false -> true)
     if (!prevOpenDropzoneModal.current && openDropzoneModal) {
-      const jobId = formData?.form_id
-        ? formData?.form_id
-        : formData?.job_order_id || (!id.startsWith("test") && id) || "";
-      const testId = formData?.test_id
-        ? formData?.test_id
-        : id.startsWith("test")
-          ? id
-          : "";
+      // Use the helper function to get correct IDs
+      const { jobOrderId, testOrderId } = getJobAndTestOrderId();
 
-      setMyJobOrder(jobId);
-      setMyTestOrder(testId);
+      console.log("Modal opened - jobOrderId:", jobOrderId, "testOrderId:", testOrderId);
 
-      if (jobId && (testId === "" || testId)) {
+      setMyJobOrder(jobOrderId);
+      setMyTestOrder(testOrderId);
+
+      // Check files if we have a job order ID (test order ID can be empty for some cases)
+      if (jobOrderId) {
         checkFilesExist();
+      } else {
+        console.warn("No jobOrderId found, cannot check files");
       }
     }
     prevOpenDropzoneModal.current = openDropzoneModal;
