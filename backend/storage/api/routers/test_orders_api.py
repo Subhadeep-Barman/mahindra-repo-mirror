@@ -14,6 +14,11 @@ from sqlalchemy.orm import Session
 from backend.storage.api.api_utils import get_db
 from backend.storage.models.models import TestOrder, JobOrder
 from google.cloud import storage
+import tempfile
+import io
+from google.cloud.storage.blob import Blob
+import zipfile
+from fastapi.responses import FileResponse, Response, StreamingResponse
 router = APIRouter()
 
 STORAGE = os.getenv("STORAGE")
@@ -497,23 +502,17 @@ async def merge_chunks(sess_idt, folder_path, file_name, attachment_type, file):
             os.remove(final_file_path)
     return upload_results
 
-# If you have a logger, import it; otherwise, use print as fallback
-try:
-    from backend.storage.api.api_utils import dbmrs_logger
-except ImportError:
-    import logging
-    dbmrs_logger = logging.getLogger("dbmrs_logger")
-
-def build_prefix(job_order_id: str, test_order_id: str = None, attachment_type: str = None):
+def build_prefix(job_order_id: str, test_order_id: str = None, attachment_type: str = None, filename: str = None):
     prefix = f"{UPLOAD_PATH}/{job_order_id}"
     if test_order_id:
         prefix += f"/{test_order_id}"
     if attachment_type:
         prefix += f"/{attachment_type}"
+    if filename:
+        prefix += f"/{filename}"
     return prefix
 
 @router.get("/check_files_GCP")
-# Remove @limiter.limit if you don't have a limiter instance
 def check_files_GCP(
     request: Request,
     job_order_id: str = Query(...),
@@ -576,64 +575,122 @@ def rename_gcp_test_order_id(
             new_blob_name = blob.name.replace(
                 f"{old_test_order_id}/", f"{new_test_order_id}/"
             )
-            # Log new blob name if logger available
-            try:
-                dbmrs_logger.info(f"New blob name is: {new_blob_name}")
-            except Exception:
-                pass
             new_blob = bucket.blob(new_blob_name)
             new_blob.rewrite(blob)
             blob.delete()
-
-        try:
-            dbmrs_logger.info(
-                f"Test Order ID '{old_test_order_id}' renamed to '{new_test_order_id}' successfully."
-            )
-        except Exception:
-            pass
     except Exception as e:
-        try:
-            dbmrs_logger.error("Error renaming test order ID.")
-            dbmrs_logger.debug(f"Error details:\n", exc_info=True)
-        except Exception:
-            pass
         raise HTTPException(
             status_code=400,
             detail="Error renaming test order ID. Please try again later.",
         )
 
-@router.get("/testorders/info")
-def get_job_and_test_order_info(
-    job_order_id: str,
-    test_order_id: str,
-    db: Session = Depends(get_db)
+@router.get("/download_job_order_id/")
+async def download_files_as_zip_or_single(
+    request: Request,
+    response: Response,
+    job_order_id: str = None,
+    test_order_id: str = None,
+    attachment_type: str = None,
+    filename: str = None,
 ):
     """
-    Fetch information for a given job_order_id and test_order_id.
+    Endpoint to download files from a GCP bucket based on job_order_id and test_order_id,
+    and return them as a zip archive or single file based on the number of files.
+
+    Args:
+    - job_order_id (str): The job order ID, which is the prefix for the blobs.
+    - test_order_id (str): The test order ID to narrow down the files inside job_order_id.
+    - attachment_type (str): The type of attachment to further narrow down the files.
+    - filename (str): The name of the file to download.
+
+    Returns:
+    - StreamingResponse: A downloadable zip file or a single file.
     """
-    job_order = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
-    test_order = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
-    if not job_order or not test_order:
-        raise HTTPException(status_code=404, detail="JobOrder or TestOrder not found")
-    return {
-        "job_order": {
-            "job_order_id": job_order.job_order_id,
-            "project_code": job_order.project_code,
-            "vehicle_serial_number": job_order.vehicle_serial_number,
-            "vehicle_body_number": job_order.vehicle_body_number,
-            "engine_serial_number": job_order.engine_serial_number,
-            "department": job_order.department,
-            "domain": job_order.domain,
-            "job_order_status": job_order.job_order_status,
-            "created_on": job_order.created_on,
-            "updated_on": job_order.updated_on,
-        },
-        "test_order": {
-            "test_order_id": test_order.test_order_id,
-            "job_order_id": test_order.job_order_id,
-            "test_type": test_order.test_type,
-            "status": test_order.status,
-            "created_on": test_order.created_on,
-            "updated_on": test_order.updated_on,
-        }
-    }
+    # try:
+    client = storage.Client.from_service_account_json(CREDENTIALS_PATH)
+    bucket = client.bucket(BUCKET_NAME)
+
+    # Use prefix to narrow down the files to download
+    prefix = build_prefix(job_order_id, test_order_id, attachment_type, filename)
+    blobs = list(bucket.list_blobs(prefix=prefix))
+
+    if not blobs:
+        raise HTTPException(
+            status_code=404, detail="No files found with the given prefix."
+        )
+
+    # If there is only one file in GCP blob then download it directly, otherwise create a zip file
+    # If filename is passed then download the file directly
+    if (attachment_type and len(blobs) == 1) or (
+        attachment_type and filename and len(blobs) == 1
+    ):
+        file_response = await serve_single_file(blobs[0])
+        response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+        return file_response
+
+    zip_response = await serve_zip_file(blobs, job_order_id)
+    response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+    return zip_response
+    # except Exception as e:
+    #     raise HTTPException(
+    #         status_code=500,
+    #         detail=f"Error downloading files from GCP: please try again later",
+    #     )
+
+async def serve_zip_file(blobs: List[Blob], job_order_id: str) -> StreamingResponse:
+    """
+    Create a zip archive from multiple files and return it as a downloadable response.
+
+    Args:
+    - blobs: List of GCP Blob objects to be included in the zip.
+    - job_order_id (str): Job order ID used to name the zip file.
+
+    Returns:
+    - StreamingResponse: Response with the zip archive content.
+    """
+    try:
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for blob in blobs:
+                file_data = blob.download_as_bytes()
+                relative_path = blob.name.replace(f"{UPLOAD_PATH}/", "")
+                zip_file.writestr(relative_path, file_data)
+        zip_buffer.seek(0)
+
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={job_order_id}.zip"},
+        )
+    except Exception as e:
+        print(f"Error creating zip file: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to serve the zip file. Please try again later.",
+        )
+    
+async def serve_single_file(blob: Blob) -> StreamingResponse:
+    """
+    Serve a single file as a direct download.
+
+    Args:
+    - blob: The GCP Blob object to be downloaded.
+
+    Returns:
+    - StreamingResponse: Response with the file content.
+    """
+    try:
+        file_data = blob.download_as_bytes()
+        file_name = blob.name.split("/")[-1]
+
+        return StreamingResponse(
+            io.BytesIO(file_data),
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f"attachment; filename={file_name}"},
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to serve the file. Please try again later.",
+        )
+
