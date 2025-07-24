@@ -13,7 +13,7 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
-  FormControl,
+  FormControl
 } from "@mui/material";
 import axios from "axios";
 import Spinner from "./UI/spinner"; // Ensure the path is correct
@@ -104,7 +104,8 @@ const Dropzone = ({
   id,
   setSubmitted,
   onUpload,
-  originalJobOrderId // <-- add this prop
+  originalJobOrderId,
+  userRole // Add this prop
 }) => {
   const [files, setFiles] = useState([]);
   const [newfiles, setNewfiles] = useState([]);
@@ -598,7 +599,8 @@ const Dropzone = ({
       const response = await axios.get(
         `${apiURL}/testorders/download_job_order_id/`,
         {
-          params: {
+          params:
+          {
             job_order_id: myJobOrderId,
             test_order_id: myTestOrderId,
             attachment_type: name,
@@ -658,9 +660,6 @@ const Dropzone = ({
     // Use the helper to get correct IDs
     const { jobOrderId, testOrderId } = getJobAndTestOrderId();
 
-    // logger.info(
-    //   `Checking if files exist for job order ${jobOrderId} and test order ${testOrderId} in attachment type ${name}`
-    // );
     console.log(
       `Checking if files exist for job order ${jobOrderId} and test order ${testOrderId} in attachment type ${name}`
     );
@@ -680,52 +679,71 @@ const Dropzone = ({
       });
 
       if (response.data.status === true && response.data.files) {
-        // Get the correct file data based on attachment type
-        let fileData;
-        if (team) {
-          fileData = formData[team]?.[name] || [];
-        } else if (name === "Special_adaptation") {
-          fileData = formData.calibrationTeam?.engineAdaptation?.Special_adaptation || [];
-        } else {
-          fileData = formData[name] || [];
-        }
-
-        // Only keep files that exist in both the API response and formData
+        // Transform API files to match the expected format
         const apiFiles = response.data.files || [];
-        const matchedFiles = fileData.filter(file =>
-          apiFiles.some(apiFile =>
-            apiFile === file.path
-          )
-        );
+        const transformedFiles = apiFiles.map(file => {
+          // If file is a string (just filename), transform it to object
+          if (typeof file === 'string') {
+            return {
+              path: file,
+              size: 0, // Default size since API doesn't provide it
+              user: 'Unknown',
+              upload_time: null
+            };
+          }
+          // If file is already an object, use it as is
+          return {
+            path: file.path || file.filename || file.name,
+            size: file.size || 0,
+            user: file.user || file.uploaded_by || 'Unknown',
+            upload_time: file.upload_time || file.created_on || null
+          };
+        });
 
-        if (matchedFiles.length > 0) {
-          setFiles(matchedFiles);
-          const _totalSize = matchedFiles.reduce(
-            (acc, file) => acc + (file.size || 0),
-            0
-          );
-          setHeaderTotalSize(_totalSize);
-          setUploaded(true);
+        // Set the files to display
+        setFiles(transformedFiles);
+
+        // Calculate total size
+        const _totalSize = transformedFiles.reduce(
+          (acc, file) => acc + (file.size || 0),
+          0
+        );
+        setHeaderTotalSize(_totalSize);
+        setUploaded(true);
+
+        // Update formData to sync with what's actually on the server
+        let updatedFormData = { ...formData };
+        if (team) {
+          updatedFormData = {
+            ...formData,
+            [team]: {
+              ...formData[team],
+              [name]: transformedFiles,
+            },
+          };
         } else {
-          setFiles([]);
-          setHeaderTotalSize(0);
-          setUploaded(false);
+          updatedFormData = {
+            ...formData,
+            [name]: transformedFiles,
+          };
         }
+        setFormData(updatedFormData);
 
         if (name === "resultFileAttachment") {
           setIsValidated(true);
         }
       } else {
+        setFiles([]);
+        setHeaderTotalSize(0);
         setUploaded(false);
       }
     } catch (error) {
       console.error("Error checking if files exist:", error);
       setUploaded(false);
-      // logger.error(
-      //   `Error checking if files exist for job order ${jobId} and test order ${testId} in attachment type ${name}`
-      // );
+      setFiles([]);
+      setHeaderTotalSize(0);
       console.error(
-        `Error checking if files exist for job order ${jobId} and test order ${testId} in attachment type ${name}`
+        `Error checking if files exist for job order ${jobOrderId} and test order ${testOrderId} in attachment type ${name}`
       );
     } finally {
       setLoading(false);
@@ -817,6 +835,28 @@ const Dropzone = ({
     return extensions.map(ext => `.${ext}`).join(',');
   };
 
+  // Helper function to determine if user can upload/modify files
+  const canModifyFiles = () => {
+    // Project Team attachments: only Project Team can upload/modify
+    if (team === 'projectTeam') {
+      return userRole !== 'TestEngineer';
+    }
+
+    // Test Engineer attachments: only Test Engineers can upload/modify
+    if (team === 'testTeam' || name.includes('test') || name.includes('result')) {
+      return userRole === 'TestEngineer';
+    }
+
+    // Default: allow modification for non-Test Engineers
+    return userRole !== 'TestEngineer';
+  };
+
+  // Helper function to determine if user can view files
+  const canViewFiles = () => {
+    // All users can view all files
+    return true;
+  };
+
   return (
     <>
       <Dialog
@@ -827,7 +867,7 @@ const Dropzone = ({
       >
         <Spinner loading={loading} />
         <DialogTitle sx={{ fontSize: "1.5rem", fontWeight: "bold" }}>
-          Upload Files
+          {canModifyFiles() ? "Upload Files" : "View Files"}
         </DialogTitle>
         <Box
           sx={{
@@ -901,7 +941,7 @@ const Dropzone = ({
                       }
                     }}
                   >
-                    {/* Top section with file info */}
+                    {/* File info section */}
                     <Box
                       display="flex"
                       alignItems="center"
@@ -932,14 +972,13 @@ const Dropzone = ({
                               {truncateFilename(file.path)}
                             </Typography>
                           </Tooltip>
-                          {/* Show upload user and time if available */}
                           <Typography variant="body2" sx={{ color: "gray" }}>
                             {file.user ? `Uploaded by: ${file.user}` : ""}
                             {file.upload_time ? ` on ${new Date(file.upload_time).toLocaleString()}` : ""}
                           </Typography>
                         </Box>
 
-                        {/* Show validation status icon if exists */}
+                        {/* Validation status */}
                         {file.isValidated !== undefined && (
                           <Box ml={1}>
                             {file.isValidated ? (
@@ -955,7 +994,7 @@ const Dropzone = ({
                         )}
                       </Box>
 
-                      {/* File Size Chip */}
+                      {/* File Size */}
                       <Chip
                         label={formatSize(file.size)}
                         sx={{
@@ -974,8 +1013,8 @@ const Dropzone = ({
                         alignItems="center"
                         sx={{ ml: 2 }}
                       >
-                        {/* Validate Button */}
-                        {(
+                        {/* Validate Button - only for calibration team with specific files */}
+                        {canModifyFiles() && (
                           name === "resultFileAttachment" &&
                           formData.projectTeam === "calibration" &&
                           (file.path.endsWith(".csv") || file.path.endsWith(".atfx") || file.path.endsWith(".ATFx"))
@@ -1002,7 +1041,7 @@ const Dropzone = ({
                             </Tooltip>
                           )}
 
-                        {/* Download Button */}
+                        {/* Download Button - always available */}
                         <Tooltip title="Download file" arrow>
                           <Button
                             size="small"
@@ -1020,27 +1059,29 @@ const Dropzone = ({
                           </Button>
                         </Tooltip>
 
-                        {/* Delete Button */}
-                        <Tooltip title="Delete file" arrow>
-                          <Button
-                            size="small"
-                            color="error"
-                            onClick={() => onTemplateRemove(file, false)}
-                            sx={{
-                              minWidth: "40px",
-                              width: "40px",
-                              height: "40px",
-                              borderRadius: "50%"
-                            }}
-                          >
-                            <Delete />
-                          </Button>
-                        </Tooltip>
+                        {/* Delete Button - only if user can modify */}
+                        {canModifyFiles() && (
+                          <Tooltip title="Delete file" arrow>
+                            <Button
+                              size="small"
+                              color="error"
+                              onClick={() => onTemplateRemove(file, false)}
+                              sx={{
+                                minWidth: "40px",
+                                width: "40px",
+                                height: "40px",
+                                borderRadius: "50%"
+                              }}
+                            >
+                              <Delete />
+                            </Button>
+                          </Tooltip>
+                        )}
                       </Box>
                     </Box>
 
-                    {/* Validation controls section */}
-                    {(name === "resultFileAttachment") && (
+                    {/* Validation controls - only for result files and if user can modify */}
+                    {canModifyFiles() && name === "resultFileAttachment" && (
                       <Box
                         sx={{
                           p: 1,
@@ -1059,7 +1100,6 @@ const Dropzone = ({
                             row
                             value={file.isValidated === undefined ? "" : (file.isValidated ? "yes" : "no")}
                             onChange={(e) => {
-                              // Allow changing validation status for any file in resultFileAttachment
                               const value = e.target.value === "yes";
                               updateFileValidationStatus(file, value);
                             }}
@@ -1069,7 +1109,6 @@ const Dropzone = ({
                               control={
                                 <Radio
                                   size="small"
-                                  // Always enabled
                                   sx={{
                                     color: '#4caf50',
                                     '&.Mui-checked': { color: '#4caf50' }
@@ -1093,7 +1132,6 @@ const Dropzone = ({
                               control={
                                 <Radio
                                   size="small"
-                                  // Always enabled
                                   sx={{
                                     color: '#f44336',
                                     '&.Mui-checked': { color: '#f44336' }
@@ -1121,125 +1159,128 @@ const Dropzone = ({
               </Box>
             )}
 
-            <br />
-            {/* Custom File Upload Area */}
-            <Typography variant="h6">Drop your Files</Typography>
-            <Box
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              sx={{
-                border: "2px dashed #ccc",
-                borderRadius: "8px",
-                padding: "20px",
-                textAlign: "center",
-                color: "#aaa",
-                cursor: "pointer",
-                marginBottom: "20px",
-              }}
-              onClick={() => fileInputRef.current && fileInputRef.current.click()}
-            >
-              <CloudUpload
-                style={{
-                  fontSize: "3rem",
-                  color: "#2d7eff",
-                  marginBottom: "10px",
-                }}
-              />
-              <Typography variant="body1">
-                Drag and Drop Files Here or Click to Select
-              </Typography>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                hidden
-                accept={getAllowedExtensions()}
-                onChange={handleFileChange}
-              />
-            </Box>
+            {/* File upload section - only show if user can modify */}
+            {canModifyFiles() && (
+              <>
+                <br />
+                <Typography variant="h6">Drop your Files</Typography>
+                <Box
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  sx={{
+                    border: "2px dashed #ccc",
+                    borderRadius: "8px",
+                    padding: "20px",
+                    textAlign: "center",
+                    color: "#aaa",
+                    cursor: "pointer",
+                    marginBottom: "20px",
+                  }}
+                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                >
+                  <CloudUpload
+                    style={{
+                      fontSize: "3rem",
+                      color: "#2d7eff",
+                      marginBottom: "10px",
+                    }}
+                  />
+                  <Typography variant="body1">
+                    Drag and Drop Files Here or Click to Select
+                  </Typography>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    hidden
+                    accept={getAllowedExtensions()}
+                    onChange={handleFileChange}
+                  />
+                </Box>
 
-            {/* List of Selected Files */}
-            {newfiles.length > 0 && (
-              <Box>
-                {newfiles.map((file, index) => (
-                  <Box key={index}>
-                    <Box
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="space-between"
-                      mb={1}
-                      sx={{
-                        padding: "8px",
-                        border: "1px solid #ccc",
-                        borderRadius: "4px",
-                      }}
-                    >
-                      {/* File Name with Tooltip */}
-                      <Tooltip title={file.name} arrow placement="top">
-                        <Typography variant="body2" sx={{ flex: 1 }}>
-                          {truncateFilename(file.name)}
-                        </Typography>
-                      </Tooltip>
+                {/* Selected files for upload */}
+                {newfiles.length > 0 && (
+                  <Box>
+                    {newfiles.map((file, index) => (
+                      <Box key={index}>
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="space-between"
+                          mb={1}
+                          sx={{
+                            padding: "8px",
+                            border: "1px solid #ccc",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          <Tooltip title={file.name} arrow placement="top">
+                            <Typography variant="body2" sx={{ flex: 1 }}>
+                              {truncateFilename(file.name)}
+                            </Typography>
+                          </Tooltip>
 
-                      {/* File Size */}
-                      <Chip
-                        label={formatSize(file.size)}
-                        color="warning"
-                        sx={{
-                          fontWeight: "bold",
-                          backgroundColor: "#ff7b00",
-                          color: "#fff",
-                          marginRight: "30px",
-                          paddingLeft: "8px",
-                        }}
-                      />
+                          <Chip
+                            label={formatSize(file.size)}
+                            color="warning"
+                            sx={{
+                              fontWeight: "bold",
+                              backgroundColor: "#ff7b00",
+                              color: "#fff",
+                              marginRight: "30px",
+                              paddingLeft: "8px",
+                            }}
+                          />
 
-                      {/* Remove Button */}
-                      <Button
-                        startIcon={<Delete />}
-                        size="small"
-                        color="error"
-                        onClick={() => onTemplateRemove(file, true)}
-                      >
-                      </Button>
-                    </Box>
-                    {/* Progress Bar for each file upload */}
-                    {uploadProgress[file.name] !== undefined && (
-                      <LinearProgress
-                        variant="determinate"
-                        value={uploadProgress[file.name]}
-                      />
-                    )}
+                          <Button
+                            startIcon={<Delete />}
+                            size="small"
+                            color="error"
+                            onClick={() => onTemplateRemove(file, true)}
+                          >
+                          </Button>
+                        </Box>
+                        {uploadProgress[file.name] !== undefined && (
+                          <LinearProgress
+                            variant="determinate"
+                            value={uploadProgress[file.name]}
+                          />
+                        )}
+                      </Box>
+                    ))}
                   </Box>
-                ))}
-              </Box>
+                )}
+
+                {/* Upload buttons */}
+                {newfiles.length > 0 && (
+                  <Box display="flex" justifyContent="flex-end" mt={2}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={onTemplateUpload}
+                      sx={{ mr: 2 }}
+                    >
+                      Upload
+                    </Button>
+
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      onClick={onTemplateClear}
+                    >
+                      Clear
+                    </Button>
+                  </Box>
+                )}
+              </>
             )}
 
-            {/* Upload and Clear Buttons */}
-            {newfiles.length > 0 && (
-              <Box display="flex" justifyContent="flex-end" mt={2}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => {
-                    // if (!myJobOrderId) {
-                    //   showSnackbar("Please select job order first", "warning");
-                    //   return;
-                    // }
-                    onTemplateUpload();
-                  }}
-                  sx={{ mr: 2 }}
-                >
-                  Upload
-                </Button>
-
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={onTemplateClear}
-                >
-                  Clear
-                </Button>
+            {/* Read-only message for users who can't modify */}
+            {!canModifyFiles() && files.length === 0 && (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body1" color="textSecondary">
+                  No files uploaded yet. You have view-only access to these attachments.
+                </Typography>
               </Box>
             )}
           </DialogContent>

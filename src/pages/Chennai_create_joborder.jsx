@@ -626,9 +626,9 @@ export default function CreateJobOrder() {
     try {
       // First try to use the direct job order ID passed to this function
       // Then fall back to other sources if not provided
-      const resolvedJobOrderId = directJobOrderId || 
-                                jobOrderId || 
-                                useStore.getState().backendJobOrderID;
+      const resolvedJobOrderId = directJobOrderId ||
+        jobOrderId ||
+        useStore.getState().backendJobOrderID;
 
       if (!resolvedJobOrderId) {
         showSnackbar("Job Order ID is missing. Cannot send mail.", "error");
@@ -754,7 +754,7 @@ export default function CreateJobOrder() {
 
       // Get the job order ID from the API response
       const createdJobOrderId = jobOrderRes.data.job_order_id || job_order_id;
-      
+
       // Set the job order ID in state (for future reference)
       setJobOrderId(createdJobOrderId);
 
@@ -762,11 +762,11 @@ export default function CreateJobOrder() {
         "Job Order Created! ID: " + createdJobOrderId,
         "success"
       );
-      
+
       // Send mail with the job order ID directly from the API response
       // BEFORE navigation
       await handleSendMail(1, createdJobOrderId, null);
-      
+
       // Navigate only after mail is sent
       navigate(-1);
     } catch (err) {
@@ -1172,6 +1172,10 @@ export default function CreateJobOrder() {
       showSnackbar("No test order selected for update.", "warning");
       return;
     }
+    const currentISTTime = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+    const formattedISTTime = new Date(currentISTTime).toISOString();
     // If ProjectTeam is updating a test in Re-edit status, set status to 'Started' (under progress)
     let newStatus = test.status;
     if (isProjectTeam && test.status === "Re-edit") {
@@ -1180,9 +1184,9 @@ export default function CreateJobOrder() {
     // In handleCreateTestOrder function, around line 790-850
     // Update the test order payload creation in handleCreateTestOrder function (around line 790-850)
     const testOrderPayload = {
-      test_order_id,
-      job_order_id: job_order_id || "",
-      CoastDownData_id: CoastDownData_id || "",
+      test_order_id: test.testOrderId,
+      job_order_id: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || "",
+      CoastDownData_id: test.CoastDownData_id || "",
       engine_number: test.engineNumber || "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
@@ -1207,28 +1211,37 @@ export default function CreateJobOrder() {
       preferred_date: test.preferredDate || null,
       emission_check_date: test.emissionCheckDate || null,
       specific_instruction: test.specificInstruction || "",
-      status: "Created",
-      id_of_creator: userId || "",
-      name_of_creator: userName || "",
-      created_on: formattedISTTime,
-      id_of_updater: "",
-      name_of_updater: "",
+      status: newStatus,
+      id_of_updater: userId || "",
+      name_of_updater: userName || "",
       updated_on: formattedISTTime,
-      // Fixed attachment field mapping to match database schema exactly
-      emission_check_attachment: test.Emission_check || test.emissionCheckAttachment || null,
-      dataset_attachment: test.Dataset_attachment || test.dataset_attachment || null,
-      a2l_attachment: test.A2L || test.a2l_attachment || null,
-      experiment_attachment: test.Experiment_attachment || test.experiment_attachment || null,
-      dbc_attachment: test.DBC_attachment || test.dbc_attachment || null,
-      wltp_attachment: test.WLTP_input_sheet || test.wltp_attachment || null,
-      pdf_report: test.PDF_report || test.pdf_report || null,
-      excel_report: test.Excel_report || test.excel_report || null,
-      dat_file_attachment: test.DAT_file_attachment || test.dat_file_attachment || null,
-      others_attachement: test.Others_attachment || test.others_attachement || null, // Note: keep "attachement" spelling as per database
+      // Attachment fields
+      emission_check_attachment: JSON.stringify(test.emissionCheckAttachment || []),
+      dataset_attachment: JSON.stringify(test.dataset_attachment || []),
+      a2l_attachment: JSON.stringify(test.a2l_attachment || []),
+      experiment_attachment: JSON.stringify(test.experiment_attachment || []),
+      dbc_attachment: JSON.stringify(test.dbc_attachment || []),
+      wltp_attachment: JSON.stringify(test.wltp_attachment || []),
+      pdf_report: JSON.stringify(test.pdf_report || []),
+      excel_report: JSON.stringify(test.excel_report || []),
+      dat_file_attachment: JSON.stringify(test.dat_file_attachment || []),
+      others_attachement: JSON.stringify(test.others_attachement || []),
     };
 
     try {
       await updateTestOrder(test.testOrderId, testOrderPayload);
+      const jobOrderId = location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id;
+      if (jobOrderId) {
+        const jobOrderUpdatePayload = {
+          id_of_updater: userId || "",
+          name_of_updater: userName || "",
+          updated_on: formattedISTTime,
+        };
+
+        // Update job order with new updater info from test order
+        await axios.patch(`${apiURL}/joborders/${jobOrderId}`, jobOrderUpdatePayload);
+      }
+
       showSnackbar("Test Order updated successfully!", "success");
       fetchAllTestOrders();
       setEditingTestOrderIdx(null);
@@ -1328,16 +1341,39 @@ export default function CreateJobOrder() {
     }
   };
 
-  // Handler to send status update to backend
   const handleStatusUpdate = async (status, remark = "", testOrderId = null, testIdx = null) => {
     try {
+      // Get current IST time
+      const currentISTTime = new Date().toLocaleString("en-US", {
+        timeZone: "Asia/Kolkata",
+      });
+      const formattedISTTime = new Date(currentISTTime).toISOString();
+
       // Only send test_order_id, status, and remark
       const payload = {
         test_order_id: testOrderId,
         status,
         remark,
+        id_of_updater: userId || "",
+        name_of_updater: userName || "",
+        updated_on: formattedISTTime,
       };
+
       await axios.post(`${apiURL}/testorders/status`, payload);
+
+      // Update the parent job order's "Updated by" and "Updated on" fields with test order update info
+      const jobOrderId = location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id;
+      if (jobOrderId) {
+        const jobOrderUpdatePayload = {
+          id_of_updater: userId || "",
+          name_of_updater: userName || "",
+          updated_on: formattedISTTime,
+        };
+
+        // Update job order with new updater info from test order
+        await axios.patch(`${apiURL}/joborders/${jobOrderId}`, jobOrderUpdatePayload);
+      }
+
       // Update test status and remarks in UI if testIdx is provided
       if (typeof testIdx === "number") {
         setTests((prev) =>
@@ -1378,6 +1414,47 @@ export default function CreateJobOrder() {
     } else {
       setCdFieldErrors((prev) => ({ ...prev, [field]: "Please enter valid numbers" }));
     }
+  };
+
+  // Helper function to get attachment file count
+  const getAttachmentFileCount = (test, attachmentField) => {
+    const attachment = test[attachmentField];
+    if (!attachment) return 0;
+    if (Array.isArray(attachment)) return attachment.length;
+    if (typeof attachment === 'string') {
+      try {
+        const parsed = JSON.parse(attachment);
+        return Array.isArray(parsed) ? parsed.length : (parsed ? 1 : 0);
+      } catch {
+        return attachment ? 1 : 0;
+      }
+    }
+    return 0;
+  };
+
+  // Helper function to get attachment button color based on file count
+  const getAttachmentColor = (fileCount) => {
+    return fileCount > 0 ? '#dc2626' : '#2563eb'; // Red if files exist, Blue if empty
+  };
+
+  // Helper function to get attachment background color
+  const getAttachmentBackgroundColor = (fileCount) => {
+    return fileCount > 0 ? '#fef2f2' : '#eff6ff'; // Light red if files exist, Light blue if empty
+  };
+
+  // Helper function to parse attachments consistently
+  const parseAttachment = (attachment) => {
+    if (!attachment) return [];
+    if (Array.isArray(attachment)) return attachment;
+    if (typeof attachment === 'string') {
+      try {
+        const parsed = JSON.parse(attachment);
+        return Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+      } catch {
+        return attachment ? [attachment] : [];
+      }
+    }
+    return attachment ? [attachment] : [];
   };
 
   // Modal component
@@ -2222,21 +2299,21 @@ export default function CreateJobOrder() {
             {/* Inputs above attachments */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
               {/* All test fields disabled for TestEngineer except status actions */}
-               <div className="flex flex-col">
+              <div className="flex flex-col">
                 <Label htmlFor={`engineNumber${idx}`} className="mb-2">
                   Engine Number <span className="text-red-500">*</span>
                 </Label>
                 <Select
-                    value={test.engineNumber || ""}
-                    onValueChange={(value) => {
-  if (value !== form.engineSerialNumber) {
-    showSnackbar && showSnackbar("Warning: You are selecting a different engine number than the main form.", "warning");
-  }
-  handleTestChange(idx, "engineNumber", value);
-}}
-                    required
-                    disabled={!areTestFieldsEditable(test, idx)}
-                  >
+                  value={test.engineNumber || ""}
+                  onValueChange={(value) => {
+                    if (value !== form.engineSerialNumber) {
+                      showSnackbar && showSnackbar("Warning: You are selecting a different engine number than the main form.", "warning");
+                    }
+                    handleTestChange(idx, "engineNumber", value);
+                  }}
+                  required
+                  disabled={!areTestFieldsEditable(test, idx)}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
@@ -2248,7 +2325,7 @@ export default function CreateJobOrder() {
                     ))}
                   </SelectContent>
                 </Select>
-          </div>
+              </div>
               <div>
                 <Label>Test Type</Label>
                 <Select
@@ -2593,7 +2670,6 @@ export default function CreateJobOrder() {
                     maxFiles={5}
                     formData={{
                       ...test,
-                      // Ensure job_order_id and test_order_id are properly set
                       job_order_id: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || "",
                       test_order_id: test.testOrderId || "",
                       originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
@@ -2616,8 +2692,18 @@ export default function CreateJobOrder() {
                     disabled={!areTestFieldsEditable(test, idx)}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
                     viewOnly={userRole === "TestEngineer"}
+                    // Add custom styling based on file count
+                    customButtonStyle={{
+                      backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'emissionCheckAttachment')),
+                      borderColor: getAttachmentColor(getAttachmentFileCount(test, 'emissionCheckAttachment')),
+                      color: 'white'
+                    }}
+                    customContainerStyle={{
+                      backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'emissionCheckAttachment'))
+                    }}
                   />
                 </div>
+
                 <div>
                   <Label>
                     Dataset Attachment
@@ -2653,8 +2739,19 @@ export default function CreateJobOrder() {
                     disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
                     viewOnly={userRole === "TestEngineer"}
+                    // Add custom styling
+                    customButtonStyle={{
+                      backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'dataset_attachment')),
+                      borderColor: getAttachmentColor(getAttachmentFileCount(test, 'dataset_attachment')),
+                      color: 'white'
+                    }}
+                    customContainerStyle={{
+                      backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'dataset_attachment'))
+                    }}
                   />
                 </div>
+
+                {/* Continue this pattern for all other attachment fields */}
                 <div>
                   <Label>
                     A2L Attachment
@@ -2690,6 +2787,14 @@ export default function CreateJobOrder() {
                     disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
                     viewOnly={userRole === "TestEngineer"}
+                    customButtonStyle={{
+                      backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'a2l_attachment')),
+                      borderColor: getAttachmentColor(getAttachmentFileCount(test, 'a2l_attachment')),
+                      color: 'white'
+                    }}
+                    customContainerStyle={{
+                      backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'a2l_attachment'))
+                    }}
                   />
                 </div>
                 <div>
@@ -2727,8 +2832,17 @@ export default function CreateJobOrder() {
                     disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
                     viewOnly={userRole === "TestEngineer"}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    customButtonStyle={{
+                      backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'experiment_attachment')),
+                      borderColor: getAttachmentColor(getAttachmentFileCount(test, 'experiment_attachment')),
+                      color: 'white'
+                    }}
+                    customContainerStyle={{
+                      backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'experiment_attachment'))
+                    }}
                   />
                 </div>
+
                 <div>
                   <Label>
                     DBC Attachment
@@ -2764,8 +2878,17 @@ export default function CreateJobOrder() {
                     disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
                     viewOnly={userRole === "TestEngineer"}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    customButtonStyle={{
+                      backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'dbc_attachment')),
+                      borderColor: getAttachmentColor(getAttachmentFileCount(test, 'dbc_attachment')),
+                      color: 'white'
+                    }}
+                    customContainerStyle={{
+                      backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'dbc_attachment'))
+                    }}
                   />
                 </div>
+
                 <div>
                   <Label>
                     WLTP Input Sheet
@@ -2801,19 +2924,29 @@ export default function CreateJobOrder() {
                     disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
                     viewOnly={userRole === "TestEngineer"}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    customButtonStyle={{
+                      backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'wltp_attachment')),
+                      borderColor: getAttachmentColor(getAttachmentFileCount(test, 'wltp_attachment')),
+                      color: 'white'
+                    }}
+                    customContainerStyle={{
+                      backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'wltp_attachment'))
+                    }}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Testbed Engineers Attachments Card */}
+           // In the Test Engineers Attachments section (around line 2950-3100)
+
+            {/* Test Engineers Attachments Card */}
             <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
               <div className="font-semibold text-sm text-gray-700 mb-2">
                 Test Engineers Attachments
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label>PDF Reprt</Label>
+                  <Label>PDF Report</Label>
                   <DropzoneFileList
                     buttonText="PDF Report"
                     name="PDF_report"
@@ -2837,14 +2970,21 @@ export default function CreateJobOrder() {
                     handleCloseModal={() =>
                       setpdfReportModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    // Disable upload for ProjectTeam unless they're editing a Re-edit status test, allow only view/download
-                    // disabled={!areTestFieldsEditable(test, idx)}
                     disabled={userRole === "ProjectTeam"}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                    // viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
                     viewOnly={userRole === "ProjectTeam"}
+                    team="testTeam" // Add team prop for test engineer attachments
+                    customButtonStyle={{
+                      backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'PDF_report')),
+                      borderColor: getAttachmentColor(getAttachmentFileCount(test, 'PDF_report')),
+                      color: 'white'
+                    }}
+                    customContainerStyle={{
+                      backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'PDF_report'))
+                    }}
                   />
                 </div>
+
                 <div>
                   <Label>Excel Report</Label>
                   <DropzoneFileList
@@ -2870,13 +3010,21 @@ export default function CreateJobOrder() {
                     handleCloseModal={() =>
                       setexcelReportModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    // disabled={!areTestFieldsEditable(test, idx)}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                    // viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
                     disabled={userRole === "ProjectTeam"}
                     viewOnly={userRole === "ProjectTeam"}
+                    team="testTeam" // Add team prop
+                    customButtonStyle={{
+                      backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'Excel_report')),
+                      borderColor: getAttachmentColor(getAttachmentFileCount(test, 'Excel_report')),
+                      color: 'white'
+                    }}
+                    customContainerStyle={{
+                      backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'Excel_report'))
+                    }}
                   />
                 </div>
+
                 <div>
                   <Label>DAT File Attachment</Label>
                   <DropzoneFileList
@@ -2902,13 +3050,21 @@ export default function CreateJobOrder() {
                     handleCloseModal={() =>
                       setDATModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    // disabled={!areTestFieldsEditable(test, idx)}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                    // viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
                     disabled={userRole === "ProjectTeam"}
                     viewOnly={userRole === "ProjectTeam"}
+                    team="testTeam" // Add team prop
+                    customButtonStyle={{
+                      backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'DAT_file_attachment')),
+                      borderColor: getAttachmentColor(getAttachmentFileCount(test, 'DAT_file_attachment')),
+                      color: 'white'
+                    }}
+                    customContainerStyle={{
+                      backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'DAT_file_attachment'))
+                    }}
                   />
                 </div>
+
                 <div>
                   <Label>Others Attachment</Label>
                   <DropzoneFileList
@@ -2934,11 +3090,18 @@ export default function CreateJobOrder() {
                     handleCloseModal={() =>
                       setOthersModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    // disabled={!areTestFieldsEditable(test, idx)}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                    // viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
                     disabled={userRole === "ProjectTeam"}
                     viewOnly={userRole === "ProjectTeam"}
+                    team="testTeam" // Add team prop
+                    customButtonStyle={{
+                      backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'Others_attachment')),
+                      borderColor: getAttachmentColor(getAttachmentFileCount(test, 'Others_attachment')),
+                      color: 'white'
+                    }}
+                    customContainerStyle={{
+                      backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'Others_attachment'))
+                    }}
                   />
                 </div>
               </div>

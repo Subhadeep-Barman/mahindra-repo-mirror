@@ -75,6 +75,10 @@ const DropzoneFileList = ({
   // Add uploaded file count
   const uploadedCount = Array.isArray(attachment) ? attachment.length : 0;
 
+  const hasFiles = uploadedCount > 0;
+  const buttonColor = hasFiles ? "#dc3545" : "#2D68C4"; // Red if has files, Blue if empty
+  const buttonHoverColor = hasFiles ? "#c82333" : "#0056b3"; // Darker shades for hover
+
   const myJobOrderId = formData?.form_id
     ? formData?.form_id
     : formData?.job_order_id || (!id.startsWith("test") && id) || "";
@@ -245,7 +249,6 @@ const DropzoneFileList = ({
         {!disabled && (
           <Button
             variant="contained"
-            color={uploadedCount === 0 ? "inherit" : "primary"}
             onClick={handleOpenModal}
             sx={{
               width: "100%",
@@ -253,12 +256,12 @@ const DropzoneFileList = ({
               textTransform: "none",
               marginBottom: "0.5rem",
               height: "50px",
-              backgroundColor: uploadedCount === 0 ? 'primary.main' : "#2D68C4",
-              color: uploadedCount === 0 ? "#fff" : undefined, // <-- add this line
+              backgroundColor: buttonColor,
+              color: "#fff",
               '&:hover': {
-                boxShadow: '0 6px 20px rgba(107, 70, 193, 0.6)',
+                boxShadow: `0 6px 20px ${hasFiles ? 'rgba(220, 53, 69, 0.6)' : 'rgba(0, 123, 255, 0.6)'}`,
                 transform: "translateY(-2px)",
-                backgroundColor: uploadedCount === 0 ? 'primary.main' : "#2D68C4",
+                backgroundColor: buttonHoverColor,
               },
               transition: "all 0.3s ease",
               position: "relative"
@@ -308,12 +311,12 @@ const DropzoneFileList = ({
               textTransform: "none",
               marginBottom: "0.5rem",
               height: "50px",
-              backgroundColor: uploadedCount === 0 ? 'primary.main' : "#2D68C4",
-              color: uploadedCount === 0 ? "#fff" : undefined, // <-- add this line
+              backgroundColor: buttonColor,
+              color: "#fff",
               '&:hover': {
-                boxShadow: '0 6px 20px rgba(107, 70, 193, 0.6)',
+                boxShadow: `0 6px 20px ${hasFiles ? 'rgba(220, 53, 69, 0.6)' : 'rgba(0, 123, 255, 0.6)'}`,
                 transform: "translateY(-2px)",
-                backgroundColor: uploadedCount === 0 ? 'primary.main' : "#2D68C4"
+                backgroundColor: buttonHoverColor,
               },
               transition: "all 0.3s ease",
               position: "relative"
@@ -323,7 +326,7 @@ const DropzoneFileList = ({
             <VisibilityIcon
               style={{
                 fontSize: "1.5rem",
-                color: "#FFFFFF ",
+                color: "#FFFFFF",
                 marginBottom: "1px",
                 marginLeft: "10px",
               }}
@@ -334,13 +337,14 @@ const DropzoneFileList = ({
               size="small"
               sx={{
                 ml: 2,
-                backgroundColor: "#fff", // white background
-                color: uploadedCount === 0 ? "#333" : "#000000", // black/grey if none, red otherwise
+                backgroundColor: "#fff",
+                color: hasFiles ? "#dc3545" : "#007bff", // Red text if has files, Blue if empty
                 fontWeight: "bold",
-                borderRadius: "50%",     // make it circular
+                borderRadius: "50%",
                 width: 28,
                 height: 28,
                 minWidth: 0,
+                border: `2px solid ${hasFiles ? "#dc3545" : "#007bff"}`, // Matching border
                 ".MuiChip-label": {
                   padding: 0,
                   width: "100%",
@@ -363,7 +367,7 @@ const DropzoneFileList = ({
           handleCloseDropzoneModal={handleCloseModal}
           onUpload={onUpload}
           originalJobOrderId={formData?.originalJobOrderId || originalJobOrderId}
-            // ^ Pass originalJobOrderId from formData or prop
+        // ^ Pass originalJobOrderId from formData or prop
         />
       </Box>
       <Box
@@ -440,7 +444,7 @@ const DropzoneFileList = ({
                 <CloudUpload
                   sx={{
                     fontSize: "4rem",
-                    color: '#a0a0a0'
+                    color: hasFiles ? '#dc3545' : '#007bff'
                   }}
                 />
                 <Typography
@@ -537,7 +541,6 @@ const DropzoneFileList = ({
           <DialogActions sx={{ p: 2 }}>
             <Button
               onClick={handleCloseViewModal}
-              color="primary"
               variant="outlined"
             >
               Close

@@ -33,19 +33,63 @@ export default function VTCChennaiPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [jobOrderEdit, setJobOrderEdit] = useState(null);
   const { userRole, userId, userName } = useAuth();
-  
+
 
   // Fetch job orders from backend on mount
   useEffect(() => {
     fetchJobOrders();
   }, []);
 
-  const fetchJobOrders = () => {
-    const department = "VTC_JO Chennai"; // Replace with the appropriate department value
-    axios
-      .get(`${apiURL}/joborders`, { params: { department } })
-      .then((res) => setJobOrders(res.data || []))
-      .catch(() => setJobOrders([]));
+  const fetchJobOrders = async () => {
+    const department = "VTC_JO Chennai";
+    try {
+      // Fetch all job orders and all test orders in parallel
+      const [jobOrdersResponse, allTestOrdersResponse] = await Promise.all([
+        axios.get(`${apiURL}/joborders`, { params: { department } }),
+        axios.get(`${apiURL}/testorders`)
+      ]);
+
+      const jobOrders = jobOrdersResponse.data || [];
+      const allTestOrders = allTestOrdersResponse.data || [];
+
+      // Group test orders by job_order_id
+      const testOrdersByJobId = {};
+      allTestOrders.forEach(testOrder => {
+        if (!testOrdersByJobId[testOrder.job_order_id]) {
+          testOrdersByJobId[testOrder.job_order_id] = [];
+        }
+        testOrdersByJobId[testOrder.job_order_id].push(testOrder);
+      });
+
+      // For each job order, find the most recent test order update
+      const jobOrdersWithTestUpdates = jobOrders.map(jobOrder => {
+        const jobTestOrders = testOrdersByJobId[jobOrder.job_order_id] || [];
+
+        if (jobTestOrders.length > 0) {
+          const mostRecentTestOrder = jobTestOrders.reduce((latest, current) => {
+            const latestTime = new Date(latest.updated_on || latest.created_on);
+            const currentTime = new Date(current.updated_on || current.created_on);
+            return currentTime > latestTime ? current : latest;
+          });
+
+          return {
+            ...jobOrder,
+            name_of_updater: mostRecentTestOrder.name_of_updater || jobOrder.name_of_updater,
+            updated_on: mostRecentTestOrder.updated_on || jobOrder.updated_on,
+            // Keep original job order update info as backup
+            job_order_name_of_updater: jobOrder.name_of_updater,
+            job_order_updated_on: jobOrder.updated_on
+          };
+        }
+
+        return jobOrder;
+      });
+
+      setJobOrders(jobOrdersWithTestUpdates);
+    } catch (error) {
+      console.error("Error fetching job orders:", error);
+      setJobOrders([]);
+    }
   };
 
   // Calculate pagination values
@@ -116,12 +160,27 @@ export default function VTCChennaiPage() {
   // Handler for saving the updated job order
   const handleSaveJobOrder = async () => {
     if (!jobOrderEdit?.job_order_id) return;
+
+    // Get current IST time
+    const currentISTTime = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+    const formattedISTTime = new Date(currentISTTime).toISOString();
+
+    // Prepare the payload with updated user info
+    const updatedJobOrderPayload = {
+      ...jobOrderEdit,
+      id_of_updater: userId || "",
+      name_of_updater: userName || "",
+      updated_on: formattedISTTime,
+    };
+
     try {
       showSnackbar("Updating job order...", "info");
 
       await axios.put(
         `${apiURL}/rde_joborders/${jobOrderEdit.job_order_id}`,
-        jobOrderEdit
+        updatedJobOrderPayload
       );
 
       setModalOpen(false);
@@ -138,7 +197,7 @@ export default function VTCChennaiPage() {
       );
     }
   };
-  
+
   return (
     <>
       <Navbar1 />
@@ -170,10 +229,9 @@ export default function VTCChennaiPage() {
                       key={tab}
                       onClick={() => handleTabClick(tab)}
                       className={`rounded-xl px-4 py-2 font-semibold border
-                        ${
-                          activeTab === tab
-                            ? "bg-red-500 text-white border-red-500"
-                            : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                        ${activeTab === tab
+                          ? "bg-red-500 text-white border-red-500"
+                          : "bg-white text-red-500 border-red-500 hover:bg-red-50"
                         }
                       `}
                     >

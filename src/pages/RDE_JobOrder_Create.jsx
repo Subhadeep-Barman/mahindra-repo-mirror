@@ -74,9 +74,6 @@ export default function RDECreateJobOrder() {
 
   const [vehicleFormData, setVehicleFormData] = useState(null);
   const [engineFormData, setEngineFormData] = useState(null);
-  const [showVehicleDetails, setShowVehicleDetails] = useState(true);
-  const [showEngineDetails, setShowEngineDetails] = useState(true);
-  const [showCoastDown, setShowCoastDown] = useState(true);
   const [showCFTPanel, setShowCFTPanel] = useState(false);
   const [cdFieldErrors, setCdFieldErrors] = useState({});
 
@@ -1447,11 +1444,12 @@ export default function RDECreateJobOrder() {
             </div>
           </div>
         </div>
+
         {/* Form Row */}
-        <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 px-8 py-6">
+        <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6 px-8 py-6">
           {/* Project Code */}
-          <div className="flex flex-col">
-            <Label htmlFor="projectCode" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="projectCode" className="text-sm font-medium leading-tight">
               Project <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1460,7 +1458,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1473,8 +1471,8 @@ export default function RDECreateJobOrder() {
             </Select>
           </div>
           {/* Vehicle Body Number */}
-          <div className="flex flex-col">
-            <Label htmlFor="vehicleBodyNumber" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="vehicleBodyNumber" className="text-sm font-medium leading-tight">
               Vehicle Body Number <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1483,7 +1481,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1499,23 +1497,23 @@ export default function RDECreateJobOrder() {
             </Select>
           </div>
           {/* Vehicle Number (auto) */}
-          <div className="flex flex-col">
-            <Label htmlFor="vehicleSerialNumber" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="vehicleSerialNumber" className="text-sm font-medium leading-tight">
               Vehicle Number <span className="text-red-500">*</span>
             </Label>
             <Input
               id="vehicleSerialNumber"
               value={form.vehicleSerialNumber}
               readOnly
-              className="w-full"
+              className="w-full h-10"
               placeholder="Auto-fetched"
               required
               disabled={formDisabled}
             />
           </div>
           {/* Engine Number (dropdown) */}
-          <div className="flex flex-col">
-            <Label htmlFor="engineNumber" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="engineNumber" className="text-sm font-medium leading-tight">
               Engine Number <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1524,7 +1522,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1537,8 +1535,8 @@ export default function RDECreateJobOrder() {
             </Select>
           </div>
           {/* Type of Engine */}
-          <div className="flex flex-col">
-            <Label htmlFor="engineType" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="engineType" className="text-sm font-medium leading-tight">
               Type of Engine <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1547,7 +1545,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1560,8 +1558,8 @@ export default function RDECreateJobOrder() {
             </Select>
           </div>
           {/* Domain */}
-          <div className="flex flex-col">
-            <Label htmlFor="domain" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="domain" className="text-sm font-medium leading-tight">
               Domain <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1570,7 +1568,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1583,8 +1581,8 @@ export default function RDECreateJobOrder() {
             </Select>
           </div>
           {/* Department */}
-          <div className="flex flex-col">
-            <Label htmlFor="department" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="department" className="text-sm font-medium leading-tight">
               Department <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1593,7 +1591,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={true}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1608,10 +1606,10 @@ export default function RDECreateJobOrder() {
         </form>
 
         {/* New fields below the main form row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 px-8 pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6 px-8 pb-6">
           {/* WBS Code */}
-          <div className="flex flex-col">
-            <Label htmlFor="wbsCode" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="wbsCode" className="text-sm font-medium leading-tight">
               WBS Code <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -1620,15 +1618,15 @@ export default function RDECreateJobOrder() {
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, wbsCode: e.target.value }))
               }
-              className="w-full"
+              className="w-full h-10"
               required
               disabled={formDisabled}
               placeholder="Enter WBS Code"
             />
           </div>
           {/* Vehicle GVW */}
-          <div className="flex flex-col">
-            <Label htmlFor="vehicleGVW" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="vehicleGVW" className="text-sm font-medium leading-tight">
               Vehicle GVW (Kg) <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -1637,7 +1635,7 @@ export default function RDECreateJobOrder() {
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, vehicleGVW: e.target.value }))
               }
-              className="w-full"
+              className="w-full h-10"
               required
               disabled={formDisabled}
               placeholder="Enter GVW"
@@ -1646,9 +1644,9 @@ export default function RDECreateJobOrder() {
             />
           </div>
           {/* Vehicle Kerb weight */}
-          <div className="flex flex-col">
-            <Label htmlFor="vehicleKerbWeight" className="mb-2">
-              Vehicle Kerb weight (Kg) <span className="text-red-500">*</span>
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="vehicleKerbWeight" className="text-sm font-medium leading-tight">
+              Vehicle Kerb Weight (Kg) <span className="text-red-500">*</span>
             </Label>
             <Input
               id="vehicleKerbWeight"
@@ -1659,7 +1657,7 @@ export default function RDECreateJobOrder() {
                   vehicleKerbWeight: e.target.value,
                 }))
               }
-              className="w-full"
+              className="w-full h-10"
               required
               disabled={formDisabled}
               placeholder="Enter Kerb Weight"
@@ -1668,10 +1666,9 @@ export default function RDECreateJobOrder() {
             />
           </div>
           {/* Vehicle Test Payload criteria */}
-          <div className="flex flex-col">
-            <Label htmlFor="vehicleTestPayloadCriteria" className="mb-2">
-              Vehicle Test Payload criteria (Kg){" "}
-              <span className="text-red-500">*</span>
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="vehicleTestPayloadCriteria" className="text-sm font-medium leading-tight whitespace-nowrap">
+              Vehicle Test Payload Criteria (Kg) <span className="text-red-500">*</span>
             </Label>
             <Select
               value={form.vehicleTestPayloadCriteria}
@@ -1685,7 +1682,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1696,9 +1693,9 @@ export default function RDECreateJobOrder() {
           </div>
           {/* Show manual entry field only if 'Manual Entry' is selected */}
           {form.vehicleTestPayloadCriteria === "Manual Entry" && (
-            <div className="flex flex-col">
-              <Label htmlFor="requestedPayloadKg" className="mb-2">
-                Requested Payload in kgs <span className="text-red-500">*</span>
+            <div className="flex flex-col space-y-2 space-x-12">
+              <Label htmlFor="requestedPayloadKg" className="text-sm font-medium leading-tight whitespace-nowrap pl-12">
+                Requested Payload (Kg) <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="requestedPayloadKg"
@@ -1711,7 +1708,7 @@ export default function RDECreateJobOrder() {
                 }
                 required
                 disabled={formDisabled}
-                className="w-full"
+                className="w-full h-10"
                 placeholder="Enter Requested Payload"
                 type="number"
                 min="0"
@@ -1719,10 +1716,9 @@ export default function RDECreateJobOrder() {
             </div>
           )}
           {/* Idle Exhaust Mass Flow */}
-          <div className="flex flex-col">
-            <Label htmlFor="idleExhaustMassFlow" className="mb-2">
-              Idle Exhaust Mass Flow (Kg/hr){" "}
-              <span className="text-red-500">*</span>
+          <div className="flex flex-col space-y-2 space-x-14">
+            <Label htmlFor="idleExhaustMassFlow" className="text-sm font-medium leading-tight whitespace-nowrap pl-14">
+              Idle Exhaust Mass Flow (Kg/hr) <span className="text-red-500">*</span>
             </Label>
             <Input
               id="idleExhaustMassFlow"
@@ -1733,7 +1729,7 @@ export default function RDECreateJobOrder() {
                   idleExhaustMassFlow: e.target.value,
                 }))
               }
-              className="w-full"
+              className="w-full h-10"
               required
               disabled={formDisabled}
               placeholder="Enter Idle Exhaust Mass Flow"
@@ -1745,9 +1741,9 @@ export default function RDECreateJobOrder() {
 
         {/* Editable Vehicle Details Accordion */}
         {form.vehicleBodyNumber && vehicleEditable && (
-          <div className="mx-8 mt-2 mb-4 border rounded shadow">
+          <div className="mx-8 mt-4 mb-6 border rounded shadow">
             <div
-              className="flex items-center justify-between bg-gray-100 border-t-4 border-red-600 px-4 py-2 cursor-pointer"
+              className="flex items-center justify-between bg-gray-100 border-t-4 border-red-600 px-4 py-3 cursor-pointer"
               onClick={() => setVehicleAccordionOpen((prev) => !prev)}
             >
               <span className="font-semibold text-sm">
@@ -1756,11 +1752,11 @@ export default function RDECreateJobOrder() {
               <span>{vehicleAccordionOpen ? "▲" : "▼"}</span>
             </div>
             {vehicleAccordionOpen && (
-              <form className="bg-white px-4 py-4">
-                <div className="grid grid-cols-4 gap-4 text-xs">
+              <form className="bg-white px-6 py-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
                   {Object.entries(vehicleEditable).map(([label, value]) => (
-                    <div key={label} className="flex flex-col">
-                      <Label className="font-semibold capitalize">
+                    <div key={label} className="flex flex-col space-y-2">
+                      <Label className="font-medium capitalize leading-tight">
                         {label.replace(/_/g, " ")}
                       </Label>
                       <Input
@@ -1768,14 +1764,12 @@ export default function RDECreateJobOrder() {
                         onChange={(e) =>
                           handleVehicleEditableChange(label, e.target.value)
                         }
-                        className="mt-1"
+                        className="h-10"
                         disabled={!vehicleEditMode || isTestEngineer}
-                      // disabled={formDisabled}
                       />
                     </div>
                   ))}
                 </div>
-                {/* Optionally, add a Save button here */}
               </form>
             )}
           </div>
@@ -1783,9 +1777,9 @@ export default function RDECreateJobOrder() {
 
         {/* Editable Engine Details Accordion */}
         {form.engineNumber && engineEditable && (
-          <div className="mx-8 mt-2 mb-4 border rounded shadow">
+          <div className="mx-8 mt-4 mb-6 border rounded shadow">
             <div
-              className="flex items-center justify-between bg-gray-100 border-t-4 border-blue-600 px-4 py-2 cursor-pointer"
+              className="flex items-center justify-between bg-gray-100 border-t-4 border-blue-600 px-4 py-3 cursor-pointer"
               onClick={() => setEngineAccordionOpen((prev) => !prev)}
             >
               <span className="font-semibold text-sm">
@@ -1794,11 +1788,11 @@ export default function RDECreateJobOrder() {
               <span>{engineAccordionOpen ? "▲" : "▼"}</span>
             </div>
             {engineAccordionOpen && (
-              <form className="bg-white px-4 py-4">
-                <div className="grid grid-cols-4 gap-4 text-xs">
+              <form className="bg-white px-6 py-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
                   {Object.entries(engineEditable).map(([label, value]) => (
-                    <div key={label} className="flex flex-col">
-                      <Label className="font-semibold capitalize">
+                    <div key={label} className="flex flex-col space-y-2">
+                      <Label className="font-medium capitalize leading-tight">
                         {label.replace(/_/g, " ")}
                       </Label>
                       <Input
@@ -1806,24 +1800,22 @@ export default function RDECreateJobOrder() {
                         onChange={(e) =>
                           handleEngineEditableChange(label, e.target.value)
                         }
-                        className="mt-1"
+                        className="h-10"
                         disabled={!engineEditMode || isTestEngineer}
-
                       />
                     </div>
                   ))}
                 </div>
-                {/* Optionally, add a Save button here */}
               </form>
             )}
           </div>
         )}
 
         {/* Coast Down Data (CD) Section */}
-        <div className="mx-8 mb-4 border rounded shadow px-6 py-4">
-          <div className="flex items-center justify-between mb-2">
+        <div className="mx-8 mb-6 border rounded shadow px-6 py-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <Label htmlFor="cdReportRef">
+              <Label htmlFor="cdReportRef" className="text-sm font-medium">
                 Coast Down Test Report Reference
               </Label>
               {location.state?.isEdit && existingCoastDownId && (
@@ -1836,143 +1828,144 @@ export default function RDECreateJobOrder() {
           <Input
             id="cdReportRef"
             placeholder="Enter Coast Test Report Ref."
-            className="w-80 mt-1"
+            className="w-full max-w-md h-10 mb-4"
             value={form.cdReportRef}
             onChange={(e) => handleCDNumberInput("cdReportRef", e.target.value)}
             disabled={formDisabled || isTestEngineer}
           />
           {cdFieldErrors.cdReportRef && (
-            <div className="text-red-600 text-xs mt-1">{cdFieldErrors.cdReportRef}</div>
+            <div className="text-red-600 text-xs mb-4">{cdFieldErrors.cdReportRef}</div>
           )}
-          <div className="mb-2 font-semibold text-xs mt-4">CD Values</div>
 
-          <div className="grid grid-cols-7 gap-4">
-            <div>
-              <Label htmlFor="vehicleRefMass" className="text-xs">
+          <div className="mb-4 font-semibold text-sm">CD Values</div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6">
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="vehicleRefMass" className="text-sm font-medium leading-tight">
                 Vehicle Reference Mass (Kg)
               </Label>
               <Input
                 id="vehicleRefMass"
-                placeholder="Enter Vehicle Reference mass (Kg)"
-                className="mt-1"
+                placeholder="Enter Reference Mass"
+                className="h-10"
                 value={form.vehicleRefMass}
                 onChange={(e) => handleCDNumberInput("vehicleRefMass", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.vehicleRefMass && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.vehicleRefMass}</div>
+                <div className="text-red-600 text-xs">{cdFieldErrors.vehicleRefMass}</div>
               )}
             </div>
-            <div>
-              <Label htmlFor="aN" className="text-xs">
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="aN" className="text-sm font-medium leading-tight">
                 A (N)
               </Label>
               <Input
                 id="aN"
                 placeholder="Enter A (N)"
-                className="mt-1"
+                className="h-10"
                 value={form.aN}
                 onChange={(e) => handleCDNumberInput("aN", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.aN && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.aN}</div>
+                <div className="text-red-600 text-xs">{cdFieldErrors.aN}</div>
               )}
             </div>
-            <div>
-              <Label htmlFor="bNkmph" className="text-xs">
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="bNkmph" className="text-sm font-medium leading-tight">
                 B (N/kmph)
               </Label>
               <Input
                 id="bNkmph"
                 placeholder="Enter B (N/kmph)"
-                className="mt-1"
+                className="h-10"
                 value={form.bNkmph}
                 onChange={(e) => handleCDNumberInput("bNkmph", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.bNkmph && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.bNkmph}</div>
+                <div className="text-red-600 text-xs">{cdFieldErrors.bNkmph}</div>
               )}
             </div>
-            <div>
-              <Label htmlFor="cNkmph2" className="text-xs">
-                C (N/kmph^2)
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="cNkmph2" className="text-sm font-medium leading-tight">
+                C (N/kmph²)
               </Label>
               <Input
                 id="cNkmph2"
-                placeholder="Enter C (N/kmph^2)"
-                className="mt-1"
+                placeholder="Enter C (N/kmph²)"
+                className="h-10"
                 value={form.cNkmph2}
                 onChange={(e) => handleCDNumberInput("cNkmph2", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.cNkmph2 && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.cNkmph2}</div>
+                <div className="text-red-600 text-xs">{cdFieldErrors.cNkmph2}</div>
               )}
             </div>
-            <div>
-              <Label htmlFor="f0N" className="text-xs">
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="f0N" className="text-sm font-medium leading-tight">
                 F0 (N)
               </Label>
               <Input
                 id="f0N"
                 placeholder="Enter F0 (N)"
-                className="mt-1"
+                className="h-10"
                 value={form.f0N}
                 onChange={(e) => handleCDNumberInput("f0N", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.f0N && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.vehicleRefMass}</div>
+                <div className="text-red-600 text-xs">{cdFieldErrors.f0N}</div>
               )}
             </div>
-            <div>
-              <Label htmlFor="f1Nkmph" className="text-xs">
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="f1Nkmph" className="text-sm font-medium leading-tight">
                 F1 (N/kmph)
               </Label>
               <Input
                 id="f1Nkmph"
                 placeholder="Enter F1 (N/kmph)"
-                className="mt-1"
+                className="h-10"
                 value={form.f1Nkmph}
                 onChange={(e) => handleCDNumberInput("f1Nkmph", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.f1Nkmph && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.f1Nkmph}</div>
+                <div className="text-red-600 text-xs">{cdFieldErrors.f1Nkmph}</div>
               )}
             </div>
-            <div>
-              <Label htmlFor="f2Nkmph2" className="text-xs">
-                F2 (N/kmph^2)
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="f2Nkmph2" className="text-sm font-medium leading-tight">
+                F2 (N/kmph²)
               </Label>
               <Input
                 id="f2Nkmph2"
-                placeholder="Enter F2 (N/kmph^2)"
-                className="mt-1"
+                placeholder="Enter F2 (N/kmph²)"
+                className="h-10"
                 value={form.f2Nkmph2}
                 onChange={(e) => handleCDNumberInput("f2Nkmph2", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.f2Nkmph2 && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.f2Nkmph2}</div>
+                <div className="text-red-600 text-xs">{cdFieldErrors.f2Nkmph2}</div>
               )}
             </div>
           </div>
           {cdError && (
-            <div className="text-red-600 text-xs mt-2">{cdError}</div>
+            <div className="text-red-600 text-xs mt-4">{cdError}</div>
           )}
-          <div className="flex items-center mt-4 gap-6">
+          <div className="flex items-center mt-6 gap-4">
             <Button
-              className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
+              className="bg-white text-red-900 border border-red-900 text-sm px-6 py-2 rounded hover:bg-red-50"
               onClick={handleRDECreateJobOrder}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
             {location.state?.isEdit && existingCoastDownId && (
               <Button
-                className="bg-blue-600 text-white text-xs px-6 py-2 rounded"
+                className="bg-blue-600 text-white text-sm px-6 py-2 rounded hover:bg-blue-700"
                 onClick={async () => {
                   try {
                     await handleUpdateCoastDownData(existingCoastDownId);
@@ -1990,7 +1983,7 @@ export default function RDECreateJobOrder() {
               </Button>
             )}
             <Button
-              className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
+              className="bg-white text-red-900 border border-red-900 text-sm px-6 py-2 rounded hover:bg-red-50"
               type="button"
               onClick={() =>
                 setForm((prev) => ({
