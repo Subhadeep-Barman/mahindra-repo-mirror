@@ -102,7 +102,7 @@ export default function VTCVehiclePage() {
   const handleEditClick = async (vehicle) => {
     try {
       const response = await axios.get(
-        `${apiURL}/vehicles/${vehicle.vehicle_serial_number}`
+        `${apiURL}/vehicles/?vehicle_serial_number=${vehicle.vehicle_serial_number}`,
       );
       setEditVehicle(vehicle);
       setEditForm(response.data); // full vehicle data
