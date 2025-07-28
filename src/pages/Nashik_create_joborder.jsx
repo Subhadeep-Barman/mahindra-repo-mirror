@@ -278,8 +278,7 @@ export default function NashikCreateJobOrder() {
       try {
         // Pass department as query param for filtering
         const res = await axios.get(
-          `${apiURL}/vehicle-body-numbers`,
-          { params: { department: form.department || "VTC_JO Nashik" } }
+          `${apiURL}/vehicle-body-numbers`
         );
         setVehicleBodyNumbers(res.data || []);
       } catch (err) {
@@ -290,8 +289,7 @@ export default function NashikCreateJobOrder() {
     (async () => {
       try {
         const res = await axios.get(
-          `${apiURL}/engine-numbers`,
-          { params: { department: form.department || "VTC_JO Nashik" } }
+          `${apiURL}/engine-numbers`
         );
         setEngineNumbers(res.data || []);
       } catch (err) {
@@ -301,10 +299,11 @@ export default function NashikCreateJobOrder() {
   }, []);
 
   // Accordion state for vehicle details
-  const [vehicleAccordionOpen, setVehicleAccordionOpen] = useState(true);
+  const [vehicleAccordionOpen, setVehicleAccordionOpen] = useState(false);
 
   // Editable vehicle form state
   const [vehicleEditable, setVehicleEditable] = useState(null);
+  const [vehicleEditMode, setVehicleEditMode] = useState(false);
 
   // Fetch vehicle details using the new API when body number changes
   const handleVehicleBodyChange = (value) => {
@@ -361,10 +360,11 @@ export default function NashikCreateJobOrder() {
   };
 
   // Accordion state for engine details
-  const [engineAccordionOpen, setEngineAccordionOpen] = useState(true);
+  const [engineAccordionOpen, setEngineAccordionOpen] = useState(false);
 
   // Editable engine form state
   const [engineEditable, setEngineEditable] = useState(null);
+  const [engineEditMode, setEngineEditMode] = useState(false);
 
   // Fetch engine details using the new API when engine number changes
   const handleEngineNumberChange = (value) => {
@@ -1440,7 +1440,7 @@ const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = nul
               onClick={() => setVehicleAccordionOpen((prev) => !prev)}
             >
               <span className="font-semibold text-sm">
-                Vehicle Details (Editable)
+                Vehicle Details
               </span>
               <span>{vehicleAccordionOpen ? "▲" : "▼"}</span>
             </div>
@@ -1458,7 +1458,7 @@ const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = nul
                           handleVehicleEditableChange(label, e.target.value)
                         }
                         className="mt-1"
-                        disabled={formDisabled || isTestEngineer}
+                        disabled={!vehicleEditMode || isTestEngineer}
                       />
                     </div>
                   ))}
@@ -1477,7 +1477,7 @@ const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = nul
               onClick={() => setEngineAccordionOpen((prev) => !prev)}
             >
               <span className="font-semibold text-sm">
-                Engine Details (Editable)
+                Engine Details
               </span>
               <span>{engineAccordionOpen ? "▲" : "▼"}</span>
             </div>
@@ -1495,7 +1495,7 @@ const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = nul
                           handleEngineEditableChange(label, e.target.value)
                         }
                         className="mt-1"
-                        disabled={formDisabled || isTestEngineer}
+                        disabled={!engineEditMode || isTestEngineer}
                       />
                     </div>
                   ))}

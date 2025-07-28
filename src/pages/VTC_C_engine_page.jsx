@@ -69,9 +69,7 @@ export default function VTCEnginePage() {
       setError(null);
       try {
         // Add department param for VTC_JO Chennai
-        const res = await axios.get(`${apiURL}/engines`, {
-          params: { department: "VTC_JO Chennai" },
-        });
+        const res = await axios.get(`${apiURL}/engines`);
         // Only pick required fields for table
         setEngines(
           (res.data || []).map((e) => ({
@@ -271,9 +269,7 @@ export default function VTCEnginePage() {
       await axios.put(`${apiURL}/engines/${editId}`, payload);
       setEditOpen(false);
       // Refresh engine list
-      const res = await axios.get(`${apiURL}/engines`, {
-        params: { department: "VTC_JO Chennai" },
-      });
+      const res = await axios.get(`${apiURL}/engines`);
       setEngines(
         (res.data || []).map((e) => ({
           engineSerialNumber: e.engine_serial_number || "",

@@ -31,7 +31,7 @@ export default function VTCNashikVehicle() {
         const department = "VTC_JO Nashik";
         const apiURL = import.meta.env.VITE_BACKEND_URL;
         const response = await axios.get(
-          `${apiURL}/vehicles?department=${encodeURIComponent(department)}`
+          `${apiURL}/vehicles`
         );
         // Map API fields to UI fields
         const minimalVehicles = (response.data || []).map((v) => ({

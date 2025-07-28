@@ -43,7 +43,7 @@ export default function VTCVehiclePage() {
         // Add department as query parameter
         const department = "VTC_JO Chennai";
         const response = await axios.get(
-          `${apiURL}/vehicles?department=${encodeURIComponent(department)}`
+          `${apiURL}/vehicles`,
         );
         // Only keep necessary fields for each vehicle
         const minimalVehicles = (response.data || []).map((v) => ({

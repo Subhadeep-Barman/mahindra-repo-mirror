@@ -466,12 +466,8 @@ export default function CreateJobOrder() {
         // Fetch vehicle body numbers and engine numbers for the specific department
         try {
           const [vehicleBodyRes, engineNumberRes] = await Promise.all([
-            axios.get(`${apiURL}/vehicle-body-numbers`, {
-              params: { department: departmentFromJobOrder }
-            }),
-            axios.get(`${apiURL}/engine-numbers`, {
-              params: { department: departmentFromJobOrder }
-            })
+            axios.get(`${apiURL}/vehicle-body-numbers`),
+            axios.get(`${apiURL}/engine-numbers`)
           ]);
 
           setVehicleBodyNumbers(vehicleBodyRes.data || []);
