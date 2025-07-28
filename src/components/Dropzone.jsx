@@ -73,6 +73,16 @@ const ALLOWED_EXTENSIONS_MAP = {
     'mkv',
     'hex',
     'zip',
+    'a2l',
+    'dbc',
+    'exp',
+    'exp64',
+    'lab',
+    'udl',
+    'mdf',
+    'mf4',
+    'dat'
+
   ]
 };
 
