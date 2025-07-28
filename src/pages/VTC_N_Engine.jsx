@@ -134,9 +134,25 @@ export default function EngineForm() {
     navigate(-1);
   };
 
-  const handleAddEngine = () => {
-    localStorage.setItem("engineFormData", JSON.stringify(formData));
-    console.log("Add Engine:", formData);
+  const handleAddEngine = async () => {
+    try {
+      // Replace '/api/engine' with your actual backend endpoint
+      const response = await fetch('/api/engine', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save engine data');
+      }
+      // Optionally handle success (e.g., show a message or redirect)
+      console.log("Engine data submitted:", formData);
+    } catch (error) {
+      console.error(error);
+      // Optionally handle error (e.g., show error message)
+    }
   };
 
   return (

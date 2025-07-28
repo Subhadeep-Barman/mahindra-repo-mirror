@@ -61,17 +61,17 @@ export default function DefaultLogin() {
 
         access_token = DOMPurify.sanitize(access_token);
         const decodedToken = jwtDecode(access_token);
-        console.log("Decoded Token:", decodedToken);
+        // console.log("Decoded Token:", decodedToken);
 
         // Use the role from form input as username since token doesn't contain username field
         const username = role; // The role input field contains the username
-        console.log("Username from form:", username);
+        // console.log("Username from form:", username);
 
         // Generate employee code based on username (role field)
         const employeecode = generateEmployeeCode(username);
-        console.log("Generated Employee Code:", employeecode); 
+        // console.log("Generated Employee Code:", employeecode); 
         const email = `${employeecode}@mahindra.com`;
-        console.log("Generated Email:", email);
+        // console.log("Generated Email:", email);
 
         // Update authentication context with decoded token data
         login(
@@ -83,7 +83,7 @@ export default function DefaultLogin() {
         );
         // Fetch all users to trigger AuthContext update
         // await axios.get(`${apiURL}/api/users/read_all_users`);
-        console.log("User logged in successfully:", username);
+        // console.log("User logged in successfully:", username);
         showSnackbar("Login successful", "success");
 
         setMessage("Login successful. Redirecting...");
