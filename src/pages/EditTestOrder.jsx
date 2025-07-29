@@ -393,9 +393,6 @@ export default function EditTestOrder() {
                 {test.testOrderId || "Test Order"}
               </Button>
             </div>
-            <div className="flex flex-col">
-              <span className="font-semibold text-lg">Edit Test Order</span>
-            </div>
           </div>
         </div>
 
@@ -1062,7 +1059,6 @@ export default function EditTestOrder() {
                 onCheckedChange={(checked) => {
                   setTest(prev => ({ ...prev, showCoastDownData: checked }));
                 }}
-                disabled={!areFieldsEditable()}
                 className="data-[state=checked]:bg-red-500"
               />
             </div>

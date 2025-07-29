@@ -153,10 +153,10 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
     const groupMembers = members.filter(m => m.group);
 
     return (
-        <div className="relative h-72 flex flex-col">
+        <div className="relative flex flex-col dark:bg-black border-gray-200">
             {/* Header */}
-            <div className="flex items-center justify-between p-2 border-b bg-gray-200 rounded-lg">
-                <h2 className="text-md font-semibold text-gray-800">ADD CFT MEMBERS</h2>
+            <div className="flex items-center justify-between p-2 border-b bg-gray-200 dark:bg-gray-800 rounded-lg">
+                <h2 className="text-md font-semibold text-gray-800 dark:text-white">ADD CFT MEMBERS</h2>
             </div>
 
             {/* Content */}
@@ -182,32 +182,26 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                 {/* Members List */}
                 <div className="mb-2">
                     {viewType === "single" && singleMembers.map((member, idx) => (
-                        <div key={idx} className="flex items-center justify-between py-2 bg-gray-50 rounded-lg mb-2">
+                        <div key={idx} className="flex items-center justify-between py-2 bg-gray-50 dark:bg-black rounded-lg mb-2">
                             <div className="flex-1">
-                                <div className="text-sm font-medium text-gray-900 border-2 p-1">
+                                <div className="text-sm font-medium text-gray-900 dark:text-white border-2 p-1 dark:bg-black">
                                     {member.code} - {member.name}
                                 </div>
                             </div>
                             <button
                                 onClick={() => removeMember(members.indexOf(member))}
-                                className="text-gray-400 hover:text-red-500 transition-colors ml-2"
+                                className="text-gray-400 hover:text-red-500 transition-colors ml-2 dark:bg-black"
                             >
                                 <Trash2 size={16} />
                             </button>
                         </div>
                     ))}
                     {viewType === "group" && groupMembers.map((group, idx) => (
-                        <div key={idx} className="flex items-center justify-between py-2 bg-gray-50 rounded-lg mb-2">
+                        <div key={idx} className="flex items-center justify-between py-2 bg-gray-50 dark:bg-black rounded-lg mb-2">
                             <div className="flex-1">
-                                <div className="text-sm font-bold text-gray-900 border-2 p-1">
+                                <div className="text-sm font-bold text-gray-900 dark:text-white border-2 p-1">
                                     Group: {group.name}
                                 </div>
-                                {/* Optionally, show group members here */}
-                                {/* <div className="text-xs text-gray-700 ml-2">
-                                    {group.members.map((m, i) => (
-                                        <span key={i}>{m.code} - {m.name}{i < group.members.length - 1 ? ", " : ""}</span>
-                                    ))}
-                                </div> */}
                             </div>
                             <button
                                 onClick={() => removeMember(members.indexOf(group))}
@@ -240,7 +234,7 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                 {/* Add Member Modal */}
                 {addModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-                        <div className="bg-white rounded-lg shadow-lg p-6 w-80 relative">
+                        <div className="bg-white dark:bg-black border-2 rounded-lg shadow-lg p-6 w-80 relative">
                             <h3 className="text-lg font-semibold mb-4">Add CFT Member</h3>
                             <div className="mb-2">
                                 <label className="block text-sm font-medium mb-1">Code</label>
@@ -248,7 +242,7 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                                     type="text"
                                     value={newCode}
                                     onChange={e => setNewCode(e.target.value)}
-                                    className="w-full border rounded px-2 py-1"
+                                    className="w-full border rounded px-2 py-1 dark:bg-black"
                                     placeholder="Enter code"
                                 />
                             </div>
@@ -258,7 +252,7 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                                     type="text"
                                     value={newName}
                                     onChange={e => setNewName(e.target.value)}
-                                    className="w-full border rounded px-2 py-1"
+                                    className="w-full border rounded px-2 py-1 dark:bg-black"
                                     placeholder="Enter name"
                                 />
                             </div>
@@ -280,7 +274,7 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                 {/* Groups Modal */}
                 {groupsModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-                        <div className="bg-white rounded-lg shadow-lg p-6 w-80 relative">
+                        <div className="bg-white dark:bg-black rounded-lg shadow-lg p-6 w-80 relative border-2">
                             <h3 className="text-lg font-semibold mb-4">Add Group</h3>
                             <div className="mb-2">
                                 <label className="block text-sm font-medium mb-1">Group Name</label>
@@ -288,7 +282,7 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                                     type="text"
                                     value={groupName}
                                     onChange={e => setGroupName(e.target.value)}
-                                    className="w-full border rounded px-2 py-1"
+                                    className="w-full border rounded px-2 py-1 dark:bg-black"
                                     placeholder="Enter group name"
                                 />
                             </div>
