@@ -1875,7 +1875,7 @@ export default function CreateJobOrder() {
         {vehicleEditable && (
           <div className="mx-8 mt-2 mb-4 border rounded shadow">
             <div
-              className="flex items-center justify-between bg-gray-100 border-t-4 border-red-600 px-4 py-2 cursor-pointer"
+              className="flex items-center justify-between bg-gray-100 dark:bg-black border-t-4 border-red-600 px-4 py-2 cursor-pointer"
               onClick={() => setVehicleAccordionOpen((prev) => !prev)}
             >
               <span className="font-semibold text-sm">
@@ -1884,7 +1884,7 @@ export default function CreateJobOrder() {
               <span>{vehicleAccordionOpen ? "▲" : "▼"}</span>
             </div>
             {vehicleAccordionOpen && (
-              <form className="bg-white px-4 py-4">
+              <form className="bg-white px-4 py-4 dark:bg-black">
                 <div className="grid grid-cols-4 gap-4 text-xs">
                   {Object.entries(vehicleEditable).map(([label, value]) => (
                     <div key={label} className="flex flex-col">
@@ -1911,7 +1911,7 @@ export default function CreateJobOrder() {
         {engineEditable && (
           <div className="mx-8 mt-2 mb-4 border rounded shadow">
             <div
-              className="flex items-center justify-between bg-gray-100 border-t-4 border-blue-600 px-4 py-2 cursor-pointer"
+              className="flex items-center justify-between bg-gray-100 dark:bg-black border-t-4 border-blue-600 px-4 py-2 cursor-pointer"
               onClick={() => setEngineAccordionOpen((prev) => !prev)}
             >
               <span className="font-semibold text-sm">
@@ -1920,7 +1920,7 @@ export default function CreateJobOrder() {
               <span>{engineAccordionOpen ? "▲" : "▼"}</span>
             </div>
             {engineAccordionOpen && (
-              <form className="bg-white px-4 py-4">
+              <form className="bg-white dark:bg-black px-4 py-4">
                 <div className="grid grid-cols-4 gap-4 text-xs">
                   {Object.entries(engineEditable).map(([label, value]) => (
                     <div key={label} className="flex flex-col">
@@ -2086,7 +2086,7 @@ export default function CreateJobOrder() {
           </div>
           <div className="flex items-center mt-4 gap-6">
             <Button
-              className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
+              className="bg-white dark:bg-black text-red-900 dark:text-red-500 border border-red-900 dark:border-red-500 text-xs px-6 py-2 rounded"
               onClick={handleCreateJobOrder}
               disabled={isTestEngineer}
             >
@@ -3387,9 +3387,9 @@ export default function CreateJobOrder() {
         <div className="mx-8 my-8">
           <div className="font-semibold mb-2">All Test Orders</div>
           <div className="overflow-x-auto">
-            <table className="min-w-full text-xs border">
+            <table className="min-w-full text-xs border ">
               <thead>
-                <tr className="bg-gray-200">
+                <tr className="bg-gray-200 dark:bg-black">
                   <th className="border px-2 py-1">Test</th> {/* Add sequential number column */}
                   <th className="border px-2 py-1">Job Order ID</th>
                   <th className="border px-2 py-1">Test Order ID</th>
