@@ -134,9 +134,22 @@ export default function EngineForm() {
     navigate(-1);
   };
 
-  const handleAddEngine = () => {
-    localStorage.setItem("engineFormData", JSON.stringify(formData));
-    console.log("Add Engine:", formData);
+  const handleAddEngine = async () => {
+    try {
+      // Replace '/api/engine' with your actual backend endpoint
+      const response = await axios.post('/api/engine', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save engine data');
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -173,13 +186,12 @@ export default function EngineForm() {
                     key={tab}
                     variant={activeTab === tab ? "default" : "outline"}
                     onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${
-                      tab === "Job Order"
+                    className={`rounded-xl ${tab === "Job Order"
                         ? "bg-red-500 text-white hover:bg-red-600"
                         : tab === "Vehicle" || tab === "Engine"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "text-red-500 border-red-500 hover:bg-red-50"
-                    }`}
+                          ? "bg-red-500 text-white hover:bg-red-600"
+                          : "text-red-500 border-red-500 hover:bg-red-50"
+                      }`}
                   >
                     {tab}
                   </Button>

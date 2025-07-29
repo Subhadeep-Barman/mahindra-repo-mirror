@@ -78,12 +78,10 @@ function App() {
           <Route path="/NashikCreateJobOrder" element={<NashikJobOrder />} />
           <Route path="/nashik/vehicle" element={<VTCNashikVehicle />} />
           <Route path="/nashik/engine" element={<RDEnginePage />} />
-          {/* <Route path="/nashik/vehicle/new" element={<VTCNashikVehicleForm />} /> */}
           <Route path="/nashik/engine/new" element={<NEngine />} />
 
           {/* RDE */}
           <Route path="/rde-chennai" element={<RDEChennaiPage />} />
-          {/* <Route path="/rde/joborder" element={<RDEJobOrder />} /> */}
           <Route path="/rde/vehicle" element={<RDEVehicle />} />
           <Route path="/rde/engine" element={<RDEEngine />} />
 

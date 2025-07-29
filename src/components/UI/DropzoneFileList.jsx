@@ -164,11 +164,6 @@ const DropzoneFileList = ({
     // Use the helper function to get correct job_order_id and test_order_id
     const { jobOrderId, testOrderId } = getJobAndTestOrderId();
 
-    console.log(
-      `Downloading files for job order ${jobOrderId} and test order ${testOrderId} in attachment type ${name}`
-    );
-    console.log('Filename to download:', fileName); // Add this debug log
-
     try {
       setLoading(true);
 
@@ -182,7 +177,6 @@ const DropzoneFileList = ({
         params.filename = fileName;
       }
 
-      console.log('Download params:', params); // Add this debug log
 
       // Fix: Change the endpoint to match your curl command
       const response = await axios.get(
@@ -231,9 +225,6 @@ const DropzoneFileList = ({
       }
 
       showSnackbar("Download successful!", "success");
-      console.log(
-        `Download success for job order ${jobOrderId} and test order ${testOrderId} in attachment type ${name}`
-      );
     } catch (error) {
       console.error("Download error:", error);
       console.error("Error response:", error.response?.data);

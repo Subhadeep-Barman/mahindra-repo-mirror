@@ -37,7 +37,6 @@ export default function AccountMenu() {
   const navigate = useNavigate();
 
   function handleLogout() {
-    console.log("Logging out...");
     logout();
     logInteraction("User logged out");
     navigate("/login");

@@ -32,15 +32,17 @@ export default function AuthSuccess() {
       setLoading(true);
       try {
         const jwtToken = searchParams.get("jwt_token");
+        // Sanitize jwtToken: must be a non-empty string and match JWT format
+        const jwtPattern = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/;
+        if (typeof jwtToken !== "string" || !jwtPattern.test(jwtToken)) {
+          throw new Error("Invalid JWT token format");
+        }
         const userDetails = jwtDecode(jwtToken);
-        console.log("Decoded JWT Token:", userDetails);
         const response = await axios.get(`${apiURL}/api/users/read_all_users`);
-        console.log("API response data:", response.data);
 
         // Debug: log each user object to see its structure
         if (Array.isArray(response.data)) {
           response.data.forEach((user, idx) => {
-            console.log(`User[${idx}]:`, user);
           });
         }
 
@@ -61,6 +63,7 @@ export default function AuthSuccess() {
         const expirationDate = new Date();
         expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000); // 1 hour from now
 
+        // Set cookies only after validation
         Cookies.set("token", jwtToken, {
           expires: expirationDate,
           secure: true,
@@ -96,7 +99,6 @@ export default function AuthSuccess() {
           userName: userDetails.displayname
         });
 
-        console.log("User authenticated successfully:", userDetails);
         showSnackbar("User authenticated successfully", "success");
         navigate("/home");
 

@@ -444,7 +444,6 @@ export default function RDECreateJobOrder() {
           setVehicleEditable(res.data);
         })
         .catch((error) => {
-          console.log("Could not fetch vehicle details:", error);
           setVehicleEditable(null);
         });
     }
@@ -503,7 +502,6 @@ export default function RDECreateJobOrder() {
           }));
         })
         .catch((error) => {
-          console.log("Could not fetch engine details:", error);
           setEngineEditable(null);
         });
     }
@@ -542,7 +540,6 @@ export default function RDECreateJobOrder() {
     // Only run once when component mounts and we have job order data
     if (location.state?.jobOrder && !hasPreFilledRef.current) {
       const jobOrder = location.state.jobOrder;
-      console.log("Pre-filling form with job order data:", jobOrder);
 
       // Mark that we've started pre-filling to prevent multiple executions
       hasPreFilledRef.current = true;
@@ -553,10 +550,7 @@ export default function RDECreateJobOrder() {
 
       // Show success message if this is for creating test orders
       if (location.state.isEdit) {
-        console.log(
-          "Loading job order for creating test orders based on:",
-          location.state.originalJobOrderId
-        );
+        showSnackbar("Job order pre-filled successfully!", "success");
       }
 
       // Function to fetch and pre-fill coast down data
@@ -567,7 +561,6 @@ export default function RDECreateJobOrder() {
               `${apiURL}/coastdown/${coastDownDataId}`
             );
             const coastDownData = response.data;
-            console.log("Fetched coast down data:", coastDownData);
 
             return {
               cdReportRef: coastDownData.coast_down_reference || "",
@@ -690,7 +683,6 @@ export default function RDECreateJobOrder() {
             "",
         };
 
-        console.log("Setting form data to:", newFormData);
         setForm(newFormData);
 
         // Prefill vehicleEditable and engineEditable if present
@@ -705,7 +697,6 @@ export default function RDECreateJobOrder() {
 
         // Use setTimeout to allow form state to settle before enabling other useEffects
         setTimeout(() => {
-          console.log("Pre-filling completed, enabling other useEffects");
           setIsPreFilling(false);
           setIsLoading(false);
         }, 1000); // Increased timeout to 1 second
@@ -736,49 +727,46 @@ export default function RDECreateJobOrder() {
   };
 
   const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = null) => {
-      setMailLoading(true);
-      try {
-        // First try to use the direct job order ID passed to this function
-        // Then fall back to other sources if not provided
-        const resolvedJobOrderId = directJobOrderId || 
-                                  jobOrderId || 
-                                  useStore.getState().backendJobOrderID;
-  
-        if (!resolvedJobOrderId) {
-          showSnackbar("Job Order ID is missing. Cannot send mail.", "error");
-          setMailLoading(false);
-          return;
-        }
-  
-        // Debug log to verify job order ID
-        console.log("Sending mail with job order ID:", resolvedJobOrderId);
-  
-        // Compose payload as per new API
-        const payload = {
-          user_name: userName,
-          token_id: userId,
-          role: userRole,
-          job_order_id: resolvedJobOrderId,
-          test_order_id: testOrderId || null, // Use testOrderId from parameter if available
-          caseid: String(caseId),
-          cft_members: cftMembers,
-        };
-  
-        const response = await axios.post(`${apiURL}/send`, payload);
-  
-        if (response.status === 200) {
-          showSnackbar("Mail sent successfully", "success");
-        } else {
-          showSnackbar("Failed to send mail", "error");
-          console.error("Mail API responded with status:", response.status, response.data);
-        }
-      } catch (error) {
-        showSnackbar("Error sending mail: " + (error?.message || "Unknown error"), "warning");
-        console.error("Error sending mail", error);
-      } finally {
+    setMailLoading(true);
+    try {
+      // First try to use the direct job order ID passed to this function
+      // Then fall back to other sources if not provided
+      const resolvedJobOrderId = directJobOrderId ||
+        jobOrderId ||
+        useStore.getState().backendJobOrderID;
+
+      if (!resolvedJobOrderId) {
+        showSnackbar("Job Order ID is missing. Cannot send mail.", "error");
         setMailLoading(false);
+        return;
       }
-    };
+
+      // Compose payload as per new API
+      const payload = {
+        user_name: userName,
+        token_id: userId,
+        role: userRole,
+        job_order_id: resolvedJobOrderId,
+        test_order_id: testOrderId || null, // Use testOrderId from parameter if available
+        caseid: String(caseId),
+        cft_members: cftMembers,
+      };
+
+      const response = await axios.post(`${apiURL}/send`, payload);
+
+      if (response.status === 200) {
+        showSnackbar("Mail sent successfully", "success");
+      } else {
+        showSnackbar("Failed to send mail", "error");
+        console.error("Mail API responded with status:", response.status, response.data);
+      }
+    } catch (error) {
+      showSnackbar("Error sending mail: " + (error?.message || "Unknown error"), "warning");
+      console.error("Error sending mail", error);
+    } finally {
+      setMailLoading(false);
+    }
+  };
 
   // Handler for creating job order
   const handleRDECreateJobOrder = async (e) => {
@@ -968,9 +956,7 @@ export default function RDECreateJobOrder() {
 
       try {
         await axios.post(`${apiURL}/coastdown`, testCoastDownPayload);
-        console.log("Test-specific coast down data created:", CoastDownData_id);
       } catch (err) {
-        console.error("Error creating test-specific coast down data:", err);
         showSnackbar(
           "Failed to create coast down data for test: " +
           (err.response?.data?.detail || err.message),
@@ -1078,7 +1064,6 @@ export default function RDECreateJobOrder() {
         `${apiURL}/coastdown/${existingCoastDownId}`,
         coastDownUpdatePayload
       );
-      console.log("Coast down data updated successfully");
     } catch (err) {
       console.error("Error updating coast down data:", err);
       throw err; // Re-throw to handle in calling function
@@ -1092,11 +1077,6 @@ export default function RDECreateJobOrder() {
 
   // Debug useEffect to monitor form state changes
   useEffect(() => {
-    console.log("Form state updated:", form);
-    console.log("Pre-filling state:", isPreFilling);
-    console.log("Loading state:", isLoading);
-    console.log("Has pre-filled:", hasPreFilledRef.current);
-
     // Check if form is being reset unexpectedly
     const hasValues = Object.values(form).some((value) => value !== "");
     if (!hasValues && hasPreFilledRef.current && !isPreFilling) {
@@ -1148,7 +1128,6 @@ export default function RDECreateJobOrder() {
         grouped[order.job_order_id].push(order);
       });
       setAllTestOrders(grouped);
-      console.log("Fetched all test orders:", grouped);
     } catch (err) {
       setAllTestOrders({});
       console.error("Failed to fetch test orders:", err);
@@ -2019,7 +1998,6 @@ export default function RDECreateJobOrder() {
             className="text-xs text-blue-700 px-0"
             onClick={() => {
               setShowCFTPanel((prev) => !prev);
-              console.log("Toggled CFT panel");
             }}
             disabled={isTestEngineer}
           >
@@ -2064,16 +2042,16 @@ export default function RDECreateJobOrder() {
                   Engine Number <span className="text-red-500">*</span>
                 </Label>
                 <Select
-                    value={test.engineNumber || ""}
-                    onValueChange={(value) => {
-  if (value !== jobOrder.engine_serial_number) {
-    showSnackbar && showSnackbar("Warning: You are selecting a different engine number than the main form.", "warning");
-  }
-  handleTestChange(idx, "engineNumber", value);
-}}
-                    required
-                    disabled={!areTestFieldsEditable(test, idx)}
-                  >
+                  value={test.engineNumber || ""}
+                  onValueChange={(value) => {
+                    if (value !== jobOrder.engine_serial_number) {
+                      showSnackbar && showSnackbar("Warning: You are selecting a different engine number than the main form.", "warning");
+                    }
+                    handleTestChange(idx, "engineNumber", value);
+                  }}
+                  required
+                  disabled={!areTestFieldsEditable(test, idx)}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
@@ -2085,7 +2063,7 @@ export default function RDECreateJobOrder() {
                     ))}
                   </SelectContent>
                 </Select>
-          </div>
+              </div>
               <div>
                 <Label>Test Type</Label>
                 <Select

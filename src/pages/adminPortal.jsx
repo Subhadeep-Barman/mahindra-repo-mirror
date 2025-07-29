@@ -151,9 +151,11 @@ export default function SystemUsersPage() {
   };
 
   // Calculate pagination
-  const totalPages = Math.ceil(users.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
+  // Guard against invalid itemsPerPage and ensure totalPages is at least 1
+  const safeItemsPerPage = Math.max(1, itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(users.length / safeItemsPerPage));
+  const startIndex = (currentPage - 1) * safeItemsPerPage;
+  const endIndex = startIndex + safeItemsPerPage;
   const currentUsers = users.slice(startIndex, endIndex);
 
   const handleBack = () => {

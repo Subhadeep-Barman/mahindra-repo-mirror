@@ -40,9 +40,6 @@ export default function EditTestOrder() {
         return;
       }
 
-      // Debug log to verify job order ID
-      console.log("Sending mail with job order ID:", resolvedJobOrderId);
-
       // Compose payload as per new API
       const payload = {
         user_name: userName,

@@ -243,8 +243,6 @@ const Dropzone = ({
               }
             }
           }
-
-          console.log(`Excel file ${file.name} passed security checks`);
           resolve(file);
         } catch (error) {
           console.error(`Error sanitizing Excel file: ${error}`);
@@ -314,7 +312,6 @@ const Dropzone = ({
       setNewfiles((prev) => [...prev, ...uniqueFiles]);
       setHeaderTotalSize((prev) => prev + addedSize);
       // logger?.info?.(`Selected files: ${JSON.stringify(uniqueFiles)}`);
-      console.log(`Selected files: ${JSON.stringify(uniqueFiles)}`);
       setSubmitted?.(false);
       setIsValidated?.(false);
     }
@@ -336,20 +333,12 @@ const Dropzone = ({
       formData?.testOrderId ||
       (id.startsWith("test") ? id : "");
 
-    console.log("getJobAndTestOrderId - jobOrderId:", jobOrderId, "testOrderId:", testOrderId);
-    console.log("originalJobOrderId prop:", originalJobOrderId);
-    console.log("formData:", formData);
-    console.log("id:", id);
-
     return { jobOrderId, testOrderId };
   };
 
   const uploadFileInChunks = async (file) => {
     // Use helper to get correct jobOrderId and testOrderId
     const { jobOrderId, testOrderId } = getJobAndTestOrderId();
-
-    // Debug log
-    console.log("uploadFileInChunks: jobOrderId:", jobOrderId, "testOrderId:", testOrderId);
 
     try {
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
@@ -389,15 +378,12 @@ const Dropzone = ({
               },
             }
           );
-          console.log(`[Chunk Response] chunkIndex: ${chunkIndex}, completed: ${response.data.completed}, sess_idt: ${response.data.sess_idt}`);
           // Set sess_idt after first response
           if (!sess_idt && response.data.sess_idt) {
             sess_idt = response.data.sess_idt;
-            console.log(`[sess_idt assigned] ${sess_idt}`);
           }
 
           if (response.data.completed) {
-            console.log(`[Upload Completed] file: ${file.name}, chunkIndex: ${chunkIndex}`);
             const uploadedFile = [{
               path: file.name,
               size: file.size,
@@ -444,7 +430,6 @@ const Dropzone = ({
           return;
         }
       }
-      console.log(`[All Chunks Uploaded] file: ${file.name}`);
     } catch (error) {
       console.error(`Error uploading file ${file.name}:`, error);
       showSnackbar(`Upload failed for ${file.name}: ${error.message}`, "error");
@@ -461,7 +446,6 @@ const Dropzone = ({
 
 
   const onTemplateUpload = async () => {
-    console.log("Uploading files:", newfiles);
     if (newfiles.length === 0) {
       showSnackbar("No new files to upload!", "warning");
       return;
@@ -555,9 +539,6 @@ const Dropzone = ({
     // logger.info(
     //   `Validating files for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
     // );
-    console.log(
-      `Validating files for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
-    );
     try {
       setLoading(true);
       setIsValidated(true);
@@ -579,7 +560,6 @@ const Dropzone = ({
       }
       window.open(url, "_blank");
       // logger.info(`Redirecting to data validation URL: ${url}`);
-      console.log(`Redirecting to data validation URL: ${url}`);
 
     } catch (error) {
       console.error("Validation error:", error);
@@ -596,9 +576,6 @@ const Dropzone = ({
   };
 
   const handleDownloadFiles = async (fileName = "") => {
-    console.log(
-      `Downloading files for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
-    );
     try {
       setLoading(true);
 
@@ -655,9 +632,6 @@ const Dropzone = ({
       }
 
       showSnackbar("Download successful!", "success");
-      console.log(
-        `Download success for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
-      );
     } catch (error) {
       console.error("Download error:", error);
       showSnackbar("Download failed, please try again.", "warning");
@@ -672,10 +646,6 @@ const Dropzone = ({
   const checkFilesExist = async () => {
     // Use the helper to get correct IDs
     const { jobOrderId, testOrderId } = getJobAndTestOrderId();
-
-    console.log(
-      `Checking if files exist for job order ${jobOrderId} and test order ${testOrderId} in attachment type ${name}`
-    );
 
     try {
       setLoading(true);
@@ -770,8 +740,6 @@ const Dropzone = ({
     if (!prevOpenDropzoneModal.current && openDropzoneModal) {
       // Use the helper function to get correct IDs
       const { jobOrderId, testOrderId } = getJobAndTestOrderId();
-
-      console.log("Modal opened - jobOrderId:", jobOrderId, "testOrderId:", testOrderId);
 
       setMyJobOrder(jobOrderId);
       setMyTestOrder(testOrderId);
