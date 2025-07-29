@@ -9,18 +9,20 @@ from alembic import context
 # Determine DB environment
 db_env = os.getenv("DB_ENV", "local")  # default is 'local'
 
-# Set DB URL based on environment
 if db_env == "local":
-    db_url = "postgresql+psycopg2://postgres:12345678@localhost:5432/VTC"
+    db_url = os.getenv("SQLALCHEMY_DATABASE_URI")
+    if not db_url:
+        raise RuntimeError("SQLALCHEMY_DATABASE_URI environment variable is not set.")
 else:
-    db_url = "postgresql://postgres:Root123@10.238.0.207:5432/dbmrs-vtc-test"
+    db_url = os.getenv("STAGING_URI")
+    if not db_url:
+        raise RuntimeError("STAGING_URI environment variable is not set.")
 
-
-# Optional: Print which DB is being used (helpful for debugging)
 print(f"[Alembic] Using '{db_env}' environment -> {db_url}")
 
 # Alembic Config object (contains .ini settings)
 config = context.config
+config.set_main_option("sqlalchemy.url", db_url)
 
 # Set up logging
 if config.config_file_name is not None:

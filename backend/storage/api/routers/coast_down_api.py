@@ -5,10 +5,14 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.storage.api.api_utils import get_db
 from backend.storage.models.models import CoastDownData
+from backend.storage.logging_config import vtc_logger
 
 router = APIRouter()
 
 class CoastDownDataSchema(BaseModel):
+    """
+    Pydantic schema for CoastDownData.
+    """
     CoastDownData_id: str
     job_order_id: str = None
     coast_down_reference: str = None
@@ -25,6 +29,11 @@ class CoastDownDataSchema(BaseModel):
     updated_on: datetime = None
 
 def coastdown_to_dict(cd: CoastDownData):
+    """
+    Convert CoastDownData ORM object to dictionary.
+    This function is used to serialize the ORM object for API responses.
+    """
+    vtc_logger.debug(f"Converting CoastDownData object to dict: {cd}")
     return {
         "CoastDownData_id": cd.CoastDownData_id,
         "job_order_id": cd.job_order_id,
@@ -47,24 +56,59 @@ def create_coastdown_api(
     coastdown: CoastDownDataSchema = Body(...),
     db: Session = Depends(get_db)
 ):
-    coastdown_data = coastdown.dict(exclude_unset=True)
-    new_cd = CoastDownData(**coastdown_data)
-    db.add(new_cd)
-    db.commit()
-    db.refresh(new_cd)
-    return coastdown_to_dict(new_cd)
+    """
+    Create a new CoastDownData entry.
+    """
+    vtc_logger.info("Received request to create CoastDownData.")
+    try:
+        coastdown_data = coastdown.dict(exclude_unset=True)
+        vtc_logger.debug(f"CoastDownData payload: {coastdown_data}")
+        new_cd = CoastDownData(**coastdown_data)
+        db.add(new_cd)
+        db.commit()
+        db.refresh(new_cd)
+        vtc_logger.info(f"Created CoastDownData with ID: {new_cd.CoastDownData_id}")
+        return coastdown_to_dict(new_cd)
+    except Exception as e:
+        vtc_logger.error("Error creating CoastDownData.")
+        vtc_logger.debug(f"Error details: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error while creating CoastDownData.")
 
 @router.get("/coastdown", response_model=List[CoastDownDataSchema])
 def read_coastdowns(db: Session = Depends(get_db)):
-    cds = db.query(CoastDownData).all()
-    return [coastdown_to_dict(cd) for cd in cds]
+    """
+    Retrieve all CoastDownData entries.
+    """
+    vtc_logger.info("Fetching all CoastDownData entries.")
+    try:
+        cds = db.query(CoastDownData).all()
+        vtc_logger.debug(f"Fetched {len(cds)} CoastDownData entries.")
+        return [coastdown_to_dict(cd) for cd in cds]
+    except Exception as e:
+        vtc_logger.error("Error fetching CoastDownData entries.")
+        vtc_logger.debug(f"Error details: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error while fetching CoastDownData.")
 
 @router.get("/coastdown/{CoastDownData_id}", response_model=CoastDownDataSchema)
 def read_coastdown(CoastDownData_id: str, db: Session = Depends(get_db)):
-    cd = db.query(CoastDownData).filter(CoastDownData.CoastDownData_id == CoastDownData_id).first()
-    if not cd:
-        raise HTTPException(status_code=404, detail="CoastDownData not found")
-    return coastdown_to_dict(cd)
+    """
+    Retrieve a specific CoastDownData entry by ID.
+    """
+    vtc_logger.info(f"Fetching CoastDownData with ID: {CoastDownData_id}")
+    try:
+        cd = db.query(CoastDownData).filter(CoastDownData.CoastDownData_id == CoastDownData_id).first()
+        if not cd:
+            vtc_logger.error(f"CoastDownData with ID {CoastDownData_id} not found.")
+            vtc_logger.debug(f"Error details: CoastDownData {CoastDownData_id} does not exist.")
+            raise HTTPException(status_code=404, detail="CoastDownData not found")
+        vtc_logger.debug(f"Found CoastDownData: {cd}")
+        return coastdown_to_dict(cd)
+    except HTTPException:
+        raise
+    except Exception as e:
+        vtc_logger.error(f"Error fetching CoastDownData with ID: {CoastDownData_id}.")
+        vtc_logger.debug(f"Error details: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error while fetching CoastDownData.")
 
 @router.put("/coastdown/{CoastDownData_id}", response_model=CoastDownDataSchema)
 def update_coastdown(
@@ -72,23 +116,52 @@ def update_coastdown(
     coastdown_update: CoastDownDataSchema = Body(...),
     db: Session = Depends(get_db)
 ):
-    cd = db.query(CoastDownData).filter(CoastDownData.CoastDownData_id == CoastDownData_id).first()
-    if not cd:
-        raise HTTPException(status_code=404, detail="CoastDownData not found")
-    update_data = coastdown_update.dict(exclude_unset=True)
-    update_data.pop("CoastDownData_id", None)
-    for key, value in update_data.items():
-        setattr(cd, key, value)
-    cd.updated_on = datetime.utcnow()
-    db.commit()
-    db.refresh(cd)
-    return coastdown_to_dict(cd)
+    """
+    Update an existing CoastDownData entry by ID.
+    """
+    vtc_logger.info(f"Updating CoastDownData with ID: {CoastDownData_id}")
+    try:
+        cd = db.query(CoastDownData).filter(CoastDownData.CoastDownData_id == CoastDownData_id).first()
+        if not cd:
+            vtc_logger.error(f"CoastDownData with ID {CoastDownData_id} not found for update.")
+            vtc_logger.debug(f"Error details: CoastDownData {CoastDownData_id} does not exist for update.")
+            raise HTTPException(status_code=404, detail="CoastDownData not found")
+        update_data = coastdown_update.dict(exclude_unset=True)
+        vtc_logger.debug(f"Update payload: {update_data}")
+        update_data.pop("CoastDownData_id", None)
+        for key, value in update_data.items():
+            setattr(cd, key, value)
+        cd.updated_on = datetime.utcnow()
+        db.commit()
+        db.refresh(cd)
+        vtc_logger.info(f"Updated CoastDownData with ID: {CoastDownData_id}")
+        return coastdown_to_dict(cd)
+    except HTTPException:
+        raise
+    except Exception as e:
+        vtc_logger.error(f"Error updating CoastDownData with ID: {CoastDownData_id}.")
+        vtc_logger.debug(f"Error details: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error while updating CoastDownData.")
 
 @router.delete("/coastdown/{CoastDownData_id}")
 def delete_coastdown(CoastDownData_id: str, db: Session = Depends(get_db)):
-    cd = db.query(CoastDownData).filter(CoastDownData.CoastDownData_id == CoastDownData_id).first()
-    if not cd:
-        raise HTTPException(status_code=404, detail="CoastDownData not found")
-    db.delete(cd)
-    db.commit()
-    return {"detail": "CoastDownData deleted successfully"}
+    """
+    Delete a CoastDownData entry by ID.
+    """
+    vtc_logger.info(f"Deleting CoastDownData with ID: {CoastDownData_id}")
+    try:
+        cd = db.query(CoastDownData).filter(CoastDownData.CoastDownData_id == CoastDownData_id).first()
+        if not cd:
+            vtc_logger.error(f"CoastDownData with ID {CoastDownData_id} not found for deletion.")
+            vtc_logger.debug(f"Error details: CoastDownData {CoastDownData_id} does not exist for deletion.")
+            raise HTTPException(status_code=404, detail="CoastDownData not found")
+        db.delete(cd)
+        db.commit()
+        vtc_logger.info(f"Deleted CoastDownData with ID: {CoastDownData_id}")
+        return {"detail": "CoastDownData deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        vtc_logger.error(f"Error deleting CoastDownData {CoastDownData_id}.")
+        vtc_logger.debug(f"Error details for CoastDownData {CoastDownData_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error while deleting CoastDownData.")
