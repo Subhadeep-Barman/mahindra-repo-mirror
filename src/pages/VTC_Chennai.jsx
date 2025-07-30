@@ -425,7 +425,7 @@ export default function VTCChennaiPage() {
                 <TableHeader>
                   <TableRow className="bg-gray-100">
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Job Order ID
+                      Job Order Number
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Project
@@ -470,7 +470,7 @@ export default function VTCChennaiPage() {
                         } hover:bg-gray-100`}
                     >
                       <TableCell
-                        className="text-xs text-blue-600 underline cursor-pointer px-4 py-2"
+                        className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400"
                         onClick={() => handleJobOrderClick(order.job_order_id)}
                       >
                         {order.job_order_id}

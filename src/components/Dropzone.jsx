@@ -82,7 +82,6 @@ const ALLOWED_EXTENSIONS_MAP = {
     'mdf',
     'mf4',
     'dat'
-
   ]
 };
 

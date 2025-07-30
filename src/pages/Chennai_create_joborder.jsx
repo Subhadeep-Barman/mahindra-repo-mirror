@@ -561,12 +561,8 @@ export default function CreateJobOrder() {
         // Fetch vehicle body numbers and engine numbers for the specific department
         try {
           const [vehicleBodyRes, engineNumberRes] = await Promise.all([
-            axios.get(`${apiURL}/vehicle-body-numbers`, {
-              params: { department: departmentFromJobOrder }
-            }),
-            axios.get(`${apiURL}/engine-numbers`, {
-              params: { department: departmentFromJobOrder }
-            })
+            axios.get(`${apiURL}/vehicle-body-numbers`),
+            axios.get(`${apiURL}/engine-numbers`)
           ]);
 
           setVehicleBodyNumbers(vehicleBodyRes.data || []);
@@ -3255,7 +3251,7 @@ export default function CreateJobOrder() {
                 </div>
               </div>
               {/* Coast Down Data Section for Test */}
-              <div className="mt-6 border rounded shadow px-4 py-3 bg-blue-50">
+              <div className="mt-6 border rounded shadow px-4 py-3 bg-blue-50 dark:bg-inherit">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="font-semibold text-sm text-blue-700">
                     Coast Down Data for Test {idx + 1}
@@ -3268,7 +3264,7 @@ export default function CreateJobOrder() {
                       setTests(updatedTests);
                     }}
                     disabled={!areTestFieldsEditable(test, idx)}
-                    className="data-[state=checked]:bg-red-500"
+                    className="data-[state=checked]:bg-red-500 dark:data-[state=unchecked]:bg-gray-400"
                   />
                 </div>
                 {test.showCoastDownData && (

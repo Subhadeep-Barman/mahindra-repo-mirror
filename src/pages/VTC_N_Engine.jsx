@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/UI/button";
 import { Input } from "@/components/UI/input";
 import { Label } from "@/components/UI/label";
@@ -17,16 +17,30 @@ import { RadioGroup, RadioGroupItem } from "@/components/UI/radio-group";
 import { Card, CardContent } from "@/components/UI/card";
 import { ArrowBack } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
+import axios from "axios";
+import { useAuth } from "@/context/AuthContext";
+import showSnackbar from "@/utils/showSnackbar";
 
 export default function EngineForm() {
   const [activeTab, setActiveTab] = useState("Engine");
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const department = queryParams.get("department") || "VTC_JO Chennai";
+  const isEditMode = queryParams.get("edit") === "true";
+
+  // Check if we have engine data from navigation state
+  const engineData = location.state?.engineData;
+  const originalEngineData = location.state?.originalEngineData;
+
+  const { apiUserRole, userId, userName } = useAuth();
+
   const [formData, setFormData] = useState({
     engineBuildLevel: "",
     engineSerialNumber: "",
     engineType: "",
     engineCapacity: "",
     numberOfCylinders: "",
-    compressionRatio: "",
+    compressionRatio: { numerator: "", denominator: "" },
     bore: "",
     stroke: "",
     vacuumModulatorMake: "",
@@ -46,9 +60,9 @@ export default function EngineForm() {
     egrValveDiameter: "",
     egrCoolerMake: "",
     egrCoolerCapacity: "",
-    cafconMass: "",
-    cafconType: "",
-    cafconLoading: "",
+    catconMass: "",
+    catconType: "",
+    catconLoading: "",
     dpfMake: "",
     dpfCapacity: "",
     scrMake: "",
@@ -58,14 +72,90 @@ export default function EngineForm() {
     powerSteeringPump: "",
     powerSteeringDetails: "",
     waterByPass: "",
-    kerbWeightEmw: "",
-    kerbWeightRmw: "",
+    kerbWeightFaw: "",
+    kerbWeightRaw: "",
     emissionStatus: "",
     thermostatDetails: "",
     vehicleSerialNumber: "",
     engineFamily: "",
+    hvBatteryMake: "",
+    hvBatteryCapacity: "",
+    hvBatteryVoltage: "",
+    hvBatteryCurrent: "",
+    evMotorPower: "",
+    department: department,
   });
 
+  // Helper function to parse ratio strings like "3.42:1" into {numerator: "3.42", denominator: "1"}
+  const parseRatio = (ratioString) => {
+    if (!ratioString) return { numerator: "", denominator: "" };
+    const parts = ratioString.toString().split(":");
+    return {
+      numerator: parts[0] || "",
+      denominator: parts[1] || ""
+    };
+  };
+
+  // Populate form with existing engine data when editing
+  useEffect(() => {
+    if (isEditMode && engineData) {
+      setFormData({
+        engineBuildLevel: engineData.engine_build_level || "",
+        engineSerialNumber: engineData.engine_serial_number || "",
+        engineType: engineData.engine_type || "",
+        engineCapacity: engineData.engine_capacity?.toString() || "",
+        numberOfCylinders: engineData.number_of_cylinders || "",
+        compressionRatio: parseRatio(engineData.compression_ratio),
+        bore: engineData.bore_mm?.toString() || "",
+        stroke: engineData.stroke_mm?.toString() || "",
+        vacuumModulatorMake: engineData.vacuum_modulator_make || "",
+        vacuumModulatorDetails: engineData.vacuum_modulator_details || "",
+        ecuMake: engineData.ecu_make || "",
+        ecuIdNumber: engineData.ecu_id_number || "",
+        ecuDatasetNumber: engineData.ecu_dataset_number || "",
+        ecuDatasetDetails: engineData.ecu_dataset_details || "",
+        injectorType: engineData.injector_type || "",
+        turbochargerType: engineData.turbo_charger_type || "",
+        blowByRecirculation: engineData.blow_by_recirculation === true ? "Yes" : engineData.blow_by_recirculation === false ? "No" : "",
+        blowByRecirculationDetails: "",
+        nozzleNumberOfHoles: engineData.nozzle_hole_count || "",
+        nozzleThroughFlow: engineData.nozzle_through_flow?.toString() || "",
+        egrValveMake: engineData.egr_valve_make || "",
+        egrValveType: engineData.egr_valve_type || "",
+        egrValveDiameter: engineData.egr_valve_diameter_mm?.toString() || "",
+        egrCoolerMake: engineData.egr_cooler_make || "",
+        egrCoolerCapacity: engineData.egr_cooler_capacity_kw?.toString() || "",
+        catconMass: engineData.catcon_make || "",
+        catconType: engineData.catcon_type || "",
+        catconLoading: engineData.catcon_loading || "",
+        dpfMake: engineData.dpf_make || "",
+        dpfCapacity: engineData.dpf_capacity || "",
+        scrMake: engineData.scr_make || "",
+        scrCapacity: engineData.scr_capacity || "",
+        acCompressor: engineData.acc_compressor === true ? "Yes" : engineData.acc_compressor === false ? "No" : "",
+        acCompressorDetails: engineData.acc_compressor_details || "",
+        powerSteeringPump: engineData.ps_pump || "",
+        powerSteeringDetails: engineData.ps_details || "",
+        waterByPass: engineData.water_bypass || "",
+        kerbWeightFaw: engineData.kerb_weight_faw_kg?.toString() || "",
+        kerbWeightRaw: engineData.kerb_weight_raw_kg?.toString() || "",
+        emissionStatus: engineData.emission_status || "",
+        thermostatDetails: engineData.thermostat_details || "",
+        vehicleSerialNumber: engineData.vehicle_serial_number || "",
+        engineFamily: engineData.engine_family || "",
+        hvBatteryMake: engineData.hv_battery_make || "",
+        hvBatteryCapacity: engineData.hv_battery_capacity?.toString() || "",
+        hvBatteryVoltage: engineData.hv_battery_voltage?.toString() || "",
+        hvBatteryCurrent: engineData.hv_battery_current?.toString() || "",
+        evMotorPower: engineData.ev_motor_power_kw?.toString() || "",
+        department: engineData.department || department,
+      });
+    }
+  }, [isEditMode, engineData, department]);
+
+  const [engineFamilies, setEngineFamilies] = useState([]);
+  const [vehicleSerialNumbers, setVehicleSerialNumbers] = useState([]);
+  const apiUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
 
   const handleInputChange = (field, value) => {
@@ -75,11 +165,18 @@ export default function EngineForm() {
     }));
   };
 
+  const handleRatioChange = (field, part, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: { ...prev[field], [part]: value },
+    }));
+  };
+
   const handleTabClick = (tab) => {
     setActiveTab(tab);
-    if (tab === "Job Order") navigate("/nashik/joborder");
-    else if (tab === "Vehicle") navigate("/nashik/vehicle");
-    else if (tab === "Engine") navigate("/nashik/engine");
+    if (tab === "Job Order") navigate("/vtc-chennai");
+    else if (tab === "Vehicle") navigate("/vtccvehicle");
+    else if (tab === "Engine") navigate("/engineform");
   };
 
   const handleClear = () => {
@@ -89,7 +186,7 @@ export default function EngineForm() {
       engineType: "",
       engineCapacity: "",
       numberOfCylinders: "",
-      compressionRatio: "",
+      compressionRatio: { numerator: "", denominator: "" },
       bore: "",
       stroke: "",
       vacuumModulatorMake: "",
@@ -109,9 +206,9 @@ export default function EngineForm() {
       egrValveDiameter: "",
       egrCoolerMake: "",
       egrCoolerCapacity: "",
-      cafconMass: "",
-      cafconType: "",
-      cafconLoading: "",
+      catconMass: "",
+      catconType: "",
+      catconLoading: "",
       dpfMake: "",
       dpfCapacity: "",
       scrMake: "",
@@ -121,12 +218,18 @@ export default function EngineForm() {
       powerSteeringPump: "",
       powerSteeringDetails: "",
       waterByPass: "",
-      kerbWeightEmw: "",
-      kerbWeightRmw: "",
+      kerbWeightFaw: "",
+      kerbWeightRaw: "",
       emissionStatus: "",
       thermostatDetails: "",
       vehicleSerialNumber: "",
       engineFamily: "",
+      hvBatteryMake: "",
+      hvBatteryCapacity: "",
+      hvBatteryVoltage: "",
+      hvBatteryCurrent: "",
+      evMotorPower: "",
+      department: department,
     });
   };
 
@@ -134,28 +237,157 @@ export default function EngineForm() {
     navigate(-1);
   };
 
-  const handleAddEngine = async () => {
-    try {
-      // Replace '/api/engine' with your actual backend endpoint
-      const response = await axios.post('/api/engine', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to save engine data');
+  // Convert current time to IST and format as ISO 8601
+  const currentISTTime = new Date().toLocaleString("en-US", {
+    timeZone: "Asia/Kolkata",
+  });
+  const formattedISTTime = new Date(currentISTTime).toISOString();
+
+  // Utility to map frontend formData to backend EngineSchema
+  const mapFormDataToEngineSchema = (formData) => {
+    // Helper to parse float or return undefined if empty
+    const parseFloatOrUndefined = (val) => (val ? parseFloat(val) : undefined);
+    // Helper to parse int or return undefined if empty
+    const parseIntOrUndefined = (val) => (val ? parseInt(val) : undefined);
+    // Helper to parse boolean from Yes/No
+    const parseBool = (val) =>
+      val === "Yes" ? true : val === "No" ? false : undefined;
+    // Compression ratio as float if both numerator and denominator are present
+    let compression_ratio = undefined;
+    if (
+      formData.compressionRatio.numerator &&
+      formData.compressionRatio.denominator
+    ) {
+      const num = parseFloat(formData.compressionRatio.numerator);
+      const den = parseFloat(formData.compressionRatio.denominator);
+      if (!isNaN(num) && !isNaN(den) && den !== 0) {
+        compression_ratio = num / den;
       }
-    } catch (error) {
-      console.error(error);
+    }
+    return {
+      engine_serial_number: formData.engineSerialNumber || undefined,
+      engine_build_level: formData.engineBuildLevel || undefined,
+      engine_capacity: parseFloatOrUndefined(formData.engineCapacity),
+      engine_type: formData.engineType || undefined,
+      number_of_cylinders: formData.numberOfCylinders || undefined,
+      compression_ratio,
+      bore_mm: parseFloatOrUndefined(formData.bore),
+      stroke_mm: parseFloatOrUndefined(formData.stroke),
+      vacuum_modulator_make: formData.vacuumModulatorMake || undefined,
+      vacuum_modulator_details: formData.vacuumModulatorDetails || undefined,
+      ecu_make: formData.ecuMake || undefined,
+      ecu_id_number: formData.ecuIdNumber || undefined,
+      ecu_dataset_number: formData.ecuDatasetNumber || undefined,
+      ecu_dataset_details: formData.ecuDatasetDetails || undefined,
+      injector_type: formData.injectorType || undefined,
+      turbo_charger_type: formData.turbochargerType || undefined,
+      blow_by_recirculation: parseBool(formData.blowByRecirculation),
+      nozzle_hole_count: formData.nozzleNumberOfHoles || undefined,
+      nozzle_through_flow: parseFloatOrUndefined(formData.nozzleThroughFlow),
+      egr_valve_make: formData.egrValveMake || undefined,
+      egr_valve_type: formData.egrValveType || undefined,
+      egr_valve_diameter_mm: parseFloatOrUndefined(formData.egrValveDiameter),
+      egr_cooler_make: formData.egrCoolerMake || undefined,
+      egr_cooler_capacity_kw: parseFloatOrUndefined(formData.egrCoolerCapacity),
+      catcon_make: formData.catconMass || undefined,
+      catcon_type: formData.catconType || undefined,
+      catcon_loading: formData.catconLoading || undefined,
+      dpf_make: formData.dpfMake || undefined,
+      dpf_capacity: formData.dpfCapacity || undefined,
+      scr_make: formData.scrMake || undefined,
+      scr_capacity: formData.scrCapacity || undefined,
+      acc_compressor: parseBool(formData.acCompressor),
+      acc_compressor_details: formData.acCompressorDetails || undefined,
+      ps_pump: formData.powerSteeringPump || undefined,
+      ps_details: formData.powerSteeringDetails || undefined,
+      water_bypass: formData.waterByPass || undefined,
+      kerb_weight_faw_kg: parseFloatOrUndefined(formData.kerbWeightFaw),
+      kerb_weight_raw_kg: parseFloatOrUndefined(formData.kerbWeightRaw),
+      emission_status: formData.emissionStatus || undefined,
+      thermostat_details: formData.thermostatDetails || undefined,
+      vehicle_serial_number: formData.vehicleSerialNumber || undefined,
+      engine_family: formData.engineFamily || undefined,
+      hv_battery_make: formData.hvBatteryMake || undefined,
+      hv_battery_capacity: parseFloatOrUndefined(formData.hvBatteryCapacity),
+      hv_battery_voltage: parseFloatOrUndefined(formData.hvBatteryVoltage),
+      hv_battery_current: parseFloatOrUndefined(formData.hvBatteryCurrent),
+      ev_motor_power_kw: parseFloatOrUndefined(formData.evMotorPower),
+      department: formData.department,
+      // Add tracking fields
+      ...(isEditMode ? {
+        id_of_updater: userId || "",
+        name_of_updater: userName || "",
+        updated_on: formattedISTTime
+      } : {
+        id_of_creator: userId || "",
+        name_of_creator: userName || "",
+        created_on: formattedISTTime,
+        updated_on: formattedISTTime
+      })
+    };
+  };
+
+  const handleAddEngine = async () => {
+    const enginePayload = mapFormDataToEngineSchema(formData);
+    try {
+      let response;
+      if (isEditMode) {
+        // Update existing engine
+        response = await axios.put(
+          `${apiUrl}/engines/${formData.engineSerialNumber}`,
+          enginePayload
+        );
+        showSnackbar("Engine updated successfully!", "success");
+      } else {
+        // Create new engine
+        response = await axios.post(`${apiUrl}/engines`, enginePayload);
+        showSnackbar(
+          `Engine added successfully! Engine Serial Number: ${response.data.engine_serial_number || formData.engineSerialNumber}`,
+          "success"
+        );
+      }
+      navigate(-1);
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.detail) {
+        showSnackbar(
+          `Failed to ${isEditMode ? 'update' : 'add'} engine: ` + err.response.data.detail,
+          "error"
+        );
+      } else {
+        showSnackbar(
+          `Failed to ${isEditMode ? 'update' : 'add'} engine. Please try again.`,
+          "error"
+        );
+      }
     }
   };
+
+  useEffect(() => {
+    axios
+      .get(`${apiUrl}/engine-families`)
+      .then((res) => {
+        setEngineFamilies(res.data);
+      })
+      .catch(() => {
+        setEngineFamilies([]);
+      });
+  }, []);
+
+  useEffect(() => {
+    // Fetch vehicle serial numbers from the API
+    axios
+      .get(`${apiUrl}/vehicle_serial_numbers`)
+      .then((res) => {
+        setVehicleSerialNumbers(res.data);
+      })
+      .catch(() => {
+        setVehicleSerialNumbers([]);
+      });
+  }, []);
 
   return (
     <>
       <Navbar1 />
-
       {/* Header */}
       <div className="bg-white dark:bg-black">
         <div className="bg-white dark:bg-black">
@@ -171,43 +403,45 @@ export default function EngineForm() {
                   <ArrowBack className="h-5 w-5" />
                 </Button>
                 <div>
-                  <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
-                    VTC Nashik
+                  <h1 className="text-lg font-semibold text-gray-800 dark:text-red-500">
+                    {isEditMode ? `EDIT ENGINE: ${formData.engineSerialNumber}` : `NEW ENGINE - ${department}`}
                   </h1>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
-                    NEW JOB ORDER
-                  </h2>
+                  {isEditMode && (
+                    <p className="text-sm text-gray-600">
+                      Editing engine: {engineData?.engine_serial_number} | Department: {department}
+                    </p>
+                  )}
                 </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                {/* Tab Buttons */}
-                {["Job Order", "Vehicle", "Engine"].map((tab) => (
-                  <Button
-                    key={tab}
-                    variant={activeTab === tab ? "default" : "outline"}
-                    onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${tab === "Job Order"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : tab === "Vehicle" || tab === "Engine"
-                          ? "bg-red-500 text-white hover:bg-red-600"
-                          : "text-red-500 border-red-500 hover:bg-red-50"
-                      }`}
-                  >
-                    {tab}
-                  </Button>
-                ))}
               </div>
             </div>
           </div>
         </div>
       </div>
-
       {/* Main Content */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Card>
           <CardContent className="p-6">
             {/* Form Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Engine Serial Number - Disable editing in edit mode */}
+              <div className="space-y-2">
+                <Label htmlFor="engineSerialNumber">
+                  Engine Serial Number{" "}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="engineSerialNumber"
+                  value={formData.engineSerialNumber}
+                  onChange={(e) =>
+                    handleInputChange("engineSerialNumber", e.target.value)
+                  }
+                  disabled={isEditMode}
+                  className={isEditMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}
+                  placeholder="Enter Engine Serial Number"
+                />
+              </div>
+
+              {/* Rest of your form fields remain the same... */}
               {/* Engine Build Level */}
               <div className="space-y-2">
                 <Label htmlFor="engineBuildLevel">Engine Build Level</Label>
@@ -221,20 +455,8 @@ export default function EngineForm() {
                 />
               </div>
 
-              {/* Engine Serial Number */}
-              <div className="space-y-2">
-                <Label htmlFor="engineSerialNumber">
-                  Engine Serial Number <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="engineSerialNumber"
-                  value={formData.engineSerialNumber}
-                  onChange={(e) =>
-                    handleInputChange("engineSerialNumber", e.target.value)
-                  }
-                  placeholder="Enter Engine Serial Number"
-                />
-              </div>
+              {/* Continue with all other fields as they were... */}
+              {/* I'll include a few key ones, but you should keep all the original fields */}
 
               {/* Engine Type */}
               <div className="space-y-2">
@@ -248,7 +470,6 @@ export default function EngineForm() {
                   placeholder="Enter Engine Type"
                 />
               </div>
-
               {/* Engine Capacity */}
               <div className="space-y-2">
                 <Label htmlFor="engineCapacity">Engine Capacity (cc)</Label>
@@ -261,7 +482,6 @@ export default function EngineForm() {
                   placeholder="Enter Engine Capacity (cc)"
                 />
               </div>
-
               {/* Number of Cylinders */}
               <div className="space-y-2">
                 <Label htmlFor="numberOfCylinders">Number of Cylinders</Label>
@@ -274,47 +494,58 @@ export default function EngineForm() {
                   placeholder="Enter Number of Cylinders"
                 />
               </div>
-
               {/* Compression Ratio */}
               <div className="space-y-2">
                 <Label htmlFor="compressionRatio">Compression Ratio</Label>
-                <Input
-                  id="compressionRatio"
-                  value={formData.compressionRatio}
-                  onChange={(e) =>
-                    handleInputChange("compressionRatio", e.target.value)
-                  }
-                  placeholder="Enter"
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="compressionRatioNumerator"
+                    value={formData.compressionRatio.numerator}
+                    onChange={(e) =>
+                      handleRatioChange("compressionRatio", "numerator", e.target.value)
+                    }
+                    placeholder="Enter numerator"
+                    className="w-1/2"
+                  />
+                  <span className="text-gray-500">:</span>
+                  <Input
+                    id="compressionRatioDenominator"
+                    value={formData.compressionRatio.denominator}
+                    onChange={(e) =>
+                      handleRatioChange("compressionRatio", "denominator", e.target.value)
+                    }
+                    placeholder="Enter denominator"
+                    className="w-1/2"
+                  />
+                </div>
               </div>
-
               {/* Bore */}
               <div className="space-y-2">
                 <Label htmlFor="bore">Bore (mm)</Label>
                 <Input
                   id="bore"
                   value={formData.bore}
-                  onChange={(e) => handleInputChange("bore", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("bore", e.target.value)
+                  }
                   placeholder="Enter Bore (mm)"
                 />
               </div>
-
               {/* Stroke */}
               <div className="space-y-2">
                 <Label htmlFor="stroke">Stroke (mm)</Label>
                 <Input
                   id="stroke"
                   value={formData.stroke}
-                  onChange={(e) => handleInputChange("stroke", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("stroke", e.target.value)
+                  }
                   placeholder="Enter Stroke (mm)"
                 />
               </div>
-
               {/* Vacuum Modulator Make */}
               <div className="space-y-2">
-                <Label htmlFor="vacuumModulatorMake">
-                  Vacuum Modulator Make
-                </Label>
+                <Label htmlFor="vacuumModulatorMake">Vacuum Modulator Make</Label>
                 <Input
                   id="vacuumModulatorMake"
                   value={formData.vacuumModulatorMake}
@@ -324,12 +555,9 @@ export default function EngineForm() {
                   placeholder="Enter Vacuum Modulator Make"
                 />
               </div>
-
               {/* Vacuum Modulator Details */}
               <div className="space-y-2">
-                <Label htmlFor="vacuumModulatorDetails">
-                  Vacuum Modulator Details
-                </Label>
+                <Label htmlFor="vacuumModulatorDetails">Vacuum Modulator Details</Label>
                 <Input
                   id="vacuumModulatorDetails"
                   value={formData.vacuumModulatorDetails}
@@ -339,18 +567,18 @@ export default function EngineForm() {
                   placeholder="Enter Vacuum Modulator Details"
                 />
               </div>
-
               {/* ECU Make */}
               <div className="space-y-2">
                 <Label htmlFor="ecuMake">ECU Make</Label>
                 <Input
                   id="ecuMake"
                   value={formData.ecuMake}
-                  onChange={(e) => handleInputChange("ecuMake", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("ecuMake", e.target.value)
+                  }
                   placeholder="Enter ECU Make"
                 />
               </div>
-
               {/* ECU ID Number */}
               <div className="space-y-2">
                 <Label htmlFor="ecuIdNumber">ECU ID Number</Label>
@@ -363,7 +591,6 @@ export default function EngineForm() {
                   placeholder="Enter ECU ID Number"
                 />
               </div>
-
               {/* ECU Dataset Number */}
               <div className="space-y-2">
                 <Label htmlFor="ecuDatasetNumber">ECU Dataset Number</Label>
@@ -376,7 +603,6 @@ export default function EngineForm() {
                   placeholder="Enter ECU Dataset Number"
                 />
               </div>
-
               {/* ECU Dataset Details */}
               <div className="space-y-2">
                 <Label htmlFor="ecuDatasetDetails">ECU Dataset Details</Label>
@@ -389,7 +615,6 @@ export default function EngineForm() {
                   placeholder="Enter ECU Dataset Details"
                 />
               </div>
-
               {/* Injector Type */}
               <div className="space-y-2">
                 <Label htmlFor="injectorType">Injector Type</Label>
@@ -402,10 +627,9 @@ export default function EngineForm() {
                   placeholder="Enter Injector Type"
                 />
               </div>
-
               {/* Turbocharger Type */}
               <div className="space-y-2">
-                <Label htmlFor="turbochargerType">Turbocharger Type</Label>
+                <Label htmlFor="turbochargerType">Turbo charger Type</Label>
                 <Input
                   id="turbochargerType"
                   value={formData.turbochargerType}
@@ -415,7 +639,6 @@ export default function EngineForm() {
                   placeholder="Enter Turbocharger Type"
                 />
               </div>
-
               {/* Blow by Recirculation */}
               <div className="space-y-2">
                 <Label>Blow by Recirculation</Label>
@@ -437,30 +660,21 @@ export default function EngineForm() {
                   </div>
                 </RadioGroup>
               </div>
-
               {/* Blow by Recirculation Details */}
               <div className="space-y-2">
-                <Label htmlFor="blowByRecirculationDetails">
-                  Blow by Recirculation Details
-                </Label>
+                <Label htmlFor="blowByRecirculationDetails">Blow by Recirculation Details</Label>
                 <Input
                   id="blowByRecirculationDetails"
                   value={formData.blowByRecirculationDetails}
                   onChange={(e) =>
-                    handleInputChange(
-                      "blowByRecirculationDetails",
-                      e.target.value
-                    )
+                    handleInputChange("blowByRecirculationDetails", e.target.value)
                   }
                   placeholder="Enter Blow by Recirculation Details"
                 />
               </div>
-
               {/* Nozzle Number of Holes */}
               <div className="space-y-2">
-                <Label htmlFor="nozzleNumberOfHoles">
-                  Nozzle Number of Holes
-                </Label>
+                <Label htmlFor="nozzleNumberOfHoles">Nozzle Number of Holes</Label>
                 <Input
                   id="nozzleNumberOfHoles"
                   value={formData.nozzleNumberOfHoles}
@@ -470,7 +684,6 @@ export default function EngineForm() {
                   placeholder="Enter Nozzle Number of Holes"
                 />
               </div>
-
               {/* Nozzle Through Flow */}
               <div className="space-y-2">
                 <Label htmlFor="nozzleThroughFlow">Nozzle Through Flow</Label>
@@ -483,7 +696,6 @@ export default function EngineForm() {
                   placeholder="Enter Nozzle Through Flow"
                 />
               </div>
-
               {/* EGR Valve Make */}
               <div className="space-y-2">
                 <Label htmlFor="egrValveMake">EGR Valve Make</Label>
@@ -496,7 +708,6 @@ export default function EngineForm() {
                   placeholder="Enter EGR Valve Make"
                 />
               </div>
-
               {/* EGR Valve Type */}
               <div className="space-y-2">
                 <Label htmlFor="egrValveType">EGR Valve Type</Label>
@@ -509,12 +720,9 @@ export default function EngineForm() {
                   placeholder="Enter EGR Valve Type"
                 />
               </div>
-
               {/* EGR Valve Diameter */}
               <div className="space-y-2">
-                <Label htmlFor="egrValveDiameter">
-                  EGR Valve Diameter (mm)
-                </Label>
+                <Label htmlFor="egrValveDiameter">EGR Valve Diameter (mm)</Label>
                 <Input
                   id="egrValveDiameter"
                   value={formData.egrValveDiameter}
@@ -524,7 +732,6 @@ export default function EngineForm() {
                   placeholder="Enter EGR Valve Diameter (mm)"
                 />
               </div>
-
               {/* EGR Cooler Make */}
               <div className="space-y-2">
                 <Label htmlFor="egrCoolerMake">EGR Cooler Make</Label>
@@ -537,12 +744,9 @@ export default function EngineForm() {
                   placeholder="Enter EGR Cooler Make"
                 />
               </div>
-
               {/* EGR Cooler Capacity */}
               <div className="space-y-2">
-                <Label htmlFor="egrCoolerCapacity">
-                  EGR Cooler Capacity (kW)
-                </Label>
+                <Label htmlFor="egrCoolerCapacity">EGR Cooler Capacity (KW)</Label>
                 <Input
                   id="egrCoolerCapacity"
                   value={formData.egrCoolerCapacity}
@@ -552,57 +756,54 @@ export default function EngineForm() {
                   placeholder="Enter EGR Cooler Capacity (kW)"
                 />
               </div>
-
-              {/* CAFCON Mass */}
+              {/* CATCON Mass */}
               <div className="space-y-2">
-                <Label htmlFor="cafconMass">CAFCON Mass</Label>
+                <Label htmlFor="catconMass">CATCON Make</Label>
                 <Input
-                  id="cafconMass"
-                  value={formData.cafconMass}
+                  id="catconMass"
+                  value={formData.catconMass}
                   onChange={(e) =>
-                    handleInputChange("cafconMass", e.target.value)
+                    handleInputChange("catconMass", e.target.value)
                   }
-                  placeholder="Enter CAFCON Mass"
+                  placeholder="Enter CATCON Make"
                 />
               </div>
-
-              {/* CAFCON Type */}
+              {/* CATCON Type */}
               <div className="space-y-2">
-                <Label htmlFor="cafconType">CAFCON Type</Label>
+                <Label htmlFor="catconType">CATCON Type</Label>
                 <Input
-                  id="cafconType"
-                  value={formData.cafconType}
+                  id="catconType"
+                  value={formData.catconType}
                   onChange={(e) =>
-                    handleInputChange("cafconType", e.target.value)
+                    handleInputChange("catconType", e.target.value)
                   }
-                  placeholder="Enter CAFCON Type"
+                  placeholder="Enter CATCON Type"
                 />
               </div>
-
-              {/* CAFCON Loading */}
+              {/* CATCON Loading */}
               <div className="space-y-2">
-                <Label htmlFor="cafconLoading">CAFCON Loading</Label>
+                <Label htmlFor="catconLoading">CATCON Loading</Label>
                 <Input
-                  id="cafconLoading"
-                  value={formData.cafconLoading}
+                  id="catconLoading"
+                  value={formData.catconLoading}
                   onChange={(e) =>
-                    handleInputChange("cafconLoading", e.target.value)
+                    handleInputChange("catconLoading", e.target.value)
                   }
-                  placeholder="Enter CAFCON Loading"
+                  placeholder="Enter CATCON Loading"
                 />
               </div>
-
               {/* DPF Make */}
               <div className="space-y-2">
                 <Label htmlFor="dpfMake">DPF Make</Label>
                 <Input
                   id="dpfMake"
                   value={formData.dpfMake}
-                  onChange={(e) => handleInputChange("dpfMake", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("dpfMake", e.target.value)
+                  }
                   placeholder="Enter DPF Make"
                 />
               </div>
-
               {/* DPF Capacity */}
               <div className="space-y-2">
                 <Label htmlFor="dpfCapacity">DPF Capacity</Label>
@@ -615,18 +816,18 @@ export default function EngineForm() {
                   placeholder="Enter DPF Capacity"
                 />
               </div>
-
               {/* SCR Make */}
               <div className="space-y-2">
                 <Label htmlFor="scrMake">SCR Make</Label>
                 <Input
                   id="scrMake"
                   value={formData.scrMake}
-                  onChange={(e) => handleInputChange("scrMake", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("scrMake", e.target.value)
+                  }
                   placeholder="Enter SCR Make"
                 />
               </div>
-
               {/* SCR Capacity */}
               <div className="space-y-2">
                 <Label htmlFor="scrCapacity">SCR Capacity</Label>
@@ -639,7 +840,6 @@ export default function EngineForm() {
                   placeholder="Enter SCR Capacity"
                 />
               </div>
-
               {/* A/C Compressor */}
               <div className="space-y-2">
                 <Label>A/C Compressor</Label>
@@ -661,12 +861,9 @@ export default function EngineForm() {
                   </div>
                 </RadioGroup>
               </div>
-
               {/* A/C Compressor Details */}
               <div className="space-y-2">
-                <Label htmlFor="acCompressorDetails">
-                  A/C Compressor Details
-                </Label>
+                <Label htmlFor="acCompressorDetails">A/C Compressor Details</Label>
                 <Input
                   id="acCompressorDetails"
                   value={formData.acCompressorDetails}
@@ -676,7 +873,6 @@ export default function EngineForm() {
                   placeholder="Enter A/C Compressor Details"
                 />
               </div>
-
               {/* Power Steering Pump */}
               <div className="space-y-2">
                 <Label htmlFor="powerSteeringPump">Power Steering Pump</Label>
@@ -689,12 +885,9 @@ export default function EngineForm() {
                   placeholder="Enter Power Steering Pump"
                 />
               </div>
-
               {/* Power Steering Details */}
               <div className="space-y-2">
-                <Label htmlFor="powerSteeringDetails">
-                  Power Steering Details
-                </Label>
+                <Label htmlFor="powerSteeringDetails">Power Steering Details</Label>
                 <Input
                   id="powerSteeringDetails"
                   value={formData.powerSteeringDetails}
@@ -704,7 +897,6 @@ export default function EngineForm() {
                   placeholder="Enter Power Steering Details"
                 />
               </div>
-
               {/* Water by pass */}
               <div className="space-y-2">
                 <Label htmlFor="waterByPass">Water by pass</Label>
@@ -717,42 +909,39 @@ export default function EngineForm() {
                   placeholder="Enter Water by pass"
                 />
               </div>
-
-              {/* Kerb Weight EMW */}
+              {/* Kerb Weight FAW */}
               <div className="space-y-2">
-                <Label htmlFor="kerbWeightEmw">
-                  Kerb Weight EMW (Kg) <span className="text-red-500">*</span>
+                <Label htmlFor="kerbWeightFaw">
+                  Kerb Weight FAW (Kg){" "}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="kerbWeightEmw"
-                  value={formData.kerbWeightEmw}
+                  id="kerbWeightFaw"
+                  value={formData.kerbWeightFaw}
                   onChange={(e) =>
-                    handleInputChange("kerbWeightEmw", e.target.value)
+                    handleInputChange("kerbWeightFaw", e.target.value)
                   }
-                  placeholder="Enter Kerb Weight EMW (Kg)"
+                  placeholder="Enter Kerb Weight FAW (Kg)"
                 />
               </div>
-
               {/* Kerb Weight RMW */}
               <div className="space-y-2">
-                <Label htmlFor="kerbWeightRmw">
-                  Kerb Weight RMW (Kg) <span className="text-red-500">*</span>
+                <Label htmlFor="kerbWeightRaw">
+                  Kerb Weight RAW (Kg){" "}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="kerbWeightRmw"
-                  value={formData.kerbWeightRmw}
+                  id="kerbWeightRaw"
+                  value={formData.kerbWeightRaw}
                   onChange={(e) =>
-                    handleInputChange("kerbWeightRmw", e.target.value)
+                    handleInputChange("kerbWeightRaw", e.target.value)
                   }
-                  placeholder="Enter Kerb Weight RMW (Kg)"
+                  placeholder="Enter Kerb Weight RAW (Kg)"
                 />
               </div>
-
               {/* Emission Status */}
               <div className="space-y-2">
-                <Label htmlFor="emissionStatus">
-                  Emission Status of the Vehicle
-                </Label>
+                <Label htmlFor="emissionStatus">Emission Status of the Vehicle</Label>
                 <Input
                   id="emissionStatus"
                   value={formData.emissionStatus}
@@ -762,7 +951,6 @@ export default function EngineForm() {
                   placeholder="Enter Emission Status of the Vehicle"
                 />
               </div>
-
               {/* Thermostat Details */}
               <div className="space-y-2">
                 <Label htmlFor="thermostatDetails">Thermostat Details</Label>
@@ -776,11 +964,11 @@ export default function EngineForm() {
                   className="min-h-[80px]"
                 />
               </div>
-
               {/* Vehicle Serial Number */}
               <div className="space-y-2">
                 <Label htmlFor="vehicleSerialNumber">
-                  Vehicle Serial Number <span className="text-red-500">*</span>
+                  Vehicle Serial Number{" "}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <Select
                   value={formData.vehicleSerialNumber}
@@ -792,13 +980,23 @@ export default function EngineForm() {
                     <SelectValue placeholder="Select Vehicle Serial No" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="VSN001">VSN001</SelectItem>
-                    <SelectItem value="VSN002">VSN002</SelectItem>
-                    <SelectItem value="VSN003">VSN003</SelectItem>
+                    {vehicleSerialNumbers.length > 0 ? (
+                      vehicleSerialNumbers.map((serialNumber) => (
+                        <SelectItem
+                          key={serialNumber}
+                          value={serialNumber}
+                        >
+                          {serialNumber}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem disabled>
+                        No Vehicle Serial Numbers Available
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
-
               {/* Engine Family */}
               <div className="space-y-2">
                 <Label htmlFor="engineFamily">Engine Family</Label>
@@ -812,19 +1010,94 @@ export default function EngineForm() {
                     <SelectValue placeholder="Select Engine Family" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Family1">Engine Family 1</SelectItem>
-                    <SelectItem value="Family2">Engine Family 2</SelectItem>
-                    <SelectItem value="Family3">Engine Family 3</SelectItem>
+                    {engineFamilies.length > 0 ? (
+                      engineFamilies.map((family) => (
+                        <SelectItem
+                          key={family.value || family.id || family}
+                          value={family}
+                        >
+                          {family}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem disabled>
+                        No Engine Families Available
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            {/* Required Field Note */}
-            <div className="mt-6">
-              <p className="text-sm text-red-500 dark:text-red-500">
-                <span className="text-red-500">*</span>required field
-              </p>
+              {/* HV Battery Make */}
+              <div className="space-y-2">
+                <Label htmlFor="hvBatteryMake">HV Battery Make</Label>
+                <Input
+                  id="hvBatteryMake"
+                  value={formData.hvBatteryMake}
+                  onChange={(e) =>
+                    handleInputChange("hvBatteryMake", e.target.value)
+                  }
+                  placeholder="Enter HV Battery Make"
+                />
+              </div>
+              {/* HV Battery Capacity */}
+              <div className="space-y-2">
+                <Label htmlFor="hvBatteryCapacity">HV Battery Capacity</Label>
+                <Input
+                  id="hvBatteryCapacity"
+                  value={formData.hvBatteryCapacity}
+                  onChange={(e) =>
+                    handleInputChange("hvBatteryCapacity", e.target.value)
+                  }
+                  placeholder="Enter HV Battery Capacity"
+                />
+              </div>
+              {/* HV Battery Voltage (V) */}
+              <div className="space-y-2">
+                <Label htmlFor="hvBatteryVoltage">HV Battery Voltage (V)</Label>
+                <Input
+                  id="hvBatteryVoltage"
+                  value={formData.hvBatteryVoltage}
+                  onChange={(e) =>
+                    handleInputChange("hvBatteryVoltage", e.target.value)
+                  }
+                  placeholder="Enter HV Battery Voltage (V)"
+                />
+              </div>
+              {/* HV Battery Current (A) */}
+              <div className="space-y-2">
+                <Label htmlFor="hvBatteryCurrent">HV Battery Current (A)</Label>
+                <Input
+                  id="hvBatteryCurrent"
+                  value={formData.hvBatteryCurrent}
+                  onChange={(e) =>
+                    handleInputChange("hvBatteryCurrent", e.target.value)
+                  }
+                  placeholder="Enter HV Battery Current (A)"
+                />
+              </div>
+              {/* EV Motor Power (KW) */}
+              <div className="space-y-2">
+                <Label htmlFor="evMotorPower">EV Motor Power (KW)</Label>
+                <Input
+                  id="evMotorPower"
+                  value={formData.evMotorPower}
+                  onChange={(e) =>
+                    handleInputChange("evMotorPower", e.target.value)
+                  }
+                  placeholder="Enter EV Motor Power (KW)"
+                />
+              </div>
+              {/* Department (fixed, read-only) */}
+              <div className="space-y-2">
+                <Label htmlFor="department">Department <span className="text-red-500">*</span></Label>
+                <Input
+                  id="department"
+                  value={formData.department}
+                  readOnly
+                  className="bg-gray-100 text-gray-500"
+                  placeholder="Department"
+                />
+              </div>
             </div>
 
             {/* Action Buttons */}
@@ -833,7 +1106,7 @@ export default function EngineForm() {
                 onClick={handleAddEngine}
                 className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
               >
-                ✓ ADD ENGINE
+                {isEditMode ? "✓ UPDATE ENGINE" : "✓ ADD ENGINE"}
               </Button>
               <Button
                 onClick={handleClear}

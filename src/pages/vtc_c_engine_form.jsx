@@ -18,6 +18,7 @@ import { Card, CardContent } from "@/components/UI/card";
 import { ArrowBack } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
+import { useAuth } from "@/context/AuthContext";
 import showSnackbar from "@/utils/showSnackbar";
 
 export default function VTCCEngineForm() {
@@ -25,6 +26,14 @@ export default function VTCCEngineForm() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const department = queryParams.get("department") || "VTC_JO Chennai";
+  const isEditMode = queryParams.get("edit") === "true";
+
+  // Check if we have engine data from navigation state
+  const engineData = location.state?.engineData;
+  const originalEngineData = location.state?.originalEngineData;
+
+  const { apiUserRole, userId, userName } = useAuth();
+
   const [formData, setFormData] = useState({
     engineBuildLevel: "",
     engineSerialNumber: "",
@@ -74,8 +83,76 @@ export default function VTCCEngineForm() {
     hvBatteryVoltage: "",
     hvBatteryCurrent: "",
     evMotorPower: "",
-    department: department, // Add department to formData
+    department: department,
   });
+
+  // Helper function to parse ratio strings like "3.42:1" into {numerator: "3.42", denominator: "1"}
+  const parseRatio = (ratioString) => {
+    if (!ratioString) return { numerator: "", denominator: "" };
+    const parts = ratioString.toString().split(":");
+    return {
+      numerator: parts[0] || "",
+      denominator: parts[1] || ""
+    };
+  };
+
+  // Populate form with existing engine data when editing
+  useEffect(() => {
+    if (isEditMode && engineData) {
+      setFormData({
+        engineBuildLevel: engineData.engine_build_level || "",
+        engineSerialNumber: engineData.engine_serial_number || "",
+        engineType: engineData.engine_type || "",
+        engineCapacity: engineData.engine_capacity?.toString() || "",
+        numberOfCylinders: engineData.number_of_cylinders || "",
+        compressionRatio: parseRatio(engineData.compression_ratio),
+        bore: engineData.bore_mm?.toString() || "",
+        stroke: engineData.stroke_mm?.toString() || "",
+        vacuumModulatorMake: engineData.vacuum_modulator_make || "",
+        vacuumModulatorDetails: engineData.vacuum_modulator_details || "",
+        ecuMake: engineData.ecu_make || "",
+        ecuIdNumber: engineData.ecu_id_number || "",
+        ecuDatasetNumber: engineData.ecu_dataset_number || "",
+        ecuDatasetDetails: engineData.ecu_dataset_details || "",
+        injectorType: engineData.injector_type || "",
+        turbochargerType: engineData.turbo_charger_type || "",
+        blowByRecirculation: engineData.blow_by_recirculation === true ? "Yes" : engineData.blow_by_recirculation === false ? "No" : "",
+        blowByRecirculationDetails: "",
+        nozzleNumberOfHoles: engineData.nozzle_hole_count || "",
+        nozzleThroughFlow: engineData.nozzle_through_flow?.toString() || "",
+        egrValveMake: engineData.egr_valve_make || "",
+        egrValveType: engineData.egr_valve_type || "",
+        egrValveDiameter: engineData.egr_valve_diameter_mm?.toString() || "",
+        egrCoolerMake: engineData.egr_cooler_make || "",
+        egrCoolerCapacity: engineData.egr_cooler_capacity_kw?.toString() || "",
+        catconMass: engineData.catcon_make || "",
+        catconType: engineData.catcon_type || "",
+        catconLoading: engineData.catcon_loading || "",
+        dpfMake: engineData.dpf_make || "",
+        dpfCapacity: engineData.dpf_capacity || "",
+        scrMake: engineData.scr_make || "",
+        scrCapacity: engineData.scr_capacity || "",
+        acCompressor: engineData.acc_compressor === true ? "Yes" : engineData.acc_compressor === false ? "No" : "",
+        acCompressorDetails: engineData.acc_compressor_details || "",
+        powerSteeringPump: engineData.ps_pump || "",
+        powerSteeringDetails: engineData.ps_details || "",
+        waterByPass: engineData.water_bypass || "",
+        kerbWeightFaw: engineData.kerb_weight_faw_kg?.toString() || "",
+        kerbWeightRaw: engineData.kerb_weight_raw_kg?.toString() || "",
+        emissionStatus: engineData.emission_status || "",
+        thermostatDetails: engineData.thermostat_details || "",
+        vehicleSerialNumber: engineData.vehicle_serial_number || "",
+        engineFamily: engineData.engine_family || "",
+        hvBatteryMake: engineData.hv_battery_make || "",
+        hvBatteryCapacity: engineData.hv_battery_capacity?.toString() || "",
+        hvBatteryVoltage: engineData.hv_battery_voltage?.toString() || "",
+        hvBatteryCurrent: engineData.hv_battery_current?.toString() || "",
+        evMotorPower: engineData.ev_motor_power_kw?.toString() || "",
+        department: engineData.department || department,
+      });
+    }
+  }, [isEditMode, engineData, department]);
+
   const [engineFamilies, setEngineFamilies] = useState([]);
   const [vehicleSerialNumbers, setVehicleSerialNumbers] = useState([]);
   const apiUrl = import.meta.env.VITE_BACKEND_URL;
@@ -152,14 +229,19 @@ export default function VTCCEngineForm() {
       hvBatteryVoltage: "",
       hvBatteryCurrent: "",
       evMotorPower: "",
-      department: department, // Reset department as well
+      department: department,
     });
-    showSnackbar("Engine created successfully!", "info");
   };
 
   const handleBack = () => {
     navigate(-1);
   };
+
+  // Convert current time to IST and format as ISO 8601
+  const currentISTTime = new Date().toLocaleString("en-US", {
+    timeZone: "Asia/Kolkata",
+  });
+  const formattedISTTime = new Date(currentISTTime).toISOString();
 
   // Utility to map frontend formData to backend EngineSchema
   const mapFormDataToEngineSchema = (formData) => {
@@ -230,26 +312,52 @@ export default function VTCCEngineForm() {
       hv_battery_voltage: parseFloatOrUndefined(formData.hvBatteryVoltage),
       hv_battery_current: parseFloatOrUndefined(formData.hvBatteryCurrent),
       ev_motor_power_kw: parseFloatOrUndefined(formData.evMotorPower),
-      department: formData.department, // Add department to payload
-      // id_of_creator, created_on, id_of_updater, updated_on are handled by backend
+      department: formData.department,
+      // Add tracking fields
+      ...(isEditMode ? {
+        id_of_updater: userId || "",
+        name_of_updater: userName || "",
+        updated_on: formattedISTTime
+      } : {
+        id_of_creator: userId || "",
+        name_of_creator: userName || "",
+        created_on: formattedISTTime,
+        updated_on: formattedISTTime
+      })
     };
   };
 
   const handleAddEngine = async () => {
     const enginePayload = mapFormDataToEngineSchema(formData);
     try {
-      const res = await axios.post(`${apiUrl}/engines`, enginePayload);
-      showSnackbar(
-        `Engine added successfully! Engine Serial Number: ${res.data.engine_serial_number || formData.engineSerialNumber}`,
-        "success"
-      );
+      let response;
+      if (isEditMode) {
+        // Update existing engine
+        response = await axios.put(
+          `${apiUrl}/engines/${formData.engineSerialNumber}`,
+          enginePayload
+        );
+        showSnackbar("Engine updated successfully!", "success");
+      } else {
+        // Create new engine
+        response = await axios.post(`${apiUrl}/engines`, enginePayload);
+        showSnackbar(
+          `Engine added successfully! Engine Serial Number: ${response.data.engine_serial_number || formData.engineSerialNumber}`,
+          "success"
+        );
+      }
       navigate(-1);
-      handleClear();
     } catch (err) {
       if (err.response && err.response.data && err.response.data.detail) {
-        showSnackbar("Failed to add engine: " + err.response.data.detail, "error");
+        showSnackbar(
+          `Failed to ${isEditMode ? 'update' : 'add'} engine: ` + err.response.data.detail,
+          "error"
+        );
       } else {
-        showSnackbar("Failed to add engine. Please try again.", "error");
+        showSnackbar(
+          `Failed to ${isEditMode ? 'update' : 'add'} engine. Please try again.`,
+          "error"
+        );
       }
     }
   };
@@ -295,29 +403,15 @@ export default function VTCCEngineForm() {
                   <ArrowBack className="h-5 w-5" />
                 </Button>
                 <div>
-                  <h1 className="text-sm font-medium text-black-600 dark:text-red-500 ">
-                    NEW ENGINE
+                  <h1 className="text-lg font-semibold text-gray-800 dark:text-red-500">
+                    {isEditMode ? `EDIT ENGINE: ${formData.engineSerialNumber}` : `NEW ENGINE - ${department}`}
                   </h1>
+                  {isEditMode && (
+                    <p className="text-sm text-gray-600">
+                      Editing engine: {engineData?.engine_serial_number} | Department: {department}
+                    </p>
+                  )}
                 </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                {/* Tab Buttons */}
-                {/* {["Job Order", "Vehicle", "Engine"].map((tab) => (
-                  <Button
-                    key={tab}
-                    variant={activeTab === tab ? "default" : "outline"}
-                    onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${
-                      tab === "Job Order"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : tab === "Vehicle" || tab === "Engine"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "text-red-500 border-red-500 hover:bg-red-50"
-                    }`}
-                  >
-                    {tab}
-                  </Button>
-                ))} */}
               </div>
             </div>
           </div>
@@ -329,6 +423,25 @@ export default function VTCCEngineForm() {
           <CardContent className="p-6">
             {/* Form Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Engine Serial Number - Disable editing in edit mode */}
+              <div className="space-y-2">
+                <Label htmlFor="engineSerialNumber">
+                  Engine Serial Number{" "}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="engineSerialNumber"
+                  value={formData.engineSerialNumber}
+                  onChange={(e) =>
+                    handleInputChange("engineSerialNumber", e.target.value)
+                  }
+                  disabled={isEditMode}
+                  className={isEditMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}
+                  placeholder="Enter Engine Serial Number"
+                />
+              </div>
+
+              {/* Rest of your form fields remain the same... */}
               {/* Engine Build Level */}
               <div className="space-y-2">
                 <Label htmlFor="engineBuildLevel">Engine Build Level</Label>
@@ -341,21 +454,10 @@ export default function VTCCEngineForm() {
                   placeholder="Enter Engine Build Level"
                 />
               </div>
-              {/* Engine Serial Number */}
-              <div className="space-y-2">
-                <Label htmlFor="engineSerialNumber">
-                  Engine Serial Number{" "}
-                  <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="engineSerialNumber"
-                  value={formData.engineSerialNumber}
-                  onChange={(e) =>
-                    handleInputChange("engineSerialNumber", e.target.value)
-                  }
-                  placeholder="Enter Engine Serial Number"
-                />
-              </div>
+
+              {/* Continue with all other fields as they were... */}
+              {/* I'll include a few key ones, but you should keep all the original fields */}
+
               {/* Engine Type */}
               <div className="space-y-2">
                 <Label htmlFor="engineType">Engine Type</Label>
@@ -997,13 +1099,14 @@ export default function VTCCEngineForm() {
                 />
               </div>
             </div>
+
             {/* Action Buttons */}
             <div className="mt-6 flex justify-end gap-3">
               <Button
                 onClick={handleAddEngine}
                 className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
               >
-                ✓ ADD ENGINE
+                {isEditMode ? "✓ UPDATE ENGINE" : "✓ ADD ENGINE"}
               </Button>
               <Button
                 onClick={handleClear}

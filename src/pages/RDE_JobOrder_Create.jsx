@@ -393,7 +393,6 @@ export default function RDECreateJobOrder() {
         // Pass department as query param for filtering
         const res = await axios.get(
           `${apiURL}/vehicle-body-numbers`,
-          { params: { department: form.department || "RDE JO" } }
         );
         setVehicleBodyNumbers(res.data || []);
       } catch (err) {
@@ -404,8 +403,7 @@ export default function RDECreateJobOrder() {
     (async () => {
       try {
         const res = await axios.get(
-          `${apiURL}/engine-numbers`,
-          { params: { department: form.department || "RDE JO" } }
+          `${apiURL}/engine-numbers`
         );
         setEngineNumbers(res.data || []);
       } catch (err) {

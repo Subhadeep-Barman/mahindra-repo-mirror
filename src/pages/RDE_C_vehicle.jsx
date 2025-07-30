@@ -1,5 +1,3 @@
-"use client";
-
 import { ArrowBack, Add, Edit as EditIcon } from "@mui/icons-material";
 import { Button } from "@/components/UI/button";
 import { Badge } from "@/components/UI/badge";
@@ -16,46 +14,40 @@ import { Card } from "@/components/UI/card";
 import { useState, useEffect } from "react";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import TextField from "@mui/material/TextField";
-import { useRef } from "react";
+import { useAuth } from "@/context/AuthContext";
+import showSnackbar from "@/utils/showSnackbar";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
-export default function VTCVehiclePage() {
+export default function RDEVehiclePage() {
   const [vehicles, setVehicles] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editVehicle, setEditVehicle] = useState(null);
-  const [editForm, setEditForm] = useState(null);
+  const { apiUserRole, userId, userName } = useAuth();
 
   // Fetch vehicles from API on mount
   useEffect(() => {
     async function fetchVehicles() {
       try {
-        // Add department as query parameter
-        const department = "RDE JO";
-        const response = await axios.get(
-          `${apiURL}/vehicles?department=${encodeURIComponent(department)}`
-        );
+        // Fetch all vehicles
+        const response = await axios.get(`${apiURL}/vehicles`);
+
+        console.log("Fetched all vehicles:", response.data); // Debug log
+
         // Only keep necessary fields for each vehicle
         const minimalVehicles = (response.data || []).map((v) => ({
           vehicle_serial_number: v.vehicle_serial_number,
           vehicle_body_number: v.vehicle_body_number,
           vehicle_model: v.vehicle_model,
-          id_of_creator: v.id_of_creator,
+          id_of_creator: v.id_of_creator || "",
           created_on: v.created_on,
           id_of_updater: v.id_of_updater,
           updated_on: v.updated_on,
         }));
         setVehicles(minimalVehicles);
       } catch (err) {
+        console.error("Error fetching vehicles:", err);
         setVehicles([]);
-        // Optionally show error
       }
     }
     fetchVehicles();
@@ -95,64 +87,50 @@ export default function VTCVehiclePage() {
     setCurrentPage(pageNumber);
   };
 
-  // Open edit modal and fetch full vehicle details
+  // FIXED: Update the handleEditClick function to fetch the SPECIFIC vehicle data
   const handleEditClick = async (vehicle) => {
     try {
+      console.log("Clicking on RDE vehicle:", vehicle.vehicle_serial_number); // Debug log
+
+      // FIXED: Use the correct API endpoint format without the slash before query parameter
       const response = await axios.get(
-        `${apiURL}/vehicles/${vehicle.vehicle_serial_number}`
+        `${apiURL}/vehicles?vehicle_serial_number=${encodeURIComponent(vehicle.vehicle_serial_number)}`
       );
-      setEditVehicle(vehicle);
-      setEditForm(response.data); // full vehicle data
-      setEditOpen(true);
+
+      console.log("RDE API Response:", response.data); // Debug log
+
+      if (response.data && response.data.length > 0) {
+        // FIXED: Find the exact vehicle that matches the clicked serial number
+        const vehicleData = response.data.find(v =>
+          v.vehicle_serial_number === vehicle.vehicle_serial_number
+        );
+
+        if (!vehicleData) {
+          console.error("Vehicle not found in response:", vehicle.vehicle_serial_number);
+          showSnackbar("Selected vehicle not found in response.", "error");
+          return;
+        }
+
+        console.log("Found matching RDE vehicle:", vehicleData); // Debug log
+
+        // Navigate to the vehicle form page with complete vehicle data
+        navigate(`/vtcvehicle/new?department=RDE%20JO&edit=true`, {
+          state: {
+            vehicleData: vehicleData,
+            isEdit: true,
+            vehicleSerialNumber: vehicle.vehicle_serial_number,
+            // Pass additional context for the form
+            editMode: true,
+            originalVehicleData: vehicleData
+          }
+        });
+      } else {
+        showSnackbar("No vehicle data found for the selected vehicle.", "warning");
+      }
     } catch (err) {
+      console.error("Error fetching vehicle details:", err);
       showSnackbar(
-        "Error fetching vehicle details: " +
-        (err.response?.data?.detail || err.message),
-        "error"
-      );
-    }
-  };
-
-  // Handle edit form change (for all fields)
-  const handleEditFormChange = (e) => {
-    const { name, value, type } = e.target;
-    setEditForm({
-      ...editForm,
-      [name]: type === "number" ? Number(value) : value,
-    });
-  };
-
-  // Save updated vehicle (send all fields)
-  const handleEditSave = async () => {
-    if (!editVehicle || !editForm) return;
-    try {
-      await axios.put(
-        `${apiURL}/vehicles/${editVehicle.vehicle_serial_number}`,
-        { ...editForm, vehicle_serial_number: editVehicle.vehicle_serial_number },
-        { headers: { "Content-Type": "application/json" } }
-      );
-      setEditOpen(false);
-      setEditVehicle(null);
-      setEditForm(null);
-
-      showSnackbar("Vehicle updated successfully!", "success");
-      navigate(-1);
-
-      // Refresh list
-      const response = await axios.get(`${apiURL}/vehicles`);
-      const minimalVehicles = (response.data || []).map((v) => ({
-        vehicle_serial_number: v.vehicle_serial_number,
-        vehicle_body_number: v.vehicle_body_number,
-        vehicle_model: v.vehicle_model,
-        id_of_creator: v.id_of_creator,
-        created_on: v.created_on,
-        id_of_updater: v.id_of_updater,
-        updated_on: v.updated_on,
-      }));
-      setVehicles(minimalVehicles);
-    } catch (err) {
-      showSnackbar(
-        "Error updating vehicle: " + (err.response?.data?.detail || err.message),
+        "Error fetching vehicle details: " + (err.response?.data?.detail || err.message),
         "error"
       );
     }
@@ -219,32 +197,29 @@ export default function VTCVehiclePage() {
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Card>
           <div className="overflow-x-auto">
-            <Table>
+            <Table className="min-w-full border-collapse border border-gray-200">
               <TableHeader>
-                <TableRow>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                <TableRow className="bg-gray-100">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Vehicle Serial Number
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Vehicle Body Number
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Vehicle Model
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Created By
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Created on
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Last Updated By
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Last Updated on
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
-                    Edit
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -252,45 +227,49 @@ export default function VTCVehiclePage() {
                 {currentItems.map((vehicle, index) => (
                   <TableRow
                     key={vehicle.vehicle_serial_number || index}
-                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
+                    className={`${index %
+                      2 === 0 ? "bg-white" : "bg-gray-50"
+                      } hover:bg-gray-100`}
                   >
-                    <TableCell className="text-sm text-gray-900 font-medium">
+                    <TableCell
+                      className="text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400 text-xs px-4 py-2"
+                      onClick={() => handleEditClick(vehicle)}
+                    >
                       {vehicle.vehicle_serial_number}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-900">
+                    <TableCell className="text-xs text-gray-900 px-4 py-2">
                       {vehicle.vehicle_body_number}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-900">
+                    <TableCell className="text-xs text-gray-900 px-4 py-2">
                       {vehicle.vehicle_model}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600">
+                    <TableCell className="text-xs text-gray-600 px-4 py-2">
                       {vehicle.id_of_creator}
                     </TableCell>
                     <TableCell className="text-xs text-gray-600 px-4 py-2">
-                        {new Date(vehicle.created_on).toLocaleString("en-IN", {
-                          timeZone: "Asia/Kolkata",
-                          hour12: true,
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </TableCell>
-                    <TableCell className="text-sm text-gray-600">
+                      {new Date(vehicle.created_on).toLocaleString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                        hour12: true,
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </TableCell>
+                    <TableCell className="text-xs text-gray-600 px-4 py-2">
                       {vehicle.id_of_updater}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {vehicle.updated_on}
-                    </TableCell>
-                    <TableCell>
-                      <button
-                        onClick={() => handleEditClick(vehicle)}
-                        className="text-gray-500 hover:text-red-500"
-                        title="Edit"
-                      >
-                        <EditIcon fontSize="small" />
-                      </button>
+                    <TableCell className="text-xs text-gray-600 px-4 py-2">
+                      {new Date(vehicle.updated_on).toLocaleString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                        hour12: true,
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -311,7 +290,7 @@ export default function VTCVehiclePage() {
               size="sm"
               disabled={currentPage === 1}
               onClick={() => handlePageChange(1)}
-              className={currentPage === 1 ? "text-gray-400" : "text-gray-600"}
+              className="text-gray-400"
             >
               {"<<"}
             </Button>
@@ -320,18 +299,30 @@ export default function VTCVehiclePage() {
               size="sm"
               disabled={currentPage === 1}
               onClick={() => handlePageChange(currentPage - 1)}
-              className={currentPage === 1 ? "text-gray-400" : "text-gray-600"}
+              className="text-gray-400"
             >
               {"<"}
             </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePageChange(page)}
+                className={`${currentPage === page
+                  ? "bg-black text-white hover:bg-gray-800"
+                  : "text-gray-600"
+                  } px-3 py-1`}
+              >
+                {page}
+              </Button>
+            ))}
             <Button
               variant="outline"
               size="sm"
               disabled={currentPage === totalPages}
               onClick={() => handlePageChange(currentPage + 1)}
-              className={
-                currentPage === totalPages ? "text-gray-400" : "text-gray-600"
-              }
+              className="text-gray-400"
             >
               {">"}
             </Button>
@@ -340,87 +331,12 @@ export default function VTCVehiclePage() {
               size="sm"
               disabled={currentPage === totalPages}
               onClick={() => handlePageChange(totalPages)}
-              className={
-                currentPage === totalPages ? "text-gray-400" : "text-gray-600"
-              }
+              className="text-gray-400"
             >
               {">>"}
             </Button>
           </div>
         </div>
-
-        {/* Edit Modal with full form */}
-        <Dialog
-          open={editOpen}
-          onClose={() => setEditOpen(false)}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle>Edit Vehicle</DialogTitle>
-          <DialogContent>
-            {editForm && (
-              <form className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {/* Example for some fields, repeat for all fields in VehicleSchema */}
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    Project
-                  </label>
-                  <input
-                    name="project_code"
-                    value={editForm.project_code || ""}
-                    onChange={handleEditFormChange}
-                    className="border rounded px-2 py-1 w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    Vehicle Build Level
-                  </label>
-                  <input
-                    name="vehicle_build_level"
-                    value={editForm.vehicle_build_level || ""}
-                    onChange={handleEditFormChange}
-                    className="border rounded px-2 py-1 w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    Vehicle Model
-                  </label>
-                  <input
-                    name="vehicle_model"
-                    value={editForm.vehicle_model || ""}
-                    onChange={handleEditFormChange}
-                    className="border rounded px-2 py-1 w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    Vehicle Body Number
-                  </label>
-                  <input
-                    name="vehicle_body_number"
-                    value={editForm.vehicle_body_number || ""}
-                    onChange={handleEditFormChange}
-                    className="border rounded px-2 py-1 w-full"
-                  />
-                </div>
-                {/* ...repeat for all fields in VehicleSchema... */}
-              </form>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={() => setEditOpen(false)}
-              className="bg-gray-200 text-gray-700"
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleEditSave} className="bg-red-500 text-white">
-              Save
-            </Button>
-          </DialogActions>
-        </Dialog>
       </div>
     </>
   );
