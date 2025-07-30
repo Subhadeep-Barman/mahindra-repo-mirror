@@ -2158,7 +2158,12 @@ export default function CreateJobOrder() {
         {showCFTPanel && !isTestEngineer && (
           <div className="mt-4 mx-8 mb-8 bg-white border rounded-lg">
             <CFTMembers
-              jobOrderId={null} // Pass job_order_id if available after creation
+              jobOrderId={
+                location.state?.originalJobOrderId ||
+                location.state?.jobOrder?.job_order_id ||
+                jobOrderId ||
+                null
+              }
               members={cftMembers}
               setMembers={setCftMembers}
               disabled={formDisabled}

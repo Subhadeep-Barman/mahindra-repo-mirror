@@ -40,7 +40,6 @@ export default function AccountMenu() {
     logout();
     logInteraction("User logged out");
     navigate("/login");
-    logger.info("User logged out");
   }
 
   const handleNavigation = (path, interaction) => {
