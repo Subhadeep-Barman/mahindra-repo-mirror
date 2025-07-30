@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowBack, Add } from "@mui/icons-material";
+import { ArrowBack, Add, Search as SearchIcon } from "@mui/icons-material";
 import { Button } from "@/components/UI/button";
 import { Badge } from "@/components/UI/badge";
 import { useNavigate } from "react-router-dom";
@@ -253,9 +253,9 @@ export default function RDEChennaiPage() {
                 <Button
                   size="sm"
                   onClick={() => setShowSearchCard(!showSearchCard)}
-                  className="border border-red-500 text-red-500 hover:bg-red-50"
+                  className="border border-red-500 bg-red-50 text-red-500 hover:text-white hover:bg-red-500 flex items-center justify-center"
                 >
-                  {showSearchCard ? "Hide Search" : "Search"}
+                  <SearchIcon className="h-5 w-5" />
                 </Button>
                 {/* Tab Buttons */}
                 {userRole !== "TestEngineer" &&
