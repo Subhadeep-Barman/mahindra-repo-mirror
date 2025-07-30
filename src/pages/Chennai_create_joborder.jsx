@@ -20,6 +20,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import CFTMembers from "@/components/CFTMembers";
 import showSnackbar from "@/utils/showSnackbar";
+import { GrClone } from "react-icons/gr";
+import { MdPeopleAlt } from "react-icons/md";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL
 
@@ -101,6 +103,11 @@ export default function CreateJobOrder() {
   const [modes, setModes] = useState([]);
   const [fuelTypes, setFuelTypes] = useState([]);
 
+  // Add state for clone modal
+  const [cloneModalOpen, setCloneModalOpen] = useState(false);
+  const [cloneDropdownOpen, setCloneDropdownOpen] = useState(false);
+  const [selectedTestOrderForClone, setSelectedTestOrderForClone] = useState("");
+
   const handleAddTest = () => {
     const existingTestOrdersCount = (allTestOrders[location.state?.originalJobOrderId] || []).length;
     const currentTestsCount = tests.length;
@@ -154,6 +161,93 @@ export default function CreateJobOrder() {
         f2Nkmph2: "",
       },
     ]);
+  };
+
+  const handleCloneTest = async () => {
+    setCloneDropdownOpen(!cloneDropdownOpen);
+  };
+
+  // Add function to handle cloning a specific test order
+  const handleCloneSpecificTestOrder = async (testOrderId) => {
+    try {
+      // Fetch the specific test order details
+      const testOrderData = await fetchTestOrderById(testOrderId);
+
+      if (!testOrderData) {
+        showSnackbar("Failed to fetch test order details", "error");
+        return;
+      }
+
+      // Calculate the next test number
+      const existingTestOrdersCount = (allTestOrders[location.state?.originalJobOrderId] || []).length;
+      const currentTestsCount = tests.length;
+      const nextTestNumber = existingTestOrdersCount + currentTestsCount + 1;
+
+      // Create a new test with prefilled values from the cloned test order
+      const clonedTest = {
+        testNumber: nextTestNumber,
+        engineNumber: testOrderData.engine_number || "",
+        testType: testOrderData.test_type || "",
+        objective: testOrderData.test_objective || "",
+        vehicleLocation: testOrderData.vehicle_location || "",
+        cycleGearShift: testOrderData.cycle_gear_shift || "",
+        datasetName: testOrderData.dataset_name || "",
+        inertiaClass: testOrderData.inertia_class || "",
+        dpf: testOrderData.dpf || "",
+        dpfRegenOccurs: testOrderData.dpf_regen_occurs || "",
+        datasetflashed: testOrderData.dataset_flashed === true ? "Yes" : testOrderData.dataset_flashed === false ? "No" : "",
+        ess: testOrderData.ess || "",
+        mode: testOrderData.mode || "",
+        hardwareChange: testOrderData.hardware_change || "",
+        equipmentRequired: testOrderData.equipment_required || "",
+        shift: testOrderData.shift || "",
+        fuelType: testOrderData.fuel_type || "",
+        preferredDate: testOrderData.preferred_date || "",
+        emissionCheckDate: testOrderData.emission_check_date || "",
+        specificInstruction: testOrderData.specific_instruction || "",
+
+        // Parse attachment fields
+        emissionCheckAttachment: parseAttachment(testOrderData.emission_check_attachment),
+        dataset_attachment: parseAttachment(testOrderData.dataset_attachment),
+        a2l_attachment: parseAttachment(testOrderData.a2l_attachment),
+        experiment_attachment: parseAttachment(testOrderData.experiment_attachment),
+        dbc_attachment: parseAttachment(testOrderData.dbc_attachment),
+        wltp_attachment: parseAttachment(testOrderData.wltp_attachment),
+        pdf_report: parseAttachment(testOrderData.pdf_report),
+        excel_report: parseAttachment(testOrderData.excel_report),
+        dat_file_attachment: parseAttachment(testOrderData.dat_file_attachment),
+        others_attachment: parseAttachment(testOrderData.others_attachement),
+
+        // Reset fields for new test order
+        testOrderId: null,
+        job_order_id: null,
+        status: null,
+        showCoastDownData: false,
+
+        // Coast down data fields (empty for new test)
+        cdReportRef: "",
+        vehicleRefMass: "",
+        aN: "",
+        bNkmph: "",
+        cNkmph2: "",
+        f0N: "",
+        f1Nkmph: "",
+        f2Nkmph2: "",
+      };
+
+      // Add the cloned test to the tests array
+      setTests((prev) => [...prev, clonedTest]);
+
+      // Close the modal and reset selection
+      setCloneModalOpen(false);
+      setSelectedTestOrderForClone("");
+
+      showSnackbar(`Test cloned successfully from Test Order: ${testOrderId}`, "success");
+
+    } catch (err) {
+      console.error("Error cloning test order:", err);
+      showSnackbar("Failed to clone test order: " + (err.response?.data?.detail || err.message), "error");
+    }
   };
 
   const handleBack = () => {
@@ -292,8 +386,6 @@ export default function CreateJobOrder() {
       }
     })();
   }, [location.state?.jobOrder?.department]); // Add dependency on job order department
-
-
 
   // Fetch vehicle details using the new API when body number changes
   const handleVehicleBodyChange = (value) => {
@@ -2143,15 +2235,62 @@ export default function CreateJobOrder() {
           >
             + ADD TEST
           </Button>
+          <div className="relative">
+            <Button
+              variant="ghost"
+              className="text-xs text-blue-700 px-0"
+              onClick={handleCloneTest}
+              disabled={isTestEngineer}
+            >
+              <GrClone />
+              CLONE TEST
+            </Button>
+
+            {cloneDropdownOpen && (
+              <div className="absolute top-full left-0 mt-1 bg-white dark:bg-black border border-gray-300 rounded-lg shadow-lg z-50 w-36">
+                <div className="p-2">
+                  <div className="text-xs font-medium mb-2 text-gray-700 dark:text-white">
+                    Select Test to Clone:
+                  </div>
+                  {(allTestOrders[location.state?.originalJobOrderId] || []).length > 0 ? (
+                    <div className="max-h-48 overflow-y-auto">
+                      {(allTestOrders[location.state?.originalJobOrderId] || []).map((testOrder, index) => (
+                        <button
+                          key={testOrder.test_order_id}
+                          onClick={() => {
+                            handleCloneSpecificTestOrder(testOrder.test_order_id);
+                            setCloneDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-2 py-2 my-1 hover:bg-gray-400 bg-gray-200 dark:hover:bg-gray-800 rounded transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-black text-sm">Test {index + 1}</span>
+                            {/* <span className="text-xs text-gray-500">{testOrder.test_order_id}</span> */}
+                          </div>
+
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500 py-4 text-center">
+                      No test orders available to clone from this job order
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           <Button
             variant="ghost"
-            className="text-xs text-blue-700 px-0"
+            className="text-xs text-blue-700 px-0 flex items-center gap-1"
             onClick={() => {
               setShowCFTPanel((prev) => !prev);
             }}
             disabled={isTestEngineer}
           >
-            {showCFTPanel ? "− CFT MEMBERS" : "+ CFT MEMBERS"}
+            <MdPeopleAlt className="text-sm" />
+            {showCFTPanel ? "CFT MEMBERS" : "CFT MEMBERS"}
           </Button>
           <div className="flex-1"></div>
         </div>
@@ -2170,6 +2309,8 @@ export default function CreateJobOrder() {
             />
           </div>
         )}
+
+
 
         {/* Test Forms */}
         {tests.map((test, idx) => {

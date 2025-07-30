@@ -221,7 +221,7 @@ export default function VTCChennaiPage() {
     } catch (err) {
       showSnackbar(
         "Failed to update job order: " +
-          (err.response?.data?.detail || err.message),
+        (err.response?.data?.detail || err.message),
         "error"
       );
     }
@@ -258,26 +258,26 @@ export default function VTCChennaiPage() {
       order.name_of_creator,
       order.created_on
         ? new Date(order.created_on).toLocaleString("en-IN", {
-            timeZone: "Asia/Kolkata",
-            hour12: true,
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })
+          timeZone: "Asia/Kolkata",
+          hour12: true,
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
         : "",
       order.name_of_updater,
       order.updated_on
         ? new Date(order.updated_on).toLocaleString("en-IN", {
-            timeZone: "Asia/Kolkata",
-            hour12: true,
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })
+          timeZone: "Asia/Kolkata",
+          hour12: true,
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
         : "N/A",
     ]);
     const csvContent =
@@ -400,7 +400,7 @@ export default function VTCChennaiPage() {
           </div>
         )}
 
-    {/* Current Job Orders Badge */}
+        {/* Current Job Orders Badge */}
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center bg-white dark:bg-black">
           <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
             Current Job Orders
@@ -455,10 +455,10 @@ export default function VTCChennaiPage() {
                       Created on
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Updated by
+                      Last Updated by
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Updated on
+                      Last Updated on
                     </TableHead>
                   </TableRow>
                 </TableHeader>

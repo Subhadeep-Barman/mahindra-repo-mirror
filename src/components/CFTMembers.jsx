@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { User, Users, Trash2 } from "lucide-react";
 import axios from "axios";
 import showSnackbar from "@/utils/showSnackbar";
- 
+
 const apiURL = import.meta.env.VITE_BACKEND_URL;
- 
+
 const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
     // Fetch CFT members on mount or when jobOrderId changes
     useEffect(() => {
@@ -19,7 +19,7 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
         };
         fetchMembers();
     }, [jobOrderId, setMembers]);
- 
+
     // Update member
     const updateMember = async (idx, updatedMember) => {
         if (!jobOrderId) return;
@@ -38,10 +38,10 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
             showSnackbar("Failed to update member", "error", 3000);
         }
     };
- 
+
     // View state: "single" or "group"
     const [viewType, setViewType] = useState("single");
- 
+
     // Remove member (single or group)
     const removeMember = async (memberToRemove) => {
         // Find the actual index of the member
@@ -84,19 +84,19 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
             }
         }
     };
- 
+
     // State for ProjectTeam users dropdown
     const [projectTeamUsers, setProjectTeamUsers] = useState([]);
     const [usersLoading, setUsersLoading] = useState(false);
     const [usersError, setUsersError] = useState("");
- 
+
     // Modal state for add member
     const [addModalOpen, setAddModalOpen] = useState(false);
     const [newCode, setNewCode] = useState("");
     const [newName, setNewName] = useState("");
     const [addError, setAddError] = useState("");
     const [selectedUserIdx, setSelectedUserIdx] = useState(-1);
- 
+
     const openAddModal = async () => {
         setNewCode("");
         setNewName("");
@@ -171,7 +171,7 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
             setApplyLoading(false);
         }
     };
- 
+
     // Groups modal state
     const [groupsModalOpen, setGroupsModalOpen] = useState(false);
     const [groups, setGroups] = useState([]);
@@ -312,7 +312,7 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                                     <div className="text-xs text-red-600">{usersError}</div>
                                 ) : (
                                     <select
-                                        className="w-full border rounded px-2 py-1"
+                                        className="w-full border rounded px-2 py-1 dark:bg-black"
                                         value={selectedUserIdx}
                                         onChange={e => {
                                             setSelectedUserIdx(Number(e.target.value));
