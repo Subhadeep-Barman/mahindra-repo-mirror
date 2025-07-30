@@ -173,7 +173,7 @@ export default function RDEChennaiPage() {
   const handleJobOrderClick = (job_order_id) => {
       // Fetch job order details from backend and redirect to /createJobOrder with all data
       axios
-        .get(`${apiURL}/rde_joborders?job_order_id=${job_order_id}`)
+        .get(`${apiURL}/rde_joborders/${job_order_id}`)
         .then((res) => {
           // Pass the complete job order data to create job order page
           // This will allow the form to be pre-filled with existing values
