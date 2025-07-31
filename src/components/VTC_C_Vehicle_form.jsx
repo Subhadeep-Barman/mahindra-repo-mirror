@@ -83,7 +83,6 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     kerbFAW: "",
     kerbRAW: "",
     awdRwdFwd: "",
-    finalDriveRatio: { numerator: "", denominator: "" },
   });
 
   // Populate form with existing vehicle data when editing
@@ -124,7 +123,6 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         kerbFAW: vehicleData.kerb_faw || "",
         kerbRAW: vehicleData.kerb_raw || "",
         awdRwdFwd: vehicleData.awd_rwd_fwd || "",
-        finalDriveRatio: parseRatio(vehicleData.final_drive_ratio),
       });
     }
   }, [isEditMode, vehicleData, department]);
@@ -211,20 +209,6 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       kerb_faw: form.kerbFAW ? parseFloat(form.kerbFAW) : null,
       kerb_raw: form.kerbRAW ? parseFloat(form.kerbRAW) : null,
       awd_rwd_fwd: form.awdRwdFwd,
-      final_drive_ratio: form.finalDriveRatio.numerator && form.finalDriveRatio.denominator
-        ? `${form.finalDriveRatio.numerator}:${form.finalDriveRatio.denominator}`
-        : "",
-      // Add tracking fields
-      ...(isEditMode ? {
-        id_of_updater: userId || "",
-        name_of_updater: userName || "",
-        updated_on: formattedISTTime
-      } : {
-        id_of_creator: userId || "",
-        name_of_creator: userName || "",
-        created_on: formattedISTTime,
-        updated_on: formattedISTTime
-      })
     };
   }
 
@@ -387,7 +371,6 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       kerbFAW: "",
       kerbRAW: "",
       awdRwdFwd: "",
-      finalDriveRatio: { numerator: "", denominator: "" },
     });
     if (onClear) onClear();
   };
