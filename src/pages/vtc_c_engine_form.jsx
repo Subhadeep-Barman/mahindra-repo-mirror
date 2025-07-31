@@ -422,7 +422,7 @@ export default function VTCCEngineForm() {
     const payload = mapFormDataToSchema(formData);
     try {
       let response;
-      const endpoint = domain === "EV" ? "/motors" : "/engines";
+      const endpoint = domain === "EV" ? "/engines" : "/engines";
       const identifier = domain === "EV" ? formData.engineSerialNumber : formData.engineSerialNumber;
 
       if (isEditMode) {
@@ -516,7 +516,7 @@ export default function VTCCEngineForm() {
                     <SelectValue placeholder="Select Domain" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ICE">ICE</SelectItem>
+                    <SelectItem value="ICE">ICS</SelectItem>
                     <SelectItem value="EV">EV</SelectItem>
                     <SelectItem value="Hybrid">Hybrid</SelectItem>
                   </SelectContent>
