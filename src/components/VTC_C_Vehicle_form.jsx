@@ -78,6 +78,12 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     gearRatio5: { numerator: "", denominator: "" },
     reverseGearRatio: { numerator: "", denominator: "" },
     department: department,
+    vehicleKerbWeight: "",
+    vehicleGVW: "",
+    kerbFAW: "",
+    kerbRAW: "",
+    awdRwdFwd: "",
+    finalDriveRatio: { numerator: "", denominator: "" },
   });
 
   // Populate form with existing vehicle data when editing
@@ -113,6 +119,12 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         gearRatio5: parseRatio(vehicleData.gear_ratio_5),
         reverseGearRatio: parseRatio(vehicleData.reverse_gear_ratio),
         department: vehicleData.department || department,
+        vehicleKerbWeight: vehicleData.vehicle_kerb_weight || "",
+        vehicleGVW: vehicleData.vehicle_gvw || "",
+        kerbFAW: vehicleData.kerb_faw || "",
+        kerbRAW: vehicleData.kerb_raw || "",
+        awdRwdFwd: vehicleData.awd_rwd_fwd || "",
+        finalDriveRatio: parseRatio(vehicleData.final_drive_ratio),
       });
     }
   }, [isEditMode, vehicleData, department]);
@@ -124,7 +136,16 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
   };
 
   const handleRadioChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "driveType") {
+      setForm({
+        ...form,
+        [name]: value,
+        drivenWheel: ""
+      });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
   };
 
   const handleRatioChange = (e, field, part) => {
@@ -185,6 +206,14 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       reverse_gear_ratio: isEV ? "" : (form.reverseGearRatio.numerator && form.reverseGearRatio.denominator
         ? `${form.reverseGearRatio.numerator}:${form.reverseGearRatio.denominator}` : ""),
       department: form.department,
+      vehicle_kerb_weight: form.vehicleKerbWeight ? parseFloat(form.vehicleKerbWeight) : null,
+      vehicle_gvw: form.vehicleGVW ? parseFloat(form.vehicleGVW) : null,
+      kerb_faw: form.kerbFAW ? parseFloat(form.kerbFAW) : null,
+      kerb_raw: form.kerbRAW ? parseFloat(form.kerbRAW) : null,
+      awd_rwd_fwd: form.awdRwdFwd,
+      final_drive_ratio: form.finalDriveRatio.numerator && form.finalDriveRatio.denominator
+        ? `${form.finalDriveRatio.numerator}:${form.finalDriveRatio.denominator}`
+        : "",
       // Add tracking fields
       ...(isEditMode ? {
         id_of_updater: userId || "",
@@ -233,6 +262,11 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       gearRatio5: "5th Gear Ratio",
       reverseGearRatio: "Reverse Gear Ratio",
       department: "Department",
+      vehicleKerbWeight: "Vehicle Kerb Weight",
+      vehicleGVW: "Vehicle GVW",
+      kerbFAW: "Kerb FAW",
+      kerbRAW: "Kerb RAW",
+      awdRwdFwd: "AWD/RWD/FWD",
     };
 
     // Check for missing fields
@@ -347,7 +381,13 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       gearRatio4: { numerator: "", denominator: "" },
       gearRatio5: { numerator: "", denominator: "" },
       reverseGearRatio: { numerator: "", denominator: "" },
-      department: department
+      department: department,
+      vehicleKerbWeight: "",
+      vehicleGVW: "",
+      kerbFAW: "",
+      kerbRAW: "",
+      awdRwdFwd: "",
+      finalDriveRatio: { numerator: "", denominator: "" },
     });
     if (onClear) onClear();
   };
@@ -547,7 +587,113 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               </label>
             </div>
           </div>
-          {/* Final Drive Axle Ratio */}
+          {/* Vehicle Kerb Weight */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Vehicle Kerb Weight (kg) <span className="text-red-500">*</span>
+            </label>
+            <input
+              name="vehicleKerbWeight"
+              value={form.vehicleKerbWeight}
+              onChange={handleChange}
+              required
+              type="number"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
+              placeholder="Enter Vehicle Kerb Weight"
+            />
+          </div>
+
+          {/* Vehicle GVW */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Vehicle GVW (kg) <span className="text-red-500">*</span>
+            </label>
+            <input
+              name="vehicleGVW"
+              value={form.vehicleGVW}
+              onChange={handleChange}
+              required
+              type="number"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
+              placeholder="Enter Vehicle GVW"
+            />
+          </div>
+
+          {/* Kerb FAW */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Kerb FAW (kg) <span className="text-red-500">*</span>
+            </label>
+            <input
+              name="kerbFAW"
+              value={form.kerbFAW}
+              onChange={handleChange}
+              required
+              type="number"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
+              placeholder="Enter Kerb FAW"
+            />
+          </div>
+
+          {/* Kerb RAW */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Kerb RAW (kg) <span className="text-red-500">*</span>
+            </label>
+            <input
+              name="kerbRAW"
+              value={form.kerbRAW}
+              onChange={handleChange}
+              required
+              type="number"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
+              placeholder="Enter Kerb RAW"
+            />
+          </div>
+
+          {/* AWD/RWD/FWD */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              AWD/RWD/FWD <span className="text-red-500">*</span>
+            </label>
+            <div className="flex gap-2">
+              <label>
+                <input
+                  type="radio"
+                  name="awdRwdFwd"
+                  value="AWD"
+                  checked={form.awdRwdFwd === "AWD"}
+                  onChange={handleRadioChange}
+                  required
+                />{" "}
+                AWD
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="awdRwdFwd"
+                  value="RWD"
+                  checked={form.awdRwdFwd === "RWD"}
+                  onChange={handleRadioChange}
+                  required
+                />{" "}
+                RWD
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="awdRwdFwd"
+                  value="FWD"
+                  checked={form.awdRwdFwd === "FWD"}
+                  onChange={handleRadioChange}
+                  required
+                />{" "}
+                FWD
+              </label>
+            </div>
+          </div>
+
+          {/* Final Drive Ratio */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Final Drive Axle Ratio <span className="text-red-500">*</span>
@@ -799,28 +945,99 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               Driven Wheel <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2">
-              <label>
-                <input
-                  type="radio"
-                  name="drivenWheel"
-                  value="Front"
-                  checked={form.drivenWheel === "Front"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                Front
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="drivenWheel"
-                  value="Rear"
-                  checked={form.drivenWheel === "Rear"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                Rear
-              </label>
+              {form.driveType === "2WD" ? (
+                <>
+                  <label>
+                    <input
+                      type="radio"
+                      name="drivenWheel"
+                      value="Front"
+                      checked={form.drivenWheel === "Front"}
+                      onChange={handleRadioChange}
+                      required
+                    />{" "}
+                    Front
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="drivenWheel"
+                      value="Rear"
+                      checked={form.drivenWheel === "Rear"}
+                      onChange={handleRadioChange}
+                      required
+                    />{" "}
+                    Rear
+                  </label>
+                </>
+              ) : form.driveType === "4WD" ? (
+                // For 4WD, allow multiple selections with checkboxes
+                <>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="drivenWheel"
+                      value="Front"
+                      checked={form.drivenWheel.includes("Front")}
+                      onChange={(e) => {
+                        const { value, checked } = e.target;
+                        let newValue = form.drivenWheel || "";
+                        if (checked) {
+                          newValue = newValue ? `${newValue}, ${value}` : value;
+                        } else {
+                          newValue = newValue.split(", ").filter(item => item !== value).join(", ");
+                        }
+                        setForm({ ...form, drivenWheel: newValue });
+                      }}
+                    />{" "}
+                    Front
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="drivenWheel"
+                      value="Rear"
+                      checked={form.drivenWheel.includes("Rear")}
+                      onChange={(e) => {
+                        const { value, checked } = e.target;
+                        let newValue = form.drivenWheel || "";
+                        if (checked) {
+                          newValue = newValue ? `${newValue}, ${value}` : value;
+                        } else {
+                          newValue = newValue.split(", ").filter(item => item !== value).join(", ");
+                        }
+                        setForm({ ...form, drivenWheel: newValue });
+                      }}
+                    />{" "}
+                    Rear
+                  </label>
+                </>
+              ) : (
+                <p className="flex gap-2">
+                  <label>
+                    <input
+                      type="radio"
+                      name="drivenWheel"
+                      value="Front"
+                      checked={form.drivenWheel === "Front"}
+                      onChange={handleRadioChange}
+                      required
+                    />{" "}
+                    Front
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="drivenWheel"
+                      value="Rear"
+                      checked={form.drivenWheel === "Rear"}
+                      onChange={handleRadioChange}
+                      required
+                    />{" "}
+                    Rear
+                  </label>
+                </p>
+              )}
             </div>
           </div>
           {/* Intercooler Location */}
