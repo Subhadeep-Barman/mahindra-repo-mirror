@@ -19,6 +19,7 @@ import { useLocation } from "react-router-dom";
 import axios from "axios";
 import Navbar1 from "@/components/UI/navbar";
 import showSnackbar from "@/utils/showSnackbar";
+import useStore from "../store/useStore";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -49,6 +50,12 @@ export default function RDEChennaiPage() {
     updated_on: "",
   });
 
+  const userCookies = useStore.getState().getUserCookieData();
+    const userEmail = userCookies.userEmail;
+    const userEmployeeId = userCookies.userId;
+    console.log("User Cookies:", userCookies);
+    console.log("employeeId:", userEmployeeId);
+
   useEffect(() => {
     fetchJobOrders();
   }, []);
@@ -58,8 +65,12 @@ export default function RDEChennaiPage() {
   }, [jobOrders]);
 
   const fetchJobOrders = () => {
+    if (!userEmployeeId) {
+      showSnackbar("User ID not found. Please login again.", "error");
+      return;
+    }
     axios
-      .get(`${apiURL}/rde_joborders`)
+      .get(`${apiURL}/rde_joborders`,{ params:{ user_id: userEmployeeId, role: userRole } })
       .then((res) => setJobOrders(res.data || []))
       .catch(() => setJobOrders([]));
   };
@@ -104,25 +115,25 @@ export default function RDEChennaiPage() {
       order.name_of_creator,
       order.created_on
         ? new Date(order.created_on).toLocaleString("en-IN", {
-            timeZone: "Asia/Kolkata",
-            hour12: true,
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })
+          timeZone: "Asia/Kolkata",
+          hour12: true,
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
         : "",
       order.updated_on
         ? new Date(order.updated_on).toLocaleString("en-IN", {
-            timeZone: "Asia/Kolkata",
-            hour12: true,
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })
+          timeZone: "Asia/Kolkata",
+          hour12: true,
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
         : "N/A",
     ]);
     const csvContent =
@@ -171,26 +182,26 @@ export default function RDEChennaiPage() {
 
   // Handler for clicking job order number
   const handleJobOrderClick = (job_order_id) => {
-      // Fetch job order details from backend and redirect to /createJobOrder with all data
-      axios
-        .get(`${apiURL}/rde_joborders/${job_order_id}`)
-        .then((res) => {
-          // Pass the complete job order data to create job order page
-          // This will allow the form to be pre-filled with existing values
-          navigate("/createJobOrder", {
-            state: {
-              jobOrder: res.data,
-              isEdit: true, // Flag to indicate this is for editing/creating test orders
-              originalJobOrderId: job_order_id, // Keep reference to original job order
-            },
-          });
-        })
-        .catch((error) => {
-          console.error("Failed to fetch job order details:", error);
-          // Still navigate but without pre-filled data
-          navigate("/createJobOrder");
+    // Fetch job order details from backend and redirect to /createJobOrder with all data
+    axios
+      .get(`${apiURL}/rde_joborders/${job_order_id}`)
+      .then((res) => {
+        // Pass the complete job order data to create job order page
+        // This will allow the form to be pre-filled with existing values
+        navigate("/createJobOrder", {
+          state: {
+            jobOrder: res.data,
+            isEdit: true, // Flag to indicate this is for editing/creating test orders
+            originalJobOrderId: job_order_id, // Keep reference to original job order
+          },
         });
-    };
+      })
+      .catch((error) => {
+        console.error("Failed to fetch job order details:", error);
+        // Still navigate but without pre-filled data
+        navigate("/createJobOrder");
+      });
+  };
 
   // Handler for editing fields in the modal
   const handleEditChange = (field, value) => {
@@ -264,10 +275,9 @@ export default function RDEChennaiPage() {
                       key={tab}
                       onClick={() => handleTabClick(tab)}
                       className={`rounded-xl px-4 py-2 font-semibold border
-                        ${
-                          activeTab === tab
-                            ? "bg-red-500 text-white border-red-500"
-                            : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                        ${activeTab === tab
+                          ? "bg-red-500 text-white border-red-500"
+                          : "bg-white text-red-500 border-red-500 hover:bg-red-50"
                         }
                       `}
                     >
@@ -279,58 +289,58 @@ export default function RDEChennaiPage() {
           </div>
         </div>
 
-          {/* Search Card */}
-          {showSearchCard && (
-            <div className="bg-white dark:bg-gray-900 py-4 px-6 border border-gray-300 rounded-lg mx-4 mt-4 shadow">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {Object.keys(search).map((field) => (
-                  <input
-                    key={field}
-                    placeholder={field.replace(/_/g, " ").toUpperCase()}
-                    value={search[field]}
-                    onChange={(e) => setSearch((prev) => ({ ...prev, [field]: e.target.value }))}
-                    className="border px-2 py-1 rounded text-sm"
-                  />
-                ))}
-              </div>
-              <div className="mt-4 flex justify-end space-x-2">
-                <Button
-                  onClick={() => {
-                    setSearch({
-                      job_order_id: "",
-                      project_code: "",
-                      vehicle_serial_number: "",
-                      vehicle_body_number: "",
-                      engine_serial_number: "",
-                      domain: "",
-                      test_status: "",
-                      completed_test_count: "",
-                      name_of_creator: "",
-                      created_on: "",
-                      updated_on: "",
-                    });
-                    setFilteredJobOrders(jobOrders);
-                    setCurrentPage(1);
-                  }}
-                  className="bg-red-500 text-white hover:bg-red-600"
-                >
-                  Clear
-                </Button>
-                <Button
-                  onClick={applySearch}
-                  className="bg-red-500 text-white hover:bg-red-600"
-                >
-                  Apply
-                </Button>
-                <Button
-                  onClick={handleDownload}
-                  className="bg-yellow-500 text-black hover:bg-yellow-600"
-                >
-                  Download
-                </Button>
-              </div>
+        {/* Search Card */}
+        {showSearchCard && (
+          <div className="bg-white dark:bg-gray-900 py-4 px-6 border border-gray-300 rounded-lg mx-4 mt-4 shadow">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {Object.keys(search).map((field) => (
+                <input
+                  key={field}
+                  placeholder={field.replace(/_/g, " ").toUpperCase()}
+                  value={search[field]}
+                  onChange={(e) => setSearch((prev) => ({ ...prev, [field]: e.target.value }))}
+                  className="border px-2 py-1 rounded text-sm"
+                />
+              ))}
             </div>
-          )}
+            <div className="mt-4 flex justify-end space-x-2">
+              <Button
+                onClick={() => {
+                  setSearch({
+                    job_order_id: "",
+                    project_code: "",
+                    vehicle_serial_number: "",
+                    vehicle_body_number: "",
+                    engine_serial_number: "",
+                    domain: "",
+                    test_status: "",
+                    completed_test_count: "",
+                    name_of_creator: "",
+                    created_on: "",
+                    updated_on: "",
+                  });
+                  setFilteredJobOrders(jobOrders);
+                  setCurrentPage(1);
+                }}
+                className="bg-red-500 text-white hover:bg-red-600"
+              >
+                Clear
+              </Button>
+              <Button
+                onClick={applySearch}
+                className="bg-red-500 text-white hover:bg-red-600"
+              >
+                Apply
+              </Button>
+              <Button
+                onClick={handleDownload}
+                className="bg-yellow-500 text-black hover:bg-yellow-600"
+              >
+                Download
+              </Button>
+            </div>
+          </div>
+        )}
 
 
         {/* Current Job Orders Badge */}
@@ -378,9 +388,9 @@ export default function RDEChennaiPage() {
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Test Status
                     </TableHead>
-                      <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                        Completed Tests
-                      </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                      Completed Tests
+                    </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Created By
                     </TableHead>
@@ -429,10 +439,10 @@ export default function RDEChennaiPage() {
                         {order.test_status}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900 px-4 py-2">
-                                              {order.completed_test_count == 0
-                                                ? "0"
-                                                : `${order.completed_test_count}/${order.test_status}`}
-                                            </TableCell>
+                        {order.completed_test_count == 0
+                          ? "0"
+                          : `${order.completed_test_count}/${order.test_status}`}
+                      </TableCell>
                       <TableCell className="text-xs text-gray-600">
                         {order.name_of_creator}
                       </TableCell>

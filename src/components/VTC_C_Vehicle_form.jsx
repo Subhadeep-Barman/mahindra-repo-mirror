@@ -7,15 +7,21 @@ import { useNavigate, useLocation } from "react-router-dom";
 import useStore from "@/store/useStore";
 import { useAuth } from "@/context/AuthContext";
 import showSnackbar from "@/utils/showSnackbar";
- 
+
 const apiURL = import.meta.env.VITE_BACKEND_URL;
- 
+
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
- 
+
 export default function VehicleEngineForm({ onSubmit, onClear }) {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const department = queryParams.get("department") || "VTC_JO Chennai";
+  const isEditMode = queryParams.get("edit") === "true";
+
+  // Check if we have vehicle data from navigation state
+  const vehicleData = location.state?.vehicleData;
+  const originalVehicleData = location.state?.originalVehicleData;
+
   // Use global store for dropdowns
   const projectOptions = useStore((state) => state.projectOptions);
   const setProjectOptions = useStore((state) => state.setProjectOptions);
@@ -28,15 +34,26 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
   const fetchProjects = useStore((state) => state.fetchProjects);
   const fetchVehicleModels = useStore((state) => state.fetchVehicleModels);
   const fetchDomains = useStore((state) => state.fetchDomains);
- 
+
   const { apiUserRole, userId, userName } = useAuth();
- 
+
+  // Helper function to parse ratio strings like "3.42:1" into {numerator: "3.42", denominator: "1"}
+  const parseRatio = (ratioString) => {
+    if (!ratioString) return { numerator: "", denominator: "" };
+    const parts = ratioString.split(":");
+    return {
+      numerator: parts[0] || "",
+      denominator: parts[1] || ""
+    };
+  };
+
+  // Initialize form with empty values or vehicle data if editing
   const [form, setForm] = useState({
     project: "",
     vehicleBuildLevel: "",
     vehicleModel: "",
     vehicleBodyNumber: "",
-    vehicleSerialNumber: "", // Added
+    vehicleSerialNumber: "",
     transmissionType: "",
     finalDriveAxleRatio: { numerator: "", denominator: "" },
     domain: "",
@@ -61,38 +78,95 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     gearRatio5: { numerator: "", denominator: "" },
     reverseGearRatio: { numerator: "", denominator: "" },
     department: department,
+    vehicleKerbWeight: "",
+    vehicleGVW: "",
+    kerbFAW: "",
+    kerbRAW: "",
+    awdRwdFwd: "",
   });
- 
+
+  // Populate form with existing vehicle data when editing
+  useEffect(() => {
+    if (isEditMode && vehicleData) {
+      
+      setForm({
+        project: vehicleData.project_code || "",
+        vehicleBuildLevel: vehicleData.vehicle_build_level || "",
+        vehicleModel: vehicleData.vehicle_model || "",
+        vehicleBodyNumber: vehicleData.vehicle_body_number || "",
+        vehicleSerialNumber: vehicleData.vehicle_serial_number || "",
+        transmissionType: vehicleData.transmission_type || "",
+        finalDriveAxleRatio: parseRatio(vehicleData.final_drive_axle_ratio),
+        domain: vehicleData.domain || "",
+        tyreMake: vehicleData.tyre_make || "",
+        tyreSize: vehicleData.tyre_size || "",
+        tyrePressureFront: vehicleData.tyre_pressure_front || "",
+        tyrePressureRear: vehicleData.tyre_pressure_rear || "",
+        tyreRunIn: vehicleData.tyre_run_in || "",
+        engineRunIn: vehicleData.engine_run_in || "",
+        gearBoxRunIn: vehicleData.gearbox_run_in || "",
+        axleRunIn: vehicleData.axle_run_in || "",
+        engineOilSpecification: vehicleData.engine_oil_specification || "",
+        axleOilSpecification: vehicleData.axle_oil_specification || "",
+        transmissionOilSpecification: vehicleData.transmission_oil_specification || "",
+        driveType: vehicleData.wd_type || "",
+        drivenWheel: vehicleData.driven_wheel || "",
+        intercoolerLocation: vehicleData.intercooler_location || "",
+        gearRatio1: parseRatio(vehicleData.gear_ratio_1),
+        gearRatio2: parseRatio(vehicleData.gear_ratio_2),
+        gearRatio3: parseRatio(vehicleData.gear_ratio_3),
+        gearRatio4: parseRatio(vehicleData.gear_ratio_4),
+        gearRatio5: parseRatio(vehicleData.gear_ratio_5),
+        reverseGearRatio: parseRatio(vehicleData.reverse_gear_ratio),
+        department: vehicleData.department || department,
+        vehicleKerbWeight: vehicleData.vehicle_kerb_weight || "",
+        vehicleGVW: vehicleData.vehicle_gvw || "",
+        kerbFAW: vehicleData.kerb_faw || "",
+        kerbRAW: vehicleData.kerb_raw || "",
+        awdRwdFwd: vehicleData.awd_rwd_fwd || "",
+      });
+    }
+  }, [isEditMode, vehicleData, department]);
+
   const isEV = form.domain === "EV";
- 
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
- 
+
   const handleRadioChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "driveType") {
+      setForm({
+        ...form,
+        [name]: value,
+        drivenWheel: ""
+      });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
   };
- 
+
   const handleRatioChange = (e, field, part) => {
     setForm({
       ...form,
       [field]: { ...form[field], [part]: e.target.value },
     });
   };
- 
+
   // Convert current time to IST and format as ISO 8601
-    const currentISTTime = new Date().toLocaleString("en-US", {
-      timeZone: "Asia/Kolkata",
-    });
-    const formattedISTTime = new Date(currentISTTime).toISOString();
- 
+  const currentISTTime = new Date().toLocaleString("en-US", {
+    timeZone: "Asia/Kolkata",
+  });
+  const formattedISTTime = new Date(currentISTTime).toISOString();
+
   // Map form state to API schema
   function mapFormToApi(form) {
     return {
       project_code: form.project,
       vehicle_body_number: form.vehicleBodyNumber,
       vehicle_model: form.vehicleModel,
-      vehicle_serial_number: form.vehicleSerialNumber, // Added
+      vehicle_serial_number: form.vehicleSerialNumber,
       vehicle_build_level: form.vehicleBuildLevel,
       transmission_type: form.transmissionType,
       final_drive_axle_ratio:
@@ -130,24 +204,39 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         ? `${form.gearRatio5.numerator}:${form.gearRatio5.denominator}` : ""),
       reverse_gear_ratio: isEV ? "" : (form.reverseGearRatio.numerator && form.reverseGearRatio.denominator
         ? `${form.reverseGearRatio.numerator}:${form.reverseGearRatio.denominator}` : ""),
-      id_of_creator: userId || "", // id_of_creator handled by backend
-      created_on: formattedISTTime,
-      id_of_updater: "", // id_of_updater handled by backend
-      // updated_on: "",
-      // id_of_creator, created_on, id_of_updater, updated_on handled by backend
-      department: form.department, // <-- add department to payload
+      department: form.department,
+      vehicle_kerb_weight: form.vehicleKerbWeight ? parseFloat(form.vehicleKerbWeight) : null,
+      vehicle_gvw: form.vehicleGVW ? parseFloat(form.vehicleGVW) : null,
+      kerb_faw: form.kerbFAW ? parseFloat(form.kerbFAW) : null,
+      kerb_raw: form.kerbRAW ? parseFloat(form.kerbRAW) : null,
+      awd_rwd_fwd: form.awdRwdFwd,
+      // final_drive_ratio: form.finalDriveRatio.numerator && form.finalDriveRatio.denominator
+      //   ? `${form.finalDriveRatio.numerator}:${form.finalDriveRatio.denominator}`
+      //   : "",
+      // Add tracking fields
+      ...(isEditMode ? {
+        id_of_updater: userId || "",
+        name_of_updater: userName || "",
+        updated_on: formattedISTTime
+      } : {
+        id_of_creator: userId || "",
+        name_of_creator: userName || "",
+        created_on: formattedISTTime,
+        updated_on: formattedISTTime
+      })
     };
   }
- 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Map of form keys to user-friendly field names
+
+    // Field validation logic (same as before)
     const fieldNames = {
       project: "Project",
       vehicleBuildLevel: "Vehicle Build Level",
       vehicleModel: "Vehicle Model",
       vehicleBodyNumber: "Vehicle Body Number",
-      vehicleSerialNumber: "Vehicle Serial Number", // Added
+      vehicleSerialNumber: "Vehicle Serial Number",
       transmissionType: "Transmission Type",
       finalDriveAxleRatio: "Final Drive Axle Ratio",
       domain: "Domain",
@@ -172,8 +261,13 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       gearRatio5: "5th Gear Ratio",
       reverseGearRatio: "Reverse Gear Ratio",
       department: "Department",
+      vehicleKerbWeight: "Vehicle Kerb Weight",
+      vehicleGVW: "Vehicle GVW",
+      kerbFAW: "Kerb FAW",
+      kerbRAW: "Kerb RAW",
+      awdRwdFwd: "AWD/RWD/FWD",
     };
- 
+
     // Check for missing fields
     const missingFields = [];
     for (let key in form) {
@@ -205,13 +299,8 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         if (!isEV && (!form[key].numerator || !form[key].denominator)) {
           missingFields.push(fieldNames[key]);
         }
-      } else if (!form[key] && (!isEV || key !== "finalDriveRatio")) {
-        // For non-EV or non-finalDriveRatio fields
-        if (
-          key !== "finalDriveRatio" // Only check finalDriveRatio for EV
-        ) {
-          missingFields.push(fieldNames[key]);
-        }
+      } else if (!form[key]) {
+        missingFields.push(fieldNames[key]);
       }
     }
     if (missingFields.length > 0) {
@@ -221,30 +310,47 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       );
       return;
     }
+
     const payload = mapFormToApi(form);
- 
+
     try {
-      const response = await axios.post(`${apiURL}/vehicles`, payload, {
-        headers: { "Content-Type": "application/json" },
-      });
-      if (onSubmit) onSubmit(response.data);
-      else showSnackbar("Vehicle added successfully!", "success");
+      let response;
+      if (isEditMode) {
+        // Update existing vehicle
+        response = await axios.put(
+          `${apiURL}/vehicles/${form.vehicleSerialNumber}`,
+          payload,
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+        if (onSubmit) onSubmit(response.data);
+        else showSnackbar("Vehicle updated successfully!", "success");
+      } else {
+        // Create new vehicle
+        response = await axios.post(`${apiURL}/vehicles`, payload, {
+          headers: { "Content-Type": "application/json" },
+        });
+        if (onSubmit) onSubmit(response.data);
+        else showSnackbar("Vehicle added successfully!", "success");
+      }
       navigate(-1);
     } catch (err) {
       showSnackbar(
-        "Error adding vehicle: " + (err.response?.data?.detail || err.message),
+        `Error ${isEditMode ? 'updating' : 'adding'} vehicle: ` +
+        (err.response?.data?.detail || err.message),
         "error"
       );
     }
   };
- 
+
   const handleClear = () => {
     setForm({
       project: "",
       vehicleBuildLevel: "",
       vehicleModel: "",
       vehicleBodyNumber: "",
-      vehicleSerialNumber: "", // Added
+      vehicleSerialNumber: "",
       transmissionType: "",
       finalDriveAxleRatio: { numerator: "", denominator: "" },
       domain: "",
@@ -269,25 +375,30 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       gearRatio4: { numerator: "", denominator: "" },
       gearRatio5: { numerator: "", denominator: "" },
       reverseGearRatio: { numerator: "", denominator: "" },
-      department: department
+      department: department,
+      vehicleKerbWeight: "",
+      vehicleGVW: "",
+      kerbFAW: "",
+      kerbRAW: "",
+      awdRwdFwd: "",
     });
     if (onClear) onClear();
   };
- 
+
   const [activeTab, setActiveTab] = useState("Vehicle");
   const navigate = useNavigate();
- 
+
   const handleTabClick = (tab) => {
     setActiveTab(tab);
     if (tab === "Job Order") navigate("/vtc-chennai");
     else if (tab === "Vehicle") navigate("/vtcvehicle/new");
     else if (tab === "Engine") navigate("/engineform");
   };
- 
+
   const handleBack = () => {
     navigate(-1);
   };
- 
+
   useEffect(() => {
     const getDropdownData = async () => {
       const projects = await fetchProjects();
@@ -306,7 +417,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     setVehicleModelOptions,
     setDomainOptions,
   ]);
- 
+
   return (
     <>
       <Navbar1 />
@@ -325,8 +436,13 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               </Button>
               <div>
                 <h1 className="text-lg font-semibold text-gray-800 dark:text-red-500">
-                  NEW VEHICLE
+                  {isEditMode ? `EDIT VEHICLE: ${form.vehicleSerialNumber}` : `NEW VEHICLE - ${department}`}
                 </h1>
+                {isEditMode && (
+                  <p className="text-sm text-gray-600">
+                    Editing vehicle: {vehicleData?.vehicle_serial_number} | Department: {department}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -338,6 +454,23 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg max-w-7xl mx-auto mt-8"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* Vehicle Serial Number - Disable editing in edit mode */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Vehicle Serial Number <span className="text-red-500">*</span>
+            </label>
+            <input
+              name="vehicleSerialNumber"
+              value={form.vehicleSerialNumber}
+              onChange={handleChange}
+              required
+              disabled={isEditMode}
+              className={`border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500 ${isEditMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                }`}
+              placeholder="Enter Vehicle Serial Number"
+            />
+          </div>
+
           {/* Project */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -406,20 +539,6 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               placeholder="Enter Vehicle Body Number"
             />
           </div>
-          {/* Vehicle Serial Number */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Vehicle Serial Number <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="vehicleSerialNumber"
-              value={form.vehicleSerialNumber}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Vehicle Serial Number"
-            />
-          </div>
           {/* Transmission Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -461,7 +580,113 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               </label>
             </div>
           </div>
-          {/* Final Drive Axle Ratio */}
+          {/* Vehicle Kerb Weight */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Vehicle Kerb Weight (kg) <span className="text-red-500">*</span>
+            </label>
+            <input
+              name="vehicleKerbWeight"
+              value={form.vehicleKerbWeight}
+              onChange={handleChange}
+              required
+              type="number"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
+              placeholder="Enter Vehicle Kerb Weight"
+            />
+          </div>
+
+          {/* Vehicle GVW */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Vehicle GVW (kg) <span className="text-red-500">*</span>
+            </label>
+            <input
+              name="vehicleGVW"
+              value={form.vehicleGVW}
+              onChange={handleChange}
+              required
+              type="number"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
+              placeholder="Enter Vehicle GVW"
+            />
+          </div>
+
+          {/* Kerb FAW */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Kerb FAW (kg) <span className="text-red-500">*</span>
+            </label>
+            <input
+              name="kerbFAW"
+              value={form.kerbFAW}
+              onChange={handleChange}
+              required
+              type="number"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
+              placeholder="Enter Kerb FAW"
+            />
+          </div>
+
+          {/* Kerb RAW */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Kerb RAW (kg) <span className="text-red-500">*</span>
+            </label>
+            <input
+              name="kerbRAW"
+              value={form.kerbRAW}
+              onChange={handleChange}
+              required
+              type="number"
+              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
+              placeholder="Enter Kerb RAW"
+            />
+          </div>
+
+          {/* AWD/RWD/FWD */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              AWD/RWD/FWD <span className="text-red-500">*</span>
+            </label>
+            <div className="flex gap-2">
+              <label>
+                <input
+                  type="radio"
+                  name="awdRwdFwd"
+                  value="AWD"
+                  checked={form.awdRwdFwd === "AWD"}
+                  onChange={handleRadioChange}
+                  required
+                />{" "}
+                AWD
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="awdRwdFwd"
+                  value="RWD"
+                  checked={form.awdRwdFwd === "RWD"}
+                  onChange={handleRadioChange}
+                  required
+                />{" "}
+                RWD
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="awdRwdFwd"
+                  value="FWD"
+                  checked={form.awdRwdFwd === "FWD"}
+                  onChange={handleRadioChange}
+                  required
+                />{" "}
+                FWD
+              </label>
+            </div>
+          </div>
+
+          {/* Final Drive Ratio */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Final Drive Axle Ratio <span className="text-red-500">*</span>
@@ -630,52 +855,52 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           </div>
           {/* Engine Oil Specification */}
           {!isEV && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Engine Oil Specification <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="engineOilSpecification"
-              value={form.engineOilSpecification}
-              onChange={handleChange}
-              required={!isEV}
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Engine Oil Specification"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Engine Oil Specification <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="engineOilSpecification"
+                value={form.engineOilSpecification}
+                onChange={handleChange}
+                required={!isEV}
+                className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter Engine Oil Specification"
+              />
+            </div>
           )}
           {/* Axle Oil Specification */}
           {!isEV && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Axle Oil Specification <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="axleOilSpecification"
-              value={form.axleOilSpecification}
-              onChange={handleChange}
-              required={!isEV}
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Axle Oil Specification"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Axle Oil Specification <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="axleOilSpecification"
+                value={form.axleOilSpecification}
+                onChange={handleChange}
+                required={!isEV}
+                className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter Axle Oil Specification"
+              />
+            </div>
           )}
           {/* Transmission Oil Specification */}
           {!isEV && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Transmission Oil Specification{" "}
-              <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="transmissionOilSpecification"
-              value={form.transmissionOilSpecification}
-              onChange={handleChange}
-              required={!isEV}
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Transmission Oil Specification"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Transmission Oil Specification{" "}
+                <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="transmissionOilSpecification"
+                value={form.transmissionOilSpecification}
+                onChange={handleChange}
+                required={!isEV}
+                className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter Transmission Oil Specification"
+              />
+            </div>
           )}
           {/* 2WD / 4WD */}
           <div>
@@ -713,72 +938,143 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               Driven Wheel <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2">
-              <label>
-                <input
-                  type="radio"
-                  name="drivenWheel"
-                  value="Front"
-                  checked={form.drivenWheel === "Front"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                Front
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="drivenWheel"
-                  value="Rear"
-                  checked={form.drivenWheel === "Rear"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                Rear
-              </label>
+              {form.driveType === "2WD" ? (
+                <>
+                  <label>
+                    <input
+                      type="radio"
+                      name="drivenWheel"
+                      value="Front"
+                      checked={form.drivenWheel === "Front"}
+                      onChange={handleRadioChange}
+                      required
+                    />{" "}
+                    Front
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="drivenWheel"
+                      value="Rear"
+                      checked={form.drivenWheel === "Rear"}
+                      onChange={handleRadioChange}
+                      required
+                    />{" "}
+                    Rear
+                  </label>
+                </>
+              ) : form.driveType === "4WD" ? (
+                // For 4WD, allow multiple selections with checkboxes
+                <>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="drivenWheel"
+                      value="Front"
+                      checked={form.drivenWheel.includes("Front")}
+                      onChange={(e) => {
+                        const { value, checked } = e.target;
+                        let newValue = form.drivenWheel || "";
+                        if (checked) {
+                          newValue = newValue ? `${newValue}, ${value}` : value;
+                        } else {
+                          newValue = newValue.split(", ").filter(item => item !== value).join(", ");
+                        }
+                        setForm({ ...form, drivenWheel: newValue });
+                      }}
+                    />{" "}
+                    Front
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="drivenWheel"
+                      value="Rear"
+                      checked={form.drivenWheel.includes("Rear")}
+                      onChange={(e) => {
+                        const { value, checked } = e.target;
+                        let newValue = form.drivenWheel || "";
+                        if (checked) {
+                          newValue = newValue ? `${newValue}, ${value}` : value;
+                        } else {
+                          newValue = newValue.split(", ").filter(item => item !== value).join(", ");
+                        }
+                        setForm({ ...form, drivenWheel: newValue });
+                      }}
+                    />{" "}
+                    Rear
+                  </label>
+                </>
+              ) : (
+                <p className="flex gap-2">
+                  <label>
+                    <input
+                      type="radio"
+                      name="drivenWheel"
+                      value="Front"
+                      checked={form.drivenWheel === "Front"}
+                      onChange={handleRadioChange}
+                      required
+                    />{" "}
+                    Front
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="drivenWheel"
+                      value="Rear"
+                      checked={form.drivenWheel === "Rear"}
+                      onChange={handleRadioChange}
+                      required
+                    />{" "}
+                    Rear
+                  </label>
+                </p>
+              )}
             </div>
           </div>
           {/* Intercooler Location */}
           {!isEV && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Intercooler Location<span className="text-red-500">*</span>
-            </label>
-            <div className="flex gap-2">
-              <label>
-                <input
-                  type="radio"
-                  name="intercoolerLocation"
-                  value="Front"
-                  checked={form.intercoolerLocation === "Front"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                Front
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Intercooler Location<span className="text-red-500">*</span>
               </label>
-              <label>
-                <input
-                  type="radio"
-                  name="intercoolerLocation"
-                  value="Rear"
-                  checked={form.intercoolerLocation === "Rear"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                Rear
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="intercoolerLocation"
-                  value="Top"
-                  checked={form.intercoolerLocation === "Top"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                Top
-              </label>
+              <div className="flex gap-2">
+                <label>
+                  <input
+                    type="radio"
+                    name="intercoolerLocation"
+                    value="Front"
+                    checked={form.intercoolerLocation === "Front"}
+                    onChange={handleRadioChange}
+                    required
+                  />{" "}
+                  Front
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="intercoolerLocation"
+                    value="Rear"
+                    checked={form.intercoolerLocation === "Rear"}
+                    onChange={handleRadioChange}
+                    required
+                  />{" "}
+                  Rear
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="intercoolerLocation"
+                    value="Top"
+                    checked={form.intercoolerLocation === "Top"}
+                    onChange={handleRadioChange}
+                    required
+                  />{" "}
+                  Top
+                </label>
+              </div>
             </div>
-          </div>
           )}
           {/* Gear Ratios or Final Drive Ratio */}
           {isEV ? null : (
@@ -955,7 +1251,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
             type="submit"
             className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg shadow-md transition-all"
           >
-            ADD VEHICLE
+            {isEditMode ? "UPDATE VEHICLE" : "ADD VEHICLE"}
           </button>
           <button
             type="button"

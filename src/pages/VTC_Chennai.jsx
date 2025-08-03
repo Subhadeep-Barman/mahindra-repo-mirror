@@ -18,7 +18,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import showSnackbar from "@/utils/showSnackbar";
-
+import useStore from "../store/useStore";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function VTCChennaiPage() {
@@ -35,6 +35,15 @@ export default function VTCChennaiPage() {
   const { userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
+  // const { userName, userEmail, userEmployeeId } = useAuth();
+  // Fetch user data directly from cookies
+  const userCookies = useStore.getState().getUserCookieData();
+  const userName = userCookies.userName;
+  const userEmail = userCookies.userEmail;
+  const userEmployeeId = userCookies.userId;
+  console.log("User Cookies:", userCookies);
+  console.log("emaployeeId:", userEmployeeId);
 
   const [search, setSearch] = useState({
     job_order_id: "",
@@ -56,9 +65,14 @@ export default function VTCChennaiPage() {
   }, []);
 
   const fetchJobOrders = () => {
+    // Get userId from localStorage or cookies (assuming it's stored after login)
+    if (!userEmployeeId) {
+      showSnackbar("User ID not found. Please login again.", "error");
+      return;
+    }
     const department = "VTC_JO Chennai";
     axios
-      .get(`${apiURL}/joborders`, { params: { department } })
+      .get(`${apiURL}/joborders`, { params: { department, user_id: userEmployeeId, role: userRole } })
       .then((res) => {
         setJobOrders(res.data || []);
         setFilteredJobOrders(res.data || []); // set filtered to all on fetch
@@ -191,11 +205,26 @@ export default function VTCChennaiPage() {
 
   const handleSaveJobOrder = async () => {
     if (!jobOrderEdit?.job_order_id) return;
+
+    // Get current IST time
+    const currentISTTime = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+    const formattedISTTime = new Date(currentISTTime).toISOString();
+
+    // Prepare the payload with updated user info
+    const updatedJobOrderPayload = {
+      ...jobOrderEdit,
+      id_of_updater: userId || "",
+      name_of_updater: userName || "",
+      updated_on: formattedISTTime,
+    };
+
     try {
       showSnackbar("Updating job order...", "info");
       await axios.put(
         `${apiURL}/rde_joborders/${jobOrderEdit.job_order_id}`,
-        jobOrderEdit
+        updatedJobOrderPayload
       );
       setModalOpen(false);
       fetchJobOrders();
@@ -206,7 +235,7 @@ export default function VTCChennaiPage() {
     } catch (err) {
       showSnackbar(
         "Failed to update job order: " +
-          (err.response?.data?.detail || err.message),
+        (err.response?.data?.detail || err.message),
         "error"
       );
     }
@@ -243,26 +272,26 @@ export default function VTCChennaiPage() {
       order.name_of_creator,
       order.created_on
         ? new Date(order.created_on).toLocaleString("en-IN", {
-            timeZone: "Asia/Kolkata",
-            hour12: true,
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })
+          timeZone: "Asia/Kolkata",
+          hour12: true,
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
         : "",
       order.name_of_updater,
       order.updated_on
         ? new Date(order.updated_on).toLocaleString("en-IN", {
-            timeZone: "Asia/Kolkata",
-            hour12: true,
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })
+          timeZone: "Asia/Kolkata",
+          hour12: true,
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
         : "N/A",
     ]);
     const csvContent =
@@ -314,10 +343,9 @@ export default function VTCChennaiPage() {
                       key={tab}
                       onClick={() => handleTabClick(tab)}
                       className={`rounded-xl px-4 py-2 font-semibold border
-                        ${
-                          activeTab === tab
-                            ? "bg-red-500 text-white border-red-500"
-                            : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                        ${activeTab === tab
+                          ? "bg-red-500 text-white border-red-500"
+                          : "bg-white text-red-500 border-red-500 hover:bg-red-50"
                         }
                       `}
                     >
@@ -386,7 +414,7 @@ export default function VTCChennaiPage() {
           </div>
         )}
 
-    {/* Current Job Orders Badge */}
+        {/* Current Job Orders Badge */}
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center bg-white dark:bg-black">
           <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
             Current Job Orders
@@ -411,7 +439,7 @@ export default function VTCChennaiPage() {
                 <TableHeader>
                   <TableRow className="bg-gray-100">
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Job Order ID
+                      Job Order Number
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Project
@@ -441,10 +469,10 @@ export default function VTCChennaiPage() {
                       Created on
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Updated by
+                      Last Updated by
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Updated on
+                      Last Updated on
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -456,7 +484,7 @@ export default function VTCChennaiPage() {
                         } hover:bg-gray-100`}
                     >
                       <TableCell
-                        className="text-xs text-blue-600 underline cursor-pointer px-4 py-2"
+                        className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400"
                         onClick={() => handleJobOrderClick(order.job_order_id)}
                       >
                         {order.job_order_id}

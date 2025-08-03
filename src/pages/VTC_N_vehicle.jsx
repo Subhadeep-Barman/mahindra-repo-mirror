@@ -1,9 +1,7 @@
-"use client";
-
 import { ArrowBack, Add } from "@mui/icons-material";
 import { Button } from "@/components/UI/button";
 import { Badge } from "@/components/UI/badge";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -16,35 +14,48 @@ import { Card } from "@/components/UI/card";
 import { useState, useEffect } from "react";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
+import { useAuth } from "@/context/AuthContext";
+import showSnackbar from "@/utils/showSnackbar";
+
+const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function VTCNashikVehicle() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [vehicles, setVehicles] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
-  const [activeTab, setActiveTab] = useState("Vehicle");
+  const { apiUserRole, userId, userName } = useAuth();
+
+  // Determine active tab from the current route
+  let activeTab = "Job Order";
+  if (location.pathname.toLowerCase().includes("vehicle"))
+    activeTab = "Vehicle";
+  else if (location.pathname.toLowerCase().includes("engine"))
+    activeTab = "Engine";
 
   // Fetch vehicles from API on mount
   useEffect(() => {
     async function fetchVehicles() {
       try {
-        const department = "VTC_JO Nashik";
-        const apiURL = import.meta.env.VITE_BACKEND_URL;
-        const response = await axios.get(
-          `${apiURL}/vehicles?department=${encodeURIComponent(department)}`
-        );
-        // Map API fields to UI fields
+        // REMOVED: Department filter to get vehicles from all teams
+        const response = await axios.get(`${apiURL}/vehicles`);
+
+        console.log("Fetched all vehicles:", response.data); // Debug log
+
+        // Only keep necessary fields for each vehicle
         const minimalVehicles = (response.data || []).map((v) => ({
-          vehicleSerialNumber: v.vehicle_serial_number,
-          vehicleBodyNumber: v.vehicle_body_number,
-          vehicleModel: v.vehicle_model,
-          createdBy: v.id_of_creator,
-          createdOn: v.created_on,
-          lastUpdatedBy: v.id_of_updater,
-          lastUpdatedOn: v.updated_on,
+          vehicle_serial_number: v.vehicle_serial_number,
+          vehicle_body_number: v.vehicle_body_number,
+          vehicle_model: v.vehicle_model,
+          id_of_creator: v.id_of_creator || "",
+          created_on: v.created_on,
+          id_of_updater: v.id_of_updater,
+          updated_on: v.updated_on,
         }));
         setVehicles(minimalVehicles);
       } catch (err) {
+        console.error("Error fetching vehicles:", err);
         setVehicles([]);
       }
     }
@@ -67,7 +78,6 @@ export default function VTCNashikVehicle() {
   };
 
   const handleTabClick = (tab) => {
-    setActiveTab(tab);
     if (tab === "Job Order") navigate("/vtc-nashik");
     else if (tab === "Vehicle") navigate("/nashik/vehicle");
     else if (tab === "Engine") navigate("/nashik/engine");
@@ -75,6 +85,55 @@ export default function VTCNashikVehicle() {
 
   const handleAddNewVehicle = () => {
     navigate("/vtcvehicle/new?department=VTC_JO%20Nashik");
+  };
+
+  // FIXED: Update the handleEditClick function to fetch the SPECIFIC vehicle data
+  const handleEditClick = async (vehicle) => {
+    try {
+      console.log("Clicking on Nashik vehicle:", vehicle.vehicle_serial_number); // Debug log
+
+      // Fetch full vehicle details using the specific vehicle serial number
+      const response = await axios.get(
+        `${apiURL}/vehicles?vehicle_serial_number=${encodeURIComponent(vehicle.vehicle_serial_number)}`
+      );
+
+      console.log("Nashik API Response:", response.data); // Debug log
+
+      if (response.data && response.data.length > 0) {
+        // Find the exact vehicle that matches the clicked serial number
+        const vehicleData = response.data.find(v =>
+          v.vehicle_serial_number === vehicle.vehicle_serial_number
+        );
+
+        if (!vehicleData) {
+          console.error("Vehicle not found in response:", vehicle.vehicle_serial_number);
+          showSnackbar("Selected vehicle not found in response.", "error");
+          return;
+        }
+
+        console.log("Found matching Nashik vehicle:", vehicleData); // Debug log
+
+        // Navigate to the vehicle form page with complete vehicle data
+        navigate(`/vtcvehicle/new?department=VTC_JO%20Nashik&edit=true`, {
+          state: {
+            vehicleData: vehicleData,
+            isEdit: true,
+            vehicleSerialNumber: vehicle.vehicle_serial_number,
+            // Pass additional context for the form
+            editMode: true,
+            originalVehicleData: vehicleData
+          }
+        });
+      } else {
+        showSnackbar("No vehicle data found for the selected vehicle.", "warning");
+      }
+    } catch (err) {
+      console.error("Error fetching vehicle details:", err);
+      showSnackbar(
+        "Error fetching vehicle details: " + (err.response?.data?.detail || err.message),
+        "error"
+      );
+    }
   };
 
   return (
@@ -94,12 +153,9 @@ export default function VTCNashikVehicle() {
                 <ArrowBack className="h-5 w-5" />
               </Button>
               <div>
-                <h1 className="text-sm font-medium text-gray-600 dark:text-red-500">
-                  VTC Nashik
+                <h1 className="text-sm font-medium text-black-600 dark:text-red-500">
+                  VTC NASHIK
                 </h1>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
-                  NEW VEHICLE
-                </h2>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -107,11 +163,13 @@ export default function VTCNashikVehicle() {
               {["Job Order", "Vehicle", "Engine"].map((tab) => (
                 <Button
                   key={tab}
-                  variant="default"
                   onClick={() => handleTabClick(tab)}
-                  className={`bg-red-500 hover:bg-red-600 text-white ${
-                    activeTab === tab ? "ring-2 ring-red-300" : ""
-                  }`}
+                  className={`rounded-xl px-4 py-2 font-semibold border
+                    ${activeTab === tab
+                      ? "bg-red-500 text-white border-red-500"
+                      : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                    }
+                  `}
                 >
                   {tab}
                 </Button>
@@ -124,7 +182,7 @@ export default function VTCNashikVehicle() {
       {/* Vehicle List Badge */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center bg-white dark:bg-black">
         <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
-          Current Job Orders
+          Vehicles List
         </Badge>
         <Button
           onClick={handleAddNewVehicle}
@@ -139,28 +197,28 @@ export default function VTCNashikVehicle() {
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Card>
           <div className="overflow-x-auto">
-            <Table>
+            <Table className="min-w-full border-collapse border border-gray-200">
               <TableHeader>
-                <TableRow>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                <TableRow className="bg-gray-100">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Vehicle Serial Number
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Vehicle Body Number
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Vehicle Model
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Created By
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Created on
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Last Updated By
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                     Last Updated on
                   </TableHead>
                 </TableRow>
@@ -168,29 +226,50 @@ export default function VTCNashikVehicle() {
               <TableBody>
                 {currentItems.map((vehicle, index) => (
                   <TableRow
-                    key={index}
-                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
+                    key={vehicle.vehicle_serial_number || index}
+                    className={`${index %
+                      2 === 0 ? "bg-white" : "bg-gray-50"
+                      } hover:bg-gray-100`}
                   >
-                    <TableCell className="text-sm text-gray-900 font-medium">
-                      {vehicle.vehicleSerialNumber}
+                    <TableCell
+                      className="text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400 text-xs px-4 py-2"
+                      onClick={() => handleEditClick(vehicle)}
+                    >
+                      {vehicle.vehicle_serial_number}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-900">
-                      {vehicle.vehicleBodyNumber}
+                    <TableCell className="text-xs text-gray-900 px-4 py-2">
+                      {vehicle.vehicle_body_number}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-900">
-                      {vehicle.vehicleModel}
+                    <TableCell className="text-xs text-gray-900 px-4 py-2">
+                      {vehicle.vehicle_model}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {vehicle.createdBy}
+                    <TableCell className="text-xs text-gray-600 px-4 py-2">
+                      {vehicle.id_of_creator}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {vehicle.createdOn}
+                    <TableCell className="text-xs text-gray-600 px-4 py-2">
+                      {new Date(vehicle.created_on).toLocaleString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                        hour12: true,
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {vehicle.lastUpdatedBy}
+                    <TableCell className="text-xs text-gray-600 px-4 py-2">
+                      {vehicle.id_of_updater}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {vehicle.lastUpdatedOn}
+                    <TableCell className="text-xs text-gray-600 px-4 py-2">
+                      {new Date(vehicle.updated_on).toLocaleString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                        hour12: true,
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -211,7 +290,7 @@ export default function VTCNashikVehicle() {
               size="sm"
               disabled={currentPage === 1}
               onClick={() => handlePageChange(1)}
-              className={currentPage === 1 ? "text-gray-400" : "text-gray-600"}
+              className="text-gray-400"
             >
               {"<<"}
             </Button>
@@ -220,19 +299,30 @@ export default function VTCNashikVehicle() {
               size="sm"
               disabled={currentPage === 1}
               onClick={() => handlePageChange(currentPage - 1)}
-              className={currentPage === 1 ? "text-gray-400" : "text-gray-600"}
+              className="text-gray-400"
             >
               {"<"}
             </Button>
-            {/* Add page numbers here if needed */}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePageChange(page)}
+                className={`${currentPage === page
+                  ? "bg-black text-white hover:bg-gray-800"
+                  : "text-gray-600"
+                  } px-3 py-1`}
+              >
+                {page}
+              </Button>
+            ))}
             <Button
               variant="outline"
               size="sm"
               disabled={currentPage === totalPages}
               onClick={() => handlePageChange(currentPage + 1)}
-              className={
-                currentPage === totalPages ? "text-gray-400" : "text-gray-600"
-              }
+              className="text-gray-400"
             >
               {">"}
             </Button>
@@ -241,9 +331,7 @@ export default function VTCNashikVehicle() {
               size="sm"
               disabled={currentPage === totalPages}
               onClick={() => handlePageChange(totalPages)}
-              className={
-                currentPage === totalPages ? "text-gray-400" : "text-gray-600"
-              }
+              className="text-gray-400"
             >
               {">>"}
             </Button>

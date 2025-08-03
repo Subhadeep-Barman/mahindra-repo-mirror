@@ -174,11 +174,9 @@ export default function VTCChennaiPage() {
   };
 
   const handleBack = () => {
-    console.log("Navigate back");
   };
 
   const handleCreateJobOrder = () => {
-    console.log("Create new job order");
   };
 
   const navigate = useNavigate();

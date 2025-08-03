@@ -30,18 +30,15 @@ export default function EditTestOrder() {
     try {
       // First try to use the direct job order ID passed to this function
       // Then fall back to other sources if not provided
-      const resolvedJobOrderId = directJobOrderId || 
-                                jobOrderId || 
-                                useStore.getState().backendJobOrderID;
+      const resolvedJobOrderId = directJobOrderId ||
+        jobOrderId ||
+        useStore.getState().backendJobOrderID;
 
       if (!resolvedJobOrderId) {
         showSnackbar("Job Order ID is missing. Cannot send mail.", "error");
         setMailLoading(false);
         return;
       }
-
-      // Debug log to verify job order ID
-      console.log("Sending mail with job order ID:", resolvedJobOrderId);
 
       // Compose payload as per new API
       const payload = {
@@ -396,19 +393,16 @@ export default function EditTestOrder() {
                 {test.testOrderId || "Test Order"}
               </Button>
             </div>
-            <div className="flex flex-col">
-              <span className="font-semibold text-lg">Edit Test Order</span>
-            </div>
           </div>
         </div>
 
         {/* Main Form */}
-        <div className="mx-8 mb-8 mt-4 border rounded-lg shadow-lg px-8 py-6 bg-white">
+        <div className="mx-8 mb-8 mt-4 border rounded-lg shadow-lg px-8 py-6 bg-white dark:bg-black dark:border-gray-300">
           {/* Status Display */}
           <div className="flex items-center gap-3 mb-4">
-            <span className="font-bold text-base text-blue-900">Test Details</span>
+            <span className="font-bold text-base text-blue-900 dark:text-blue-300">Test Details</span>
             {test.status === "Started" && (
-              <span className="flex items-center bg-yellow-100 border border-yellow-400 text-yellow-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+              <span className="flex items-center bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#FFA500" }}>
                   <circle cx="12" cy="12" r="9" stroke="#FFA500" strokeWidth="2" fill="none" />
                   <path d="M12 7v5l3 3" stroke="#FFA500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -417,7 +411,7 @@ export default function EditTestOrder() {
               </span>
             )}
             {test.status === "Rejected" && (
-              <span className="flex items-center bg-red-100 border border-red-400 text-red-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+              <span className="flex items-center bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-800 dark:text-red-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#e53935" }}>
                   <circle cx="12" cy="12" r="9" stroke="#e53935" strokeWidth="2" fill="none" />
                   <line x1="9" y1="9" x2="15" y2="15" stroke="#e53935" strokeWidth="2" />
@@ -427,7 +421,7 @@ export default function EditTestOrder() {
               </span>
             )}
             {test.status === "Re-edit" && (
-              <span className="flex items-center bg-blue-100 border border-blue-400 text-blue-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+              <span className="flex items-center bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-600 text-blue-800 dark:text-blue-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#1976d2" }}>
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="#1976d2" strokeWidth="2" />
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="#1976d2" strokeWidth="2" />
@@ -436,7 +430,7 @@ export default function EditTestOrder() {
               </span>
             )}
             {test.status === "Completed" && (
-              <span className="flex items-center bg-green-100 border border-green-400 text-green-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+              <span className="flex items-center bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-600 text-green-800 dark:text-green-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#43a047" }}>
                   <circle cx="12" cy="12" r="9" stroke="#43a047" strokeWidth="2" fill="none" />
                   <path d="M9 12l2 2 4-4" stroke="#43a047" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -448,14 +442,14 @@ export default function EditTestOrder() {
 
           {/* Show rejection remarks if status is Rejected */}
           {test.status === "Rejected" && (
-            <div className="bg-red-100 border border-red-400 rounded-lg p-4 mt-4 mb-2 shadow-inner">
-              <div className="font-semibold text-sm text-red-700 mb-2">
+            <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+              <div className="font-semibold text-sm text-red-700 dark:text-red-300 mb-2">
                 Rejected Reason
               </div>
               <textarea
                 value={test.rejection_remarks}
                 readOnly
-                className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical bg-white"
+                className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 style={{ minWidth: "100%", fontSize: "1rem" }}
                 rows={3}
               />
@@ -464,11 +458,11 @@ export default function EditTestOrder() {
 
           {/* Show re-edit remarks if status is Re-edit */}
           {test.status === "Re-edit" && (
-            <div className="bg-blue-100 border border-blue-400 rounded-lg p-4 mt-4 mb-2 shadow-inner">
-              <div className="font-semibold text-sm text-blue-700 mb-2">
+            <div className="bg-blue-100 dark:bg-blue-900/30 border border-blue-400 dark:border-blue-600 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+              <div className="font-semibold text-sm text-blue-700 dark:text-blue-300 mb-2">
                 Re-edit Reason from Test Engineer
               </div>
-              <div className="w-full border rounded p-2 min-h-[60px] bg-white">
+              <div className="w-full border rounded p-2 min-h-[60px] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 {test.re_edit_remarks || "No re-edit remarks provided"}
               </div>
             </div>
@@ -477,7 +471,7 @@ export default function EditTestOrder() {
           {/* Main form fields */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
             <div className="flex flex-col">
-              <Label htmlFor="engineNumber" className="mb-2">
+              <Label htmlFor="engineNumber" className="mb-2 dark:text-white">
                 Engine Number <span className="text-red-500">*</span>
               </Label>
               <Select
@@ -499,7 +493,7 @@ export default function EditTestOrder() {
               </Select>
             </div>
             <div>
-              <Label>Test Type</Label>
+              <Label className="dark:text-white">Test Type</Label>
               <Select
                 value={test.testType}
                 onValueChange={(v) => handleTestChange("testType", v)}
@@ -518,7 +512,7 @@ export default function EditTestOrder() {
               </Select>
             </div>
             <div>
-              <Label>
+              <Label className="dark:text-white">
                 Objective of the Test <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -529,7 +523,7 @@ export default function EditTestOrder() {
               />
             </div>
             <div>
-              <Label>Vehicle Location</Label>
+              <Label className="dark:text-white">Vehicle Location</Label>
               <Input
                 value={test.vehicleLocation}
                 onChange={(e) => handleTestChange("vehicleLocation", e.target.value)}
@@ -538,7 +532,7 @@ export default function EditTestOrder() {
               />
             </div>
             <div>
-              <Label>Cycle Gear Shift</Label>
+              <Label className="dark:text-white">Cycle Gear Shift</Label>
               <Input
                 value={test.cycleGearShift}
                 onChange={(e) => handleTestChange("cycleGearShift", e.target.value)}
@@ -547,7 +541,7 @@ export default function EditTestOrder() {
               />
             </div>
             <div>
-              <Label>Inertia Class</Label>
+              <Label className="dark:text-white">Inertia Class</Label>
               <Select
                 value={test.inertiaClass}
                 onValueChange={(v) => handleTestChange("inertiaClass", v)}
@@ -569,7 +563,7 @@ export default function EditTestOrder() {
               </Select>
             </div>
             <div>
-              <Label>Dataset Name</Label>
+              <Label className="dark:text-white">Dataset Name</Label>
               <Input
                 value={test.datasetName}
                 onChange={(e) => handleTestChange("datasetName", e.target.value)}
@@ -578,7 +572,7 @@ export default function EditTestOrder() {
               />
             </div>
             <div>
-              <Label>DPF</Label>
+              <Label className="dark:text-white">DPF</Label>
               <div className="flex gap-2 mt-2">
                 <label>
                   <input
@@ -617,7 +611,7 @@ export default function EditTestOrder() {
             </div>
             {test.dpf === "Yes" && (
               <div>
-                <Label>DPF Regen Occurs (g)*</Label>
+                <Label className="dark:text-white">DPF Regen Occurs (g)*</Label>
                 <Input
                   value={test.dpfRegenOccurs || ""}
                   onChange={(e) => handleTestChange("dpfRegenOccurs", e.target.value)}
@@ -627,7 +621,7 @@ export default function EditTestOrder() {
               </div>
             )}
             <div>
-              <Label>Dataset flashed</Label>
+              <Label className="dark:text-white">Dataset flashed</Label>
               <div className="flex gap-2 mt-2">
                 <label>
                   <input
@@ -654,7 +648,7 @@ export default function EditTestOrder() {
               </div>
             </div>
             <div>
-              <Label>ESS</Label>
+              <Label className="dark:text-white">ESS</Label>
               <div className="flex gap-2 mt-2">
                 <label>
                   <input
@@ -692,7 +686,7 @@ export default function EditTestOrder() {
               </div>
             </div>
             <div>
-              <Label>Mode</Label>
+              <Label className="dark:text-white">Mode</Label>
               <Select
                 value={test.mode}
                 onValueChange={(v) => handleTestChange("mode", v)}
@@ -711,7 +705,7 @@ export default function EditTestOrder() {
               </Select>
             </div>
             <div>
-              <Label>Hardware Change</Label>
+              <Label className="dark:text-white">Hardware Change</Label>
               <Input
                 value={test.hardwareChange}
                 onChange={(e) => handleTestChange("hardwareChange", e.target.value)}
@@ -720,7 +714,7 @@ export default function EditTestOrder() {
               />
             </div>
             <div>
-              <Label>Shift</Label>
+              <Label className="dark:text-white">Shift</Label>
               <Select
                 value={test.shift}
                 onValueChange={(v) => handleTestChange("shift", v)}
@@ -738,7 +732,7 @@ export default function EditTestOrder() {
               </Select>
             </div>
             <div>
-              <Label>Fuel Type</Label>
+              <Label className="dark:text-white">Fuel Type</Label>
               <Select
                 value={test.fuelType}
                 onValueChange={(v) => handleTestChange("fuelType", v)}
@@ -757,7 +751,7 @@ export default function EditTestOrder() {
               </Select>
             </div>
             <div>
-              <Label>Equipment Required</Label>
+              <Label className="dark:text-white">Equipment Required</Label>
               <Input
                 value={test.equipmentRequired}
                 onChange={(e) => handleTestChange("equipmentRequired", e.target.value)}
@@ -766,7 +760,7 @@ export default function EditTestOrder() {
               />
             </div>
             <div>
-              <Label>Preferred Date</Label>
+              <Label className="dark:text-white">Preferred Date</Label>
               <Input
                 type="date"
                 value={test.preferredDate}
@@ -775,7 +769,7 @@ export default function EditTestOrder() {
               />
             </div>
             <div>
-              <Label>Emission Check Date</Label>
+              <Label className="dark:text-white">Emission Check Date</Label>
               <Input
                 type="date"
                 value={test.emissionCheckDate}
@@ -784,13 +778,13 @@ export default function EditTestOrder() {
               />
             </div>
             <div className="col-span-2">
-              <Label>Specific Instruction</Label>
+              <Label className="dark:text-white">Specific Instruction</Label>
               <textarea
                 value={test.specificInstruction}
                 onChange={(e) => handleTestChange("specificInstruction", e.target.value)}
                 placeholder="Enter Specific Instructions"
                 disabled={!areFieldsEditable()}
-                className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical"
+                className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical dark:bg-black dark:text-white dark:placeholder-gray-400"
                 style={{ minWidth: "100%", fontSize: "1rem" }}
                 rows={3}
               />
@@ -798,13 +792,13 @@ export default function EditTestOrder() {
           </div>
 
           {/* Attachments Section */}
-          <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
-            <div className="font-semibold text-sm text-gray-700 mb-2">
+          <div className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+            <div className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">
               Attachments
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label>Emission Check Attachment</Label>
+                <Label className="dark:text-white">Emission Check Attachment</Label>
                 <DropzoneFileList
                   buttonText="Emission Check Attachment"
                   name="emmission_check_attachment"
@@ -827,7 +821,7 @@ export default function EditTestOrder() {
                 />
               </div>
               <div>
-                <Label>Dataset Attachment</Label>
+                <Label className="dark:text-white">Dataset Attachment</Label>
                 <DropzoneFileList
                   buttonText="Dataset Attachment"
                   name="dataset_attachment"
@@ -851,7 +845,7 @@ export default function EditTestOrder() {
                 />
               </div>
               <div>
-                <Label>A2L Attachment</Label>
+                <Label className="dark:text-white">A2L Attachment</Label>
                 <DropzoneFileList
                   buttonText="A2L Attachment"
                   name="a2l_attachment"
@@ -875,7 +869,7 @@ export default function EditTestOrder() {
                 />
               </div>
               <div>
-                <Label>Experiment Attachment</Label>
+                <Label className="dark:text-white">Experiment Attachment</Label>
                 <DropzoneFileList
                   buttonText="Experiment Attachment"
                   name="experiment_attachment"
@@ -899,7 +893,7 @@ export default function EditTestOrder() {
                 />
               </div>
               <div>
-                <Label>DBC Attachment</Label>
+                <Label className="dark:text-white">DBC Attachment</Label>
                 <DropzoneFileList
                   buttonText="DBC Attachment"
                   name="dbc_attachment"
@@ -923,7 +917,7 @@ export default function EditTestOrder() {
                 />
               </div>
               <div>
-                <Label>WLTP Input Sheet</Label>
+                <Label className="dark:text-white">WLTP Input Sheet</Label>
                 <DropzoneFileList
                   buttonText="WLTP Input Sheet"
                   name="wltp_attachment"
@@ -950,13 +944,13 @@ export default function EditTestOrder() {
           </div>
 
           {/* Test Engineers Attachments */}
-          <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
-            <div className="font-semibold text-sm text-gray-700 mb-2">
+          <div className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+            <div className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">
               Test Engineers Attachments
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label>PDF Report</Label>
+                <Label className="dark:text-white">PDF Report</Label>
                 <DropzoneFileList
                   buttonText="PDF Report"
                   name="pdf_report"
@@ -980,7 +974,7 @@ export default function EditTestOrder() {
                 />
               </div>
               <div>
-                <Label>Excel Report</Label>
+                <Label className="dark:text-white">Excel Report</Label>
                 <DropzoneFileList
                   buttonText="Excel Report"
                   name="excel_report"
@@ -1004,7 +998,7 @@ export default function EditTestOrder() {
                 />
               </div>
               <div>
-                <Label>DAT File Attachment</Label>
+                <Label className="dark:text-white">DAT File Attachment</Label>
                 <DropzoneFileList
                   buttonText="DAT File Attachment"
                   name="dat_file_attachment"
@@ -1028,7 +1022,7 @@ export default function EditTestOrder() {
                 />
               </div>
               <div>
-                <Label>Others Attachment</Label>
+                <Label className="dark:text-white">Others Attachment</Label>
                 <DropzoneFileList
                   buttonText="Others Attachment"
                   name="others_attachement"
@@ -1055,9 +1049,9 @@ export default function EditTestOrder() {
           </div>
 
           {/* Coast Down Data Section */}
-          <div className="mt-6 border rounded shadow px-4 py-3 bg-blue-50">
+          <div className="mt-6 border rounded shadow px-4 py-3 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600">
             <div className="flex items-center gap-3 mb-3">
-              <span className="font-semibold text-sm text-blue-700">
+              <span className="font-semibold text-sm text-blue-700 dark:text-blue-300">
                 Coast Down Data
               </span>
               <Switch
@@ -1065,14 +1059,13 @@ export default function EditTestOrder() {
                 onCheckedChange={(checked) => {
                   setTest(prev => ({ ...prev, showCoastDownData: checked }));
                 }}
-                disabled={!areFieldsEditable()}
                 className="data-[state=checked]:bg-red-500"
               />
             </div>
             {test.showCoastDownData && (
               <div>
                 <div className="mb-3">
-                  <Label className="text-xs">
+                  <Label className="text-xs dark:text-white">
                     Coast Down Test Report Reference
                   </Label>
                   <Input
@@ -1083,10 +1076,10 @@ export default function EditTestOrder() {
                     disabled={!areFieldsEditable()}
                   />
                 </div>
-                <div className="mb-2 font-semibold text-xs">CD Values</div>
+                <div className="mb-2 font-semibold text-xs dark:text-white">CD Values</div>
                 <div className="grid grid-cols-4 gap-3 text-xs">
                   <div>
-                    <Label className="text-xs">
+                    <Label className="text-xs dark:text-white">
                       Vehicle Reference mass (Kg)
                     </Label>
                     <Input
@@ -1098,7 +1091,7 @@ export default function EditTestOrder() {
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">A (N)</Label>
+                    <Label className="text-xs dark:text-white">A (N)</Label>
                     <Input
                       value={test.aN}
                       onChange={(e) => handleTestChange("aN", e.target.value)}
@@ -1108,7 +1101,7 @@ export default function EditTestOrder() {
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">B (N/kmph)</Label>
+                    <Label className="text-xs dark:text-white">B (N/kmph)</Label>
                     <Input
                       value={test.bNkmph}
                       onChange={(e) => handleTestChange("bNkmph", e.target.value)}
@@ -1118,7 +1111,7 @@ export default function EditTestOrder() {
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">C (N/kmph^2)</Label>
+                    <Label className="text-xs dark:text-white">C (N/kmph^2)</Label>
                     <Input
                       value={test.cNkmph2}
                       onChange={(e) => handleTestChange("cNkmph2", e.target.value)}
@@ -1130,7 +1123,7 @@ export default function EditTestOrder() {
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-xs mt-3">
                   <div>
-                    <Label className="text-xs">F0 (N)</Label>
+                    <Label className="text-xs dark:text-white">F0 (N)</Label>
                     <Input
                       value={test.f0N}
                       onChange={(e) => handleTestChange("f0N", e.target.value)}
@@ -1140,7 +1133,7 @@ export default function EditTestOrder() {
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">F1 (N/kmph)</Label>
+                    <Label className="text-xs dark:text-white">F1 (N/kmph)</Label>
                     <Input
                       value={test.f1Nkmph}
                       onChange={(e) => handleTestChange("f1Nkmph", e.target.value)}
@@ -1150,7 +1143,7 @@ export default function EditTestOrder() {
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">F2 (N/kmph^2)</Label>
+                    <Label className="text-xs dark:text-white">F2 (N/kmph^2)</Label>
                     <Input
                       value={test.f2Nkmph2}
                       onChange={(e) => handleTestChange("f2Nkmph2", e.target.value)}
@@ -1245,8 +1238,8 @@ export default function EditTestOrder() {
         {/* Mail Remarks Modal */}
         {mailRemarksModal && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-            <div className="bg-white rounded shadow-lg p-6 w-96">
-              <div className="font-semibold mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-96">
+              <div className="font-semibold mb-2 dark:text-white">
                 {modalActionType === "re-edit"
                   ? "Re-edit Reason"
                   : modalActionType === "reject"
@@ -1254,7 +1247,7 @@ export default function EditTestOrder() {
                     : "Update Comments"}
               </div>
               <textarea
-                className="w-full border rounded p-2 mb-4"
+                className="w-full border rounded p-2 mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                 rows={3}
                 value={mailRemarks}
                 onChange={(e) => setMailRemarks(e.target.value)}
@@ -1268,7 +1261,7 @@ export default function EditTestOrder() {
               />
               <div className="flex justify-end gap-2">
                 <Button
-                  className="bg-gray-300 text-black px-4 py-1 rounded"
+                  className="bg-gray-300 dark:bg-gray-600 text-black dark:text-white px-4 py-1 rounded"
                   type="button"
                   onClick={() => setMailRemarksModal(false)}
                 >
@@ -1276,10 +1269,10 @@ export default function EditTestOrder() {
                 </Button>
                 <Button
                   className={`${modalActionType === "re-edit"
-                      ? "bg-blue-600"
-                      : modalActionType === "reject"
-                        ? "bg-red-600"
-                        : "bg-blue-600"
+                    ? "bg-blue-600"
+                    : modalActionType === "reject"
+                      ? "bg-red-600"
+                      : "bg-blue-600"
                     } text-white px-4 py-1 rounded`}
                   type="button"
                   onClick={() => {

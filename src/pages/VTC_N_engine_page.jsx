@@ -12,105 +12,148 @@ import {
   TableRow,
 } from "@/components/UI/table";
 import { Card } from "@/components/UI/card";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar1 from "@/components/UI/navbar";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
+import { useAuth } from "@/context/AuthContext";
+import showSnackbar from "@/utils/showSnackbar";
 
-const engines = [
-  {
-    engineSerialNumber: "ENGINE1",
-    engineBuildLevel: "L90",
-    engineCapacity: "",
-    engineType: "DIESEL",
-    lastUpdatedOn: "",
-  },
-  {
-    engineSerialNumber: "ENGINE",
-    engineBuildLevel: "TEST",
-    engineCapacity: "",
-    engineType: "",
-    lastUpdatedOn: "",
-  },
-  {
-    engineSerialNumber: "DEMO1",
-    engineBuildLevel: "",
-    engineCapacity: "",
-    engineType: "",
-    lastUpdatedOn: "",
-  },
-  {
-    engineSerialNumber: "FOR HOT TESTING",
-    engineBuildLevel: "",
-    engineCapacity: "",
-    engineType: "FOR HOT TESTING",
-    lastUpdatedOn: "21-09-2021",
-  },
-  {
-    engineSerialNumber: "TESTTEST",
-    engineBuildLevel: "",
-    engineCapacity: "",
-    engineType: "",
-    lastUpdatedOn: "",
-  },
-  {
-    engineSerialNumber: "123123123",
-    engineBuildLevel: "TEST",
-    engineCapacity: "TEST",
-    engineType: "TEST",
-    lastUpdatedOn: "15-09-2021",
-  },
-  {
-    engineSerialNumber: "NOLINE",
-    engineBuildLevel: "",
-    engineCapacity: "",
-    engineType: "",
-    lastUpdatedOn: "15-09-2021",
-  },
-  {
-    engineSerialNumber: "SAMPLE",
-    engineBuildLevel: "",
-    engineCapacity: "",
-    engineType: "",
-    lastUpdatedOn: "15-09-2021",
-  },
-  {
-    engineSerialNumber: "123123123",
-    engineBuildLevel: "",
-    engineCapacity: "",
-    engineType: "",
-    lastUpdatedOn: "",
-  },
-  {
-    engineSerialNumber: "123456789",
-    engineBuildLevel: "",
-    engineCapacity: "",
-    engineType: "",
-    lastUpdatedOn: "",
-  },
-];
+const apiURL = import.meta.env.VITE_BACKEND_URL;
 
-export default function VTCEnginePage() {
+export default function VTCNashikEnginePage() {
+  const [engines, setEngines] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState("Engine");
+  const [itemsPerPage] = useState(8);
+  const { apiUserRole, userId, userName } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Determine active tab from the current route
+  let activeTab = "Job Order";
+  if (location.pathname.toLowerCase().includes("vehicle"))
+    activeTab = "Vehicle";
+  else if (location.pathname.toLowerCase().includes("engine"))
+    activeTab = "Engine";
+
+  // Fetch engines from API on mount
+  useEffect(() => {
+    const fetchEngines = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // REMOVED: Department filter to get engines from all teams
+        const response = await axios.get(`${apiURL}/engines`);
+
+        console.log("Fetched all engines:", response.data); // Debug log
+
+        // Only keep necessary fields for each engine
+        const minimalEngines = (response.data || []).map((e) => ({
+          engine_serial_number: e.engine_serial_number || "",
+          engine_build_level: e.engine_build_level || "",
+          engine_capacity: e.engine_capacity || "",
+          engine_type: e.engine_type || "",
+          id_of_creator: e.id_of_creator || "",
+          created_on: e.created_on,
+          id_of_updater: e.id_of_updater,
+          updated_on: e.updated_on,
+        }));
+        setEngines(minimalEngines);
+      } catch (err) {
+        console.error("Error fetching engines:", err);
+        setError(
+          err?.response?.data?.detail ||
+          err?.message ||
+          "Failed to fetch engines"
+        );
+        setEngines([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEngines();
+  }, []);
+
+  // Pagination calculations
+  const totalItems = engines.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = engines.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
 
   const handleBack = () => {
-    navigate(-1); // Go back to previous page
+    navigate(-1);
   };
-
-  const navigate = useNavigate();
 
   const handleAddNewEngine = () => {
-    navigate("/nashik/engine/new"); // Nashik engine form route
+    navigate("/nashik/engine/new?department=VTC_JO%20Nashik");
   };
-
-  //const navigate = useNavigate();
 
   const handleTabClick = (tab) => {
-    setActiveTab(tab);
-    if (tab === "Job Order") navigate("/nashik/joborder");
-    else if (tab === "Vehicle") navigate("/nashik/vehicle");
-    else if (tab === "Engine") navigate("/nashik/engine");
+    if (tab === "Job Order") {
+      navigate("/vtc-nashik");
+    } else if (tab === "Vehicle") {
+      navigate("/nashik/vehicle");
+    } else if (tab === "Engine") {
+      navigate("/nashik/engine");
+    }
   };
+
+  // FIXED: Update the handleEditClick function to fetch the SPECIFIC engine data
+  const handleEditClick = async (engine) => {
+    try {
+      console.log("Clicking on Nashik engine:", engine.engine_serial_number); // Debug log
+
+      // Fetch full engine details using the specific engine serial number
+      const response = await axios.get(
+        `${apiURL}/engines?engine_serial_number=${encodeURIComponent(engine.engine_serial_number)}`
+      );
+
+      console.log("Nashik Engine API Response:", response.data); // Debug log
+
+      if (response.data && response.data.length > 0) {
+        // Find the exact engine that matches the clicked serial number
+        const engineData = response.data.find(e =>
+          e.engine_serial_number === engine.engine_serial_number
+        );
+
+        if (!engineData) {
+          console.error("Engine not found in response:", engine.engine_serial_number);
+          showSnackbar("Selected engine not found in response.", "error");
+          return;
+        }
+
+        console.log("Found matching Nashik engine:", engineData); // Debug log
+
+        // Navigate to the engine form page with complete engine data
+        navigate(`/nashik/engine/new?department=VTC_JO%20Nashik&edit=true`, {
+          state: {
+            engineData: engineData,
+            isEdit: true,
+            engineSerialNumber: engine.engine_serial_number,
+            // Pass additional context for the form
+            editMode: true,
+            originalEngineData: engineData
+          }
+        });
+      } else {
+        showSnackbar("No engine data found for the selected engine.", "warning");
+      }
+    } catch (err) {
+      console.error("Error fetching engine details:", err);
+      showSnackbar(
+        "Error fetching engine details: " + (err.response?.data?.detail || err.message),
+        "error"
+      );
+    }
+  };
+
   return (
     <>
       <Navbar1 />
@@ -130,11 +173,8 @@ export default function VTCEnginePage() {
                 </Button>
                 <div>
                   <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
-                    VTC Nashik
+                    VTC NASHIK
                   </h1>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
-                    NEW JOB ORDER
-                  </h2>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
@@ -142,27 +182,17 @@ export default function VTCEnginePage() {
                 {["Job Order", "Vehicle", "Engine"].map((tab) => (
                   <Button
                     key={tab}
-                    variant={activeTab === tab ? "default" : "outline"}
                     onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${
-                      tab === "Job Order"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : tab === "Vehicle" || tab === "Engine"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "text-red-500 border-red-500 hover:bg-red-50"
-                    }`}
+                    className={`rounded-xl px-4 py-2 font-semibold border
+                      ${activeTab === tab
+                        ? "bg-red-500 text-white border-red-500"
+                        : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                      }
+                    `}
                   >
                     {tab}
                   </Button>
                 ))}
-                {/* Add New Engine Button */}
-                <Button
-                  onClick={handleAddNewEngine}
-                  className="bg-red-500 hover:bg-red-600 text-white"
-                >
-                  <Add className="h-4 w-4 mr-1" />
-                  ADD NEW ENGINE
-                </Button>
               </div>
             </div>
           </div>
@@ -170,58 +200,129 @@ export default function VTCEnginePage() {
 
         {/* Engine List Badge */}
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
-            Engine List
-          </Badge>
+          <div className="flex items-center justify-between">
+            <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
+              Engine List
+            </Badge>
+            <Button
+              onClick={handleAddNewEngine}
+              className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
+            >
+              <Add className="h-4 w-4 mr-1" />
+              ADD NEW ENGINE
+            </Button>
+          </div>
         </div>
 
         {/* Main Content */}
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
           <Card>
             <div className="overflow-x-auto">
-              <Table>
+              {error && (
+                <div className="text-red-500 text-sm mb-2">{error}</div>
+              )}
+              <Table className="min-w-full border-collapse border border-gray-200">
                 <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="font-semibold text-gray-700 text-sm">
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Engine Serial Number
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-sm">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Engine Build Level
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-sm">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Engine Capacity (cc)
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-sm">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Engine Type
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-sm">
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                      Created By
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                      Created on
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                      Last Updated By
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Last Updated on
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {engines.map((engine, index) => (
-                    <TableRow
-                      key={index}
-                      className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
-                    >
-                      <TableCell className="text-sm text-gray-900 font-medium">
-                        {engine.engineSerialNumber}
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-900">
-                        {engine.engineBuildLevel}
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-900">
-                        {engine.engineCapacity}
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-900">
-                        {engine.engineType}
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {engine.lastUpdatedOn}
+                  {loading ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={8}
+                        className="text-center text-gray-500"
+                      >
+                        Loading...
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : engines.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={8}
+                        className="text-center text-gray-500"
+                      >
+                        No engines found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    currentItems.map((engine, index) => (
+                      <TableRow
+                        key={engine.engine_serial_number || index}
+                        className={`${index %
+                          2 === 0 ? "bg-white" : "bg-gray-50"
+                          } hover:bg-gray-100`}
+                      >
+                        <TableCell
+                          className="text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400 text-xs px-4 py-2"
+                          onClick={() => handleEditClick(engine)}
+                        >
+                          {engine.engine_serial_number}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-900 px-4 py-2">
+                          {engine.engine_build_level}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-900 px-4 py-2">
+                          {engine.engine_capacity}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-900 px-4 py-2">
+                          {engine.engine_type}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600 px-4 py-2">
+                          {engine.id_of_creator}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600 px-4 py-2">
+                          {new Date(engine.created_on).toLocaleString("en-IN", {
+                            timeZone: "Asia/Kolkata",
+                            hour12: true,
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600 px-4 py-2">
+                          {engine.id_of_updater}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600 px-4 py-2">
+                          {new Date(engine.updated_on).toLocaleString("en-IN", {
+                            timeZone: "Asia/Kolkata",
+                            hour12: true,
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -229,12 +330,16 @@ export default function VTCEnginePage() {
 
           {/* Pagination Footer */}
           <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-gray-600">Showing 1 of 10</div>
+            <div className="text-sm text-gray-600">
+              Showing {indexOfFirstItem + 1} to{" "}
+              {Math.min(indexOfLastItem, totalItems)} of {totalItems} Records
+            </div>
             <div className="flex items-center space-x-2">
               <Button
                 variant="outline"
                 size="sm"
-                disabled
+                disabled={currentPage === 1}
+                onClick={() => handlePageChange(1)}
                 className="text-gray-400"
               >
                 {"<<"}
@@ -242,22 +347,31 @@ export default function VTCEnginePage() {
               <Button
                 variant="outline"
                 size="sm"
-                disabled
+                disabled={currentPage === 1}
+                onClick={() => handlePageChange(currentPage - 1)}
                 className="text-gray-400"
               >
                 {"<"}
               </Button>
-              <Button
-                variant="default"
-                size="sm"
-                className="bg-black text-white hover:bg-gray-800"
-              >
-                1
-              </Button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(page)}
+                  className={`${currentPage === page
+                    ? "bg-black text-white hover:bg-gray-800"
+                    : "text-gray-600"
+                    } px-3 py-1`}
+                >
+                  {page}
+                </Button>
+              ))}
               <Button
                 variant="outline"
                 size="sm"
-                disabled
+                disabled={currentPage === totalPages}
+                onClick={() => handlePageChange(currentPage + 1)}
                 className="text-gray-400"
               >
                 {">"}
@@ -265,7 +379,8 @@ export default function VTCEnginePage() {
               <Button
                 variant="outline"
                 size="sm"
-                disabled
+                disabled={currentPage === totalPages}
+                onClick={() => handlePageChange(totalPages)}
                 className="text-gray-400"
               >
                 {">>"}
@@ -273,15 +388,6 @@ export default function VTCEnginePage() {
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <footer className="bg-gray-100 border-t py-4 dark:bg-black text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center text-sm text-gray-500">
-              © 2022 Brand, Inc • Privacy • Terms • Sitemap
-            </div>
-          </div>
-        </footer>
       </div>
     </>
   );
