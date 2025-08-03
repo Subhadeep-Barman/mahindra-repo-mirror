@@ -99,7 +99,11 @@ export default function EditTestOrder() {
     fuelType: testOrder?.fuel_type || "",
     preferredDate: testOrder?.preferred_date || "",
     emissionCheckDate: testOrder?.emission_check_date || "",
-    emissionCheckAttachment: testOrder?.emission_check_attachment || "",
+    emissionCheckAttachment: Array.isArray(testOrder?.emission_check_attachment)
+      ? testOrder?.emission_check_attachment
+      : testOrder?.emission_check_attachment
+        ? testOrder?.emission_check_attachment
+        : [],
     dataset_attachment: testOrder?.dataset_attachment || "",
     a2l_attachment: testOrder?.a2l_attachment || "",
     experiment_attachment: testOrder?.experiment_attachment || "",
@@ -149,6 +153,7 @@ export default function EditTestOrder() {
   const [mailRemarksModal, setMailRemarksModal] = useState(false);
   const [mailRemarks, setMailRemarks] = useState("");
   const [modalActionType, setModalActionType] = useState(""); // "re-edit" or "reject" or "update"
+  const [completeRemarks, setCompleteRemarks] = useState(""); // New state for complete remarks
 
   const handleBack = () => {
     navigate(-1);
@@ -252,7 +257,12 @@ export default function EditTestOrder() {
     fuel_type: test.fuelType || "",
     preferred_date: test.preferredDate || null,
     emission_check_date: test.emissionCheckDate || null,
-    emission_check_attachment: test.emissionCheckAttachment || "",
+    emission_check_attachment:
+      Array.isArray(test.emissionCheckAttachment)
+        ? test.emissionCheckAttachment
+        : test.emissionCheckAttachment
+          ? test.emissionCheckAttachment
+          : [],
     dataset_attachment: test.dataset_attachment || "",
     a2l_attachment: test.a2l_attachment || "",
     experiment_attachment: test.experiment_attachment || "",
@@ -347,6 +357,26 @@ export default function EditTestOrder() {
       await handleStatusUpdate("Started");
     } catch (err) {
       showSnackbar("Failed to start test order: " + (err.response?.data?.detail || err.message), "error");
+    }
+  };
+
+  // Handler to complete the test order with remarks
+  const handleCompleteTestOrder = async () => {
+    try {
+      const testOrderPayload = {
+        ...getTestOrderPayload("Completed"),
+        complete_remarks: completeRemarks,
+      };
+      await axios.put(`${apiURL}/testorders/${test.testOrderId}`, testOrderPayload);
+      await axios.post(`${apiURL}/testorders/status`, {
+        test_order_id: test.testOrderId,
+        status: "Completed",
+        remark: completeRemarks,
+      });
+      showSnackbar("Test order marked as Completed", "success");
+      handleBack();
+    } catch (err) {
+      showSnackbar("Failed to complete test order: " + (err.response?.data?.detail || err.message), "error");
     }
   };
 
@@ -1205,9 +1235,11 @@ export default function EditTestOrder() {
                 <Button
                   className="bg-green-600 text-white text-xs px-3 py-1 rounded"
                   type="button"
-                  onClick={async () => {
-                    await handleStatusUpdate("Completed");
-                    await handleSendMail("6", jobOrderId, test.testOrderId);
+                  onClick={() => {
+                    setModalActionType("complete");
+                    setMailRemarks("");
+                    setCompleteRemarks("");
+                    setMailRemarksModal(true);
                   }}
                 >
                   Complete
@@ -1244,19 +1276,33 @@ export default function EditTestOrder() {
                   ? "Re-edit Reason"
                   : modalActionType === "reject"
                     ? "Rejection Reason"
-                    : "Update Comments"}
+                    : modalActionType === "complete"
+                      ? "Completion Remarks"
+                      : "Update Comments"}
               </div>
               <textarea
                 className="w-full border rounded p-2 mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                 rows={3}
-                value={mailRemarks}
-                onChange={(e) => setMailRemarks(e.target.value)}
+                value={
+                  modalActionType === "complete"
+                    ? completeRemarks
+                    : mailRemarks
+                }
+                onChange={(e) => {
+                  if (modalActionType === "complete") {
+                    setCompleteRemarks(e.target.value);
+                  } else {
+                    setMailRemarks(e.target.value);
+                  }
+                }}
                 placeholder={
                   modalActionType === "re-edit"
                     ? "Enter reason for re-edit..."
                     : modalActionType === "reject"
                       ? "Enter reason for rejection..."
-                      : "Enter update comments..."
+                      : modalActionType === "complete"
+                        ? "Enter completion remarks..."
+                        : "Enter update comments..."
                 }
               />
               <div className="flex justify-end gap-2">
@@ -1272,11 +1318,17 @@ export default function EditTestOrder() {
                     ? "bg-blue-600"
                     : modalActionType === "reject"
                       ? "bg-red-600"
-                      : "bg-blue-600"
+                      : modalActionType === "complete"
+                        ? "bg-green-600"
+                        : "bg-blue-600"
                     } text-white px-4 py-1 rounded`}
                   type="button"
-                  onClick={() => {
-                    if (isProjectTeam) {
+                  onClick={async () => {
+                    if (modalActionType === "complete") {
+                      await handleCompleteTestOrder();
+                      await handleSendMail("6", jobOrderId, test.testOrderId);
+                      setMailRemarksModal(false);
+                    } else if (isProjectTeam) {
                       handleSubmitMailRemarks();
                     } else if (isTestEngineer) {
                       if (modalActionType === "re-edit") {
@@ -1288,7 +1340,11 @@ export default function EditTestOrder() {
                       handleSubmitMailRemarks();
                     }
                   }}
-                  disabled={!mailRemarks.trim()}
+                  disabled={
+                    modalActionType === "complete"
+                      ? !completeRemarks.trim()
+                      : !mailRemarks.trim()
+                  }
                 >
                   Submit
                 </Button>
