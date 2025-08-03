@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { User, Users, Trash2 } from "lucide-react";
+import { User, Trash2 } from "lucide-react";
 import axios from "axios";
 import showSnackbar from "@/utils/showSnackbar";
+import { Autocomplete, TextField, Chip } from "@mui/material";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -39,70 +40,21 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
         }
     };
 
-    // View state: "single" or "group"
-    const [viewType, setViewType] = useState("single");
-
-    // Remove member (single or group)
-    const removeMember = async (memberToRemove) => {
-        // Find the actual index of the member
-        const idx = members.findIndex(m => {
-            if (memberToRemove.group) {
-                return m.group && m.name === memberToRemove.name;
-            } else {
-                return !m.group && m.code === memberToRemove.code && m.name === memberToRemove.name;
-            }
-        });
-
-        if (idx === -1) {
-            showSnackbar("Member not found", "error", 3000);
-            return;
-        }
-
-        console.log("Attempting to remove member at index:", idx);
-        console.log("Current members:", members);
-        console.log("JobOrderId:", jobOrderId);
-
-        // Always allow local removal first
-        setMembers((prev) => prev.filter((_, i) => i !== idx));
-        showSnackbar("Member removed locally", "success", 3000);
-
-        // If jobOrderId exists, also try to remove from backend
-        if (jobOrderId) {
-            try {
-                const response = await axios.delete(`${apiURL}/cft_members/delete`, {
-                    params: {
-                        job_order_id: jobOrderId,
-                        member_index: idx
-                    }
-                });
-                console.log("Delete response:", response);
-                showSnackbar("Member deleted from server successfully", "success", 3000);
-            } catch (err) {
-                console.error("Delete error:", err.response || err);
-                showSnackbar(`Failed to delete member from server: ${err.response?.data?.message || err.message}`, "warning", 3000);
-                // Don't revert local removal - user can still work locally
-            }
-        }
-    };
+    // Remove member (only for single members)
+    // No longer used, so you can remove or comment out this function
+    // const removeMember = async (memberToRemove) => { ... }
 
     // State for ProjectTeam users dropdown
     const [projectTeamUsers, setProjectTeamUsers] = useState([]);
     const [usersLoading, setUsersLoading] = useState(false);
     const [usersError, setUsersError] = useState("");
-
-    // Modal state for add member
-    const [addModalOpen, setAddModalOpen] = useState(false);
-    const [newCode, setNewCode] = useState("");
-    const [newName, setNewName] = useState("");
     const [addError, setAddError] = useState("");
-    const [selectedUserIdx, setSelectedUserIdx] = useState(-1);
+    // Multi-select state: store selected user objects
+    const [selectedUsers, setSelectedUsers] = useState([]);
 
     const openAddModal = async () => {
-        setNewCode("");
-        setNewName("");
         setAddError("");
-        setSelectedUserIdx(-1);
-        setAddModalOpen(true);
+        setSelectedUsers([]);
         setUsersLoading(true);
         setUsersError("");
         try {
@@ -115,35 +67,99 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
         setUsersLoading(false);
     };
 
-    const closeAddModal = () => {
-        setAddModalOpen(false);
-    };
+    // Fetch users if not loaded
+    useEffect(() => {
+        if (projectTeamUsers.length === 0) {
+            setUsersLoading(true);
+            setUsersError("");
+            axios.get(`${apiURL}/api/cft/projectteam_users`)
+                .then(res => setProjectTeamUsers(res.data || []))
+                .catch(() => {
+                    setUsersError("Failed to load users");
+                    setProjectTeamUsers([]);
+                })
+                .finally(() => setUsersLoading(false));
+        }
+    }, []);
 
-    const handleAddMember = async () => {
-        // Remove jobOrderId check and allow adding locally
-        if (selectedUserIdx === -1) {
-            setAddError("Please select a user");
-            return;
+    // Only keep single members
+    const singleMembers = members.filter(m => !m.group);
+
+    // Prepare Autocomplete options (filter out already added)
+    const usedIds = members.filter(m => !m.group).map(m => m.code);
+    const filteredUsers = projectTeamUsers.filter(u => !usedIds.includes(u.id));
+
+    // Prepare value for Autocomplete (selectedUsers)
+    // If a user is removed from members, also remove from selectedUsers
+    useEffect(() => {
+        setSelectedUsers(prev =>
+            prev.filter(u => members.some(m => m.code === u.id && m.name === u.username))
+        );
+    }, [members]);
+
+    // Add selected users as members or remove when chip is deleted
+    const handleAddMembers = async (event, newValue) => {
+        setAddError("");
+        // Only add users not already in members
+        const toAdd = newValue.filter(
+            user => !members.some(m => m.code === user.id && m.name === user.username)
+        );
+        // Find users to remove (those present in members but not in newValue)
+        const toRemove = members.filter(
+            m => !m.group && !newValue.some(user => user.id === m.code && user.username === m.name)
+        );
+
+        // Remove members
+        if (toRemove.length && jobOrderId) {
+            await Promise.all(
+                toRemove.map(member => {
+                    const idx = members.findIndex(
+                        m => !m.group && m.code === member.code && m.name === member.name
+                    );
+                    if (idx !== -1) {
+                        return axios.delete(`${apiURL}/cft_members/delete`, {
+                            params: {
+                                job_order_id: jobOrderId,
+                                member_index: idx
+                            }
+                        });
+                    }
+                    return Promise.resolve();
+                })
+            );
         }
-        const user = projectTeamUsers[selectedUserIdx];
-        if (!user) {
-            setAddError("Invalid user selected");
-            return;
-        }
-        // If jobOrderId exists, try to add to backend, else just update local state
-        if (jobOrderId) {
+        // Update local state for removals
+        let updatedMembers = members.filter(
+            m => m.group || newValue.some(user => user.id === m.code && user.username === m.name)
+        );
+
+        // Add new members
+        if (toAdd.length && jobOrderId) {
             try {
-                await axios.post(`${apiURL}/cft_members/add`, { job_order_id: jobOrderId, member: { code: user.id, name: user.username } });
-                setMembers((prev) => [...prev, { code: user.id, name: user.username }]);
-                setAddModalOpen(false);
+                await Promise.all(
+                    toAdd.map(user =>
+                        axios.post(`${apiURL}/cft_members/add`, {
+                            job_order_id: jobOrderId,
+                            member: { code: user.id, name: user.username }
+                        })
+                    )
+                );
+                updatedMembers = [
+                    ...updatedMembers,
+                    ...toAdd.map(user => ({ code: user.id, name: user.username }))
+                ];
             } catch (err) {
-                setAddError("Failed to add member");
+                setAddError("Failed to add member(s)");
             }
-        } else {
-            // Add to local state only
-            setMembers((prev) => [...prev, { code: user.id, name: user.username }]);
-            setAddModalOpen(false);
+        } else if (toAdd.length) {
+            updatedMembers = [
+                ...updatedMembers,
+                ...toAdd.map(user => ({ code: user.id, name: user.username }))
+            ];
         }
+
+        setMembers(updatedMembers);
+        setSelectedUsers(newValue);
     };
 
     // State for apply button
@@ -172,40 +188,6 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
         }
     };
 
-    // Groups modal state
-    const [groupsModalOpen, setGroupsModalOpen] = useState(false);
-    const [groups, setGroups] = useState([]);
-    const [groupName, setGroupName] = useState("");
-    const [groupError, setGroupError] = useState("");
-
-    const openGroupsModal = () => {
-        setGroupName("");
-        setGroupError("");
-        setGroupsModalOpen(true);
-    };
-
-    const closeGroupsModal = () => {
-        setGroupsModalOpen(false);
-    };
-
-    // Add Group to members (with group: true and members array)
-    const handleAddGroup = () => {
-        if (!groupName.trim()) {
-            setGroupError("Group name required");
-            return;
-        }
-        // Add group object to members
-        setMembers(prev => [
-            ...prev,
-            { group: true, name: groupName.trim(), members: [] }
-        ]);
-        setGroupsModalOpen(false);
-    };
-
-    // Filtered lists
-    const singleMembers = members.filter(m => !m.group);
-    const groupMembers = members.filter(m => m.group);
-
     return (
         <div className="relative flex flex-col dark:bg-black border-gray-200">
             {/* Header */}
@@ -215,190 +197,63 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
 
             {/* Content */}
             <div className="p-4 flex-1">
-                {/* Action Buttons */}
-                <div className="flex gap-2 mb-4">
-                    <button
-                        className={`flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors ${viewType === "single" ? "bg-red-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-                        onClick={() => setViewType("single")}
-                        disabled={viewType === "single"}
-                    >
-                        <User size={16} />
-                    </button>
-                    <button
-                        onClick={() => setViewType("group")}
-                        className={`flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors ${viewType === "group" ? "bg-red-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-                        disabled={viewType === "group"}
-                    >
-                        <Users size={16} />
-                    </button>
-                </div>
-
-                {/* Members List */}
-                <div className="mb-2">
-                    {viewType === "single" && singleMembers.map((member, idx) => {
-                        // Find by comparing unique properties instead of object reference
-                        const actualIndex = members.findIndex(m =>
-                            !m.group && m.code === member.code && m.name === member.name
-                        );
-
-                        return (
-                            <div key={`${member.code}-${idx}`} className="flex items-center justify-between py-2 bg-gray-50 dark:bg-black rounded-lg mb-2">
-                                <div className="flex-1">
-                                    <div className="text-sm font-medium text-gray-900 dark:text-white border-2 p-1 dark:bg-black">
-                                        {member.code} - {member.name}
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => removeMember(member)} // Pass the member object
-                                    className="text-gray-400 hover:text-red-500 transition-colors ml-2 dark:bg-black"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            </div>
-                        );
-                    })}
-
-                    {viewType === "group" && groupMembers.map((group, idx) => {
-                        const actualIndex = members.findIndex(m =>
-                            m.group && m.name === group.name
-                        );
-
-                        return (
-                            <div key={`group-${group.name}-${idx}`} className="flex items-center justify-between py-2 bg-gray-50 dark:bg-black rounded-lg mb-2">
-                                <div className="flex-1">
-                                    <div className="text-sm font-bold text-gray-900 dark:text-white border-2 p-1">
-                                        Group: {group.name}
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => removeMember(group)} // Pass the group object
-                                    className="text-gray-400 hover:text-red-500 transition-colors ml-2"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {/* Add CFT Button */}
-                {viewType === "single" && (
-                    <button
-                        onClick={openAddModal}
-                        className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center mt-2"
-                    >
-                        + ADD CFT
-                    </button>
-                )}
-                {viewType === "group" && (
-                    <button
-                        onClick={openGroupsModal}
-                        className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center mt-2"
-                    >
-                        + ADD GROUP
-                    </button>
-                )}
-
-                {/* Add Member Modal */}
-                {addModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-                        <div className="bg-white dark:bg-black border-2 rounded-lg shadow-lg p-6 w-80 relative">
-                            <h3 className="text-lg font-semibold mb-4">Add CFT Member</h3>
-                            <div className="mb-2">
-                                <label className="block text-sm font-medium mb-1">Select ProjectTeam User</label>
-                                {usersLoading ? (
-                                    <div className="text-xs text-gray-500">Loading users...</div>
-                                ) : usersError ? (
-                                    <div className="text-xs text-red-600">{usersError}</div>
-                                ) : (
-                                    <select
-                                        className="w-full border rounded px-2 py-1 dark:bg-black"
-                                        value={selectedUserIdx}
-                                        onChange={e => {
-                                            setSelectedUserIdx(Number(e.target.value));
-                                            const idx = Number(e.target.value);
-                                            if (idx >= 0 && filteredUsers[idx]) {
-                                                setNewCode(filteredUsers[idx].id);
-                                                setNewName(filteredUsers[idx].username);
-                                            } else {
-                                                setNewCode("");
-                                                setNewName("");
-                                            }
-                                        }}
-                                    >
-                                        <option value={-1}>Select user</option>
-                                        {/* Filter out users already in members */}
-                                        {(() => {
-                                            // Only single members (not groups)
-                                            const usedIds = members.filter(m => !m.group).map(m => m.code);
-                                            // Filtered users for dropdown
-                                            var filteredUsers = projectTeamUsers.filter(u => !usedIds.includes(u.id));
-                                            // Expose filteredUsers to onChange handler
-                                            window.filteredUsers = filteredUsers;
-                                            return filteredUsers.map((user, idx) => (
-                                                <option key={user.id} value={idx}>
-                                                    {user.id} - {user.username}
-                                                </option>
-                                            ));
-                                        })()}
-                                    </select>
-                                )}
-                            </div>
-                            {/* Show code and name as read-only */}
-                            {selectedUserIdx >= 0 && (
-                                <div className="mb-2">
-                                    <div className="text-xs text-gray-700">
-                                        <span className="font-semibold">ID:</span> {newCode}
-                                    </div>
-                                    <div className="text-xs text-gray-700">
-                                        <span className="font-semibold">Name:</span> {newName}
-                                    </div>
-                                </div>
-                            )}
-                            {addError && <div className="text-red-600 text-xs mb-2">{addError}</div>}
-                            <div className="flex justify-end gap-2 mt-4">
-                                <button
-                                    onClick={closeAddModal}
-                                    className="px-3 py-1 bg-gray-200 rounded text-gray-700 text-sm"
-                                >Cancel</button>
-                                <button
-                                    onClick={handleAddMember}
-                                    className="px-3 py-1 bg-red-600 text-white rounded text-sm"
-                                >Add</button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Groups Modal */}
-                {groupsModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-                        <div className="bg-white dark:bg-black rounded-lg shadow-lg p-6 w-80 relative border-2">
-                            <h3 className="text-lg font-semibold mb-4">Add Group</h3>
-                            <div className="mb-2">
-                                <label className="block text-sm font-medium mb-1">Group Name</label>
-                                <input
-                                    type="text"
-                                    value={groupName}
-                                    onChange={e => setGroupName(e.target.value)}
-                                    className="w-full border rounded px-2 py-1 dark:bg-black"
-                                    placeholder="Enter group name"
+                {/* Multi-select Autocomplete for adding CFT members */}
+                <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">Select ProjectTeam User(s)</label>
+                    <Autocomplete
+                        multiple
+                        options={filteredUsers}
+                        getOptionLabel={option =>
+                            `${option.id}${option.username ? ` - ${option.username}` : ""}`
+                        }
+                        value={singleMembers.map(m =>
+                            projectTeamUsers.find(u => u.id === m.code && u.username === m.name)
+                        ).filter(Boolean)}
+                        loading={usersLoading}
+                        disabled={disabled}
+                        onChange={handleAddMembers}
+                        isOptionEqualToValue={(option, value) =>
+                            option?.id === value?.id
+                        }
+                        renderTags={(value, getTagProps) =>
+                            value.map((option, index) => (
+                                <Chip
+                                    key={option.id}
+                                    label={`${option.id}${option.username ? ` - ${option.username}` : ""}`}
+                                    {...getTagProps({ index })}
+                                    size="medium"
+                                    sx={{
+                                        maxWidth: "100%",
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        borderRadius: "16px",
+                                        backgroundColor: (theme) =>
+                                            theme.palette.mode === "dark"
+                                                ? "rgba(255,255,255,0.08)"
+                                                : "rgba(25,118,210,0.08)",
+                                        color: "primary.main",
+                                        fontWeight: 500,
+                                    }}
                                 />
-                            </div>
-                            {groupError && <div className="text-red-600 text-xs mb-2">{groupError}</div>}
-                            <div className="flex justify-end gap-2 mt-4">
-                                <button
-                                    onClick={closeGroupsModal}
-                                    className="px-3 py-1 bg-gray-200 rounded text-gray-700 text-sm"
-                                >Cancel</button>
-                                <button
-                                    onClick={handleAddGroup}
-                                    className="px-3 py-1 bg-red-600 text-white rounded text-sm"
-                                >Add Group</button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                            ))
+                        }
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="CFT Members"
+                                error={!!addError}
+                                helperText={addError || usersError}
+                                fullWidth
+                                sx={{
+                                    "& .MuiOutlinedInput-root": {
+                                        borderRadius: "8px",
+                                    },
+                                }}
+                            />
+                        )}
+                    />
+                </div>
             </div>
         </div>
     );

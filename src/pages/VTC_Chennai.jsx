@@ -18,7 +18,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import showSnackbar from "@/utils/showSnackbar";
-
+import useStore from "../store/useStore";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function VTCChennaiPage() {
@@ -35,6 +35,15 @@ export default function VTCChennaiPage() {
   const { userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
+  // const { userName, userEmail, userEmployeeId } = useAuth();
+  // Fetch user data directly from cookies
+  const userCookies = useStore.getState().getUserCookieData();
+  const userName = userCookies.userName;
+  const userEmail = userCookies.userEmail;
+  const userEmployeeId = userCookies.userId;
+  console.log("User Cookies:", userCookies);
+  console.log("emaployeeId:", userEmployeeId);
 
   const [search, setSearch] = useState({
     job_order_id: "",
@@ -56,9 +65,14 @@ export default function VTCChennaiPage() {
   }, []);
 
   const fetchJobOrders = () => {
+    // Get userId from localStorage or cookies (assuming it's stored after login)
+    if (!userEmployeeId) {
+      showSnackbar("User ID not found. Please login again.", "error");
+      return;
+    }
     const department = "VTC_JO Chennai";
     axios
-      .get(`${apiURL}/joborders`, { params: { department } })
+      .get(`${apiURL}/joborders`, { params: { department, user_id: userEmployeeId, role: userRole } })
       .then((res) => {
         setJobOrders(res.data || []);
         setFilteredJobOrders(res.data || []); // set filtered to all on fetch

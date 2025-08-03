@@ -83,12 +83,12 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     kerbFAW: "",
     kerbRAW: "",
     awdRwdFwd: "",
-    finalDriveRatio: { numerator: "", denominator: "" },
   });
 
   // Populate form with existing vehicle data when editing
   useEffect(() => {
     if (isEditMode && vehicleData) {
+      
       setForm({
         project: vehicleData.project_code || "",
         vehicleBuildLevel: vehicleData.vehicle_build_level || "",
@@ -124,7 +124,6 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         kerbFAW: vehicleData.kerb_faw || "",
         kerbRAW: vehicleData.kerb_raw || "",
         awdRwdFwd: vehicleData.awd_rwd_fwd || "",
-        finalDriveRatio: parseRatio(vehicleData.final_drive_ratio),
       });
     }
   }, [isEditMode, vehicleData, department]);
@@ -211,9 +210,9 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       kerb_faw: form.kerbFAW ? parseFloat(form.kerbFAW) : null,
       kerb_raw: form.kerbRAW ? parseFloat(form.kerbRAW) : null,
       awd_rwd_fwd: form.awdRwdFwd,
-      final_drive_ratio: form.finalDriveRatio.numerator && form.finalDriveRatio.denominator
-        ? `${form.finalDriveRatio.numerator}:${form.finalDriveRatio.denominator}`
-        : "",
+      // final_drive_ratio: form.finalDriveRatio.numerator && form.finalDriveRatio.denominator
+      //   ? `${form.finalDriveRatio.numerator}:${form.finalDriveRatio.denominator}`
+      //   : "",
       // Add tracking fields
       ...(isEditMode ? {
         id_of_updater: userId || "",
@@ -300,13 +299,8 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         if (!isEV && (!form[key].numerator || !form[key].denominator)) {
           missingFields.push(fieldNames[key]);
         }
-      } else if (!form[key] && (!isEV || key !== "finalDriveRatio")) {
-        // For non-EV or non-finalDriveRatio fields
-        if (
-          key !== "finalDriveRatio" // Only check finalDriveRatio for EV
-        ) {
-          missingFields.push(fieldNames[key]);
-        }
+      } else if (!form[key]) {
+        missingFields.push(fieldNames[key]);
       }
     }
     if (missingFields.length > 0) {
@@ -387,7 +381,6 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       kerbFAW: "",
       kerbRAW: "",
       awdRwdFwd: "",
-      finalDriveRatio: { numerator: "", denominator: "" },
     });
     if (onClear) onClear();
   };

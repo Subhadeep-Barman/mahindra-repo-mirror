@@ -19,6 +19,7 @@ import { useLocation } from "react-router-dom";
 import axios from "axios";
 import Navbar1 from "@/components/UI/navbar";
 import showSnackbar from "@/utils/showSnackbar";
+import useStore from "../store/useStore";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -49,6 +50,12 @@ export default function RDEChennaiPage() {
     updated_on: "",
   });
 
+  const userCookies = useStore.getState().getUserCookieData();
+    const userEmail = userCookies.userEmail;
+    const userEmployeeId = userCookies.userId;
+    console.log("User Cookies:", userCookies);
+    console.log("employeeId:", userEmployeeId);
+
   useEffect(() => {
     fetchJobOrders();
   }, []);
@@ -58,8 +65,12 @@ export default function RDEChennaiPage() {
   }, [jobOrders]);
 
   const fetchJobOrders = () => {
+    if (!userEmployeeId) {
+      showSnackbar("User ID not found. Please login again.", "error");
+      return;
+    }
     axios
-      .get(`${apiURL}/rde_joborders`)
+      .get(`${apiURL}/rde_joborders`,{ params:{ user_id: userEmployeeId, role: userRole } })
       .then((res) => setJobOrders(res.data || []))
       .catch(() => setJobOrders([]));
   };

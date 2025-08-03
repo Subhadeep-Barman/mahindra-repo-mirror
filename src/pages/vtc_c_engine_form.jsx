@@ -34,18 +34,24 @@ export default function VTCCEngineForm() {
 
   const { apiUserRole, userId, userName } = useAuth();
 
-  // Add domain state
-  const [domain, setDomain] = useState("ICE"); // Default to ICE
+  // Add engine_domain state
+  const [engine_domain, setengine_domain] = useState(() => {
+    // Try to get from navigation state or query param, fallback to ICE
+    if (location.state?.engine_domain) return location.state.engine_domain;
+    if (location.state?.domain) return location.state.domain;
+    if (queryParams.get("engine_domain")) return queryParams.get("engine_domain");
+    if (queryParams.get("domain")) return queryParams.get("domain");
+    return "ICE";
+  }); // Default to ICE
 
   const [formData, setFormData] = useState({
-    // Common fields
+    // All fields for all engine_domains
     engineSerialNumber: "",
-    vehicleSerialNumber: "",
+    motorSerialNumber: "",
     vehicleBodyNumber: "",
-    project: "",
+    projectCode: "",
     department: department,
 
-    // ICE/Hybrid specific fields
     engineBuildLevel: "",
     engineType: "",
     engineCapacity: "",
@@ -86,6 +92,7 @@ export default function VTCCEngineForm() {
     kerbWeightRaw: "",
     emissionStatus: "",
     thermostatDetails: "",
+    vehicleSerialNumber: "",
     engineFamily: "",
     hvBatteryMake: "",
     hvBatteryCapacity: "",
@@ -124,9 +131,19 @@ export default function VTCCEngineForm() {
   // Populate form with existing engine data when editing
   useEffect(() => {
     if (isEditMode && engineData) {
+      // Try to set engine_domain from engineData if present
+      if (engineData.engine_domain || engineData.domain) {
+        setengine_domain(engineData.engine_domain || engineData.domain);
+      }
       setFormData({
-        engineBuildLevel: engineData.engine_build_level || "",
+        // All fields for all engine_domains
         engineSerialNumber: engineData.engine_serial_number || "",
+        motorSerialNumber: engineData.motor_serial_number || "",
+        vehicleBodyNumber: engineData.vehicle_body_number || "",
+        projectCode: engineData.project_code || "",
+        department: engineData.department || department,
+
+        engineBuildLevel: engineData.engine_build_level || "",
         engineType: engineData.engine_type || "",
         engineCapacity: engineData.engine_capacity?.toString() || "",
         numberOfCylinders: engineData.number_of_cylinders || "",
@@ -173,11 +190,8 @@ export default function VTCCEngineForm() {
         hvBatteryVoltage: engineData.hv_battery_voltage?.toString() || "",
         hvBatteryCurrent: engineData.hv_battery_current?.toString() || "",
         evMotorPower: engineData.ev_motor_power_kw?.toString() || "",
-        department: engineData.department || department,
 
-        // EV specific fields - add if available in engineData
-        vehicleBodyNumber: engineData.vehicle_body_number || "",
-        project: engineData.project || "",
+        // EV specific fields
         motorMake: engineData.motor_make || "",
         motorFront: engineData.motor_front === true ? "Yes" : engineData.motor_front === false ? "No" : "",
         motorRear: engineData.motor_rear === true ? "Yes" : engineData.motor_rear === false ? "No" : "",
@@ -199,6 +213,8 @@ export default function VTCCEngineForm() {
 
   const [engineFamilies, setEngineFamilies] = useState([]);
   const [vehicleSerialNumbers, setVehicleSerialNumbers] = useState([]);
+  const [projectCodes, setProjectCodes] = useState([]); // <-- NEW
+  const [vehicleBodyNumberMap, setVehicleBodyNumberMap] = useState({}); // <-- NEW
   const apiUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
 
@@ -225,8 +241,14 @@ export default function VTCCEngineForm() {
 
   const handleClear = () => {
     setFormData({
-      engineBuildLevel: "",
+      // All fields for all engine_domains
       engineSerialNumber: "",
+      motorSerialNumber: "",
+      vehicleBodyNumber: "",
+      projectCode: "",
+      department: department,
+
+      engineBuildLevel: "",
       engineType: "",
       engineCapacity: "",
       numberOfCylinders: "",
@@ -273,11 +295,8 @@ export default function VTCCEngineForm() {
       hvBatteryVoltage: "",
       hvBatteryCurrent: "",
       evMotorPower: "",
-      department: department,
 
       // EV specific fields
-      vehicleBodyNumber: "",
-      project: "",
       motorMake: "",
       motorFront: "",
       motorRear: "",
@@ -327,7 +346,7 @@ export default function VTCCEngineForm() {
 
     const baseData = {
       department: formData.department,
-      domain: domain,
+      engine_domain: engine_domain, // <-- ensure engine_domain is always included in payload
       vehicle_serial_number: formData.vehicleSerialNumber || undefined,
       // Add tracking fields
       ...(isEditMode ? {
@@ -342,12 +361,61 @@ export default function VTCCEngineForm() {
       })
     };
 
-    if (domain === "EV") {
+    // For EV, include all fields (not just EV-specific)
+    if (engine_domain === "EV") {
       return {
         ...baseData,
-        motor_serial_number: formData.engineSerialNumber || undefined,
+        engine_serial_number: formData.engineSerialNumber || undefined,
+        motor_serial_number: formData.engineSerialNumber || formData.motorSerialNumber || undefined,
         vehicle_body_number: formData.vehicleBodyNumber || undefined,
-        project: formData.project || undefined,
+        project_code: formData.projectCode || undefined,
+        engine_build_level: formData.engineBuildLevel || undefined,
+        engine_capacity: parseFloatOrUndefined(formData.engineCapacity),
+        engine_type: formData.engineType || undefined,
+        number_of_cylinders: formData.numberOfCylinders || undefined,
+        compression_ratio,
+        bore_mm: parseFloatOrUndefined(formData.bore),
+        stroke_mm: parseFloatOrUndefined(formData.stroke),
+        vacuum_modulator_make: formData.vacuumModulatorMake || undefined,
+        vacuum_modulator_details: formData.vacuumModulatorDetails || undefined,
+        ecu_make: formData.ecuMake || undefined,
+        ecu_id_number: formData.ecuIdNumber || undefined,
+        ecu_dataset_number: formData.ecuDatasetNumber || undefined,
+        ecu_dataset_details: formData.ecuDatasetDetails || undefined,
+        injector_type: formData.injectorType || undefined,
+        turbo_charger_type: formData.turbochargerType || undefined,
+        blow_by_recirculation: parseBool(formData.blowByRecirculation),
+        nozzle_hole_count: formData.nozzleNumberOfHoles || undefined,
+        nozzle_through_flow: parseFloatOrUndefined(formData.nozzleThroughFlow),
+        egr_valve_make: formData.egrValveMake || undefined,
+        egr_valve_type: formData.egrValveType || undefined,
+        egr_valve_diameter_mm: parseFloatOrUndefined(formData.egrValveDiameter),
+        egr_cooler_make: formData.egrCoolerMake || undefined,
+        egr_cooler_capacity_kw: parseFloatOrUndefined(formData.egrCoolerCapacity),
+        catcon_make: formData.catconMass || undefined,
+        catcon_type: formData.catconType || undefined,
+        catcon_loading: formData.catconLoading || undefined,
+        dpf_make: formData.dpfMake || undefined,
+        dpf_capacity: formData.dpfCapacity || undefined,
+        scr_make: formData.scrMake || undefined,
+        scr_capacity: formData.scrCapacity || undefined,
+        acc_compressor: parseBool(formData.acCompressor),
+        acc_compressor_details: formData.acCompressorDetails || undefined,
+        ps_pump: formData.powerSteeringPump || undefined,
+        ps_details: formData.powerSteeringDetails || undefined,
+        water_bypass: formData.waterByPass || undefined,
+        kerb_weight_faw_kg: parseFloatOrUndefined(formData.kerbWeightFaw),
+        kerb_weight_raw_kg: parseFloatOrUndefined(formData.kerbWeightRaw),
+        emission_status: formData.emissionStatus || undefined,
+        thermostat_details: formData.thermostatDetails || undefined,
+        engine_family: formData.engineFamily || undefined,
+        hv_battery_make: formData.hvBatteryMake || undefined,
+        hv_battery_capacity: parseFloatOrUndefined(formData.hvBatteryCapacity),
+        hv_battery_voltage: parseFloatOrUndefined(formData.hvBatteryVoltage),
+        hv_battery_current: parseFloatOrUndefined(formData.hvBatteryCurrent),
+        ev_motor_power_kw: parseFloatOrUndefined(formData.evMotorPower),
+
+        // EV-specific
         motor_make: formData.motorMake || undefined,
         motor_front: parseBool(formData.motorFront),
         motor_rear: parseBool(formData.motorRear),
@@ -422,19 +490,19 @@ export default function VTCCEngineForm() {
     const payload = mapFormDataToSchema(formData);
     try {
       let response;
-      const endpoint = domain === "EV" ? "/motors" : "/engines";
-      const identifier = domain === "EV" ? formData.engineSerialNumber : formData.engineSerialNumber;
+      const endpoint = engine_domain === "EV" ? "/engines" : "/engines";
+      const identifier = engine_domain === "EV" ? formData.engineSerialNumber : formData.engineSerialNumber;
 
       if (isEditMode) {
         response = await axios.put(
           `${apiUrl}${endpoint}/${identifier}`,
           payload
         );
-        showSnackbar(`${domain === "EV" ? "Motor" : "Engine"} updated successfully!`, "success");
+        showSnackbar(`${engine_domain === "EV" ? "Motor" : "Engine"} updated successfully!`, "success");
       } else {
         response = await axios.post(`${apiUrl}${endpoint}`, payload);
         showSnackbar(
-          `${domain === "EV" ? "Motor" : "Engine"} added successfully! Serial Number: ${response.data[domain === "EV" ? "motor_serial_number" : "engine_serial_number"] || formData.engineSerialNumber}`,
+          `${engine_domain === "EV" ? "Motor" : "Engine"} added successfully! Serial Number: ${response.data[engine_domain === "EV" ? "motor_serial_number" : "engine_serial_number"] || formData.engineSerialNumber}`,
           "success"
         );
       }
@@ -442,12 +510,12 @@ export default function VTCCEngineForm() {
     } catch (err) {
       if (err.response && err.response.data && err.response.data.detail) {
         showSnackbar(
-          `Failed to ${isEditMode ? 'update' : 'add'} ${domain === "EV" ? "motor" : "engine"}: ` + err.response.data.detail,
+          `Failed to ${isEditMode ? 'update' : 'add'} ${engine_domain === "EV" ? "motor" : "engine"}: ` + err.response.data.detail,
           "error"
         );
       } else {
         showSnackbar(
-          `Failed to ${isEditMode ? 'update' : 'add'} ${domain === "EV" ? "motor" : "engine"}. Please try again.`,
+          `Failed to ${isEditMode ? 'update' : 'add'} ${engine_domain === "EV" ? "motor" : "engine"}. Please try again.`,
           "error"
         );
       }
@@ -465,16 +533,46 @@ export default function VTCCEngineForm() {
       });
   }, []);
 
+  // Fetch project codes
   useEffect(() => {
     axios
-      .get(`${apiUrl}/vehicle_serial_numbers`)
+      .get(`${apiUrl}/project-codes`)
       .then((res) => {
-        setVehicleSerialNumbers(res.data);
+        setProjectCodes(res.data || []);
+      })
+      .catch(() => setProjectCodes([]));
+  }, [apiUrl]);
+
+  // Fetch vehicle serial numbers and body numbers
+  useEffect(() => {
+    axios
+      .get(`${apiUrl}/vehicle-body-numbers${department ? `?department=${encodeURIComponent(department)}` : ""}`)
+      .then((res) => {
+        setVehicleSerialNumbers(res.data.map(v => v.vehicle_serial_number));
+        // Build a map: { vehicle_serial_number: vehicle_body_number }
+        const map = {};
+        res.data.forEach(v => {
+          map[v.vehicle_serial_number] = v.vehicle_body_number;
+        });
+        setVehicleBodyNumberMap(map);
       })
       .catch(() => {
         setVehicleSerialNumbers([]);
+        setVehicleBodyNumberMap({});
       });
-  }, []);
+  }, [apiUrl, department]);
+
+  // Auto-fill vehicle body number when vehicle serial number changes (EV only)
+  useEffect(() => {
+    if (engine_domain === "EV" && formData.vehicleSerialNumber && vehicleBodyNumberMap[formData.vehicleSerialNumber]) {
+      setFormData(prev => ({
+        ...prev,
+        vehicleBodyNumber: vehicleBodyNumberMap[formData.vehicleSerialNumber]
+      }));
+    }
+  // Only run when vehicleSerialNumber changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.vehicleSerialNumber, engine_domain, vehicleBodyNumberMap]);
 
   return (
     <>
@@ -495,25 +593,25 @@ export default function VTCCEngineForm() {
                 </Button>
                 <div>
                   <h1 className="text-lg font-semibold text-gray-800 dark:text-red-500">
-                    {isEditMode ? `EDIT ${domain === "EV" ? "MOTOR" : "ENGINE"}: ${formData.engineSerialNumber}` : `NEW ${domain === "EV" ? "MOTOR" : "ENGINE"} - ${department}`}
+                    {isEditMode ? `EDIT ${engine_domain === "EV" ? "MOTOR" : "ENGINE"}: ${formData.engineSerialNumber}` : `NEW ${engine_domain === "EV" ? "MOTOR" : "ENGINE"} - ${department}`}
                   </h1>
                   {isEditMode && (
                     <p className="text-sm text-gray-600">
-                      Editing {domain === "EV" ? "motor" : "engine"}: {engineData?.engine_serial_number || engineData?.motor_serial_number} | Department: {department}
+                      Editing {engine_domain === "EV" ? "motor" : "engine"}: {engineData?.engine_serial_number || engineData?.motor_serial_number} | Department: {department}
                     </p>
                   )}
                 </div>
               </div>
-              {/* Domain Dropdown */}
+              {/* engine_domain Dropdown */}
               <div className="flex items-center space-x-3">
-                <Label htmlFor="domain" className="text-sm font-medium">Domain:</Label>
+                <Label htmlFor="engine_domain" className="text-sm font-medium">Engine domain:</Label>
                 <Select
-                  value={domain}
-                  onValueChange={setDomain}
+                  value={engine_domain}
+                  onValueChange={setengine_domain}
                   disabled={isEditMode}
                 >
                   <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Select Domain" />
+                    <SelectValue placeholder="Select engine_domain" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ICE">ICE</SelectItem>
@@ -534,23 +632,74 @@ export default function VTCCEngineForm() {
             {/* Form Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-              {/* Project (EV only) */}
-              {domain === "EV" && (
+              {/* Project (EV only, now dropdown) */}
+              {engine_domain === "EV" && (
                 <div className="space-y-2">
                   <Label htmlFor="project">Project</Label>
-                  <Input
-                    id="project"
-                    value={formData.project}
-                    onChange={(e) =>
-                      handleInputChange("project", e.target.value)
+                  <Select
+                    value={formData.projectCode}
+                    onValueChange={(value) =>
+                      handleInputChange("projectCode", value)
                     }
-                    placeholder="Enter Project"
-                  />
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projectCodes.length > 0 ? (
+                        projectCodes.map((code) => (
+                          <SelectItem key={code} value={code}>
+                            {code}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem disabled>
+                          No Project Codes Available
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
-              {/* Vehicle Body Number (EV only) */}
-              {domain === "EV" && (
+              {/* Vehicle Serial Number (EV only, moved up) */}
+              {engine_domain === "EV" && (
+                <div className="space-y-2">
+                  <Label htmlFor="vehicleSerialNumber">
+                    Vehicle Serial Number{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={formData.vehicleSerialNumber}
+                    onValueChange={(value) =>
+                      handleInputChange("vehicleSerialNumber", value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Vehicle Serial No" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vehicleSerialNumbers.length > 0 ? (
+                        vehicleSerialNumbers.map((serialNumber) => (
+                          <SelectItem
+                            key={serialNumber}
+                            value={serialNumber}
+                          >
+                            {serialNumber}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem disabled>
+                          No Vehicle Serial Numbers Available
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Vehicle Body Number (EV only, auto-filled) */}
+              {engine_domain === "EV" && (
                 <div className="space-y-2">
                   <Label htmlFor="vehicleBodyNumber">Vehicle Body Number</Label>
                   <Input
@@ -560,6 +709,8 @@ export default function VTCCEngineForm() {
                       handleInputChange("vehicleBodyNumber", e.target.value)
                     }
                     placeholder="Enter Vehicle Body Number"
+                    readOnly // Make it read-only since it's auto-filled
+                    className="bg-gray-100"
                   />
                 </div>
               )}
@@ -567,7 +718,7 @@ export default function VTCCEngineForm() {
               {/* Motor/Engine Serial Number */}
               <div className="space-y-2">
                 <Label htmlFor="engineSerialNumber">
-                  {domain === "EV" ? "Motor Serial Number" : "Engine Serial Number"}{" "}
+                  {engine_domain === "EV" ? "Motor Serial Number" : "Engine Serial Number"}{" "}
                   <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -578,12 +729,12 @@ export default function VTCCEngineForm() {
                   }
                   disabled={isEditMode}
                   className={isEditMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}
-                  placeholder={`Enter ${domain === "EV" ? "Motor" : "Engine"} Serial Number`}
+                  placeholder={`Enter ${engine_domain === "EV" ? "Motor" : "Engine"} Serial Number`}
                 />
               </div>
 
               {/* EV Specific Fields */}
-              {domain === "EV" && (
+              {engine_domain === "EV" && (
                 <>
                   {/* Engine Build Level */}
                   <div className="space-y-2">
@@ -1356,40 +1507,6 @@ export default function VTCCEngineForm() {
                     />
                   </div>
 
-                  {/* Vehicle Serial Number */}
-                  <div className="space-y-2">
-                    <Label htmlFor="vehicleSerialNumber">
-                      Vehicle Serial Number{" "}
-                      <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={formData.vehicleSerialNumber}
-                      onValueChange={(value) =>
-                        handleInputChange("vehicleSerialNumber", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Vehicle Serial No" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {vehicleSerialNumbers.length > 0 ? (
-                          vehicleSerialNumbers.map((serialNumber) => (
-                            <SelectItem
-                              key={serialNumber}
-                              value={serialNumber}
-                            >
-                              {serialNumber}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem disabled>
-                            No Vehicle Serial Numbers Available
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   {/* Engine Family */}
                   <div className="space-y-2">
                     <Label htmlFor="engineFamily">Engine Family</Label>
@@ -1490,7 +1607,7 @@ export default function VTCCEngineForm() {
               )}
 
               {/* ICE/Hybrid Specific Fields */}
-              {(domain === "ICE" || domain === "Hybrid") && (
+              {(engine_domain === "ICE" || engine_domain === "Hybrid") && (
                 <>
                   {/* Engine Build Level */}
                   <div className="space-y-2">
@@ -2050,40 +2167,6 @@ export default function VTCCEngineForm() {
                     />
                   </div>
 
-                  {/* Vehicle Serial Number */}
-                  <div className="space-y-2">
-                    <Label htmlFor="vehicleSerialNumber">
-                      Vehicle Serial Number{" "}
-                      <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={formData.vehicleSerialNumber}
-                      onValueChange={(value) =>
-                        handleInputChange("vehicleSerialNumber", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Vehicle Serial No" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {vehicleSerialNumbers.length > 0 ? (
-                          vehicleSerialNumbers.map((serialNumber) => (
-                            <SelectItem
-                              key={serialNumber}
-                              value={serialNumber}
-                            >
-                              {serialNumber}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem disabled>
-                            No Vehicle Serial Numbers Available
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   {/* Engine Family */}
                   <div className="space-y-2">
                     <Label htmlFor="engineFamily">Engine Family</Label>
@@ -2201,7 +2284,7 @@ export default function VTCCEngineForm() {
                 onClick={handleAddEngine}
                 className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
               >
-                {isEditMode ? `✓ UPDATE ${domain === "EV" ? "MOTOR" : "ENGINE"}` : `✓ ADD ${domain === "EV" ? "MOTOR" : "ENGINE"}`}
+                {isEditMode ? `✓ UPDATE ${engine_domain === "EV" ? "MOTOR" : "ENGINE"}` : `✓ ADD ${engine_domain === "EV" ? "MOTOR" : "ENGINE"}`}
               </Button>
               <Button
                 onClick={handleClear}

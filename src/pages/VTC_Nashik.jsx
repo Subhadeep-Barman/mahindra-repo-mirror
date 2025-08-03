@@ -16,6 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/UI/card";
 import { useState, useEffect } from "react";
 import Navbar1 from "@/components/UI/navbar";
+import useStore from "../store/useStore";
 import axios from "axios";
 import showSnackbar from "@/utils/showSnackbar";
 
@@ -45,8 +46,13 @@ export default function VTCNashikPage() {
     updated_on: "",
   });
   const rowsPerPage = 8;
-  const { userRole, userId, userName } = useAuth();
+  const { userRole, userId } = useAuth();
 
+    const userCookies = useStore.getState().getUserCookieData();
+    const userEmail = userCookies.userEmail;
+    const userEmployeeId = userCookies.userId;
+    console.log("User Cookies:", userCookies);
+    console.log("employeeId:", userEmployeeId);
   // Fetch job orders from backend on mount
   useEffect(() => {
     fetchJobOrders();
@@ -57,12 +63,17 @@ export default function VTCNashikPage() {
   }, [jobOrders]);
 
   const fetchJobOrders = () => {
-    const department = "VTC_JO Nashik"; // Replace with the appropriate department value
+    // Get userId from localStorage or cookies (assuming it's stored after login)
+    if (!userEmployeeId) {
+      showSnackbar("User ID not found. Please login again.", "error");
+      return;
+    }
+    const department = "VTC_JO Nashik";
     axios
-      .get(`${apiURL}/joborders`, { params: { department } })
+      .get(`${apiURL}/joborders`, { params: { department, user_id: userEmployeeId, role: userRole } })
       .then((res) => {
         setJobOrders(res.data || []);
-        setFilteredJobOrders(res.data || []);
+        setFilteredJobOrders(res.data || []); // set filtered to all on fetch
       })
       .catch(() => {
         setJobOrders([]);
