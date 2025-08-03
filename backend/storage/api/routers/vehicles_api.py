@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 from backend.storage.models.models import Vehicle
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import datetime
 from pydantic import BaseModel
 from backend.storage.crud.create_vehicle import create_vehicle as crud_create_vehicle, vehicle_to_dict
@@ -46,6 +46,11 @@ class VehicleSchema(BaseModel):
     created_on: Optional[datetime] = None
     id_of_updater: Optional[str] = None
     updated_on: Optional[datetime] = None
+    vehicle_kerb_weight: Optional[Union[str, float]] = None
+    vehicle_gvw: Optional[Union[str, float]] = None
+    kerb_faw: Optional[Union[str, float]] = None
+    kerb_raw: Optional[Union[str, float]] = None
+    awd_rwd_fwd: Optional[str] = None
 
     class Config:
         orm_mode = True

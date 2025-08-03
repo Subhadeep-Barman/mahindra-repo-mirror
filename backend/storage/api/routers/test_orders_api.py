@@ -90,7 +90,7 @@ class TestOrderSchema(BaseModel):
     shift: Optional[str] = None
     preferred_date: Optional[date] = None
     emission_check_date: Optional[date] = None
-    emission_check_attachment: Optional[str] = None
+    emission_check_attachment: Optional[List[dict]] = None
     dataset_attachment: Optional[List[dict]] = None
     a2l_attachment: Optional[List[dict]] = None
     experiment_attachment: Optional[List[dict]] = None

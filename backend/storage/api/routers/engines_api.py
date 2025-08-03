@@ -15,6 +15,10 @@ router = APIRouter()
 
 class EngineSchema(BaseModel):
     engine_serial_number: Optional[str] = None
+    motor_serial_number: Optional[str] = None
+    vehicle_body_number: Optional[str] = None
+    engine_domain: Optional[str] = None
+    project_code: Optional[str] = None
     engine_build_level: Optional[str] = None
     engine_capacity: Optional[float] = None
     engine_type: Optional[str] = None
@@ -61,6 +65,21 @@ class EngineSchema(BaseModel):
     hv_battery_voltage: Optional[float] = None
     hv_battery_current: Optional[float] = None
     ev_motor_power_kw: Optional[float] = None
+    motor_make: Optional[str] = None
+    motor_front: Optional[bool] = None
+    motor_rear: Optional[bool] = None
+    front_motor_serial_number: Optional[str] = None
+    rear_motor_serial_number: Optional[str] = None
+    front_motor_max_power: Optional[float] = None
+    rear_motor_max_power: Optional[float] = None
+    front_motor_max_torque: Optional[float] = None
+    rear_motor_max_torque: Optional[float] = None
+    front_motor_make: Optional[str] = None
+    rear_motor_make: Optional[str] = None
+    motor_max_voltage: Optional[float] = None
+    battery_capacity_kwh: Optional[float] = None
+    battery_max_voltage: Optional[float] = None
+    battery_max_current: Optional[float] = None
     department: Optional[str] = None
     id_of_creator: Optional[str] = None
     created_on: Optional[datetime] = None

@@ -1,8 +1,8 @@
-"""Initial schema setup
+"""SCHEMA SETUP CORRECLTY
 
-Revision ID: 332896d803bc
+Revision ID: c22a0cc84a5d
 Revises: 
-Create Date: 2025-07-14 10:33:37.554139
+Create Date: 2025-08-01 11:13:43.372324
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '332896d803bc'
+revision: str = 'c22a0cc84a5d'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -39,7 +39,11 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('CoastDownData_id')
     )
     op.create_table('Engines',
-    sa.Column('engine_serial_number', sa.String(), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('engine_serial_number', sa.String(), nullable=True),
+    sa.Column('motor_serial_number', sa.String(), nullable=True),
+    sa.Column('vehicle_body_number', sa.String(), nullable=True),
+    sa.Column('project_code', sa.String(), nullable=True),
     sa.Column('engine_build_level', sa.String(), nullable=True),
     sa.Column('engine_capacity', sa.Float(), nullable=True),
     sa.Column('engine_type', sa.String(), nullable=True),
@@ -86,11 +90,27 @@ def upgrade() -> None:
     sa.Column('hv_battery_voltage', sa.Float(), nullable=True),
     sa.Column('hv_battery_current', sa.Float(), nullable=True),
     sa.Column('ev_motor_power_kw', sa.Float(), nullable=True),
+    sa.Column('motor_make', sa.String(), nullable=True),
+    sa.Column('motor_front', sa.Boolean(), nullable=True),
+    sa.Column('motor_rear', sa.Boolean(), nullable=True),
+    sa.Column('front_motor_serial_number', sa.String(), nullable=True),
+    sa.Column('rear_motor_serial_number', sa.String(), nullable=True),
+    sa.Column('front_motor_max_power', sa.Float(), nullable=True),
+    sa.Column('rear_motor_max_power', sa.Float(), nullable=True),
+    sa.Column('front_motor_max_torque', sa.Float(), nullable=True),
+    sa.Column('rear_motor_max_torque', sa.Float(), nullable=True),
+    sa.Column('front_motor_make', sa.String(), nullable=True),
+    sa.Column('rear_motor_make', sa.String(), nullable=True),
+    sa.Column('motor_max_voltage', sa.Float(), nullable=True),
+    sa.Column('battery_capacity_kwh', sa.Float(), nullable=True),
+    sa.Column('battery_max_voltage', sa.Float(), nullable=True),
+    sa.Column('battery_max_current', sa.Float(), nullable=True),
+    sa.Column('department', sa.String(), nullable=True),
     sa.Column('id_of_creator', sa.String(), nullable=True),
     sa.Column('created_on', sa.TIMESTAMP(), nullable=True),
     sa.Column('id_of_updater', sa.String(), nullable=True),
     sa.Column('updated_on', sa.TIMESTAMP(), nullable=True),
-    sa.PrimaryKeyConstraint('engine_serial_number')
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('JobOrders',
     sa.Column('job_order_id', sa.String(), nullable=False),
@@ -105,9 +125,6 @@ def upgrade() -> None:
     sa.Column('test_status', sa.String(), nullable=True),
     sa.Column('completed_test_count', sa.String(), nullable=True),
     sa.Column('job_order_status', sa.String(), nullable=True),
-    sa.Column('remarks', sa.String(), nullable=True),
-    sa.Column('rejection_remarks', sa.String(), nullable=True),
-    sa.Column('mail_remarks', sa.String(), nullable=True),
     sa.Column('id_of_creator', sa.String(), nullable=True),
     sa.Column('name_of_creator', sa.String(), nullable=True),
     sa.Column('created_on', sa.TIMESTAMP(), nullable=True),
@@ -119,9 +136,10 @@ def upgrade() -> None:
     )
     op.create_table('RDEJobOrders',
     sa.Column('job_order_id', sa.String(), nullable=False),
+    sa.Column('project_code', sa.String(), nullable=True),
     sa.Column('vehicle_serial_number', sa.String(), nullable=True),
     sa.Column('vehicle_body_number', sa.String(), nullable=True),
-    sa.Column('engine_id', sa.String(), nullable=True),
+    sa.Column('engine_serial_number', sa.String(), nullable=True),
     sa.Column('CoastDownData_id', sa.String(), nullable=True),
     sa.Column('type_of_engine', sa.String(), nullable=True),
     sa.Column('department', sa.String(), nullable=True),
@@ -132,11 +150,10 @@ def upgrade() -> None:
     sa.Column('vehicle_gwv', sa.String(), nullable=True),
     sa.Column('vehicle_kerb_weight', sa.String(), nullable=True),
     sa.Column('vehicle_test_payload_criteria', sa.String(), nullable=True),
+    sa.Column('requested_payload', sa.String(), nullable=True),
     sa.Column('idle_exhaust_mass_flow', sa.String(), nullable=True),
     sa.Column('job_order_status', sa.String(), nullable=True),
-    sa.Column('remarks', sa.String(), nullable=True),
-    sa.Column('rejection_remarks', sa.String(), nullable=True),
-    sa.Column('mail_remarks', sa.String(), nullable=True),
+    sa.Column('cft_members', sa.JSON(), nullable=True),
     sa.Column('id_of_creator', sa.String(), nullable=True),
     sa.Column('name_of_creator', sa.String(), nullable=True),
     sa.Column('created_on', sa.TIMESTAMP(), nullable=True),
@@ -150,21 +167,36 @@ def upgrade() -> None:
     sa.Column('job_order_id', sa.String(), nullable=True),
     sa.Column('CoastDownData_id', sa.String(), nullable=True),
     sa.Column('test_type', sa.String(), nullable=True),
+    sa.Column('engine_number', sa.String(), nullable=True),
     sa.Column('test_objective', sa.Text(), nullable=True),
     sa.Column('vehicle_location', sa.String(), nullable=True),
     sa.Column('cycle_gear_shift', sa.String(), nullable=True),
     sa.Column('inertia_class', sa.String(), nullable=True),
     sa.Column('dataset_name', sa.String(), nullable=True),
     sa.Column('dpf', sa.String(), nullable=True),
+    sa.Column('dpf_regen_occurs', sa.String(), nullable=True),
     sa.Column('dataset_flashed', sa.Boolean(), nullable=True),
     sa.Column('ess', sa.String(), nullable=True),
     sa.Column('mode', sa.String(), nullable=True),
+    sa.Column('fuel_type', sa.String(), nullable=True),
     sa.Column('hardware_change', sa.Text(), nullable=True),
     sa.Column('equipment_required', sa.Text(), nullable=True),
     sa.Column('shift', sa.String(), nullable=True),
     sa.Column('preferred_date', sa.Date(), nullable=True),
     sa.Column('emission_check_date', sa.Date(), nullable=True),
-    sa.Column('emission_check_attachment', sa.Text(), nullable=True),
+    sa.Column('emission_check_attachment', sa.JSON(), nullable=True),
+    sa.Column('dataset_attachment', sa.JSON(), nullable=True),
+    sa.Column('a2l_attachment', sa.JSON(), nullable=True),
+    sa.Column('experiment_attachment', sa.JSON(), nullable=True),
+    sa.Column('dbc_attachment', sa.JSON(), nullable=True),
+    sa.Column('wltp_attachment', sa.JSON(), nullable=True),
+    sa.Column('pdf_report', sa.JSON(), nullable=True),
+    sa.Column('excel_report', sa.JSON(), nullable=True),
+    sa.Column('dat_file_attachment', sa.JSON(), nullable=True),
+    sa.Column('others_attachement', sa.JSON(), nullable=True),
+    sa.Column('remark', sa.String(), nullable=True),
+    sa.Column('rejection_remarks', sa.String(), nullable=True),
+    sa.Column('mail_remarks', sa.String(), nullable=True),
     sa.Column('specific_instruction', sa.Text(), nullable=True),
     sa.Column('status', sa.String(), nullable=True),
     sa.Column('id_of_creator', sa.String(), nullable=True),
@@ -212,10 +244,16 @@ def upgrade() -> None:
     sa.Column('gear_ratio_4', sa.String(), nullable=True),
     sa.Column('gear_ratio_5', sa.String(), nullable=True),
     sa.Column('reverse_gear_ratio', sa.String(), nullable=True),
+    sa.Column('department', sa.String(), nullable=True),
     sa.Column('id_of_creator', sa.String(), nullable=True),
     sa.Column('created_on', sa.TIMESTAMP(), nullable=True),
     sa.Column('id_of_updater', sa.String(), nullable=True),
     sa.Column('updated_on', sa.TIMESTAMP(), nullable=True),
+    sa.Column('vehicle_kerb_weight', sa.String(), nullable=True),
+    sa.Column('vehicle_gvw', sa.String(), nullable=True),
+    sa.Column('kerb_faw', sa.String(), nullable=True),
+    sa.Column('kerb_raw', sa.String(), nullable=True),
+    sa.Column('awd_rwd_fwd', sa.String(), nullable=True),
     sa.PrimaryKeyConstraint('vehicle_serial_number')
     )
     # ### end Alembic commands ###

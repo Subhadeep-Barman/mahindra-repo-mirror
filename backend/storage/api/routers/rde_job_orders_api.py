@@ -86,6 +86,18 @@ def rde_joborder_to_dict(rde_joborder: RDEJobOrder, db: Session = None):
         "cft_members": normalize_cft_members(rde_joborder.cft_members)
     }
 
+def is_user_in_cft_members(cft_members, user_id):
+    """
+    Checks if the user_id is present in the cft_members list.
+    Matches either 'id' or 'code' field in cft_members.
+    """
+    if not cft_members:
+        return False
+    for member in cft_members:
+        if str(member.get("id", "")) == str(user_id) or str(member.get("code", "")) == str(user_id):
+            return True
+    return False
+
 @router.post("/rde_joborders", response_model=RDEJobOrderSchema)
 def create_rde_joborder(
     rde_joborder: RDEJobOrderSchema = Body(...),
@@ -101,8 +113,22 @@ def create_rde_joborder(
     return rde_joborder_to_dict(new_rde_joborder)
 
 @router.get("/rde_joborders", response_model=List[RDEJobOrderSchema])
-def read_rde_joborders(db: Session = Depends(get_db)):
-    rde_joborders = db.query(RDEJobOrder).all()
+def read_rde_joborders(
+    user_id: Optional[str] = None,
+    role: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(RDEJobOrder)
+    rde_joborders = query.all()
+    if role in ["TestEngineer", "Admin"]:
+        # If the user is a Test Engineer or Admin, return all job orders
+        return [rde_joborder_to_dict(r, db) for r in rde_joborders]
+    if user_id:
+        filtered = []
+        for r in rde_joborders:
+            if r.id_of_creator == user_id or is_user_in_cft_members(r.cft_members, user_id):
+                filtered.append(r)
+        return [rde_joborder_to_dict(r, db) for r in filtered]
     return [rde_joborder_to_dict(r, db) for r in rde_joborders]
 
 @router.get("/rde_joborders/{job_order_id}", response_model=RDEJobOrderSchema)
