@@ -614,7 +614,7 @@ export default function VTCCEngineForm() {
                     <SelectValue placeholder="Select engine_domain" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ICE">ICE</SelectItem>
+                    <SelectItem value="ICE">ICS</SelectItem>
                     <SelectItem value="EV">EV</SelectItem>
                     <SelectItem value="Hybrid">Hybrid</SelectItem>
                   </SelectContent>
