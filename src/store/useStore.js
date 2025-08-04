@@ -139,8 +139,13 @@ const initialTestOrderFormData = {
 const useStore = create(
   persist(
     (set, get) => ({
-      isDarkMode: false,
-      toggleTheme: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
+      isDarkMode: localStorage.getItem("theme-dark") === "true",
+      setIsDarkMode: (val) => {
+        localStorage.setItem("theme-dark", val);
+        set({ isDarkMode: val });
+        if (val) document.documentElement.classList.add("dark");
+        else document.documentElement.classList.remove("dark");
+      },
       jobOrderFormData: { ...initialJobOrderFormData }, // Initialize with default values
       setJobOrderFormData: (newData) =>
         set((state) => ({

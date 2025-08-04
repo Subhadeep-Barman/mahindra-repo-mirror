@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowBack, Add } from "@mui/icons-material";
+import { ArrowBack, Add, Search as SearchIcon } from "@mui/icons-material";
 import { Button } from "@/components/UI/button";
 import { Badge } from "@/components/UI/badge";
 import { useNavigate } from "react-router-dom";
@@ -12,11 +12,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/UI/table";
+import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/UI/card";
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
 import Navbar1 from "@/components/UI/navbar";
+import showSnackbar from "@/utils/showSnackbar";
+import useStore from "../store/useStore";
+
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function RDEChennaiPage() {
@@ -29,23 +33,131 @@ export default function RDEChennaiPage() {
   const [selectedJobOrder, setSelectedJobOrder] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [jobOrderEdit, setJobOrderEdit] = useState(null);
+  const { userRole, userId, userName } = useAuth();
+  const [filteredJobOrders, setFilteredJobOrders] = useState([]);
+  const [showSearchCard, setShowSearchCard] = useState(false);
+  const [search, setSearch] = useState({
+    job_order_id: "",
+    project_code: "",
+    vehicle_serial_number: "",
+    vehicle_body_number: "",
+    engine_serial_number: "",
+    domain: "",
+    test_status: "",
+    completed_test_count: "",
+    name_of_creator: "",
+    created_on: "",
+    updated_on: "",
+  });
+
+  const userCookies = useStore.getState().getUserCookieData();
+    const userEmail = userCookies.userEmail;
+    const userEmployeeId = userCookies.userId;
+    console.log("User Cookies:", userCookies);
+    console.log("employeeId:", userEmployeeId);
 
   useEffect(() => {
     fetchJobOrders();
   }, []);
 
+  useEffect(() => {
+    setFilteredJobOrders(jobOrders);
+  }, [jobOrders]);
+
   const fetchJobOrders = () => {
+    if (!userEmployeeId) {
+      showSnackbar("User ID not found. Please login again.", "error");
+      return;
+    }
     axios
-      .get(`${apiURL}/rde_joborders`)
+      .get(`${apiURL}/rde_joborders`,{ params:{ user_id: userEmployeeId, role: userRole } })
       .then((res) => setJobOrders(res.data || []))
       .catch(() => setJobOrders([]));
   };
 
+  const applySearch = () => {
+    const filtered = jobOrders.filter((order) =>
+      Object.entries(search).every(([key, value]) =>
+        value === "" ||
+        String(order[key] || "").toLowerCase().includes(value.toLowerCase())
+      )
+    );
+    setFilteredJobOrders(filtered);
+    setCurrentPage(1);
+  };
+
+  const handleDownload = () => {
+    if (!filteredJobOrders.length) return;
+    const headers = [
+      "Job Order ID",
+      "Project Code",
+      "Vehicle Number",
+      "Body Number",
+      "Engine Number",
+      "Domain",
+      "Test Status",
+      "Completed Tests",
+      "Created By",
+      "Created On",
+      "Updated On",
+    ];
+    const rows = filteredJobOrders.map((order) => [
+      order.job_order_id,
+      order.project_code,
+      order.vehicle_serial_number,
+      order.vehicle_body_number,
+      order.engine_serial_number || "N/A",
+      order.domain,
+      order.test_status,
+      order.completed_test_count == 0
+        ? "0"
+        : `${order.completed_test_count}/${order.test_status}`,
+      order.name_of_creator,
+      order.created_on
+        ? new Date(order.created_on).toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata",
+          hour12: true,
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        : "",
+      order.updated_on
+        ? new Date(order.updated_on).toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata",
+          hour12: true,
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        : "N/A",
+    ]);
+    const csvContent =
+      [headers, ...rows]
+        .map((row) =>
+          row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(",")
+        )
+        .join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "job_orders.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // Calculate pagination values
-  const totalPages = Math.ceil(jobOrders.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredJobOrders.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
-  const currentRows = jobOrders.slice(startIndex, endIndex);
+  const currentRows = filteredJobOrders.slice(startIndex, endIndex);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -58,7 +170,7 @@ export default function RDEChennaiPage() {
   };
 
   const handleCreateJobOrder = () => {
-    console.log("Create new job order");
+    navigate("/RDECreateJobOrder");
   };
 
   const handleTabClick = (tab) => {
@@ -70,15 +182,24 @@ export default function RDEChennaiPage() {
 
   // Handler for clicking job order number
   const handleJobOrderClick = (job_order_id) => {
+    // Fetch job order details from backend and redirect to /createJobOrder with all data
     axios
       .get(`${apiURL}/rde_joborders/${job_order_id}`)
       .then((res) => {
-        setJobOrderEdit(res.data);
-        setModalOpen(true);
+        // Pass the complete job order data to create job order page
+        // This will allow the form to be pre-filled with existing values
+        navigate("/createJobOrder", {
+          state: {
+            jobOrder: res.data,
+            isEdit: true, // Flag to indicate this is for editing/creating test orders
+            originalJobOrderId: job_order_id, // Keep reference to original job order
+          },
+        });
       })
-      .catch(() => {
-        setJobOrderEdit(null);
-        setModalOpen(false);
+      .catch((error) => {
+        console.error("Failed to fetch job order details:", error);
+        // Still navigate but without pre-filled data
+        navigate("/createJobOrder");
       });
   };
 
@@ -94,14 +215,25 @@ export default function RDEChennaiPage() {
   const handleSaveJobOrder = async () => {
     if (!jobOrderEdit?.job_order_id) return;
     try {
+      showSnackbar("Updating job order...", "info");
+
       await axios.put(
         `${apiURL}/rde_joborders/${jobOrderEdit.job_order_id}`,
         jobOrderEdit
       );
+
       setModalOpen(false);
       fetchJobOrders();
+      showSnackbar(
+        `Job order ${jobOrderEdit.job_order_id} updated successfully!`,
+        "success"
+      );
     } catch (err) {
-      alert("Failed to update job order");
+      console.error("Error updating job order:", err);
+      showSnackbar(
+        "Failed to update job order: " + (err.response?.data?.detail || err.message),
+        "error"
+      );
     }
   };
 
@@ -123,49 +255,109 @@ export default function RDEChennaiPage() {
                   <ArrowBack className="h-5 w-5" />
                 </Button>
                 <div>
-                  <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
+                  <h1 className="text-sm font-medium text-black-600 dark:text-red-500 ">
                     RDE CHENNAI
                   </h1>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-red-500">
-                    NEW JOB ORDER
-                  </h2>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
+                <Button
+                  size="sm"
+                  onClick={() => setShowSearchCard(!showSearchCard)}
+                  className="border border-red-500 bg-red-50 text-red-500 hover:text-white hover:bg-red-500 flex items-center justify-center"
+                >
+                  <SearchIcon className="h-5 w-5" />
+                </Button>
                 {/* Tab Buttons */}
-                {["Job Order", "Vehicle", "Engine"].map((tab) => (
-                  <Button
-                    key={tab}
-                    variant={activeTab === tab ? "default" : "outline"}
-                    onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${
-                      tab === "Job Order"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : tab === "Vehicle" || tab === "Engine"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "text-red-500 border-red-500 hover:bg-red-50"
-                    }`}
-                  >
-                    {tab}
-                  </Button>
-                ))}
+                {userRole !== "TestEngineer" &&
+                  ["Job Order", "Vehicle", "Engine"].map((tab) => (
+                    <Button
+                      key={tab}
+                      onClick={() => handleTabClick(tab)}
+                      className={`rounded-xl px-4 py-2 font-semibold border
+                        ${activeTab === tab
+                          ? "bg-red-500 text-white border-red-500"
+                          : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                        }
+                      `}
+                    >
+                      {tab}
+                    </Button>
+                  ))}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Search Card */}
+        {showSearchCard && (
+          <div className="bg-white dark:bg-gray-900 py-4 px-6 border border-gray-300 rounded-lg mx-4 mt-4 shadow">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {Object.keys(search).map((field) => (
+                <input
+                  key={field}
+                  placeholder={field.replace(/_/g, " ").toUpperCase()}
+                  value={search[field]}
+                  onChange={(e) => setSearch((prev) => ({ ...prev, [field]: e.target.value }))}
+                  className="border px-2 py-1 rounded text-sm"
+                />
+              ))}
+            </div>
+            <div className="mt-4 flex justify-end space-x-2">
+              <Button
+                onClick={() => {
+                  setSearch({
+                    job_order_id: "",
+                    project_code: "",
+                    vehicle_serial_number: "",
+                    vehicle_body_number: "",
+                    engine_serial_number: "",
+                    domain: "",
+                    test_status: "",
+                    completed_test_count: "",
+                    name_of_creator: "",
+                    created_on: "",
+                    updated_on: "",
+                  });
+                  setFilteredJobOrders(jobOrders);
+                  setCurrentPage(1);
+                }}
+                className="bg-red-500 text-white hover:bg-red-600"
+              >
+                Clear
+              </Button>
+              <Button
+                onClick={applySearch}
+                className="bg-red-500 text-white hover:bg-red-600"
+              >
+                Apply
+              </Button>
+              <Button
+                onClick={handleDownload}
+                className="bg-yellow-500 text-black hover:bg-yellow-600"
+              >
+                Download
+              </Button>
+            </div>
+          </div>
+        )}
+
 
         {/* Current Job Orders Badge */}
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center bg-white dark:bg-black">
           <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
             Current Job Orders
           </Badge>
-          <Button
-            onClick={() => navigate("/RDECreateJobOrder")}
-            className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
-          >
-            <Add className="h-4 w-4 mr-1" />
-            CREATE JOB ORDER
-          </Button>
+          {/* Hide CREATE JOB ORDER button for TEST ENGINEER */}
+          {userRole !== "TestEngineer" && (
+            <Button
+              onClick={handleCreateJobOrder}
+              className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
+            >
+              <Add className="h-4 w-4 mr-1" />
+              CREATE JOB ORDER
+            </Button>
+          )}
         </div>
 
         {/* Main Content */}
@@ -179,7 +371,7 @@ export default function RDEChennaiPage() {
                       Job Order Number
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
-                      Project
+                      Project Code
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Vehicle Number
@@ -195,6 +387,9 @@ export default function RDEChennaiPage() {
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Test Status
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                      Completed Tests
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Created By
@@ -225,8 +420,9 @@ export default function RDEChennaiPage() {
                         </span>
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
-                        {order.project_id}
+                        {order.project_code}
                       </TableCell>
+
                       <TableCell className="text-xs text-gray-600">
                         {order.vehicle_serial_number}
                       </TableCell>
@@ -234,16 +430,32 @@ export default function RDEChennaiPage() {
                         {order.vehicle_body_number}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
+                        {order.engine_serial_number}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-900">
                         {order.domain}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
                         {order.test_status}
                       </TableCell>
-                      <TableCell className="text-xs text-gray-600">
-                        {order.created_by}
+                      <TableCell className="text-xs text-gray-900 px-4 py-2">
+                        {order.completed_test_count == 0
+                          ? "0"
+                          : `${order.completed_test_count}/${order.test_status}`}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.created_on?.slice(0, 10)}
+                        {order.name_of_creator}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600 px-4 py-2">
+                        {new Date(order.created_on).toLocaleString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          hour12: true,
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
                         {order.last_updated_by}

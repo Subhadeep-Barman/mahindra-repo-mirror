@@ -7,14 +7,14 @@ import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Logout from "@mui/icons-material/Logout";
-import useUserInteractionLogger from "../../hooks/useUserInteractionLogger"; 
+import useUserInteractionLogger from "../../hooks/useUserInteractionLogger";
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import HomeIcon from "@mui/icons-material/Home";
 // Keep Box at the end to avoid vite error
 import Box from "@mui/material/Box";
 import useStore from "../../store/useStore";
-import { useAuth } from "../../context/AuthContext"; 
+import { useAuth } from "../../context/AuthContext";
 
 export default function AccountMenu() {
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -25,11 +25,11 @@ export default function AccountMenu() {
   const handleClose = () => {
     setAnchorEl(null);
   };
-  const {logout} = useAuth(); 
+  const { logout } = useAuth();
   // const { userName, userEmail, userEmployeeId } = useAuth();
   // Fetch user data directly from cookies
   const userCookies = useStore.getState().getUserCookieData();
-	const userRole = userCookies.userRole;
+  const userRole = userCookies.userRole;
   const userName = userCookies.userName;
   const userEmail = userCookies.userEmail;
   const userEmployeeId = userCookies.userEmployeeId;
@@ -37,11 +37,9 @@ export default function AccountMenu() {
   const navigate = useNavigate();
 
   function handleLogout() {
-    console.log("Logging out...");
     logout();
     logInteraction("User logged out");
     navigate("/login");
-    logger.info("User logged out");
   }
 
   const handleNavigation = (path, interaction) => {

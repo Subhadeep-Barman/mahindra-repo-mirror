@@ -18,6 +18,7 @@ import { Card, CardContent } from "@/components/UI/card";
 import { ArrowBack } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
+import showSnackbar from "@/utils/showSnackbar";
 
 export default function EngineForm() {
   const [activeTab, setActiveTab] = useState("Engine");
@@ -176,8 +177,8 @@ export default function EngineForm() {
         formData.blowByRecirculation === "Yes"
           ? true
           : formData.blowByRecirculation === "No"
-          ? false
-          : null,
+            ? false
+            : null,
       nozzle_hole_count: formData.nozzleNumberOfHoles,
       nozzle_through_flow: formData.nozzleThroughFlow
         ? parseFloat(formData.nozzleThroughFlow)
@@ -202,8 +203,8 @@ export default function EngineForm() {
         formData.acCompressor === "Yes"
           ? true
           : formData.acCompressor === "No"
-          ? false
-          : null,
+            ? false
+            : null,
       acc_compressor_details: formData.acCompressorDetails,
       ps_pump: formData.powerSteeringPump,
       ps_details: formData.powerSteeringDetails,
@@ -241,12 +242,11 @@ export default function EngineForm() {
       const response = await axios.post(`${apiUrl}/engines`, payload, {
         headers: { "Content-Type": "application/json" },
       });
-      alert("Engine added successfully!");
+      showSnackbar("Engine added successfully!", "success");
+      navigate(-1);
       // Optionally clear form or navigate
     } catch (err) {
-      alert(
-        "Error adding engine: " + (err.response?.data?.detail || err.message)
-      );
+      showSnackbar("Error adding engine: " + (err.response?.data?.detail || err.message), "error");
     }
   };
 
@@ -296,13 +296,12 @@ export default function EngineForm() {
                     key={tab}
                     variant={activeTab === tab ? "default" : "outline"}
                     onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${
-                      tab === "Job Order"
+                    className={`rounded-xl ${tab === "Job Order"
                         ? "bg-red-500 text-white hover:bg-red-600"
                         : tab === "Vehicle" || tab === "Engine"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "text-red-500 border-red-500 hover:bg-red-50"
-                    }`}
+                          ? "bg-red-500 text-white hover:bg-red-600"
+                          : "text-red-500 border-red-500 hover:bg-red-50"
+                      }`}
                   >
                     {tab}
                   </Button>

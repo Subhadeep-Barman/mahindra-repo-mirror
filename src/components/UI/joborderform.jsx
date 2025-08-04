@@ -26,7 +26,6 @@ export default function ChennaiJobOrderForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log(form);
     // handle form submission here
   };
 

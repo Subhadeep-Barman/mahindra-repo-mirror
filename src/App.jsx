@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
+import { Snackbar, Alert } from "@mui/material";
+import useStore from "@/store/useStore";
 
 // Auth & Home
 import Login from "./pages/login";
@@ -20,10 +22,10 @@ import RDEnginePage from "./pages/RDE_C_engine_page";
 
 // VTC Nashik
 import VTCNashikPage from "./pages/VTC_Nashik";
-import NashikJobOrder from "./pages/Nashik_joborder";
+import NashikJobOrder from "./pages/Nashik_create_joborder";
 import VTCNashikVehicle from "./pages/VTC_N_vehicle";
 import NEngine from "./pages/VTC_N_Engine";
-import VTCNashikVehicleForm from "./pages/VTC_N_Vehicle_form";
+// import VTCNashikVehicleForm from "./pages/VTC_N_Vehicle_form";
 
 // RDE
 import RDEChennaiPage from "./pages/RDE_Chennai_Page";
@@ -37,129 +39,73 @@ import CreateJobOrder from "./pages/Chennai_create_joborder";
 import AuthSuccess from "./pages/AuthSuccess";
 import DefaultLogin from "./pages/defaultlogin";
 
-const ProtectedRoute = ({ element }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    console.log("Checking user login status...");
-    const userCookies = document.cookie
-      .split(";")
-      .find((cookie) => cookie.trim().startsWith("userRole="));
-    if (userCookies) {
-      console.log("User is logged in");
-      setIsLoggedIn(true);
-    }
-    setIsLoading(false);
-  }, []);
-
-  console.log("ProtectedRoute rendered with isLoggedIn:", isLoggedIn);
-
-  if (isLoading) {
-    return <div>Loading...</div>; // Show a loading state while checking login status
-  }
-
-  return isLoggedIn ? element : <Navigate to="/login" />;
-};
+// Import EditTestOrder component
+import EditTestOrder from "./pages/EditTestOrder";
 
 function App() {
+  // Move snackbar state to App component where Snackbar is rendered
+  const {
+    snackbarOpen,
+    snackbarMessage,
+    snackbarSeverity,
+    snackbarDuration,
+    setSnackbarOpen,
+  } = useStore();
+
   return (
     <Router>
-      <div className="p-4">
+      <div className="px-4">
         <Routes>
           {/* Auth & Home */}
           <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route
-            path="/home"
-            element={<ProtectedRoute element={<HomePage />} />}
-          />
+          <Route path="/home" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/default-login" element={<DefaultLogin />} />
 
           {/* Admin */}
-          <Route
-            path="/admin-portal"
-            element={<ProtectedRoute element={<AdminPortal />} />}
-          />
+          <Route path="/admin-portal" element={<AdminPortal />} />
 
           {/* VTC Chennai */}
-          <Route
-            path="/vtc-chennai"
-            element={<ProtectedRoute element={<VTCChennaiPage />} />}
-          />
-          <Route
-            path="/vtccvehicle"
-            element={<ProtectedRoute element={<VTCCVehiclePage />} />}
-          />
-          <Route
-            path="/vtcChennaiEngine"
-            element={<ProtectedRoute element={<VTCEnginePage />} />}
-          />
-          <Route
-            path="/engineform"
-            element={<ProtectedRoute element={<EngineForm />} />}
-          />
-          <Route
-            path="/vtcvehicle/new"
-            element={<ProtectedRoute element={<VehicleForm />} />}
-          />
-          <Route
-            path="/chennai/engine/new"
-            element={<ProtectedRoute element={<VTCCEngineForm />} />}
-          />
+          <Route path="/vtc-chennai" element={<VTCChennaiPage />} />
+          <Route path="/vtccvehicle" element={<VTCCVehiclePage />} />
+          <Route path="/vtcChennaiEngine" element={<VTCEnginePage />} />
+          <Route path="/engineform" element={<EngineForm />} />
+          <Route path="/vtcvehicle/new" element={<VehicleForm />} />
+          <Route path="/chennai/engine/new" element={<VTCCEngineForm />} />
 
           {/* VTC Nashik */}
-          <Route
-            path="/vtc-nashik"
-            element={<ProtectedRoute element={<VTCNashikPage />} />}
-          />
-          <Route
-            path="/nashik/joborder"
-            element={<ProtectedRoute element={<NashikJobOrder />} />}
-          />
-          <Route
-            path="/nashik/vehicle"
-            element={<ProtectedRoute element={<VTCNashikVehicle />} />}
-          />
-          <Route
-            path="/nashik/engine"
-            element={<ProtectedRoute element={<RDEnginePage />} />}
-          />
-          <Route
-            path="/nashik/vehicle/new"
-            element={<ProtectedRoute element={<VTCNashikVehicleForm />} />}
-          />
-          <Route
-            path="/nashik/engine/new"
-            element={<ProtectedRoute element={<NEngine />} />}
-          />
+          <Route path="/vtc-nashik" element={<VTCNashikPage />} />
+          <Route path="/NashikCreateJobOrder" element={<NashikJobOrder />} />
+          <Route path="/nashik/vehicle" element={<VTCNashikVehicle />} />
+          <Route path="/nashik/engine" element={<RDEnginePage />} />
+          <Route path="/nashik/engine/new" element={<NEngine />} />
 
           {/* RDE */}
-          <Route
-            path="/rde-chennai"
-            element={<ProtectedRoute element={<RDEChennaiPage />} />}
-          />
-          {/* <Route path="/rde/joborder" element={<ProtectedRoute element={<RDEJobOrder />} />} /> */}
-          <Route
-            path="/rde/vehicle"
-            element={<ProtectedRoute element={<RDEVehicle />} />}
-          />
-          <Route
-            path="/rde/engine"
-            element={<ProtectedRoute element={<RDEEngine />} />}
-          />
+          <Route path="/rde-chennai" element={<RDEChennaiPage />} />
+          <Route path="/rde/vehicle" element={<RDEVehicle />} />
+          <Route path="/rde/engine" element={<RDEEngine />} />
 
           {/* Misc */}
-          <Route
-            path="/RDECreateJobOrder"
-            element={<ProtectedRoute element={<RDE_JobOrder_Create />} />}
-          />
-          <Route
-            path="/createJobOrder"
-            element={<ProtectedRoute element={<CreateJobOrder />} />}
-          />
+          <Route path="/RDECreateJobOrder" element={<RDE_JobOrder_Create />} />
+          <Route path="/createJobOrder" element={<CreateJobOrder />} />
+          <Route path="/editTestOrder" element={<EditTestOrder />} />
           <Route path="/authSuccess" element={<AuthSuccess />} />
         </Routes>
+
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={snackbarDuration}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        >
+          <Alert
+            onClose={() => setSnackbarOpen(false)}
+            severity={snackbarSeverity}
+            sx={{ width: "100%" }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
       </div>
     </Router>
   );

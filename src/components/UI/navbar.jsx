@@ -1,4 +1,3 @@
-"use client";
 import {
   Mail,
   Notifications,
@@ -14,9 +13,11 @@ import { Switch } from "@/components/UI/switch";
 import AccountMenu from "@/components/UI/accountmenu";
 import darkLogo from "../../assets/mai_dark.png";
 import lightLogo from "../../assets/mai_dark.png";
+import useStore from "@/store/useStore";
 
 export default function Navbar() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const isDarkMode = useStore((s) => s.isDarkMode);
+  const setIsDarkMode = useStore((s) => s.setIsDarkMode);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
 

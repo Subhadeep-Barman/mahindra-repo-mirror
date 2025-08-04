@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowBack, Add } from "@mui/icons-material";
+import { ArrowBack, Add, Search as SearchIcon } from "@mui/icons-material";
 import { Button } from "@/components/UI/button";
 import { Badge } from "@/components/UI/badge";
 import { useNavigate } from "react-router-dom";
@@ -12,10 +12,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/UI/table";
+import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/UI/card";
 import { useState, useEffect } from "react";
 import Navbar1 from "@/components/UI/navbar";
+import useStore from "../store/useStore";
 import axios from "axios";
+import showSnackbar from "@/utils/showSnackbar";
+
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function VTCNashikPage() {
@@ -25,26 +29,141 @@ export default function VTCNashikPage() {
   const [selectedJobOrder, setSelectedJobOrder] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [jobOrderEdit, setJobOrderEdit] = useState(null);
+  const [filteredJobOrders, setFilteredJobOrders] = useState([]);
+  const [showSearchCard, setShowSearchCard] = useState(false);
+  const [search, setSearch] = useState({
+    job_order_id: "",
+    project_code: "",
+    vehicle_serial_number: "",
+    vehicle_body_number: "",
+    engine_serial_number: "",
+    domain: "",
+    test_status: "",
+    completed_test_count: "",
+    name_of_creator: "",
+    created_on: "",
+    name_of_updater: "",
+    updated_on: "",
+  });
   const rowsPerPage = 8;
+  const { userRole, userId } = useAuth();
 
+    const userCookies = useStore.getState().getUserCookieData();
+    const userEmail = userCookies.userEmail;
+    const userEmployeeId = userCookies.userId;
+    console.log("User Cookies:", userCookies);
+    console.log("employeeId:", userEmployeeId);
   // Fetch job orders from backend on mount
   useEffect(() => {
     fetchJobOrders();
   }, []);
 
+  useEffect(() => {
+    setFilteredJobOrders(jobOrders);
+  }, [jobOrders]);
+
   const fetchJobOrders = () => {
-    const department = "VTC_JO Nashik"; // Replace with the appropriate department value
+    // Get userId from localStorage or cookies (assuming it's stored after login)
+    if (!userEmployeeId) {
+      showSnackbar("User ID not found. Please login again.", "error");
+      return;
+    }
+    const department = "VTC_JO Nashik";
     axios
-      .get(`${apiURL}/joborders`, { params: { department } })
-      .then((res) => setJobOrders(res.data || []))
-      .catch(() => setJobOrders([]));
+      .get(`${apiURL}/joborders`, { params: { department, user_id: userEmployeeId, role: userRole } })
+      .then((res) => {
+        setJobOrders(res.data || []);
+        setFilteredJobOrders(res.data || []); // set filtered to all on fetch
+      })
+      .catch(() => {
+        setJobOrders([]);
+        setFilteredJobOrders([]);
+      });
+  };
+
+  // Filtering logic
+  const applySearch = () => {
+    const filtered = jobOrders.filter((order) => {
+      return (
+        (search.job_order_id === "" ||
+          String(order.job_order_id || "")
+            .toLowerCase()
+            .includes(search.job_order_id.toLowerCase())) &&
+        (search.project_code === "" ||
+          String(order.project_code || "")
+            .toLowerCase()
+            .includes(search.project_code.toLowerCase())) &&
+        (search.vehicle_serial_number === "" ||
+          String(order.vehicle_serial_number || "")
+            .toLowerCase()
+            .includes(search.vehicle_serial_number.toLowerCase())) &&
+        (search.vehicle_body_number === "" ||
+          String(order.vehicle_body_number || "")
+            .toLowerCase()
+            .includes(search.vehicle_body_number.toLowerCase())) &&
+        (search.engine_serial_number === "" ||
+          String(order.engine_serial_number || "")
+            .toLowerCase()
+            .includes(search.engine_serial_number.toLowerCase())) &&
+        (search.domain === "" ||
+          String(order.domain || "")
+            .toLowerCase()
+            .includes(search.domain.toLowerCase())) &&
+        (search.test_status === "" ||
+          String(order.test_status || "")
+            .toLowerCase()
+            .includes(search.test_status.toLowerCase())) &&
+        (search.completed_test_count === "" ||
+          String(order.completed_test_count || "")
+            .toLowerCase()
+            .includes(search.completed_test_count.toLowerCase())) &&
+        (search.name_of_creator === "" ||
+          String(order.name_of_creator || "")
+            .toLowerCase()
+            .includes(search.name_of_creator.toLowerCase())) &&
+        (search.created_on === "" ||
+          (order.created_on &&
+            new Date(order.created_on)
+              .toLocaleString("en-IN", {
+                timeZone: "Asia/Kolkata",
+                hour12: true,
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+              .toLowerCase()
+              .includes(search.created_on.toLowerCase()))) &&
+        (search.name_of_updater === "" ||
+          String(order.name_of_updater || "")
+            .toLowerCase()
+            .includes(search.name_of_updater.toLowerCase())) &&
+        (search.updated_on === "" ||
+          (order.updated_on &&
+            new Date(order.updated_on)
+              .toLocaleString("en-IN", {
+                timeZone: "Asia/Kolkata",
+                hour12: true,
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+              .toLowerCase()
+              .includes(search.updated_on.toLowerCase())))
+      );
+    });
+    setFilteredJobOrders(filtered);
+    setCurrentPage(1);
   };
 
   // Calculate pagination values
-  const totalPages = Math.ceil(jobOrders.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredJobOrders.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
-  const currentRows = jobOrders.slice(startIndex, endIndex);
+  const currentRows = filteredJobOrders.slice(startIndex, endIndex);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -57,7 +176,7 @@ export default function VTCNashikPage() {
   };
 
   const handleCreateJobOrder = () => {
-    console.log("Create new job order");
+    navigate("/NashikCreateJobOrder")
   };
 
   const handleTabClick = (tab) => {
@@ -92,17 +211,29 @@ export default function VTCNashikPage() {
     }));
   };
 
+  // Handler for saving the updated job order
   const handleSaveJobOrder = async () => {
     if (!jobOrderEdit?.job_order_id) return;
     try {
+      showSnackbar("Updating job order...", "info");
+
       await axios.put(
-        `${apiURL}/joborders/${jobOrderEdit.job_order_id}`,
+        `${apiURL}/rde_joborders/${jobOrderEdit.job_order_id}`,
         jobOrderEdit
       );
+
       setModalOpen(false);
       fetchJobOrders();
+      showSnackbar(
+        `Job order ${jobOrderEdit.job_order_id} updated successfully!`,
+        "success"
+      );
     } catch (err) {
-      alert("Failed to update job order");
+      console.error("Error updating job order:", err);
+      showSnackbar(
+        "Failed to update job order: " + (err.response?.data?.detail || err.message),
+        "error"
+      );
     }
   };
 
@@ -130,40 +261,172 @@ export default function VTCNashikPage() {
                 </div>
               </div>
               <div className="flex items-center space-x-3">
+                <Button
+                  size="sm"
+                  onClick={() => setShowSearchCard(!showSearchCard)}
+                  className="border border-red-500 bg-red-50 text-red-500 hover:text-white hover:bg-red-500 flex items-center justify-center"
+                >
+                  <SearchIcon className="h-5 w-5" />
+                </Button>
                 {/* Tab Buttons */}
-                {["Job Order", "Vehicle", "Engine"].map((tab) => (
-                  <Button
-                    key={tab}
-                    variant={activeTab === tab ? "default" : "outline"}
-                    onClick={() => handleTabClick(tab)}
-                    className={`rounded-xl ${
-                      tab === "Job Order"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : tab === "Vehicle" || tab === "Engine"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "text-red-500 border-red-500 hover:bg-red-50"
-                    }`}
-                  >
-                    {tab}
-                  </Button>
-                ))}
+                  {userRole !== "TestEngineer" &&
+                  ["Job Order", "Vehicle", "Engine"].map((tab) => (
+                    <Button
+                      key={tab}
+                      onClick={() => handleTabClick(tab)}
+                      className={`rounded-xl px-4 py-2 font-semibold border
+                        ${
+                          activeTab === tab
+                            ? "bg-red-500 text-white border-red-500"
+                            : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                        }
+                      `}
+                    >
+                      {tab}
+                    </Button>
+                  ))}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Search Card */}
+        {showSearchCard && (
+          <div className="bg-white dark:bg-gray-900 py-4 px-6 border border-gray-300 rounded-lg mx-4 mt-4 shadow">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <input placeholder="Job Order Number" className="border px-2 py-1 rounded text-sm" value={search.job_order_id} onChange={e => setSearch(s => ({ ...s, job_order_id: e.target.value }))} />
+              <input placeholder="Project Code" className="border px-2 py-1 rounded text-sm" value={search.project_code} onChange={e => setSearch(s => ({ ...s, project_code: e.target.value }))} />
+              <input placeholder="Vehicle Number" className="border px-2 py-1 rounded text-sm" value={search.vehicle_serial_number} onChange={e => setSearch(s => ({ ...s, vehicle_serial_number: e.target.value }))} />
+              <input placeholder="Body Number" className="border px-2 py-1 rounded text-sm" value={search.vehicle_body_number} onChange={e => setSearch(s => ({ ...s, vehicle_body_number: e.target.value }))} />
+              <input placeholder="Engine Number" className="border px-2 py-1 rounded text-sm" value={search.engine_serial_number} onChange={e => setSearch(s => ({ ...s, engine_serial_number: e.target.value }))} />
+              <input placeholder="Domain" className="border px-2 py-1 rounded text-sm" value={search.domain} onChange={e => setSearch(s => ({ ...s, domain: e.target.value }))} />
+              <input placeholder="Test Status" className="border px-2 py-1 rounded text-sm" value={search.test_status} onChange={e => setSearch(s => ({ ...s, test_status: e.target.value }))} />
+              <input placeholder="Completed Tests" className="border px-2 py-1 rounded text-sm" value={search.completed_test_count} onChange={e => setSearch(s => ({ ...s, completed_test_count: e.target.value }))} />
+              <input placeholder="Created By" className="border px-2 py-1 rounded text-sm" value={search.name_of_creator} onChange={e => setSearch(s => ({ ...s, name_of_creator: e.target.value }))} />
+              <input placeholder="Created On" className="border px-2 py-1 rounded text-sm" value={search.created_on} onChange={e => setSearch(s => ({ ...s, created_on: e.target.value }))} />
+              <input placeholder="Updated By" className="border px-2 py-1 rounded text-sm" value={search.name_of_updater} onChange={e => setSearch(s => ({ ...s, name_of_updater: e.target.value }))} />
+              <input placeholder="Updated On" className="border px-2 py-1 rounded text-sm" value={search.updated_on} onChange={e => setSearch(s => ({ ...s, updated_on: e.target.value }))} />
+            </div>
+            <div className="mt-4 flex justify-end space-x-2">
+              <Button
+                onClick={() => {
+                  setSearch({
+                    job_order_id: "",
+                    project_code: "",
+                    vehicle_serial_number: "",
+                    vehicle_body_number: "",
+                    engine_serial_number: "",
+                    domain: "",
+                    test_status: "",
+                    completed_test_count: "",
+                    name_of_creator: "",
+                    created_on: "",
+                    name_of_updater: "",
+                    updated_on: "",
+                  });
+                  setFilteredJobOrders(jobOrders);
+                  setCurrentPage(1);
+                }}
+                className="bg-red-500 text-white hover:bg-red-600"
+              >
+                Clear
+              </Button>
+              <Button
+                onClick={applySearch}
+                className="bg-red-500 text-white hover:bg-red-600"
+              >
+                Apply
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!filteredJobOrders.length) return;
+                  const headers = [
+                    "Job Order Number",
+                    "Project Code",
+                    "Vehicle Number",
+                    "Body Number",
+                    "Engine Number",
+                    "Domain",
+                    "Test Orders",
+                    "Completed Test Orders",
+                    "Created by",
+                    "Created on",
+                    "Last updated By",
+                    "Last updated on",
+                  ];
+                  const rows = filteredJobOrders.map((order) => [
+                    order.job_order_id || "N/A",
+                    order.project_code || "N/A",
+                    order.vehicle_serial_number || "N/A",
+                    order.vehicle_body_number || "N/A",
+                    order.engine_serial_number || "N/A",
+                    order.domain || "N/A",
+                    order.test_status || "0",
+                    order.completed_test_count || "0",
+                    order.name_of_creator || "N/A",
+                    order.created_on
+                      ? new Date(order.created_on).toLocaleString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          hour12: true,
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "",
+                    order.name_of_updater || "N/A",
+                    order.updated_on
+                      ? new Date(order.updated_on).toLocaleString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          hour12: true,
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "N/A",
+                  ]);
+                  const csvContent =
+                    [headers, ...rows]
+                      .map((row) =>
+                        row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(",")
+                      )
+                      .join("\r\n");
+                  const blob = new Blob([csvContent], { type: "text/csv" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "job_orders.csv";
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }}
+                className="bg-yellow-500 text-black hover:bg-yellow-600"
+              >
+                Download
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Current Job Orders Badge */}
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center bg-white dark:bg-black">
           <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
             Current Job Orders
           </Badge>
-          <Button
-            onClick={() => navigate("/nashik/joborder")}
-            className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
-          >
-            <Add className="h-4 w-4 mr-1" />
-            CREATE JOB ORDER
-          </Button>
+          {/* Hide CREATE JOB ORDER button for TEST ENGINEER */}
+          {userRole !== "TestEngineer" && (
+            <Button
+              onClick={handleCreateJobOrder}
+              className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
+            >
+              <Add className="h-4 w-4 mr-1" />
+              CREATE JOB ORDER
+            </Button>
+          )}
         </div>
 
         {/* Main Content */}
@@ -177,7 +440,7 @@ export default function VTCNashikPage() {
                       Job Order Number
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
-                      Project
+                      Project Code
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Vehicle Number
@@ -196,6 +459,9 @@ export default function VTCNashikPage() {
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Completed Test Orders
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs">
+                      Creadted by
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs">
                       Created on
@@ -230,6 +496,9 @@ export default function VTCNashikPage() {
                         {order.vehicle_body_number || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
+                        {order.engine_serial_number || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-900">
                         {order.domain || "N/A"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-900">
@@ -239,7 +508,18 @@ export default function VTCNashikPage() {
                         {order.completed_test_count || "0"}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {order.created_on?.slice(0, 10) || "N/A"}
+                        {order.name_of_creator || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600 px-4 py-2">
+                        {new Date(order.created_on).toLocaleString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          hour12: true,
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
                         {order.name_of_updater || "N/A"}
@@ -257,8 +537,8 @@ export default function VTCNashikPage() {
           {/* Pagination Footer */}
           <div className="flex items-center justify-between mt-4">
             <div className="text-sm text-gray-600 dark:text-white">
-              Showing {startIndex + 1} to {Math.min(endIndex, jobOrders.length)}{" "}
-              of {jobOrders.length}
+              Showing {startIndex + 1} to {Math.min(endIndex, filteredJobOrders.length)}{" "}
+              of {filteredJobOrders.length}
             </div>
             <div className="flex items-center space-x-2">
               <Button

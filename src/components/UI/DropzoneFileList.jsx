@@ -75,6 +75,10 @@ const DropzoneFileList = ({
   // Add uploaded file count
   const uploadedCount = Array.isArray(attachment) ? attachment.length : 0;
 
+  const hasFiles = uploadedCount > 0;
+  const buttonColor = hasFiles ? "#dc3545" : "#2D68C4"; // Red if has files, Blue if empty
+  const buttonHoverColor = hasFiles ? "#c82333" : "#0056b3"; // Darker shades for hover
+
   const myJobOrderId = formData?.form_id
     ? formData?.form_id
     : formData?.job_order_id || (!id.startsWith("test") && id) || "";
@@ -92,16 +96,32 @@ const DropzoneFileList = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
+  // Helper to get correct job_order_id and test_order_id for API calls
+  const getJobAndTestOrderId = () => {
+    const jobOrderId =
+      formData?.originalJobOrderId ||
+      formData?.form_id ||
+      formData?.job_order_id ||
+      (!id.startsWith("test") && id) ||
+      "";
+    const testOrderId =
+      formData?.test_id ||
+      formData?.test_order_id ||
+      formData?.testOrderId ||
+      (id.startsWith("test") ? id : "");
+    return { jobOrderId, testOrderId };
+  };
+
   // Check if files exist both in GCP and formData
   const checkFilesExist = async () => {
-    if (!myJobOrderId) return;
+    const { jobOrderId, testOrderId } = getJobAndTestOrderId();
 
     try {
       setLoading(true);
-      const response = await axios.get(`${apiURL}/testorders/check_files_GCP`, {
+      const response = await axios.get(`${apiURL}/check_files_GCP`, {
         params: {
-          job_order_id: myJobOrderId,
-          test_order_id: myTestOrderId,
+          job_order_id: jobOrderId,
+          test_order_id: testOrderId,
           attachment_type: name,
         },
         responseType: "json",
@@ -141,15 +161,15 @@ const DropzoneFileList = ({
   }, [viewModalOpen]);
 
   const handleDownloadFiles = async (fileName = "") => {
-    logger.info(
-      `Downloading files for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
-    );
+    // Use the helper function to get correct job_order_id and test_order_id
+    const { jobOrderId, testOrderId } = getJobAndTestOrderId();
+
     try {
       setLoading(true);
 
       const params = {
-        job_order_id: myJobOrderId,
-        test_order_id: myTestOrderId,
+        job_order_id: jobOrderId,
+        test_order_id: testOrderId,
         attachment_type: name,
       };
 
@@ -157,18 +177,23 @@ const DropzoneFileList = ({
         params.filename = fileName;
       }
 
+
+      // Fix: Change the endpoint to match your curl command
       const response = await axios.get(
-        `${apiURL}/testorders/download_job_order_id/`,
+        `${apiURL}/download_job_order_id/`,
         {
           params,
           responseType: "blob",
+          headers: {
+            'accept': 'application/json',
+          },
         }
       );
 
       const disposition = response.headers["content-disposition"];
       const downloadedFileName = disposition
         ? disposition.split("filename=")[1].replace(/"/g, "")
-        : "downloaded_file";
+        : fileName || "downloaded_file";
 
       // Create blob URL safely
       const blob = new Blob([response.data], {
@@ -200,14 +225,22 @@ const DropzoneFileList = ({
       }
 
       showSnackbar("Download successful!", "success");
-      logger.info(
-        `Download success for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
-      );
     } catch (error) {
       console.error("Download error:", error);
-      showSnackbar("Download failed, please try again.", "warning");
-      logger.error(
-        `Download failed for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+
+      // More specific error messages
+      if (error.response?.status === 404) {
+        showSnackbar("File not found on server", "error");
+      } else if (error.response?.status === 403) {
+        showSnackbar("Access denied", "error");
+      } else {
+        showSnackbar("Download failed, please try again.", "warning");
+      }
+
+      console.error(
+        `Download failed for job order ${jobOrderId} and test order ${testOrderId} in attachment type ${name}`
       );
     } finally {
       setLoading(false);
@@ -229,7 +262,6 @@ const DropzoneFileList = ({
         {!disabled && (
           <Button
             variant="contained"
-            color={uploadedCount === 0 ? "inherit" : "primary"}
             onClick={handleOpenModal}
             sx={{
               width: "100%",
@@ -237,12 +269,12 @@ const DropzoneFileList = ({
               textTransform: "none",
               marginBottom: "0.5rem",
               height: "50px",
-              backgroundColor: uploadedCount === 0 ? 'primary.main' : "#2D68C4",
-              color: uploadedCount === 0 ? "#fff" : undefined, // <-- add this line
+              backgroundColor: buttonColor,
+              color: "#fff",
               '&:hover': {
-                boxShadow: '0 6px 20px rgba(107, 70, 193, 0.6)',
+                boxShadow: `0 6px 20px ${hasFiles ? 'rgba(220, 53, 69, 0.6)' : 'rgba(0, 123, 255, 0.6)'}`,
                 transform: "translateY(-2px)",
-                backgroundColor: uploadedCount === 0 ? 'primary.main' : "#2D68C4",
+                backgroundColor: buttonHoverColor,
               },
               transition: "all 0.3s ease",
               position: "relative"
@@ -292,12 +324,12 @@ const DropzoneFileList = ({
               textTransform: "none",
               marginBottom: "0.5rem",
               height: "50px",
-              backgroundColor: uploadedCount === 0 ? 'primary.main' : "#2D68C4",
-              color: uploadedCount === 0 ? "#fff" : undefined, // <-- add this line
+              backgroundColor: buttonColor,
+              color: "#fff",
               '&:hover': {
-                boxShadow: '0 6px 20px rgba(107, 70, 193, 0.6)',
+                boxShadow: `0 6px 20px ${hasFiles ? 'rgba(220, 53, 69, 0.6)' : 'rgba(0, 123, 255, 0.6)'}`,
                 transform: "translateY(-2px)",
-                backgroundColor: uploadedCount === 0 ? 'primary.main' : "#2D68C4"
+                backgroundColor: buttonHoverColor,
               },
               transition: "all 0.3s ease",
               position: "relative"
@@ -307,7 +339,7 @@ const DropzoneFileList = ({
             <VisibilityIcon
               style={{
                 fontSize: "1.5rem",
-                color: "#FFFFFF ",
+                color: "#FFFFFF",
                 marginBottom: "1px",
                 marginLeft: "10px",
               }}
@@ -318,13 +350,14 @@ const DropzoneFileList = ({
               size="small"
               sx={{
                 ml: 2,
-                backgroundColor: "#fff", // white background
-                color: uploadedCount === 0 ? "#333" : "#000000", // black/grey if none, red otherwise
+                backgroundColor: "#fff",
+                color: hasFiles ? "#dc3545" : "#007bff", // Red text if has files, Blue if empty
                 fontWeight: "bold",
-                borderRadius: "50%",     // make it circular
+                borderRadius: "50%",
                 width: 28,
                 height: 28,
                 minWidth: 0,
+                border: `2px solid ${hasFiles ? "#dc3545" : "#007bff"}`, // Matching border
                 ".MuiChip-label": {
                   padding: 0,
                   width: "100%",
@@ -347,7 +380,7 @@ const DropzoneFileList = ({
           handleCloseDropzoneModal={handleCloseModal}
           onUpload={onUpload}
           originalJobOrderId={formData?.originalJobOrderId || originalJobOrderId}
-            // ^ Pass originalJobOrderId from formData or prop
+        // ^ Pass originalJobOrderId from formData or prop
         />
       </Box>
       <Box
@@ -424,7 +457,7 @@ const DropzoneFileList = ({
                 <CloudUpload
                   sx={{
                     fontSize: "4rem",
-                    color: '#a0a0a0'
+                    color: hasFiles ? '#dc3545' : '#007bff'
                   }}
                 />
                 <Typography
@@ -521,7 +554,6 @@ const DropzoneFileList = ({
           <DialogActions sx={{ p: 2 }}>
             <Button
               onClick={handleCloseViewModal}
-              color="primary"
               variant="outlined"
             >
               Close

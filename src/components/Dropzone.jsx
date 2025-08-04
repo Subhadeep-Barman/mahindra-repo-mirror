@@ -13,11 +13,10 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
-  FormControl,
+  FormControl
 } from "@mui/material";
 import axios from "axios";
 import Spinner from "./UI/spinner"; // Ensure the path is correct
-import showSnackbar from "../utils/showSnackbar";
 import useStore from "../store/useStore";
 import {
   CloudUpload,
@@ -27,6 +26,7 @@ import {
   CheckCircle,
   HighlightOff
 } from "@mui/icons-material";
+import showSnackbar from "../utils/showSnackbar";
 
 const formatSize = (bytes) => {
   if (bytes === 0) return "0 Bytes";
@@ -42,7 +42,7 @@ const truncateFilename = (filename) => {
 };
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
-const CHUNK_SIZE = 1024 * 1024; 
+const CHUNK_SIZE = 64 * 1024 * 1024;
 
 // Add allowed file extensions mapping for different upload types
 const ALLOWED_EXTENSIONS_MAP = {
@@ -73,6 +73,15 @@ const ALLOWED_EXTENSIONS_MAP = {
     'mkv',
     'hex',
     'zip',
+    'a2l',
+    'dbc',
+    'exp',
+    'exp64',
+    'lab',
+    'udl',
+    'mdf',
+    'mf4',
+    'dat'
   ]
 };
 
@@ -104,7 +113,8 @@ const Dropzone = ({
   id,
   setSubmitted,
   onUpload,
-  originalJobOrderId // <-- add this prop
+  originalJobOrderId,
+  userRole // Add this prop
 }) => {
   const [files, setFiles] = useState([]);
   const [newfiles, setNewfiles] = useState([]);
@@ -203,7 +213,6 @@ const Dropzone = ({
           );
 
           if (containsDangerousContent || containsMaliciousFormula) {
-            // logger.error(`Dangerous content detected in Excel file ${file.name}`);
             console.error(`Dangerous content detected in Excel file ${file.name}`);
             reject(new Error(`Excel file contains potentially malicious content`));
             return;
@@ -227,20 +236,14 @@ const Dropzone = ({
 
               if (dangerousPatterns.some(pattern => sampleString.toLowerCase().includes(pattern.toLowerCase())) ||
                 formulaRegexPatterns.some(regex => regex.test(sampleString.toLowerCase()))) {
-                // logger.error(`Dangerous content detected deeper in Excel file ${file.name}`);
                 console.error(`Dangerous content detected deeper in Excel file ${file.name}`);
                 reject(new Error(`Excel file contains potentially malicious content`));
                 return;
               }
             }
           }
-
-          // If the file passes all checks, resolve with the file
-          // logger.info(`Excel file ${file.name} passed security checks`);
-          console.log(`Excel file ${file.name} passed security checks`);
           resolve(file);
         } catch (error) {
-          // logger.error(`Error sanitizing Excel file: ${error}`);
           console.error(`Error sanitizing Excel file: ${error}`);
           reject(new Error(`Error validating Excel file: ${error.message}`));
         }
@@ -308,36 +311,33 @@ const Dropzone = ({
       setNewfiles((prev) => [...prev, ...uniqueFiles]);
       setHeaderTotalSize((prev) => prev + addedSize);
       // logger?.info?.(`Selected files: ${JSON.stringify(uniqueFiles)}`);
-      console.log(`Selected files: ${JSON.stringify(uniqueFiles)}`);
       setSubmitted?.(false);
       setIsValidated?.(false);
     }
   };
-
-  console.log("Form Data:", formData);
   // Helper to get correct job_order_id and test_order_id for upload
   const getJobAndTestOrderId = () => {
-    // Prefer originalJobOrderId if provided
     const jobOrderId =
       originalJobOrderId ||
+      formData?.originalJobOrderId ||
       formData?.form_id ||
       formData?.job_order_id ||
       (!id.startsWith("test") && id) ||
       "";
-    // Prefer test_order_id from formData, else from id prop if it's a test
+
+    // Prefer test_order_id from formData
     const testOrderId =
       formData?.test_id ||
       formData?.test_order_id ||
+      formData?.testOrderId ||
       (id.startsWith("test") ? id : "");
+
     return { jobOrderId, testOrderId };
   };
 
   const uploadFileInChunks = async (file) => {
     // Use helper to get correct jobOrderId and testOrderId
     const { jobOrderId, testOrderId } = getJobAndTestOrderId();
-
-    // Debug log
-    console.log("uploadFileInChunks: jobOrderId:", jobOrderId, "testOrderId:", testOrderId);
 
     try {
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
@@ -361,11 +361,10 @@ const Dropzone = ({
         formDataPayload.append("test_order_id", testOrderId);
         formDataPayload.append("attachment_type", name);
         formDataPayload.append("user", userCookies?.userName || "unknown");
-        // if (sess_idt) {
-        //   if (typeof sess_idt === 'string' && /^[\w\-]+$/.test(sess_idt)) {
-        //     formDataPayload.append("sess_idt", sess_idt);
-        //   }
-        // }
+        // Always send sess_idt after first chunk
+        if (sess_idt) {
+          formDataPayload.append("sess_idt", sess_idt);
+        }
 
         try {
           const response = await axios.post(
@@ -378,7 +377,10 @@ const Dropzone = ({
               },
             }
           );
-          sess_idt = response.data.sess_idt;
+          // Set sess_idt after first response
+          if (!sess_idt && response.data.sess_idt) {
+            sess_idt = response.data.sess_idt;
+          }
 
           if (response.data.completed) {
             const uploadedFile = [{
@@ -390,20 +392,19 @@ const Dropzone = ({
 
             let updatedFormData = { ...formData };
             if (team) {
-              const existing = useStore.getState().jobOrderFormData || {};
-              const allAttachments = useStore.getState().jobOrderFormData[team]?.[name] || [];
+              const existing = formData[team]?.[name] || [];
               updatedFormData = {
-                ...existing,
+                ...formData,
                 [team]: {
-                  ...existing[team],
-                  [name]: [...uploadedFile, ...allAttachments],
+                  ...formData[team],
+                  [name]: [...existing, ...uploadedFile],
                 },
               };
             } else {
-              const existing = useStore.getState().testOrderFormData[name] || [];
+              const existing = formData[name] || [];
               updatedFormData = {
                 ...formData,
-                [name]: [...uploadedFile, ...existing],
+                [name]: [...existing, ...uploadedFile],
               };
             }
             setFormData(updatedFormData);
@@ -418,7 +419,7 @@ const Dropzone = ({
           }
         } catch (error) {
           console.error(`Error uploading chunk ${chunkIndex}:`, error);
-          alert(`Upload failed for ${file.name}. Please try again.`);
+          showSnackbar(`Upload failed for ${file.name}: ${error.message}`, "error");
           // Remove progress bar on error
           setUploadProgress((prev) => {
             const updated = { ...prev };
@@ -444,7 +445,6 @@ const Dropzone = ({
 
 
   const onTemplateUpload = async () => {
-    console.log("Uploading files:", newfiles);
     if (newfiles.length === 0) {
       showSnackbar("No new files to upload!", "warning");
       return;
@@ -538,9 +538,6 @@ const Dropzone = ({
     // logger.info(
     //   `Validating files for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
     // );
-    console.log(
-      `Validating files for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
-    );
     try {
       setLoading(true);
       setIsValidated(true);
@@ -562,8 +559,7 @@ const Dropzone = ({
       }
       window.open(url, "_blank");
       // logger.info(`Redirecting to data validation URL: ${url}`);
-      console.log(`Redirecting to data validation URL: ${url}`);
-      
+
     } catch (error) {
       console.error("Validation error:", error);
       showSnackbar("Validation failed", "warning");
@@ -578,51 +574,51 @@ const Dropzone = ({
     }
   };
 
-  const handleDownloadFiles = async (filepath = "") => {
-    // logger.info(
-    //   `Downloading files for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
-    // );
-    console.log(
-      `Downloading files for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
-    );
+  const handleDownloadFiles = async (fileName = "") => {
     try {
       setLoading(true);
+
+      const params = {
+        job_order_id: myJobOrderId,
+        test_order_id: myTestOrderId,
+        attachment_type: name,
+      };
+
+      if (fileName !== "") {
+        params.filename = fileName;
+      }
 
       const response = await axios.get(
         `${apiURL}/testorders/download_job_order_id/`,
         {
-          params: {
-            job_order_id: myJobOrderId,
-            test_order_id: myTestOrderId,
-            attachment_type: name,
-            filename: filepath !== "" ? filepath : ""
-          },
+          params,
           responseType: "blob",
         }
       );
 
-      const fileName = response.headers["content-disposition"]
-        .split("filename=")[1]
-        .replace(/"/g, "");
+      const disposition = response.headers["content-disposition"];
+      const downloadedFileName = disposition
+        ? disposition.split("filename=")[1].replace(/"/g, "")
+        : "downloaded_file";
 
       // Create blob URL safely
       const blob = new Blob([response.data], {
-        type: response.headers['content-type'] || 'application/octet-stream'
+        type: response.headers["content-type"] || "application/octet-stream",
       });
 
       // Use more secure download method
       if (window.navigator && window.navigator.msSaveOrOpenBlob) {
         // For IE
-        window.navigator.msSaveOrOpenBlob(blob, fileName);
+        window.navigator.msSaveOrOpenBlob(blob, downloadedFileName);
       } else {
         // For modern browsers
         const blobUrl = URL.createObjectURL(blob);
-        const downloadLink = document.createElement('a');
+        const downloadLink = document.createElement("a");
 
         // Set link properties
         downloadLink.href = blobUrl;
-        downloadLink.download = fileName;
-        downloadLink.style.display = 'none';
+        downloadLink.download = downloadedFileName;
+        downloadLink.style.display = "none";
 
         // Download file and cleanup
         try {
@@ -635,41 +631,27 @@ const Dropzone = ({
       }
 
       showSnackbar("Download successful!", "success");
-      // logger.info(`Download success for job order ${myJobOrderId}`);
-      console.log(`Download success for job order ${myJobOrderId}`);
     } catch (error) {
       console.error("Download error:", error);
       showSnackbar("Download failed, please try again.", "warning");
-      // logger.error(`Download failed for job order ${myJobOrderId}`);
-      console.error(`Download failed for job order ${myJobOrderId}`);
+      console.error(
+        `Download failed for job order ${myJobOrderId} and test order ${myTestOrderId} in attachment type ${name}`
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const checkFilesExist = async () => {
-    const jobId = formData?.form_id
-      ? formData?.form_id
-      : formData?.job_order_id || (!id.startsWith("test") && id) || "";
-    const testId = formData?.test_id
-      ? formData?.test_id
-      : id.startsWith("test")
-        ? id
-        : "";
-
-    // logger.info(
-    //   `Checking if files exist for job order ${jobId} and test order ${testId} in attachment type ${name}`
-    // );
-    console.log(
-      `Checking if files exist for job order ${jobId} and test order ${testId} in attachment type ${name}`
-    );
+    // Use the helper to get correct IDs
+    const { jobOrderId, testOrderId } = getJobAndTestOrderId();
 
     try {
       setLoading(true);
-      const response = await axios.get(`${apiURL}/testorders/check_files_GCP`, {
+      const response = await axios.get(`${apiURL}/check_files_GCP`, {
         params: {
-          job_order_id: jobId,
-          test_order_id: testId,
+          job_order_id: jobOrderId,
+          test_order_id: testOrderId,
           attachment_type: name,
         },
         responseType: "json",
@@ -679,52 +661,71 @@ const Dropzone = ({
       });
 
       if (response.data.status === true && response.data.files) {
-        // Get the correct file data based on attachment type
-        let fileData;
-        if (team) {
-          fileData = formData[team]?.[name] || [];
-        } else if (name === "Special_adaptation") {
-          fileData = formData.calibrationTeam?.engineAdaptation?.Special_adaptation || [];
-        } else {
-          fileData = formData[name] || [];
-        }
-
-        // Only keep files that exist in both the API response and formData
+        // Transform API files to match the expected format
         const apiFiles = response.data.files || [];
-        const matchedFiles = fileData.filter(file =>
-          apiFiles.some(apiFile =>
-            apiFile === file.path
-          )
-        );
+        const transformedFiles = apiFiles.map(file => {
+          // If file is a string (just filename), transform it to object
+          if (typeof file === 'string') {
+            return {
+              path: file,
+              size: 0, // Default size since API doesn't provide it
+              user: 'Unknown',
+              upload_time: null
+            };
+          }
+          // If file is already an object, use it as is
+          return {
+            path: file.path || file.filename || file.name,
+            size: file.size || 0,
+            user: file.user || file.uploaded_by || 'Unknown',
+            upload_time: file.upload_time || file.created_on || null
+          };
+        });
 
-        if (matchedFiles.length > 0) {
-          setFiles(matchedFiles);
-          const _totalSize = matchedFiles.reduce(
-            (acc, file) => acc + (file.size || 0),
-            0
-          );
-          setHeaderTotalSize(_totalSize);
-          setUploaded(true);
+        // Set the files to display
+        setFiles(transformedFiles);
+
+        // Calculate total size
+        const _totalSize = transformedFiles.reduce(
+          (acc, file) => acc + (file.size || 0),
+          0
+        );
+        setHeaderTotalSize(_totalSize);
+        setUploaded(true);
+
+        // Update formData to sync with what's actually on the server
+        let updatedFormData = { ...formData };
+        if (team) {
+          updatedFormData = {
+            ...formData,
+            [team]: {
+              ...formData[team],
+              [name]: transformedFiles,
+            },
+          };
         } else {
-          setFiles([]);
-          setHeaderTotalSize(0);
-          setUploaded(false);
+          updatedFormData = {
+            ...formData,
+            [name]: transformedFiles,
+          };
         }
+        setFormData(updatedFormData);
 
         if (name === "resultFileAttachment") {
           setIsValidated(true);
         }
       } else {
+        setFiles([]);
+        setHeaderTotalSize(0);
         setUploaded(false);
       }
     } catch (error) {
       console.error("Error checking if files exist:", error);
       setUploaded(false);
-      // logger.error(
-      //   `Error checking if files exist for job order ${jobId} and test order ${testId} in attachment type ${name}`
-      // );
+      setFiles([]);
+      setHeaderTotalSize(0);
       console.error(
-        `Error checking if files exist for job order ${jobId} and test order ${testId} in attachment type ${name}`
+        `Error checking if files exist for job order ${jobOrderId} and test order ${testOrderId} in attachment type ${name}`
       );
     } finally {
       setLoading(false);
@@ -736,20 +737,17 @@ const Dropzone = ({
   useEffect(() => {
     // Only call checkFilesExist when modal is opened (false -> true)
     if (!prevOpenDropzoneModal.current && openDropzoneModal) {
-      const jobId = formData?.form_id
-        ? formData?.form_id
-        : formData?.job_order_id || (!id.startsWith("test") && id) || "";
-      const testId = formData?.test_id
-        ? formData?.test_id
-        : id.startsWith("test")
-          ? id
-          : "";
+      // Use the helper function to get correct IDs
+      const { jobOrderId, testOrderId } = getJobAndTestOrderId();
 
-      setMyJobOrder(jobId);
-      setMyTestOrder(testId);
+      setMyJobOrder(jobOrderId);
+      setMyTestOrder(testOrderId);
 
-      if (jobId && (testId === "" || testId)) {
+      // Check files if we have a job order ID (test order ID can be empty for some cases)
+      if (jobOrderId) {
         checkFilesExist();
+      } else {
+        console.warn("No jobOrderId found, cannot check files");
       }
     }
     prevOpenDropzoneModal.current = openDropzoneModal;
@@ -816,6 +814,28 @@ const Dropzone = ({
     return extensions.map(ext => `.${ext}`).join(',');
   };
 
+  // Helper function to determine if user can upload/modify files
+  const canModifyFiles = () => {
+    // Project Team attachments: only Project Team can upload/modify
+    if (team === 'projectTeam') {
+      return userRole !== 'TestEngineer';
+    }
+
+    // Test Engineer attachments: only Test Engineers can upload/modify
+    if (team === 'testTeam' || name.includes('test') || name.includes('result')) {
+      return userRole === 'TestEngineer';
+    }
+
+    // Default: allow modification for non-Test Engineers
+    return userRole !== 'TestEngineer';
+  };
+
+  // Helper function to determine if user can view files
+  const canViewFiles = () => {
+    // All users can view all files
+    return true;
+  };
+
   return (
     <>
       <Dialog
@@ -826,7 +846,7 @@ const Dropzone = ({
       >
         <Spinner loading={loading} />
         <DialogTitle sx={{ fontSize: "1.5rem", fontWeight: "bold" }}>
-          Upload Files
+          {canModifyFiles() ? "Upload Files" : "View Files"}
         </DialogTitle>
         <Box
           sx={{
@@ -900,7 +920,7 @@ const Dropzone = ({
                       }
                     }}
                   >
-                    {/* Top section with file info */}
+                    {/* File info section */}
                     <Box
                       display="flex"
                       alignItems="center"
@@ -931,14 +951,13 @@ const Dropzone = ({
                               {truncateFilename(file.path)}
                             </Typography>
                           </Tooltip>
-                          {/* Show upload user and time if available */}
                           <Typography variant="body2" sx={{ color: "gray" }}>
                             {file.user ? `Uploaded by: ${file.user}` : ""}
                             {file.upload_time ? ` on ${new Date(file.upload_time).toLocaleString()}` : ""}
                           </Typography>
                         </Box>
 
-                        {/* Show validation status icon if exists */}
+                        {/* Validation status */}
                         {file.isValidated !== undefined && (
                           <Box ml={1}>
                             {file.isValidated ? (
@@ -954,7 +973,7 @@ const Dropzone = ({
                         )}
                       </Box>
 
-                      {/* File Size Chip */}
+                      {/* File Size */}
                       <Chip
                         label={formatSize(file.size)}
                         sx={{
@@ -973,8 +992,8 @@ const Dropzone = ({
                         alignItems="center"
                         sx={{ ml: 2 }}
                       >
-                        {/* Validate Button */}
-                        {(
+                        {/* Validate Button - only for calibration team with specific files */}
+                        {canModifyFiles() && (
                           name === "resultFileAttachment" &&
                           formData.projectTeam === "calibration" &&
                           (file.path.endsWith(".csv") || file.path.endsWith(".atfx") || file.path.endsWith(".ATFx"))
@@ -1001,7 +1020,7 @@ const Dropzone = ({
                             </Tooltip>
                           )}
 
-                        {/* Download Button */}
+                        {/* Download Button - always available */}
                         <Tooltip title="Download file" arrow>
                           <Button
                             size="small"
@@ -1019,27 +1038,29 @@ const Dropzone = ({
                           </Button>
                         </Tooltip>
 
-                        {/* Delete Button */}
-                        <Tooltip title="Delete file" arrow>
-                          <Button
-                            size="small"
-                            color="error"
-                            onClick={() => onTemplateRemove(file, false)}
-                            sx={{
-                              minWidth: "40px",
-                              width: "40px",
-                              height: "40px",
-                              borderRadius: "50%"
-                            }}
-                          >
-                            <Delete />
-                          </Button>
-                        </Tooltip>
+                        {/* Delete Button - only if user can modify */}
+                        {canModifyFiles() && (
+                          <Tooltip title="Delete file" arrow>
+                            <Button
+                              size="small"
+                              color="error"
+                              onClick={() => onTemplateRemove(file, false)}
+                              sx={{
+                                minWidth: "40px",
+                                width: "40px",
+                                height: "40px",
+                                borderRadius: "50%"
+                              }}
+                            >
+                              <Delete />
+                            </Button>
+                          </Tooltip>
+                        )}
                       </Box>
                     </Box>
 
-                    {/* Validation controls section */}
-                    {(name === "resultFileAttachment") && (
+                    {/* Validation controls - only for result files and if user can modify */}
+                    {canModifyFiles() && name === "resultFileAttachment" && (
                       <Box
                         sx={{
                           p: 1,
@@ -1058,7 +1079,6 @@ const Dropzone = ({
                             row
                             value={file.isValidated === undefined ? "" : (file.isValidated ? "yes" : "no")}
                             onChange={(e) => {
-                              // Allow changing validation status for any file in resultFileAttachment
                               const value = e.target.value === "yes";
                               updateFileValidationStatus(file, value);
                             }}
@@ -1068,7 +1088,6 @@ const Dropzone = ({
                               control={
                                 <Radio
                                   size="small"
-                                  // Always enabled
                                   sx={{
                                     color: '#4caf50',
                                     '&.Mui-checked': { color: '#4caf50' }
@@ -1076,10 +1095,10 @@ const Dropzone = ({
                                 />
                               }
                               label={
-                                <Typography 
-                                  variant="body2" 
-                                  sx={{ 
-                                    fontWeight: 600, 
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: 600,
                                     color: '#4caf50'
                                   }}
                                 >
@@ -1092,7 +1111,6 @@ const Dropzone = ({
                               control={
                                 <Radio
                                   size="small"
-                                  // Always enabled
                                   sx={{
                                     color: '#f44336',
                                     '&.Mui-checked': { color: '#f44336' }
@@ -1100,10 +1118,10 @@ const Dropzone = ({
                                 />
                               }
                               label={
-                                <Typography 
-                                  variant="body2" 
-                                  sx={{ 
-                                    fontWeight: 600, 
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: 600,
                                     color: '#f44336'
                                   }}
                                 >
@@ -1120,125 +1138,128 @@ const Dropzone = ({
               </Box>
             )}
 
-            <br />
-            {/* Custom File Upload Area */}
-            <Typography variant="h6">Drop your Files</Typography>
-            <Box
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              sx={{
-                border: "2px dashed #ccc",
-                borderRadius: "8px",
-                padding: "20px",
-                textAlign: "center",
-                color: "#aaa",
-                cursor: "pointer",
-                marginBottom: "20px",
-              }}
-              onClick={() => fileInputRef.current && fileInputRef.current.click()}
-            >
-              <CloudUpload
-                style={{
-                  fontSize: "3rem",
-                  color: "#2d7eff",
-                  marginBottom: "10px",
-                }}
-              />
-              <Typography variant="body1">
-                Drag and Drop Files Here or Click to Select
-              </Typography>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                hidden
-                accept={getAllowedExtensions()}
-                onChange={handleFileChange}
-              />
-            </Box>
+            {/* File upload section - only show if user can modify */}
+            {canModifyFiles() && (
+              <>
+                <br />
+                <Typography variant="h6">Drop your Files</Typography>
+                <Box
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  sx={{
+                    border: "2px dashed #ccc",
+                    borderRadius: "8px",
+                    padding: "20px",
+                    textAlign: "center",
+                    color: "#aaa",
+                    cursor: "pointer",
+                    marginBottom: "20px",
+                  }}
+                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                >
+                  <CloudUpload
+                    style={{
+                      fontSize: "3rem",
+                      color: "#2d7eff",
+                      marginBottom: "10px",
+                    }}
+                  />
+                  <Typography variant="body1">
+                    Drag and Drop Files Here or Click to Select
+                  </Typography>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    hidden
+                    accept={getAllowedExtensions()}
+                    onChange={handleFileChange}
+                  />
+                </Box>
 
-            {/* List of Selected Files */}
-            {newfiles.length > 0 && (
-              <Box>
-                {newfiles.map((file, index) => (
-                  <Box key={index}>
-                    <Box
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="space-between"
-                      mb={1}
-                      sx={{
-                        padding: "8px",
-                        border: "1px solid #ccc",
-                        borderRadius: "4px",
-                      }}
-                    >
-                      {/* File Name with Tooltip */}
-                      <Tooltip title={file.name} arrow placement="top">
-                        <Typography variant="body2" sx={{ flex: 1 }}>
-                          {truncateFilename(file.name)}
-                        </Typography>
-                      </Tooltip>
+                {/* Selected files for upload */}
+                {newfiles.length > 0 && (
+                  <Box>
+                    {newfiles.map((file, index) => (
+                      <Box key={index}>
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="space-between"
+                          mb={1}
+                          sx={{
+                            padding: "8px",
+                            border: "1px solid #ccc",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          <Tooltip title={file.name} arrow placement="top">
+                            <Typography variant="body2" sx={{ flex: 1 }}>
+                              {truncateFilename(file.name)}
+                            </Typography>
+                          </Tooltip>
 
-                      {/* File Size */}
-                      <Chip
-                        label={formatSize(file.size)}
-                        color="warning"
-                        sx={{
-                          fontWeight: "bold",
-                          backgroundColor: "#ff7b00",
-                          color: "#fff",
-                          marginRight: "30px",
-                          paddingLeft: "8px",
-                        }}
-                      />
+                          <Chip
+                            label={formatSize(file.size)}
+                            color="warning"
+                            sx={{
+                              fontWeight: "bold",
+                              backgroundColor: "#ff7b00",
+                              color: "#fff",
+                              marginRight: "30px",
+                              paddingLeft: "8px",
+                            }}
+                          />
 
-                      {/* Remove Button */}
-                      <Button
-                        startIcon={<Delete />}
-                        size="small"
-                        color="error"
-                        onClick={() => onTemplateRemove(file, true)}
-                      >
-                      </Button>
-                    </Box>
-                    {/* Progress Bar for each file upload */}
-                    {uploadProgress[file.name] !== undefined && (
-                      <LinearProgress
-                        variant="determinate"
-                        value={uploadProgress[file.name]}
-                      />
-                    )}
+                          <Button
+                            startIcon={<Delete />}
+                            size="small"
+                            color="error"
+                            onClick={() => onTemplateRemove(file, true)}
+                          >
+                          </Button>
+                        </Box>
+                        {uploadProgress[file.name] !== undefined && (
+                          <LinearProgress
+                            variant="determinate"
+                            value={uploadProgress[file.name]}
+                          />
+                        )}
+                      </Box>
+                    ))}
                   </Box>
-                ))}
-              </Box>
+                )}
+
+                {/* Upload buttons */}
+                {newfiles.length > 0 && (
+                  <Box display="flex" justifyContent="flex-end" mt={2}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={onTemplateUpload}
+                      sx={{ mr: 2 }}
+                    >
+                      Upload
+                    </Button>
+
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      onClick={onTemplateClear}
+                    >
+                      Clear
+                    </Button>
+                  </Box>
+                )}
+              </>
             )}
 
-            {/* Upload and Clear Buttons */}
-            {newfiles.length > 0 && (
-              <Box display="flex" justifyContent="flex-end" mt={2}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => {
-                    // if (!myJobOrderId) {
-                    //   showSnackbar("Please select job order first", "warning");
-                    //   return;
-                    // }
-                    onTemplateUpload();
-                  }}
-                  sx={{ mr: 2 }}
-                >
-                  Upload
-                </Button>
-
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={onTemplateClear}
-                >
-                  Clear
-                </Button>
+            {/* Read-only message for users who can't modify */}
+            {!canModifyFiles() && files.length === 0 && (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body1" color="textSecondary">
+                  No files uploaded yet. You have view-only access to these attachments.
+                </Typography>
               </Box>
             )}
           </DialogContent>
