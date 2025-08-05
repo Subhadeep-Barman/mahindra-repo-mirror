@@ -345,47 +345,44 @@ export default function CreateJobOrder() {
     fetchFuelTypes();
   }, []);
 
-  // Fetch vehicle and engine lists from API on mount
-  useEffect(() => {
-    // Replace with your actual API endpoints
-    fetch("/api/vehicles")
-      .then((res) => res.json())
-      .then((data) => setVehicleList(data || []));
-    fetch("/api/engines")
-      .then((res) => res.json())
-      .then((data) => setEngineList(data || []));
-
-    // Determine department - check if we have job order data first
-    const currentDepartment = location.state?.jobOrder?.department || form.department || "VTC_JO Chennai";
-
-    // Fetch vehicle body numbers (now returns both body number and vehicle_serial_number)
-    (async () => {
-      try {
-        // Pass department as query param for filtering
-        const res = await axios.get(
-          `${apiURL}/vehicle-body-numbers`,
-          { params: { department: currentDepartment } }
-        );
-        setVehicleBodyNumbers(res.data || []);
-      } catch (err) {
-        setVehicleBodyNumbers([]);
+  // New: State for fetched vehicles by project
+    const [projectVehicles, setProjectVehicles] = useState([]);
+    // New: State for selected vehicle's engine numbers
+    const [vehicleEngineNumbers, setVehicleEngineNumbers] = useState([]);
+  
+    useEffect(() => {
+      // When project code changes, fetch vehicles for that project
+      if (form.projectCode) {
+        axios
+          .get(`${apiURL}/vehicles/by-project/${encodeURIComponent(form.projectCode)}`)
+          .then((res) => {
+            setProjectVehicles(res.data.vehicles || []);
+          })
+          .catch(() => {
+            setProjectVehicles([]);
+          });
+        // Reset vehicle and engine selections
+        setForm((prev) => ({
+          ...prev,
+          vehicleBodyNumber: "",
+          vehicleSerialNumber: "",
+          engineNumber: "",
+          engineType: "",
+        }));
+        setVehicleEngineNumbers([]);
+      } else {
+        setProjectVehicles([]);
+        setVehicleEngineNumbers([]);
+        setForm((prev) => ({
+          ...prev,
+          vehicleBodyNumber: "",
+          vehicleSerialNumber: "",
+          engineNumber: "",
+          engineType: "",
+        }));
       }
-    })();
-
-    // Fetch engine numbers from FastAPI endpoint
-    (async () => {
-      try {
-        // Pass department as query param for filtering
-        const res = await axios.get(
-          `${apiURL}/engine-numbers`,
-          { params: { department: currentDepartment } }
-        );
-        setEngineNumbers(res.data || []);
-      } catch (err) {
-        setEngineNumbers([]);
-      }
-    })();
-  }, [location.state?.jobOrder?.department]); // Add dependency on job order department
+      // eslint-disable-next-line
+    }, [form.projectCode]);
 
   // Fetch vehicle details using the new API when body number changes
   const handleVehicleBodyChange = (value) => {
@@ -467,21 +464,7 @@ export default function CreateJobOrder() {
   };
 
   // Keep engineEditable in sync with API response
-  useEffect(() => {
-    if (form.engineSerialNumber && !isPreFilling) {
-      axios
-        .get(
-          `${apiURL}/engines/by-engine-number/${encodeURIComponent(
-            form.engineSerialNumber
-          )}`
-        )
-        .then((res) => setEngineEditable(res.data))
-        .catch(() => setEngineEditable(null));
-    } else if (!form.engineSerialNumber && !isPreFilling) {
-      setEngineEditable(null);
-    }
-    // eslint-disable-next-line
-  }, [form.engineSerialNumber, isPreFilling]);
+
 
   // Handler for editable engine form changes
   const handleEngineEditableChange = (field, value) => {
@@ -1690,13 +1673,13 @@ export default function CreateJobOrder() {
               value={form.vehicleBodyNumber}
               onValueChange={handleVehicleBodyChange}
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || !form.projectCode}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
-                {vehicleBodyNumbers.map((item, index) => (
+                {projectVehicles.map((item, index) => (
                   <SelectItem
                     key={`${item.vehicle_body_number}-${index}`}
                     value={item.vehicle_body_number}
@@ -1735,14 +1718,14 @@ export default function CreateJobOrder() {
                 formDisabled ||
                 isTestEngineer ||
                 !!(location.state?.originalJobOrderId &&
-                  (allTestOrders[location.state?.originalJobOrderId] || []).length > 0)
+                  (allTestOrders[location.state?.originalJobOrderId] || []).length > 0 || !form.vehicleBodyNumber)
               }
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
-                {engineNumbers.map((engineSerialNumber) => (
+                {vehicleEngineNumbers.map((engineSerialNumber) => (
                   <SelectItem key={engineSerialNumber} value={engineSerialNumber}>
                     {engineSerialNumber}
                   </SelectItem>

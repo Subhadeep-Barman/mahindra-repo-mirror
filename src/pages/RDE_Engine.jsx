@@ -308,16 +308,17 @@ export default function RDEEnginePage() {
                           {engine.id_of_updater}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600 px-4 py-2">
-                          {new Date(engine.updated_on).toLocaleString("en-IN", {
-                            timeZone: "Asia/Kolkata",
-                            hour12: true,
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </TableCell>
+                        {new Date(engine.updated_on + "Z").toLocaleString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                          hour12: true,
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </TableCell>
+
                       </TableRow>
                     ))
                   )}

@@ -370,63 +370,55 @@ export default function RDECreateJobOrder() {
   }, []);
 
 
-  // New: State for fetched vehicles and engines
-  const [vehicleList, setVehicleList] = useState([]);
-  const [engineList, setEngineList] = useState([]);
-  // New: State for vehicle body numbers
-  const [vehicleBodyNumbers, setVehicleBodyNumbers] = useState([]);
-  // New: State for engine numbers from API
-  const [engineNumbers, setEngineNumbers] = useState([]);
+  // New: State for fetched vehicles by project
+  const [projectVehicles, setProjectVehicles] = useState([]);
+  // New: State for selected vehicle's engine numbers
+  const [vehicleEngineNumbers, setVehicleEngineNumbers] = useState([]);
 
-  // Fetch vehicle and engine lists from API on mount
   useEffect(() => {
-    // Replace with your actual API endpoints
-    fetch("/api/vehicles")
-      .then((res) => res.json())
-      .then((data) => setVehicleList(data || []));
-    fetch("/api/engines")
-      .then((res) => res.json())
-      .then((data) => setEngineList(data || []));
-    // Fetch vehicle body numbers (now returns both body number and vehicle number)
-    (async () => {
-      try {
-        // Pass department as query param for filtering
-        const res = await axios.get(
-          `${apiURL}/vehicle-body-numbers`,
-        );
-        setVehicleBodyNumbers(res.data || []);
-      } catch (err) {
-        setVehicleBodyNumbers([]);
-      }
-    })();
-    // Fetch engine numbers from FastAPI endpoint
-    (async () => {
-      try {
-        const res = await axios.get(
-          `${apiURL}/engine-numbers`
-        );
-        setEngineNumbers(res.data || []);
-      } catch (err) {
-        setEngineNumbers([]);
-      }
-    })();
-  }, []);
+    // When project code changes, fetch vehicles for that project
+    if (form.projectCode) {
+      axios
+        .get(`${apiURL}/vehicles/by-project/${encodeURIComponent(form.projectCode)}`)
+        .then((res) => {
+          setProjectVehicles(res.data.vehicles || []);
+        })
+        .catch(() => {
+          setProjectVehicles([]);
+        });
+      // Reset vehicle and engine selections
+      setForm((prev) => ({
+        ...prev,
+        vehicleBodyNumber: "",
+        vehicleSerialNumber: "",
+        engineNumber: "",
+        engineType: "",
+      }));
+      setVehicleEngineNumbers([]);
+    } else {
+      setProjectVehicles([]);
+      setVehicleEngineNumbers([]);
+      setForm((prev) => ({
+        ...prev,
+        vehicleBodyNumber: "",
+        vehicleSerialNumber: "",
+        engineNumber: "",
+        engineType: "",
+      }));
+    }
+    // eslint-disable-next-line
+  }, [form.projectCode]);
 
-  // Accordion state for vehicle details
   const [vehicleAccordionOpen, setVehicleAccordionOpen] = useState(false);
-
-  // Editable vehicle form state
   const [vehicleEditable, setVehicleEditable] = useState(null);
   const [vehicleEditMode, setVehicleEditMode] = useState(false);
 
-  // Fetch vehicle details using the new API when body number changes
+  // Handler for vehicle body number selection
   const handleVehicleBodyChange = (value) => {
     // Don't interfere if we're currently pre-filling
     if (isPreFilling) return;
 
-    const found = vehicleBodyNumbers.find(
-      (v) => v.vehicle_body_number === value
-    );
+    const found = projectVehicles.find((v) => v.vehicle_body_number === value);
     setForm((prev) => ({
       ...prev,
       vehicleBodyNumber: value,
@@ -434,14 +426,15 @@ export default function RDECreateJobOrder() {
       engineNumber: "",
       engineType: "",
     }));
-    // Use the new API endpoint
+    setVehicleEngineNumbers(found?.engine_numbers || []);
+    // Use the new API endpoint for vehicle details if needed
     if (value) {
       axios
         .get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(value)}`)
         .then((res) => {
           setVehicleEditable(res.data);
         })
-        .catch((error) => {
+        .catch(() => {
           setVehicleEditable(null);
         });
     }
@@ -488,7 +481,7 @@ export default function RDECreateJobOrder() {
       ...prev,
       engineNumber: value,
     }));
-    // Use the new API endpoint
+    // Use the new API endpoint for engine details if needed
     if (value) {
       axios
         .get(`${apiURL}/engines/by-engine-number/${encodeURIComponent(value)}`)
@@ -499,35 +492,10 @@ export default function RDECreateJobOrder() {
             engineType: res.data?.engineType || prev.engineType,
           }));
         })
-        .catch((error) => {
+        .catch(() => {
           setEngineEditable(null);
         });
     }
-  };
-
-  // Keep engineEditable in sync with API response
-  useEffect(() => {
-    if (form.engineNumber && !isPreFilling) {
-      axios
-        .get(
-          `${apiURL}/engines/by-engine-number/${encodeURIComponent(
-            form.engineNumber
-          )}`
-        )
-        .then((res) => setEngineEditable(res.data))
-        .catch(() => setEngineEditable(null));
-    } else if (!form.engineNumber && !isPreFilling) {
-      setEngineEditable(null);
-    }
-    // eslint-disable-next-line
-  }, [form.engineNumber, isPreFilling]);
-
-  // Handler for editable engine form changes
-  const handleEngineEditableChange = (field, value) => {
-    setEngineEditable((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
   };
 
   const navigate = useNavigate();
@@ -1456,13 +1424,13 @@ export default function RDECreateJobOrder() {
               value={form.vehicleBodyNumber}
               onValueChange={handleVehicleBodyChange}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || !form.projectCode}
             >
               <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
-                {vehicleBodyNumbers.map((item, index) => (
+                {projectVehicles.map((item, index) => (
                   <SelectItem
                     key={`${item.vehicle_body_number}-${index}`}
                     value={item.vehicle_body_number}
@@ -1497,13 +1465,13 @@ export default function RDECreateJobOrder() {
               value={form.engineNumber}
               onValueChange={handleEngineNumberChange}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || !form.vehicleBodyNumber}
             >
               <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
-                {engineNumbers.map((engineNumber) => (
+                {vehicleEngineNumbers.map((engineNumber) => (
                   <SelectItem key={engineNumber} value={engineNumber}>
                     {engineNumber}
                   </SelectItem>

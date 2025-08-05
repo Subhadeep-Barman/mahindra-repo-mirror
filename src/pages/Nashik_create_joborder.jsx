@@ -71,6 +71,7 @@ export default function NashikCreateJobOrder() {
   const [engineFormData, setEngineFormData] = useState(null);
   const [showCFTPanel, setShowCFTPanel] = useState(false);
   const [cdError, setCdError] = useState("");
+  const [cdFieldErrors, setCdFieldErrors] = useState({});
 
   // State to control pre-filling mode to prevent useEffect conflicts
   const [isPreFilling, setIsPreFilling] = useState(false);
@@ -255,48 +256,44 @@ export default function NashikCreateJobOrder() {
   }, []);
 
 
-  // New: State for fetched vehicles and engines
-  const [vehicleList, setVehicleList] = useState([]);
-  const [engineList, setEngineList] = useState([]);
-  // New: State for vehicle body numbers
-  const [vehicleBodyNumbers, setVehicleBodyNumbers] = useState([]);
-  // New: State for engine numbers from API
-  const [engineNumbers, setEngineNumbers] = useState([]);
-  const [cdFieldErrors, setCdFieldErrors] = useState({});
-
-  // Fetch vehicle and engine lists from API on mount
-  useEffect(() => {
-    // Replace with your actual API endpoints
-    fetch("/api/vehicles")
-      .then((res) => res.json())
-      .then((data) => setVehicleList(data || []));
-    fetch("/api/engines")
-      .then((res) => res.json())
-      .then((data) => setEngineList(data || []));
-    // Fetch vehicle body numbers (now returns both body number and vehicle number)
-    (async () => {
-      try {
-        // Pass department as query param for filtering
-        const res = await axios.get(
-          `${apiURL}/vehicle-body-numbers`
-        );
-        setVehicleBodyNumbers(res.data || []);
-      } catch (err) {
-        setVehicleBodyNumbers([]);
+  // New: State for fetched vehicles by project
+    const [projectVehicles, setProjectVehicles] = useState([]);
+    // New: State for selected vehicle's engine numbers
+    const [vehicleEngineNumbers, setVehicleEngineNumbers] = useState([]);
+  
+    useEffect(() => {
+      // When project code changes, fetch vehicles for that project
+      if (form.projectCode) {
+        axios
+          .get(`${apiURL}/vehicles/by-project/${encodeURIComponent(form.projectCode)}`)
+          .then((res) => {
+            setProjectVehicles(res.data.vehicles || []);
+          })
+          .catch(() => {
+            setProjectVehicles([]);
+          });
+        // Reset vehicle and engine selections
+        setForm((prev) => ({
+          ...prev,
+          vehicleBodyNumber: "",
+          vehicleSerialNumber: "",
+          engineNumber: "",
+          engineType: "",
+        }));
+        setVehicleEngineNumbers([]);
+      } else {
+        setProjectVehicles([]);
+        setVehicleEngineNumbers([]);
+        setForm((prev) => ({
+          ...prev,
+          vehicleBodyNumber: "",
+          vehicleSerialNumber: "",
+          engineNumber: "",
+          engineType: "",
+        }));
       }
-    })();
-    // Fetch engine numbers from FastAPI endpoint
-    (async () => {
-      try {
-        const res = await axios.get(
-          `${apiURL}/engine-numbers`
-        );
-        setEngineNumbers(res.data || []);
-      } catch (err) {
-        setEngineNumbers([]);
-      }
-    })();
-  }, []);
+      // eslint-disable-next-line
+    }, [form.projectCode]);
 
   // Accordion state for vehicle details
   const [vehicleAccordionOpen, setVehicleAccordionOpen] = useState(false);
@@ -392,21 +389,6 @@ export default function NashikCreateJobOrder() {
   };
 
   // Keep engineEditable in sync with API response
-  useEffect(() => {
-    if (form.engineSerialNumber && !isPreFilling) {
-      axios
-        .get(
-          `${apiURL}/engines/by-engine-number/${encodeURIComponent(
-            form.engineSerialNumber
-          )}`
-        )
-        .then((res) => setEngineEditable(res.data))
-        .catch(() => setEngineEditable(null));
-    } else if (!form.engineSerialNumber && !isPreFilling) {
-      setEngineEditable(null);
-    }
-    // eslint-disable-next-line
-  }, [form.engineSerialNumber, isPreFilling]);
 
   // Handler for editable engine form changes
   const handleEngineEditableChange = (field, value) => {
@@ -1285,13 +1267,13 @@ export default function NashikCreateJobOrder() {
               value={form.vehicleBodyNumber}
               onValueChange={handleVehicleBodyChange}
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || !form.projectCode}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
-                {vehicleBodyNumbers.map((item, index) => (
+                {projectVehicles.map((item, index) => (
                   <SelectItem
                     key={`${item.vehicle_body_number}-${index}`}
                     value={item.vehicle_body_number}
@@ -1326,13 +1308,13 @@ export default function NashikCreateJobOrder() {
               value={form.engineSerialNumber}
               onValueChange={handleEngineNumberChange}
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || !form.vehicleBodyNumber}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
-                {engineNumbers.map((engineSerialNumber) => (
+                {vehicleEngineNumbers.map((engineSerialNumber) => (
                   <SelectItem key={engineSerialNumber} value={engineSerialNumber}>
                     {engineSerialNumber}
                   </SelectItem>
