@@ -2,7 +2,7 @@ from backend.storage.api.api_utils import get_db
 from fastapi import APIRouter, HTTPException, Depends, Body
 from pathlib import Path
 import json
-from backend.storage.models.models import Vehicle
+from backend.storage.models.models import Vehicle, Engine  # Add Engine import
 from sqlalchemy.orm import Session
 from typing import List, Optional, Union
 from datetime import datetime
@@ -150,3 +150,42 @@ def get_vehicle_by_body_number(vehicle_body_number: str, db: Session = Depends(g
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehicle not found for the given body number")
     return vehicle_to_dict(vehicle)
+
+@router.get("/vehicles/by-project/{project_code}")
+def get_vehicles_by_project(
+    project_code: str, 
+    db: Session = Depends(get_db)
+):
+    """
+    Get all vehicle body numbers and their corresponding engines for a specific project code.
+    """
+    vehicles = db.query(Vehicle).filter(Vehicle.project_code == project_code).all()
+    
+    if not vehicles:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No vehicles found for project code: {project_code}"
+        )
+    
+    result = []
+    for vehicle in vehicles:
+        # Skip vehicles without body numbers
+        if not vehicle.vehicle_body_number:
+            continue
+        
+        # Find all engines associated with this vehicle
+        engines = db.query(Engine).filter(Engine.vehicle_serial_number == vehicle.vehicle_serial_number).all()
+        engine_numbers = [engine.engine_serial_number for engine in engines] if engines else []
+            
+        vehicle_data = {
+            "vehicle_serial_number": vehicle.vehicle_serial_number,
+            "vehicle_body_number": vehicle.vehicle_body_number,
+            "engine_numbers": engine_numbers
+        }
+        result.append(vehicle_data)
+    
+    return {
+        "project_code": project_code,
+        "vehicle_count": len(result),
+        "vehicles": result
+    }
