@@ -389,9 +389,7 @@ export default function CreateJobOrder() {
     // Don't interfere if we're currently pre-filling
     if (isPreFilling) return;
 
-    const found = vehicleBodyNumbers.find(
-      (v) => v.vehicle_body_number === value
-    );
+    const found = projectVehicles.find((v) => v.vehicle_body_number === value);
     setForm((prev) => ({
       ...prev,
       vehicleBodyNumber: value,
@@ -399,6 +397,7 @@ export default function CreateJobOrder() {
       engineSerialNumber: "",
       engineType: "",
     }));
+    setVehicleEngineNumbers(found?.engine_numbers || []);
     // Use the new API endpoint
     if (value) {
       axios

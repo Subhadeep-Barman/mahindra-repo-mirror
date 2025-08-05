@@ -127,7 +127,7 @@ export default function EditTestOrder() {
     f2Nkmph2: testOrder?.f2_value?.toString() || "",
     // Remarks
     rejection_remarks: testOrder?.rejection_remarks || "",
-    re_edit_remarks: testOrder?.remark || "",
+    remark: testOrder?.remark || "",
   });
 
   // States for API data

@@ -1632,7 +1632,7 @@ export default function RDECreateJobOrder() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Legislation">Legislation</SelectItem>
-                <SelectItem value="Manual Entry">Manual Entry</SelectItem>
+                <SelectItem value="Manual Entry">Customized Payload</SelectItem>
               </SelectContent>
             </Select>
           </div>
