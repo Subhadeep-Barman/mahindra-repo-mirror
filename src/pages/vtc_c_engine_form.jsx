@@ -662,41 +662,39 @@ export default function VTCCEngineForm() {
                 </div>
               )}
 
-              {/* Vehicle Serial Number (EV only, moved up) */}
-              {engine_domain === "EV" && (
-                <div className="space-y-2">
-                  <Label htmlFor="vehicleSerialNumber">
-                    Vehicle Serial Number{" "}
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={formData.vehicleSerialNumber}
-                    onValueChange={(value) =>
-                      handleInputChange("vehicleSerialNumber", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Vehicle Serial No" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vehicleSerialNumbers.length > 0 ? (
-                        vehicleSerialNumbers.map((serialNumber) => (
-                          <SelectItem
-                            key={serialNumber}
-                            value={serialNumber}
-                          >
-                            {serialNumber}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem disabled>
-                          No Vehicle Serial Numbers Available
+              {/* Vehicle Serial Number (for all domains) */}
+              <div className="space-y-2">
+                <Label htmlFor="vehicleSerialNumber">
+                  Vehicle Serial Number{" "}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={formData.vehicleSerialNumber}
+                  onValueChange={(value) =>
+                    handleInputChange("vehicleSerialNumber", value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Vehicle Serial No" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehicleSerialNumbers.length > 0 ? (
+                      vehicleSerialNumbers.map((serialNumber) => (
+                        <SelectItem
+                          key={serialNumber}
+                          value={serialNumber}
+                        >
+                          {serialNumber}
                         </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+                      ))
+                    ) : (
+                      <SelectItem disabled>
+                        No Vehicle Serial Numbers Available
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Vehicle Body Number (EV only, auto-filled) */}
               {engine_domain === "EV" && (

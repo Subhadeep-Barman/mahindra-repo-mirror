@@ -860,9 +860,8 @@ export default function CreateJobOrder() {
       return;
     }
 
-    const test_order_id = "TO" + Date.now();
-
     const job_order_id = location.state?.jobOrder?.job_order_id || location.state?.originalJobOrderId || "";
+    const test_order_id = `${job_order_id}/${test.testNumber}`;
 
     const currentISTTime = new Date().toLocaleString("en-US", {
       timeZone: "Asia/Kolkata",
@@ -882,55 +881,32 @@ export default function CreateJobOrder() {
       test.f1Nkmph ||
       test.f2Nkmph2;
 
-    if (hasTestSpecificCoastDownData) {
-      CoastDownData_id = "CD" + Date.now() + "_T" + testIndex;
-
-      // Create coast down data payload for this test
-      const testCoastDownPayload = {
-        CoastDownData_id,
-        job_order_id,
-        coast_down_reference:
-          test.cdReportRef || test.cdReportRef || form.cdReportRef || null,
-        vehicle_reference_mass:
-          test.vehicleRefMass || form.vehicleRefMass
-            ? parseFloat(test.vehicleRefMass || form.vehicleRefMass)
-            : null,
-        a_value: test.aN || form.aN ? parseFloat(test.aN || form.aN) : null,
-        b_value:
-          test.bNkmph || form.bNkmph
-            ? parseFloat(test.bNkmph || form.bNkmph)
-            : null,
-        c_value:
-          test.cNkmph2 || form.cNkmph2
-            ? parseFloat(test.cNkmph2 || form.cNkmph2)
-            : null,
-        f0_value:
-          test.f0N || form.f0N ? parseFloat(test.f0N || form.f0N) : null,
-        f1_value:
-          test.f1Nkmph || form.f1Nkmph
-            ? parseFloat(test.f1Nkmph || form.f1Nkmph)
-            : null,
-        f2_value:
-          test.f2Nkmph2 || form.f2Nkmph2
-            ? parseFloat(test.f2Nkmph2 || form.f2Nkmph2)
-            : null,
-        id_of_creator: userId || "",
-        created_on: formattedISTTime, // Now this is defined
-        id_of_updater: "",
-      };
-
-      try {
-        await axios.post(`${apiURL}/coastdown`, testCoastDownPayload);
-      } catch (err) {
-        console.error("Error creating test-specific coast down data:", err);
-        showSnackbar(
-          "Failed to create coast down data for test: " +
-          (err.response?.data?.detail || err.message),
-          "error"
-        );
-        return;
-      }
-    }
+    // Include coast down data from the main job order form if not filled in the test
+    const testCoastDownPayload = {
+      CoastDownData_id,
+      job_order_id,
+      coast_down_reference: test.cdReportRef || form.cdReportRef || null,
+      vehicle_reference_mass: test.vehicleRefMass || form.vehicleRefMass
+        ? parseFloat(test.vehicleRefMass || form.vehicleRefMass)
+        : null,
+      a_value: test.aN || form.aN ? parseFloat(test.aN || form.aN) : null,
+      b_value: test.bNkmph || form.bNkmph
+        ? parseFloat(test.bNkmph || form.bNkmph)
+        : null,
+      c_value: test.cNkmph2 || form.cNkmph2
+        ? parseFloat(test.cNkmph2 || form.cNkmph2)
+        : null,
+      f0_value: test.f0N || form.f0N ? parseFloat(test.f0N || form.f0N) : null,
+      f1_value: test.f1Nkmph || form.f1Nkmph
+        ? parseFloat(test.f1Nkmph || form.f1Nkmph)
+        : null,
+      f2_value: test.f2Nkmph2 || form.f2Nkmph2
+        ? parseFloat(test.f2Nkmph2 || form.f2Nkmph2)
+        : null,
+      id_of_creator: userId || "",
+      created_on: formattedISTTime,
+      id_of_updater: "",
+    };
 
     const testOrderPayload = {
       test_order_id,
@@ -944,7 +920,7 @@ export default function CreateJobOrder() {
       inertia_class: test.inertiaClass || "",
       dataset_name: test.datasetName || "",
       dpf: test.dpf || "",
-      dpfRegenOccurs: test.dpfRegenOccurs || "",
+      dpf_regen_occurs: test.dpfRegenOccurs || "",
       dataset_flashed:
         test.datasetflashed === "Yes"
           ? true
@@ -967,7 +943,6 @@ export default function CreateJobOrder() {
       id_of_updater: "",
       name_of_updater: "",
       updated_on: formattedISTTime,
-      // Only one set of each attachment key, pass as array
       emission_check_attachment: test.Emission_check || test.emissionCheckAttachment || [],
       dataset_attachment: test.Dataset_attachment || test.dataset_attachment || [],
       a2l_attachment: test.A2L || test.a2l_attachment || [],
@@ -978,6 +953,8 @@ export default function CreateJobOrder() {
       excel_report: test.Excel_report || test.excel_report || [],
       dat_file_attachment: test.DAT_file_attachment || test.dat_file_attachment || [],
       others_attachement: test.Others_attachment || test.others_attachement || [],
+      // Include coast down data in the payload
+      coast_down_data: testCoastDownPayload,
     };
 
     try {
@@ -1003,7 +980,6 @@ export default function CreateJobOrder() {
           : ""),
         "success"
       );
-      // Send mail with the test order ID
       await handleSendMail(2, job_order_id, response.data.test_order_id);
       navigate(-1);
 
@@ -1871,6 +1847,7 @@ export default function CreateJobOrder() {
                 <span className="text-red-500">*</span>
               </Label>
               <Select
+                id="vehicleTestPayloadCriteria"
                 value={form.vehicleTestPayloadCriteria}
                 onValueChange={(value) => {
                   setForm((prev) => ({
@@ -1887,12 +1864,12 @@ export default function CreateJobOrder() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Legislation">Legislation</SelectItem>
-                  <SelectItem value="Manual Entry">Manual Entry</SelectItem>
+                  <SelectItem value="Manual Entry">Customized Payload</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             {/* Show manual entry field only if 'Manual Entry' is selected */}
-            {form.vehicleTestPayloadCriteria === "Manual Entry" && (
+            {form.vehicleTestPayloadCriteria === "Customized Payload" && (
               <div className="flex flex-col">
                 <Label htmlFor="requestedPayloadKg" className="mb-2">
                   Requested Payload in kgs <span className="text-red-500">*</span>
