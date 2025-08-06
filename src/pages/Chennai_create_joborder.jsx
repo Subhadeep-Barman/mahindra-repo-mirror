@@ -455,7 +455,7 @@ export default function CreateJobOrder() {
       console.log("exit");
       return;
     }
-    console.log("still")
+    console.log("handleEngineNumberChange with value:", value);
     setForm((prev) => ({
       ...prev,
       engineSerialNumber: value,
@@ -563,6 +563,42 @@ export default function CreateJobOrder() {
 
           setVehicleBodyNumbers(vehicleBodyRes.data || []);
           setEngineNumbers(engineNumberRes.data || []);
+          
+          // Fetch engine numbers associated with the vehicle body number
+          if (jobOrder.vehicle_body_number) {
+            try {
+              console.log("Fetching engine numbers for vehicle body:", jobOrder.vehicle_body_number);
+              const vehicleEngineRes = await axios.get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(jobOrder.vehicle_body_number)}`);
+              
+              console.log("Vehicle engine response:", vehicleEngineRes.data);
+              
+              if (vehicleEngineRes.data && vehicleEngineRes.data.engine_numbers) {
+                setVehicleEngineNumbers(vehicleEngineRes.data.engine_numbers);
+              }
+              
+              // If the job order's engine serial number is not in the list, add it
+              if (jobOrder.engine_serial_number) {
+                console.log("Job order engine serial number:", jobOrder.engine_serial_number);
+                
+                if (vehicleEngineRes.data && 
+                    (!vehicleEngineRes.data.engine_numbers || 
+                    !vehicleEngineRes.data.engine_numbers.includes(jobOrder.engine_serial_number))) {
+                  console.log("Adding job order engine serial number to vehicleEngineNumbers");
+                  setVehicleEngineNumbers(prev => {
+                    const updatedList = [...prev, jobOrder.engine_serial_number];
+                    console.log("Updated vehicleEngineNumbers:", updatedList);
+                    return updatedList;
+                  });
+                }
+              }
+            } catch (error) {
+              console.error("Error fetching vehicle engine numbers:", error);
+              // If we can't get the vehicle's engine numbers, at least include the job order's engine number
+              if (jobOrder.engine_serial_number) {
+                setVehicleEngineNumbers([jobOrder.engine_serial_number]);
+              }
+            }
+          }
         } catch (error) {
           console.error("Error fetching department-specific data:", error);
           setVehicleBodyNumbers([]);
@@ -1715,11 +1751,24 @@ export default function CreateJobOrder() {
               </SelectTrigger>
               {console.log("Vehicle Engine Numbers:", vehicleEngineNumbers)}
               <SelectContent>
-                {vehicleEngineNumbers.map((engineSerialNumber) => (
-                  <SelectItem key={engineSerialNumber} value={engineSerialNumber}>
-                    {engineSerialNumber}
+                {vehicleEngineNumbers.length > 0 ? (
+                  vehicleEngineNumbers.map((engineSerialNumber) => (
+                    <SelectItem key={engineSerialNumber} value={engineSerialNumber}>
+                      {engineSerialNumber}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <div className="px-2 py-2 text-sm text-gray-500">
+                    No engine numbers available
+                  </div>
+                )}
+                {/* Add the current value as an option if not in the list */}
+                {form.engineSerialNumber && 
+                 !vehicleEngineNumbers.includes(form.engineSerialNumber) && (
+                  <SelectItem key={form.engineSerialNumber} value={form.engineSerialNumber}>
+                    {form.engineSerialNumber} (Current)
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
