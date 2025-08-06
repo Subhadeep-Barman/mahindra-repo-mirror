@@ -72,6 +72,7 @@ class TestOrderSchema(BaseModel):
     test_order_id: Optional[str] = None
     job_order_id: Optional[str] = None
     CoastDownData_id: Optional[str] = None
+    coast_down_data: Optional[dict] = None  # New field for CoastDownData as dict
     engine_number: Optional[str] = None
     test_type: Optional[str] = None
     test_objective: Optional[str] = None
@@ -104,6 +105,7 @@ class TestOrderSchema(BaseModel):
     remark: Optional[str] = None
     rejection_remarks: Optional[str] = None
     mail_remarks: Optional[str] = None
+    complete_remarks: Optional[str] = None
     status: Optional[str] = None
     id_of_creator: Optional[str] = None
     name_of_creator: Optional[str] = None
@@ -144,6 +146,7 @@ def testorder_to_dict(testorder: TestOrder):
         "test_order_id": testorder.test_order_id,
         "job_order_id": testorder.job_order_id,
         "CoastDownData_id": testorder.CoastDownData_id,
+        "coast_down_data": testorder.coast_down_data,
         "engine_number": testorder.engine_number,
         "test_type": testorder.test_type,
         "test_objective": testorder.test_objective,
@@ -176,6 +179,7 @@ def testorder_to_dict(testorder: TestOrder):
         "remark": testorder.remark if testorder.remark is not None else "",
         "rejection_remarks": testorder.rejection_remarks if testorder.rejection_remarks is not None else "",
         "mail_remarks": testorder.mail_remarks if testorder.mail_remarks is not None else "",
+        "complete_remarks": testorder.complete_remarks if testorder.complete_remarks is not None else "",
         "status": testorder.status,
         "id_of_creator": testorder.id_of_creator,
         "name_of_creator": testorder.name_of_creator,

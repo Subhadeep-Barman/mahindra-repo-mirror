@@ -111,6 +111,16 @@ def joborder_to_dict(joborder: JobOrder, db: Session = None):
         "cft_members": joborder.cft_members if joborder.cft_members else []
     }
 
+def generate_job_order_id(vehicle_body_number: str, db: Session) -> str:
+    """
+    Generates a job order ID in the format:
+    JO VTC-<year>-<count>/<vehicle_body_number>
+    """
+    current_year = datetime.utcnow().year % 100  # Get last two digits of the year
+    count = db.query(JobOrder).count() + 1  # Increment count based on total job orders
+    count_str = f"{count:04d}"  # Format count as 4 digits (e.g., 0001)
+    return f"JO VTC-{current_year}-{count_str}/{vehicle_body_number}"
+
 @router.post("/joborders", response_model=JobOrderSchema)
 def create_joborder_api(
     joborder: JobOrderSchema = Body(...),
@@ -120,6 +130,11 @@ def create_joborder_api(
     # Ensure cft_members is a list of dicts or set to []
     if "cft_members" in joborder_data and joborder_data["cft_members"] is None:
         joborder_data["cft_members"] = []
+    # Generate job_order_id if not provided
+    if not joborder_data.get("job_order_id"):
+        if not joborder_data.get("vehicle_body_number"):
+            raise HTTPException(status_code=400, detail="Vehicle body number is required to generate job_order_id")
+        joborder_data["job_order_id"] = generate_job_order_id(joborder_data["vehicle_body_number"], db)
     new_joborder = JobOrder(**joborder_data)
     db.add(new_joborder)
     db.commit()

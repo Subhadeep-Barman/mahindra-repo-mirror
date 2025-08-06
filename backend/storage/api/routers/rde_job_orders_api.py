@@ -86,6 +86,18 @@ def rde_joborder_to_dict(rde_joborder: RDEJobOrder, db: Session = None):
         "cft_members": normalize_cft_members(rde_joborder.cft_members)
     }
 
+def generate_job_order_id(vehicle_body_number: str, db: Session) -> str:
+    """
+    Generates a job order ID in the format:
+    JO VTC-<year>-<count>/<vehicle_body_number>
+    """
+    current_year = datetime.utcnow().year % 100  # Get last two digits of the year
+    count = db.query(RDEJobOrder).count() + 1  # Increment count based on total job orders
+    count_str = f"{count:04d}"  # Format count as 4 digits (e.g., 0001)
+    job_order_id = f"JO VTC-{current_year}-{count_str}/{vehicle_body_number}"
+    print(f"Generated job_order_id: {job_order_id}")  # Debug print statement
+    return job_order_id
+
 def is_user_in_cft_members(cft_members, user_id):
     """
     Checks if the user_id is present in the cft_members list.
@@ -106,11 +118,27 @@ def create_rde_joborder(
     rde_joborder_data = rde_joborder.dict(exclude_unset=True)
     if "cft_members" in rde_joborder_data:
         rde_joborder_data["cft_members"] = normalize_cft_members(rde_joborder_data["cft_members"])
+
+    # Always generate job_order_id
+    if not rde_joborder_data.get("vehicle_body_number"):
+        print("Error: Vehicle body number is missing!")  # Debug print statement
+        raise HTTPException(status_code=400, detail="Vehicle body number is required to generate job_order_id")
+    rde_joborder_data["job_order_id"] = generate_job_order_id(rde_joborder_data["vehicle_body_number"], db)
+    print(f"Generated job_order_id: {rde_joborder_data['job_order_id']}")  # Debug print statement
+
+    # Ensure the function is called
+    print("Proceeding to save the job order...")  # Debug print statement
     new_rde_joborder = RDEJobOrder(**rde_joborder_data)
     db.add(new_rde_joborder)
     db.commit()
     db.refresh(new_rde_joborder)
-    return rde_joborder_to_dict(new_rde_joborder)
+    print(f"Saved job order to database: {new_rde_joborder}")  # Debug print statement
+    
+    # Include the generated job_order_id in the response
+    response_data = rde_joborder_to_dict(new_rde_joborder)
+    response_data["job_order_id"] = new_rde_joborder.job_order_id
+    print(f"Response data: {response_data}")  # Debug print statement
+    return response_data
 
 @router.get("/rde_joborders", response_model=List[RDEJobOrderSchema])
 def read_rde_joborders(

@@ -16,7 +16,7 @@ from backend.storage.logging_config import vtc_logger
 router = APIRouter()
 
 EMAIL_TEMPLATE_PATH = os.path.join(
-    os.path.dirname(__file__), "../../../json_data/mail_body.json"
+    os.path.dirname(__file__), "../../json_data/mail_body.json"
 )
 
 
@@ -127,7 +127,49 @@ def load_email_template(caseid: str) -> tuple:
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-def send_email(to_emails: list, subject: str, body: str) -> None:
+def get_cft_member_emails(job_order, db: Session) -> list:
+    """
+    Extract email addresses from CFT members of a job order.
+    If email is not present, try to fetch from User table using code, else fallback to code@mahindra.com.
+
+    Args:
+        job_order (JobOrder): The job order instance.
+        db (Session): SQLAlchemy database session.
+
+    Returns:
+        list: List of email addresses from CFT members.
+    """
+    emails = []
+    if hasattr(job_order, "cft_members") and job_order.cft_members:
+        vtc_logger.debug(f"Raw CFT members: {job_order.cft_members}")
+        for member in job_order.cft_members:
+            code = None
+            email = None
+            if isinstance(member, dict):
+                code = member.get("code")
+                email = member.get("email")
+            elif isinstance(member, str):
+                try:
+                    import json
+                    member_dict = json.loads(member)
+                    code = member_dict.get("code")
+                    email = member_dict.get("email")
+                except Exception:
+                    code = None
+                    email = None
+            # If email is not present, try to fetch from User table
+            if not email and code:
+                user = db.query(User).filter(User.id == code).first()
+                if user and user.email:
+                    email = user.email
+                else:
+                    email = f"{code}@mahindra.com"
+            if email:
+                emails.append(email)
+    return emails
+
+
+def send_email(to_emails: list, subject: str, body: str, cc_emails: list = None) -> None:
     """
     Send an email using SMTP.
 
@@ -135,6 +177,7 @@ def send_email(to_emails: list, subject: str, body: str) -> None:
         to_emails (list): List of recipient email addresses.
         subject (str): Email subject.
         body (str): Email body (HTML).
+        cc_emails (list, optional): List of CC email addresses.
 
     Raises:
         HTTPException: If SMTP configuration is missing or sending fails.
@@ -157,16 +200,72 @@ def send_email(to_emails: list, subject: str, body: str) -> None:
         msg["Subject"] = subject
         msg["From"] = from_email
         msg["To"] = ", ".join(to_emails)
+        if cc_emails:
+            msg["Cc"] = ", ".join(cc_emails)
         msg.attach(MIMEText(body, "html"))
+
+        all_recipients = to_emails + (cc_emails if cc_emails else [])
 
         with smtplib.SMTP(smtp_host, smtp_port) as server:
             server.starttls()
             server.login(smtp_user, smtp_pass)
-            server.sendmail(from_email, to_emails, msg.as_string())
-        vtc_logger.info(f"Email sent to: {to_emails} with subject: {subject}")
+            server.sendmail(from_email, all_recipients, msg.as_string())
+        vtc_logger.info(f"Email sent to: {to_emails} with CC: {cc_emails} and subject: {subject}")
     except Exception as e:
         vtc_logger.error(f"Error sending email: {e}")
         raise HTTPException(status_code=500, detail="Failed to send email")
+
+
+def get_group_email_for_caseid(caseid: str) -> str:
+    """
+    Get the group email from mail_body.json for the given caseid.
+    """
+    try:
+        with open(EMAIL_TEMPLATE_PATH, "r", encoding="utf-8") as f:
+            templates = json.load(f)
+        email_cases = templates.get("email_cases", [])
+        template = next((case for case in email_cases if case["id"] == caseid), None)
+        if not template:
+            vtc_logger.warning(f"Invalid caseid: {caseid}")
+            return None
+        return template.get("group_email")
+    except Exception as e:
+        vtc_logger.error(f"Error in get_group_email_for_caseid: {e}")
+        return None
+
+
+def get_total_tests_for_job(db: Session, job_order_id: str) -> int:
+    """
+    Return the total number of TestOrder records for a given job_order_id.
+    """
+    try:
+        return db.query(TestOrder).filter(TestOrder.job_order_id == job_order_id).count()
+    except Exception as e:
+        vtc_logger.error(f"Error in get_total_tests_for_job: {e}")
+        return 0
+
+
+def get_job_creator_info(db: Session, job_order) -> dict:
+    """
+    Return a dict with creator's name, email, and job creation time.
+    """
+    try:
+        creator = db.query(User).filter(User.id == job_order.id_of_creator).first()
+        creator_name = creator.username if creator and hasattr(creator, "username") else "N/A"
+        creator_email = creator.email if creator and hasattr(creator, "email") else "N/A"
+        created_at = job_order.created_on.strftime("%Y-%m-%d %H:%M:%S") if hasattr(job_order, "created_on") and job_order.created_on else "N/A"
+        return {
+            "creator_name": creator_name,
+            "creator_email": creator_email,
+            "created_at": created_at
+        }
+    except Exception as e:
+        vtc_logger.error(f"Error in get_job_creator_info: {e}")
+        return {
+            "creator_name": "N/A",
+            "creator_email": "N/A",
+            "created_at": "N/A"
+        }
 
 
 @router.post("/send")
@@ -177,35 +276,44 @@ async def send_email_endpoint(
     db: Session = Depends(get_db),
 ):
     """
-    Send an email to all users of the role specified in mail_body.json for the given caseid.
-
-    Args:
-        job_order_id (str): The job order ID.
-        caseid (str): The case ID for the email template.
-        test_order_id (str, optional): The test order ID.
-        db (Session): SQLAlchemy database session.
-
-    Returns:
-        dict: Detail message about email sending status.
+    Send an email to a group email (if defined) or all users of the role specified in mail_body.json for the given caseid.
+    Also CC all CFT members added to the job order.
     """
     try:
         role = get_role_for_caseid(caseid)
         if not role:
             vtc_logger.warning(f"Role not found for caseid: {caseid}")
             raise HTTPException(status_code=400, detail="Role not found for caseid")
-        to_emails = get_all_emails_by_role(db, role)
-        vtc_logger.debug(f"To Emails: {to_emails}")  # Debugging line to check email addresses
-        if not to_emails:
-            vtc_logger.warning(f"No recipient found for the given role: {role}")
-            raise HTTPException(status_code=404, detail="No recipient found for the given role")
+        group_email = get_group_email_for_caseid(caseid)
+        if group_email:
+            to_emails = [group_email]
+            vtc_logger.info(f"Using group email for caseid {caseid}: {group_email}")
+        else:
+            to_emails = get_all_emails_by_role(db, role)
+            vtc_logger.debug(f"To Emails: {to_emails}")
+            if not to_emails:
+                vtc_logger.warning(f"No recipient found for the given role: {role}")
+                raise HTTPException(status_code=404, detail="No recipient found for the given role")
         subject, body = load_email_template(caseid)
-        # Replace placeholders with actual IDs
+        # Fetch job order and related info if needed
+        job_order = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
+        total_tests = get_total_tests_for_job(db, job_order_id) if caseid == "1" else ""
+        creator_info = get_job_creator_info(db, job_order) if job_order and caseid == "1" else {"creator_name": "", "creator_email": "", "created_at": ""}
+        # Replace placeholders with actual IDs and info
         subject = subject.replace("{{job_order_id}}", str(job_order_id))
         subject = subject.replace("{{test_order_id}}", str(test_order_id) if test_order_id else "")
         body = body.replace("{{job_order_id}}", str(job_order_id))
         body = body.replace("{{test_order_id}}", str(test_order_id) if test_order_id else "")
-        send_email(to_emails, subject, body)
-        return {"detail": f"Email sent to all users with role {role} successfully"}
+        body = body.replace("{{total_tests}}", str(total_tests))
+        body = body.replace("{{creator_name}}", creator_info.get("creator_name", ""))
+        body = body.replace("{{creator_email}}", creator_info.get("creator_email", ""))
+        body = body.replace("{{created_at}}", creator_info.get("created_at", ""))
+        # Fetch CFT member emails for CC
+        cc_emails = get_cft_member_emails(job_order, db) if job_order else []
+        vtc_logger.debug(f"CC Emails (CFT members): {cc_emails}")
+
+        send_email(to_emails, subject, body, cc_emails=cc_emails)
+        return {"detail": f"Email sent to group or all users with role {role} and CFT members successfully"}
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -355,6 +463,7 @@ async def delete_cft_member(
             raise HTTPException(status_code=404, detail="CFT member not found")
         job_order.cft_members.pop(member_index)
         db.commit()
+        db.refresh(job_order)
         vtc_logger.info(f"Deleted CFT member at index {member_index} for job_order_id: {job_order_id}")
         return job_order
     except Exception as e:

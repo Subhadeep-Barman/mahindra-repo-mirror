@@ -205,6 +205,7 @@ class TestOrder(Base):
     test_order_id = Column(String, primary_key=True)
     job_order_id = Column(String, nullable=True)  # removed ForeignKey
     CoastDownData_id = Column(String, nullable=True)         # removed ForeignKey
+    coast_down_data = Column(JSON, nullable=True)
     test_type = Column(String, nullable=True)
     engine_number = Column(String, nullable=True)
     test_objective = Column(Text, nullable=True)
@@ -236,6 +237,7 @@ class TestOrder(Base):
     remark = Column(String, nullable=True)
     rejection_remarks = Column(String, nullable=True)
     mail_remarks = Column(String, nullable=True)
+    complete_remarks = Column(String, nullable=True)
     specific_instruction = Column(Text, nullable=True)
     status = Column(String, nullable=True)
     id_of_creator = Column(String, nullable=True)

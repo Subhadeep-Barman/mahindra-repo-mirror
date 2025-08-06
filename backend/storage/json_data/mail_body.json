@@ -8,12 +8,13 @@
             "case": "Job Order Creation",
             "body": {
                 "subject": "New Job Order {{job_order_id}} Created",
-                "message": "A new job order {{job_order_id}} has been created. Test Order creations process can be started now."
+                "message": "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 8px #f0f0f0; padding: 24px; background: #fafbfc;'><h2 style='color: #4CAF50; margin-bottom: 16px;'>New Job Order Created</h2><p>Dear Team,</p><p>This is to inform you that the job order <b>{{job_order_id}}</b> has been created.</p><table style='width:100%; border-collapse:collapse; margin: 16px 0;'><tr><td style='padding: 8px; font-weight:bold;'>Total Tests Created:</td><td style='padding: 8px;'>{{total_tests}}</td></tr><tr><td style='padding: 8px; font-weight:bold;'>Created By:</td><td style='padding: 8px;'>{{creator_name}} ({{creator_email}})</td></tr><tr><td style='padding: 8px; font-weight:bold;'>Created At:</td><td style='padding: 8px;'>{{created_at}}</td></tr></table><p>The details and documents for the same can be accessed using the button below:</p><p><a href=\"{{redirect_link}}\" style='background-color: #E51636; color: white; padding: 10px 20px; text-align: center; text-decoration: none; border-radius: 5px; font-family: Aptos, sans-serif; display: inline-block;'>Click Here</a></p><p style='margin-top: 32px;'>Regards,<br>DBMRS VTC Team</p></div>"
             }
         },
         {
             "id": "1.1",
             "receivers": "ProjectTeam",
+            "group_email": "projectteam-group@company.com",
             "case": "Test Started",
             "body": {
                 "subject": "Test Order {{test_order_id}} Started",
@@ -24,6 +25,7 @@
         {
             "id": "2",
             "receivers": "TestEngineer",
+            "group_email": "testengineers-group@company.com",
             "case": "Test Order Created",
             "body": {
                 "subject": "Test Order {{test_order_id}} Created",
@@ -33,6 +35,7 @@
         {
             "id": "3",
             "receivers": "ProjectTeam",
+            "group_email": "projectteam-group@company.com",
             "case": "Test Re-edit Request",
             "body": {
                 "subject": "Test Order {{test_order_id}} Re-edit Request",
@@ -42,6 +45,7 @@
         {
             "id": "4",
             "receivers": "ProjectTeam",
+            "group_email": "projectteam-group@company.com",
             "case": "Test Order Rejection",
             "body": {
                 "subject": "Test Order {{test_order_id}} Rejected",
@@ -51,6 +55,7 @@
         {
             "id": "5",
             "receivers": "TestEngineer",
+            "group_email": "testengineers-group@company.com",
             "case": "Test Order Updated",
             "body": {
                 "subject": "Test Order {{test_order_id}} Updated",
@@ -60,6 +65,7 @@
         {
             "id": "6",
             "receivers": "ProjectTeam",
+            "group_email": "projectteam-group@company.com",
             "case": "Test Order Completed",
             "body": {
                 "subject": "Test Order {{test_order_id}} Completed",
