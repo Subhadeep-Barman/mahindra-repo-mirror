@@ -7,8 +7,9 @@
             "receivers": "TestEngineer",
             "case": "Job Order Creation",
             "body": {
-                "subject": "New Job Order {{job_order_id}} Created",
-                "message": "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 8px #f0f0f0; padding: 24px; background: #fafbfc;'><h2 style='color: #4CAF50; margin-bottom: 16px;'>New Job Order Created</h2><p>Dear Team,</p><p>This is to inform you that the job order <b>{{job_order_id}}</b> has been created.</p><table style='width:100%; border-collapse:collapse; margin: 16px 0;'><tr><td style='padding: 8px; font-weight:bold;'>Total Tests Created:</td><td style='padding: 8px;'>{{total_tests}}</td></tr><tr><td style='padding: 8px; font-weight:bold;'>Created By:</td><td style='padding: 8px;'>{{creator_name}} ({{creator_email}})</td></tr><tr><td style='padding: 8px; font-weight:bold;'>Created At:</td><td style='padding: 8px;'>{{created_at}}</td></tr></table><p>The details and documents for the same can be accessed using the button below:</p><p><a href=\"{{redirect_link}}\" style='background-color: #E51636; color: white; padding: 10px 20px; text-align: center; text-decoration: none; border-radius: 5px; font-family: Aptos, sans-serif; display: inline-block;'>Click Here</a></p><p style='margin-top: 32px;'>Regards,<br>DBMRS VTC Team</p></div>"
+                "subject": "{{job_order_id}}",
+                "message": "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 8px #f0f0f0; padding: 24px; background: #fafbfc;'><h2 style='color: #4CAF50; margin-bottom: 16px;'>New Job Order Created</h2><p>Dear Team,</p><p>This is to inform you that the job order <b>{{job_order_id}}</b> has been created.</p><table style='width:100%; border-collapse:collapse; margin: 16px 0;'><tr><td style='padding: 8px; font-weight:bold;'>Total Tests Created:</td><td style='padding: 8px;'>{{total_tests}}</td></tr><tr><td style='padding: 8px; font-weight:bold;'>Created By:</td><td style='padding: 8px;'>{{creator_name}} ({{creator_email}})</td></tr><tr><td style='padding: 8px; font-weight:bold;'>Created At:</td><td style='padding: 8px;'>{{created_at}}</td></tr></table><p>The details and documents for the same can be accessed using the button below:</p><p><a href='https://dbmrs-vtc-test.m-devsecops.com/login' style='background-color: #E51636; color: white; padding: 10px 20px; text-align: center; text-decoration: none; border-radius: 5px; font-family: Aptos, sans-serif; display: inline-block;'>Click Here</a></p><p style='margin-top: 32px;'>Regards,<br>DBMRS VTC Team</p></div>"
+
             }
         },
         {
@@ -17,10 +18,9 @@
             "group_email": "projectteam-group@company.com",
             "case": "Test Started",
             "body": {
-                "subject": "Test Order {{test_order_id}} Started",
-                "message": "Test order {{test_order_id}} has been started. Please check the details."
+                "subject": "{{test_order_id}}",
+                "message": "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 8px #f0f0f0; padding: 24px; background: #fafbfc;'><h2 style='color: #4CAF50; margin-bottom: 16px;'>Test Coast Down Data In Progress</h2><p>Dear Team,</p><p>This is to inform that the test coast down data is in progress. The details and documents for the same can be accessed using the button below:</p><table style='width:100%; border-collapse:collapse; margin: 16px 0;'><tr><td style='padding: 8px; font-weight:bold;'>Objective of the Test:</td><td style='padding: 8px;'>{{test_objective}}</td></tr></table><p><a href='https://dbmrs-vtc-test.m-devsecops.com/login' style='background-color: #E51636; color: white; padding: 10px 20px; text-align: center; text-decoration: none; border-radius: 5px; font-family: Aptos, sans-serif; display: inline-block;'>Click Here</a></p><p style='margin-top: 32px;'>Regards,<br>EDC-VTC Lab Team</p></div>"
             }
-
         },
         {
             "id": "2",
@@ -28,7 +28,7 @@
             "group_email": "testengineers-group@company.com",
             "case": "Test Order Created",
             "body": {
-                "subject": "Test Order {{test_order_id}} Created",
+                "subject": "{{test_order_id}}",
                 "message": "A new test order {{test_order_id}} for job order {{job_order_id}} has been created. Please start the Testing Process."
             }
         },
@@ -38,8 +38,8 @@
             "group_email": "projectteam-group@company.com",
             "case": "Test Re-edit Request",
             "body": {
-                "subject": "Test Order {{test_order_id}} Re-edit Request",
-                "message": "A re-edit request has been made for test order {{test_order_id}}. Please review the changes and take necessary actions."
+                "subject": "{{test_order_id}}",
+                "message": "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 8px #f0f0f0; padding: 24px; background: #fafbfc;'><h2 style='color: #4CAF50; margin-bottom: 16px;'>Coast Down is Re-edit</h2><p>Dear Team,</p><p>A re-edit request has been made for test order <b>{{test_order_id}}</b>. The details and documents for the same can be accessed using the button below:</p><table style='width:100%; border-collapse:collapse; margin: 16px 0;'><tr><td style='padding: 8px; font-weight:bold;'>Objective of the Test:</td><td style='padding: 8px;'>{{test_objective}}</td></tr><tr><td style='padding: 8px; font-weight:bold;'>Remarks for Re-edit:</td><td style='padding: 8px;'>{{remark}}</td></tr></table><p><a href='https://dbmrs-vtc-test.m-devsecops.com/login' style='background-color: #E51636; color: white; padding: 10px 20px; text-align: center; text-decoration: none; border-radius: 5px; font-family: Aptos, sans-serif; display: inline-block;'>Click Here</a></p><p style='margin-top: 32px;'>Regards,<br>EDC-VTC Lab Team</p></div>"
             }
         },
         {
@@ -48,8 +48,8 @@
             "group_email": "projectteam-group@company.com",
             "case": "Test Order Rejection",
             "body": {
-                "subject": "Test Order {{test_order_id}} Rejected",
-                "message": "Test order {{test_order_id}} has been rejected. Please review the rejection remarks."
+                "subject": "{{test_order_id}}",
+                "message": "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 8px #f0f0f0; padding: 24px; background: #fafbfc;'><h2 style='color: #4CAF50; margin-bottom: 16px;'>Coast Down Data is Rejected</h2><p>Dear Team,</p><p>Test order <b>{{test_order_id}}</b> has been rejected. The details and documents for the same can be accessed using the button below:</p><table style='width:100%; border-collapse:collapse; margin: 16px 0;'><tr><td style='padding: 8px; font-weight:bold;'>Objective of the Test:</td><td style='padding: 8px;'>{{test_objective}}</td></tr><tr><td style='padding: 8px; font-weight:bold;'>Rejection Remarks:</td><td style='padding: 8px;'>{{rejection_remarks}}</td></tr></table><p><a href='https://dbmrs-vtc-test.m-devsecops.com/login' style='background-color: #E51636; color: white; padding: 10px 20px; text-align: center; text-decoration: none; border-radius: 5px; font-family: Aptos, sans-serif; display: inline-block;'>Click Here</a></p><p style='margin-top: 32px;'>Regards,<br>EDC-VTC Lab Team</p></div>"
             }
         },
         {
@@ -58,8 +58,8 @@
             "group_email": "testengineers-group@company.com",
             "case": "Test Order Updated",
             "body": {
-                "subject": "Test Order {{test_order_id}} Updated",
-                "message": "Test order {{test_order_id}} has been updated. Please check the details."
+                "subject": "{{test_order_id}}",
+                "message": "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 8px #f0f0f0; padding: 24px; background: #fafbfc;'><h2 style='color: #4CAF50; margin-bottom: 16px;'>Test Order Updated</h2><p>Dear Team,</p><p>This is to inform that the job order id <b>{{job_order_id}}</b> is updated.</p><table style='width:100%; border-collapse:collapse; margin: 16px 0;'><tr><td style='padding: 8px; font-weight:bold;'>Total Tests Created:</td><td style='padding: 8px;'>{{total_tests_created}}</td></tr><tr><td style='padding: 8px; font-weight:bold;'>Total Tests Completed:</td><td style='padding: 8px;'>{{total_tests_completed}}</td></tr></table><p>The details and documents for the same can be accessed using the button below:</p><p><a href='https://dbmrs-vtc-test.m-devsecops.com/login' style='background-color: #E51636; color: white; padding: 10px 20px; text-align: center; text-decoration: none; border-radius: 5px; font-family: Aptos, sans-serif; display: inline-block;'>Click Here</a></p><p style='margin-top: 32px;'>Regards,<br>EDC-VTC Lab Team</p></div>"
             }
         },
         {
@@ -68,8 +68,8 @@
             "group_email": "projectteam-group@company.com",
             "case": "Test Order Completed",
             "body": {
-                "subject": "Test Order {{test_order_id}} Completed",
-                "message": "Test order {{test_order_id}} has been completed. Please review the results and proceed with the next steps."
+                "subject": "{{test_order_id}}",
+                "message": "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 8px #f0f0f0; padding: 24px; background: #fafbfc;'><h2 style='color: #4CAF50; margin-bottom: 16px;'>Coast Down Data {{test_order_id}} is Completed</h2><p>Dear Team,</p><p>The coast down data for test order <b>{{test_order_id}}</b> is completed. The details and documents for the same can be accessed using the button below:</p><table style='width:100%; border-collapse:collapse; margin: 16px 0;'><tr><td style='padding: 8px; font-weight:bold;'>Objective of the Test:</td><td style='padding: 8px;'>{{test_objective}}</td></tr><tr><td style='padding: 8px; font-weight:bold;'>Completed Remarks:</td><td style='padding: 8px;'>{{complete_remarks}}</td></tr></table><p><a href='https://dbmrs-vtc-test.m-devsecops.com/login' style='background-color: #E51636; color: white; padding: 10px 20px; text-align: center; text-decoration: none; border-radius: 5px; font-family: Aptos, sans-serif; display: inline-block;'>Click Here</a></p><p style='margin-top: 32px;'>Regards,<br>EDC-VTC Lab Team</p></div>"
             }
         }
     ]
