@@ -93,21 +93,11 @@ export default function VTCEnginePage() {
   const [activeTab, setActiveTab] = useState("Engine");
 
   const handleBack = () => {
-    navigate(-1); // Go back to previous page
-  };
-
-  const handleAddNewEngine = () => {
-    console.log("Add new engine");
+    navigate(-1); 
   };
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
-    // Navigate to different pages based on tab
-    if (tab === "Job Order") {
-      console.log("Navigate to job order page");
-    } else if (tab === "Vehicle") {
-      console.log("Navigate to vehicle page");
-    }
   };
 
   return (
@@ -144,10 +134,10 @@ export default function VTCEnginePage() {
                     variant={activeTab === tab ? "default" : "outline"}
                     onClick={() => handleTabClick(tab)}
                     className={`rounded-xl ${tab === "Job Order"
+                      ? "bg-red-500 text-white hover:bg-red-600"
+                      : tab === "Vehicle" || tab === "Engine"
                         ? "bg-red-500 text-white hover:bg-red-600"
-                        : tab === "Vehicle" || tab === "Engine"
-                          ? "bg-red-500 text-white hover:bg-red-600"
-                          : "text-red-500 border-red-500 hover:bg-red-50"
+                        : "text-red-500 border-red-500 hover:bg-red-50"
                       }`}
                   >
                     {tab}

@@ -1,9 +1,8 @@
 "use client";
 
-import { ArrowBack, Add } from "@mui/icons-material";
+import { ArrowBack, Add, Search as SearchIcon } from "@mui/icons-material";
 import { Button } from "@/components/UI/button";
 import { Badge } from "@/components/UI/badge";
-import { useNavigate, useLocation } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -12,52 +11,161 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/UI/table";
-import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/UI/card";
-import { useState, useEffect } from "react";
 import Navbar1 from "@/components/UI/navbar";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import showSnackbar from "@/utils/showSnackbar";
-
+import useStore from "../store/useStore";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function VTCChennaiPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 8;
 
-  // Add: State for job orders fetched from backend
   const [jobOrders, setJobOrders] = useState([]);
-
-  // State for selected job order and modal
+  const [filteredJobOrders, setFilteredJobOrders] = useState([]); // new state
   const [selectedJobOrder, setSelectedJobOrder] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [jobOrderEdit, setJobOrderEdit] = useState(null);
-  const { userRole, userId, userName } = useAuth();
-  
+  const [showSearchCard, setShowSearchCard] = useState(false);
 
-  // Fetch job orders from backend on mount
+  const { userRole } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { logout } = useAuth();
+  // const { userName, userEmail, userEmployeeId } = useAuth();
+  // Fetch user data directly from cookies
+  const userCookies = useStore.getState().getUserCookieData();
+  const userName = userCookies.userName;
+  const userEmail = userCookies.userEmail;
+  const userEmployeeId = userCookies.userId;
+  console.log("User Cookies:", userCookies);
+  console.log("emaployeeId:", userEmployeeId);
+
+  const [search, setSearch] = useState({
+    job_order_id: "",
+    project_code: "",
+    vehicle_serial_number: "",
+    vehicle_body_number: "",
+    engine_serial_number: "",
+    domain: "",
+    test_status: "",
+    completed_test_count: "",
+    name_of_creator: "",
+    created_on: "",
+    name_of_updater: "",
+    updated_on: "",
+  });
+
   useEffect(() => {
     fetchJobOrders();
   }, []);
 
   const fetchJobOrders = () => {
-    const department = "VTC_JO Chennai"; // Replace with the appropriate department value
+    // Get userId from localStorage or cookies (assuming it's stored after login)
+    if (!userEmployeeId) {
+      showSnackbar("User ID not found. Please login again.", "error");
+      return;
+    }
+    const department = "VTC_JO Chennai";
     axios
-      .get(`${apiURL}/joborders`, { params: { department } })
-      .then((res) => setJobOrders(res.data || []))
-      .catch(() => setJobOrders([]));
+      .get(`${apiURL}/joborders`, { params: { department, user_id: userEmployeeId, role: userRole } })
+      .then((res) => {
+        setJobOrders(res.data || []);
+        setFilteredJobOrders(res.data || []); // set filtered to all on fetch
+      })
+      .catch(() => {
+        setJobOrders([]);
+        setFilteredJobOrders([]);
+      });
   };
 
-  // Calculate pagination values
-  const totalPages = Math.ceil(jobOrders.length / rowsPerPage);
+  // Filtering logic moved to a function
+  const applySearch = () => {
+    const filtered = jobOrders.filter((order) => {
+      return (
+        (search.job_order_id === "" ||
+          String(order.job_order_id || "")
+            .toLowerCase()
+            .includes(search.job_order_id.toLowerCase())) &&
+        (search.project_code === "" ||
+          String(order.project_code || "")
+            .toLowerCase()
+            .includes(search.project_code.toLowerCase())) &&
+        (search.vehicle_serial_number === "" ||
+          String(order.vehicle_serial_number || "")
+            .toLowerCase()
+            .includes(search.vehicle_serial_number.toLowerCase())) &&
+        (search.vehicle_body_number === "" ||
+          String(order.vehicle_body_number || "")
+            .toLowerCase()
+            .includes(search.vehicle_body_number.toLowerCase())) &&
+        (search.engine_serial_number === "" ||
+          String(order.engine_serial_number || "")
+            .toLowerCase()
+            .includes(search.engine_serial_number.toLowerCase())) &&
+        (search.domain === "" ||
+          String(order.domain || "")
+            .toLowerCase()
+            .includes(search.domain.toLowerCase())) &&
+        (search.test_status === "" ||
+          String(order.test_status || "")
+            .toLowerCase()
+            .includes(search.test_status.toLowerCase())) &&
+        (search.completed_test_count === "" ||
+          String(order.completed_test_count || "")
+            .toLowerCase()
+            .includes(search.completed_test_count.toLowerCase())) &&
+        (search.name_of_creator === "" ||
+          String(order.name_of_creator || "")
+            .toLowerCase()
+            .includes(search.name_of_creator.toLowerCase())) &&
+        (search.created_on === "" ||
+          (order.created_on &&
+            new Date(order.created_on)
+              .toLocaleString("en-IN", {
+                timeZone: "Asia/Kolkata",
+                hour12: true,
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+              .toLowerCase()
+              .includes(search.created_on.toLowerCase()))) &&
+        (search.name_of_updater === "" ||
+          String(order.name_of_updater || "")
+            .toLowerCase()
+            .includes(search.name_of_updater.toLowerCase())) &&
+        (search.updated_on === "" ||
+          (order.updated_on &&
+            new Date(order.updated_on)
+              .toLocaleString("en-IN", {
+                timeZone: "Asia/Kolkata",
+                hour12: true,
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+              .toLowerCase()
+              .includes(search.updated_on.toLowerCase())))
+      );
+    });
+    setFilteredJobOrders(filtered);
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.ceil(filteredJobOrders.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
-  const currentRows = jobOrders.slice(startIndex, endIndex);
+  const currentRows = filteredJobOrders.slice(startIndex, endIndex);
 
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // Determine active tab from the current route
   let activeTab = "Job Order";
   if (location.pathname.toLowerCase().includes("vehicle"))
     activeTab = "Vehicle";
@@ -70,42 +178,24 @@ export default function VTCChennaiPage() {
     else if (tab === "Engine") navigate("/vtcChennaiEngine");
   };
 
-  const handleBack = () => {
-    navigate(-1);
-  };
+  const handleBack = () => navigate(-1);
+  const handleCreateJobOrder = () => navigate("/createJobOrder");
 
-  const handleCreateJobOrder = () => {
-    navigate("/createJobOrder");
-  };
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  // Handler for clicking job order number
   const handleJobOrderClick = (job_order_id) => {
-    // Fetch job order details from backend and redirect to /createJobOrder with all data
     axios
       .get(`${apiURL}/joborders/${job_order_id}`)
       .then((res) => {
-        // Pass the complete job order data to create job order page
-        // This will allow the form to be pre-filled with existing values
         navigate("/createJobOrder", {
           state: {
             jobOrder: res.data,
-            isEdit: true, // Flag to indicate this is for editing/creating test orders
-            originalJobOrderId: job_order_id, // Keep reference to original job order
+            isEdit: true,
+            originalJobOrderId: job_order_id,
           },
         });
       })
-      .catch((error) => {
-        console.error("Failed to fetch job order details:", error);
-        // Still navigate but without pre-filled data
-        navigate("/createJobOrder");
-      });
+      .catch(() => navigate("/createJobOrder"));
   };
 
-  // Handler for editing fields in the modal
   const handleEditChange = (field, value) => {
     setJobOrderEdit((prev) => ({
       ...prev,
@@ -113,17 +203,29 @@ export default function VTCChennaiPage() {
     }));
   };
 
-  // Handler for saving the updated job order
   const handleSaveJobOrder = async () => {
     if (!jobOrderEdit?.job_order_id) return;
+
+    // Get current IST time
+    const currentISTTime = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+    const formattedISTTime = new Date(currentISTTime).toISOString();
+
+    // Prepare the payload with updated user info
+    const updatedJobOrderPayload = {
+      ...jobOrderEdit,
+      id_of_updater: userId || "",
+      name_of_updater: userName || "",
+      updated_on: formattedISTTime,
+    };
+
     try {
       showSnackbar("Updating job order...", "info");
-
       await axios.put(
         `${apiURL}/rde_joborders/${jobOrderEdit.job_order_id}`,
-        jobOrderEdit
+        updatedJobOrderPayload
       );
-
       setModalOpen(false);
       fetchJobOrders();
       showSnackbar(
@@ -131,19 +233,86 @@ export default function VTCChennaiPage() {
         "success"
       );
     } catch (err) {
-      console.error("Error updating job order:", err);
       showSnackbar(
-        "Failed to update job order: " + (err.response?.data?.detail || err.message),
+        "Failed to update job order: " +
+        (err.response?.data?.detail || err.message),
         "error"
       );
     }
   };
-  
+
+  // CSV Download handler
+  const handleDownload = () => {
+    if (!filteredJobOrders.length) return;
+    const headers = [
+      "Job Order ID",
+      "Project",
+      "Vehicle Number",
+      "Body No",
+      "Engine Number",
+      "Domain",
+      "Test Orders",
+      "Completed Tests",
+      "Created by",
+      "Created on",
+      "Updated by",
+      "Updated on",
+    ];
+    const rows = filteredJobOrders.map((order) => [
+      order.job_order_id,
+      order.project_code,
+      order.vehicle_serial_number,
+      order.vehicle_body_number,
+      order.engine_serial_number || "N/A",
+      order.domain,
+      order.test_status,
+      order.completed_test_count == 0
+        ? "0"
+        : `${order.completed_test_count}/${order.test_status}`,
+      order.name_of_creator,
+      order.created_on
+        ? new Date(order.created_on).toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata",
+          hour12: true,
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        : "",
+      order.name_of_updater,
+      order.updated_on
+        ? new Date(order.updated_on).toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata",
+          hour12: true,
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        : "N/A",
+    ]);
+    const csvContent =
+      [headers, ...rows]
+        .map((row) => row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(","))
+        .join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "job_orders.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <>
       <Navbar1 />
       <div className="dark:bg-gray-900">
-        {/* Header */}
         <div className="bg-white dark:bg-black">
           <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
@@ -156,40 +325,94 @@ export default function VTCChennaiPage() {
                 >
                   <ArrowBack className="h-5 w-5" />
                 </Button>
-                <div>
-                  <h1 className="text-sm font-medium text-black-600 dark:text-red-500 ">
-                    VTC CHENNAI
-                  </h1>
-                </div>
+                <h1 className="text-sm font-medium text-black-600 dark:text-red-500 ">
+                  VTC CHENNAI
+                </h1>
               </div>
               <div className="flex items-center space-x-3">
-                {/* Tab Buttons */}
+                <Button
+                  size="sm"
+                  onClick={() => setShowSearchCard(!showSearchCard)}
+                  className="border border-red-500 bg-red-50 text-red-500 hover:text-white hover:bg-red-500 flex items-center justify-center"
+                >
+                  <SearchIcon className="h-5 w-5" />
+                </Button>
                 {userRole !== "TestEngineer" &&
                   ["Job Order", "Vehicle", "Engine"].map((tab) => (
                     <Button
                       key={tab}
                       onClick={() => handleTabClick(tab)}
                       className={`rounded-xl px-4 py-2 font-semibold border
-                        ${
-                          activeTab === tab
-                            ? "bg-red-500 text-white border-red-500"
-                            : "bg-white text-red-500 border-red-500 hover:bg-red-50"
+                        ${activeTab === tab
+                          ? "bg-red-500 text-white border-red-500"
+                          : "bg-white text-red-500 border-red-500 hover:bg-red-50"
                         }
                       `}
                     >
                       {tab}
                     </Button>
                   ))}
-                {/* If TEST ENGINEER, only show current tab name */}
-                {/* {userRole === "TestEngineer" && (
-                  <span className="rounded-xl px-4 py-2 font-semibold border bg-red-500 text-white border-red-500">
-                    {activeTab}
-                  </span>
-                )} */}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Search Card */}
+        {showSearchCard && (
+          <div className="bg-white dark:bg-gray-900 py-4 px-6 border border-gray-300 rounded-lg mx-4 mt-4 shadow">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <input placeholder="Job Order Number" className="border px-2 py-1 rounded text-sm" value={search.job_order_id} onChange={e => setSearch(s => ({ ...s, job_order_id: e.target.value }))} />
+              <input placeholder="Project" className="border px-2 py-1 rounded text-sm" value={search.project_code} onChange={e => setSearch(s => ({ ...s, project_code: e.target.value }))} />
+              <input placeholder="Vehicle Number" className="border px-2 py-1 rounded text-sm" value={search.vehicle_serial_number} onChange={e => setSearch(s => ({ ...s, vehicle_serial_number: e.target.value }))} />
+              <input placeholder="Body Number" className="border px-2 py-1 rounded text-sm" value={search.vehicle_body_number} onChange={e => setSearch(s => ({ ...s, vehicle_body_number: e.target.value }))} />
+              <input placeholder="Engine Number" className="border px-2 py-1 rounded text-sm" value={search.engine_serial_number} onChange={e => setSearch(s => ({ ...s, engine_serial_number: e.target.value }))} />
+              <input placeholder="Domain" className="border px-2 py-1 rounded text-sm" value={search.domain} onChange={e => setSearch(s => ({ ...s, domain: e.target.value }))} />
+              <input placeholder="Test Status" className="border px-2 py-1 rounded text-sm" value={search.test_status} onChange={e => setSearch(s => ({ ...s, test_status: e.target.value }))} />
+              <input placeholder="Completed Tests" className="border px-2 py-1 rounded text-sm" value={search.completed_test_count} onChange={e => setSearch(s => ({ ...s, completed_test_count: e.target.value }))} />
+              <input placeholder="Created By" className="border px-2 py-1 rounded text-sm" value={search.name_of_creator} onChange={e => setSearch(s => ({ ...s, name_of_creator: e.target.value }))} />
+              <input placeholder="Created On" className="border px-2 py-1 rounded text-sm" value={search.created_on} onChange={e => setSearch(s => ({ ...s, created_on: e.target.value }))} />
+              <input placeholder="Updated By" className="border px-2 py-1 rounded text-sm" value={search.name_of_updater} onChange={e => setSearch(s => ({ ...s, name_of_updater: e.target.value }))} />
+              <input placeholder="Updated On" className="border px-2 py-1 rounded text-sm" value={search.updated_on} onChange={e => setSearch(s => ({ ...s, updated_on: e.target.value }))} />
+            </div>
+            <div className="mt-4 flex justify-end space-x-2">
+              <Button
+                onClick={() => {
+                  setSearch({
+                    job_order_id: "",
+                    project_code: "",
+                    vehicle_serial_number: "",
+                    vehicle_body_number: "",
+                    engine_serial_number: "",
+                    domain: "",
+                    test_status: "",
+                    completed_test_count: "",
+                    name_of_creator: "",
+                    created_on: "",
+                    name_of_updater: "",
+                    updated_on: "",
+                  });
+                  setFilteredJobOrders(jobOrders);
+                  setCurrentPage(1);
+                }}
+                className="bg-red-500 text-white hover:bg-red-600"
+              >
+                Clear
+              </Button>
+              <Button
+                onClick={applySearch}
+                className="bg-red-500 text-white hover:bg-red-600"
+              >
+                Apply
+              </Button>
+              <Button
+                onClick={handleDownload}
+                className="bg-yellow-500 text-black hover:bg-yellow-600"
+              >
+                Download
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Current Job Orders Badge */}
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center bg-white dark:bg-black">
@@ -216,7 +439,7 @@ export default function VTCChennaiPage() {
                 <TableHeader>
                   <TableRow className="bg-gray-100">
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Job Order ID
+                      Job Order Number
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
                       Project
@@ -246,10 +469,10 @@ export default function VTCChennaiPage() {
                       Created on
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Updated by
+                      Last Updated by
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Updated on
+                      Last Updated on
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -261,7 +484,7 @@ export default function VTCChennaiPage() {
                         } hover:bg-gray-100`}
                     >
                       <TableCell
-                        className="text-xs text-blue-600 underline cursor-pointer px-4 py-2"
+                        className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400"
                         onClick={() => handleJobOrderClick(order.job_order_id)}
                       >
                         {order.job_order_id}
@@ -329,8 +552,8 @@ export default function VTCChennaiPage() {
           {/* Pagination Footer */}
           <div className="flex items-center justify-between mt-4">
             <div className="text-sm text-gray-600 dark:text-white">
-              Showing {startIndex + 1} to {Math.min(endIndex, jobOrders.length)}{" "}
-              of {jobOrders.length}
+              Showing {startIndex + 1} to {Math.min(endIndex, filteredJobOrders.length)}{" "}
+              of {filteredJobOrders.length}
             </div>
             <div className="flex items-center space-x-2">
               <Button
@@ -440,3 +663,4 @@ export default function VTCChennaiPage() {
     </>
   );
 }
+

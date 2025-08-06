@@ -74,9 +74,6 @@ export default function RDECreateJobOrder() {
 
   const [vehicleFormData, setVehicleFormData] = useState(null);
   const [engineFormData, setEngineFormData] = useState(null);
-  const [showVehicleDetails, setShowVehicleDetails] = useState(true);
-  const [showEngineDetails, setShowEngineDetails] = useState(true);
-  const [showCoastDown, setShowCoastDown] = useState(true);
   const [showCFTPanel, setShowCFTPanel] = useState(false);
   const [cdFieldErrors, setCdFieldErrors] = useState({});
 
@@ -373,63 +370,55 @@ export default function RDECreateJobOrder() {
   }, []);
 
 
-  // New: State for fetched vehicles and engines
-  const [vehicleList, setVehicleList] = useState([]);
-  const [engineList, setEngineList] = useState([]);
-  // New: State for vehicle body numbers
-  const [vehicleBodyNumbers, setVehicleBodyNumbers] = useState([]);
-  // New: State for engine numbers from API
-  const [engineNumbers, setEngineNumbers] = useState([]);
+  // New: State for fetched vehicles by project
+  const [projectVehicles, setProjectVehicles] = useState([]);
+  // New: State for selected vehicle's engine numbers
+  const [vehicleEngineNumbers, setVehicleEngineNumbers] = useState([]);
 
-  // Fetch vehicle and engine lists from API on mount
   useEffect(() => {
-    // Replace with your actual API endpoints
-    fetch("/api/vehicles")
-      .then((res) => res.json())
-      .then((data) => setVehicleList(data || []));
-    fetch("/api/engines")
-      .then((res) => res.json())
-      .then((data) => setEngineList(data || []));
-    // Fetch vehicle body numbers (now returns both body number and vehicle number)
-    (async () => {
-      try {
-        // Pass department as query param for filtering
-        const res = await axios.get(
-          `${apiURL}/vehicle-body-numbers`,
-        );
-        setVehicleBodyNumbers(res.data || []);
-      } catch (err) {
-        setVehicleBodyNumbers([]);
-      }
-    })();
-    // Fetch engine numbers from FastAPI endpoint
-    (async () => {
-      try {
-        const res = await axios.get(
-          `${apiURL}/engine-numbers`
-        );
-        setEngineNumbers(res.data || []);
-      } catch (err) {
-        setEngineNumbers([]);
-      }
-    })();
-  }, []);
+    // When project code changes, fetch vehicles for that project
+    if (form.projectCode) {
+      axios
+        .get(`${apiURL}/vehicles/by-project/${encodeURIComponent(form.projectCode)}`)
+        .then((res) => {
+          setProjectVehicles(res.data.vehicles || []);
+        })
+        .catch(() => {
+          setProjectVehicles([]);
+        });
+      // Reset vehicle and engine selections
+      setForm((prev) => ({
+        ...prev,
+        vehicleBodyNumber: "",
+        vehicleSerialNumber: "",
+        engineNumber: "",
+        engineType: "",
+      }));
+      setVehicleEngineNumbers([]);
+    } else {
+      setProjectVehicles([]);
+      setVehicleEngineNumbers([]);
+      setForm((prev) => ({
+        ...prev,
+        vehicleBodyNumber: "",
+        vehicleSerialNumber: "",
+        engineNumber: "",
+        engineType: "",
+      }));
+    }
+    // eslint-disable-next-line
+  }, [form.projectCode]);
 
-  // Accordion state for vehicle details
   const [vehicleAccordionOpen, setVehicleAccordionOpen] = useState(false);
-
-  // Editable vehicle form state
   const [vehicleEditable, setVehicleEditable] = useState(null);
   const [vehicleEditMode, setVehicleEditMode] = useState(false);
 
-  // Fetch vehicle details using the new API when body number changes
+  // Handler for vehicle body number selection
   const handleVehicleBodyChange = (value) => {
     // Don't interfere if we're currently pre-filling
     if (isPreFilling) return;
 
-    const found = vehicleBodyNumbers.find(
-      (v) => v.vehicle_body_number === value
-    );
+    const found = projectVehicles.find((v) => v.vehicle_body_number === value);
     setForm((prev) => ({
       ...prev,
       vehicleBodyNumber: value,
@@ -437,15 +426,15 @@ export default function RDECreateJobOrder() {
       engineNumber: "",
       engineType: "",
     }));
-    // Use the new API endpoint
+    setVehicleEngineNumbers(found?.engine_numbers || []);
+    // Use the new API endpoint for vehicle details if needed
     if (value) {
       axios
         .get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(value)}`)
         .then((res) => {
           setVehicleEditable(res.data);
         })
-        .catch((error) => {
-          console.log("Could not fetch vehicle details:", error);
+        .catch(() => {
           setVehicleEditable(null);
         });
     }
@@ -492,7 +481,7 @@ export default function RDECreateJobOrder() {
       ...prev,
       engineNumber: value,
     }));
-    // Use the new API endpoint
+    // Use the new API endpoint for engine details if needed
     if (value) {
       axios
         .get(`${apiURL}/engines/by-engine-number/${encodeURIComponent(value)}`)
@@ -503,36 +492,10 @@ export default function RDECreateJobOrder() {
             engineType: res.data?.engineType || prev.engineType,
           }));
         })
-        .catch((error) => {
-          console.log("Could not fetch engine details:", error);
+        .catch(() => {
           setEngineEditable(null);
         });
     }
-  };
-
-  // Keep engineEditable in sync with API response
-  useEffect(() => {
-    if (form.engineNumber && !isPreFilling) {
-      axios
-        .get(
-          `${apiURL}/engines/by-engine-number/${encodeURIComponent(
-            form.engineNumber
-          )}`
-        )
-        .then((res) => setEngineEditable(res.data))
-        .catch(() => setEngineEditable(null));
-    } else if (!form.engineNumber && !isPreFilling) {
-      setEngineEditable(null);
-    }
-    // eslint-disable-next-line
-  }, [form.engineNumber, isPreFilling]);
-
-  // Handler for editable engine form changes
-  const handleEngineEditableChange = (field, value) => {
-    setEngineEditable((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
   };
 
   const navigate = useNavigate();
@@ -543,7 +506,6 @@ export default function RDECreateJobOrder() {
     // Only run once when component mounts and we have job order data
     if (location.state?.jobOrder && !hasPreFilledRef.current) {
       const jobOrder = location.state.jobOrder;
-      console.log("Pre-filling form with job order data:", jobOrder);
 
       // Mark that we've started pre-filling to prevent multiple executions
       hasPreFilledRef.current = true;
@@ -554,10 +516,7 @@ export default function RDECreateJobOrder() {
 
       // Show success message if this is for creating test orders
       if (location.state.isEdit) {
-        console.log(
-          "Loading job order for creating test orders based on:",
-          location.state.originalJobOrderId
-        );
+        showSnackbar("Job order pre-filled successfully!", "success");
       }
 
       // Function to fetch and pre-fill coast down data
@@ -568,7 +527,6 @@ export default function RDECreateJobOrder() {
               `${apiURL}/coastdown/${coastDownDataId}`
             );
             const coastDownData = response.data;
-            console.log("Fetched coast down data:", coastDownData);
 
             return {
               cdReportRef: coastDownData.coast_down_reference || "",
@@ -691,7 +649,6 @@ export default function RDECreateJobOrder() {
             "",
         };
 
-        console.log("Setting form data to:", newFormData);
         setForm(newFormData);
 
         // Prefill vehicleEditable and engineEditable if present
@@ -706,7 +663,6 @@ export default function RDECreateJobOrder() {
 
         // Use setTimeout to allow form state to settle before enabling other useEffects
         setTimeout(() => {
-          console.log("Pre-filling completed, enabling other useEffects");
           setIsPreFilling(false);
           setIsLoading(false);
         }, 1000); // Increased timeout to 1 second
@@ -737,49 +693,46 @@ export default function RDECreateJobOrder() {
   };
 
   const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = null) => {
-      setMailLoading(true);
-      try {
-        // First try to use the direct job order ID passed to this function
-        // Then fall back to other sources if not provided
-        const resolvedJobOrderId = directJobOrderId || 
-                                  jobOrderId || 
-                                  useStore.getState().backendJobOrderID;
-  
-        if (!resolvedJobOrderId) {
-          showSnackbar("Job Order ID is missing. Cannot send mail.", "error");
-          setMailLoading(false);
-          return;
-        }
-  
-        // Debug log to verify job order ID
-        console.log("Sending mail with job order ID:", resolvedJobOrderId);
-  
-        // Compose payload as per new API
-        const payload = {
-          user_name: userName,
-          token_id: userId,
-          role: userRole,
-          job_order_id: resolvedJobOrderId,
-          test_order_id: testOrderId || null, // Use testOrderId from parameter if available
-          caseid: String(caseId),
-          cft_members: cftMembers,
-        };
-  
-        const response = await axios.post(`${apiURL}/send`, payload);
-  
-        if (response.status === 200) {
-          showSnackbar("Mail sent successfully", "success");
-        } else {
-          showSnackbar("Failed to send mail", "error");
-          console.error("Mail API responded with status:", response.status, response.data);
-        }
-      } catch (error) {
-        showSnackbar("Error sending mail: " + (error?.message || "Unknown error"), "warning");
-        console.error("Error sending mail", error);
-      } finally {
+    setMailLoading(true);
+    try {
+      // First try to use the direct job order ID passed to this function
+      // Then fall back to other sources if not provided
+      const resolvedJobOrderId = directJobOrderId ||
+        jobOrderId ||
+        useStore.getState().backendJobOrderID;
+
+      if (!resolvedJobOrderId) {
+        showSnackbar("Job Order ID is missing. Cannot send mail.", "error");
         setMailLoading(false);
+        return;
       }
-    };
+
+      // Compose payload as per new API
+      const payload = {
+        user_name: userName,
+        token_id: userId,
+        role: userRole,
+        job_order_id: resolvedJobOrderId,
+        test_order_id: testOrderId || null, // Use testOrderId from parameter if available
+        caseid: String(caseId),
+        cft_members: cftMembers,
+      };
+
+      const response = await axios.post(`${apiURL}/send`, payload);
+
+      if (response.status === 200) {
+        showSnackbar("Mail sent successfully", "success");
+      } else {
+        showSnackbar("Failed to send mail", "error");
+        console.error("Mail API responded with status:", response.status, response.data);
+      }
+    } catch (error) {
+      showSnackbar("Error sending mail: " + (error?.message || "Unknown error"), "warning");
+      console.error("Error sending mail", error);
+    } finally {
+      setMailLoading(false);
+    }
+  };
 
   // Handler for creating job order
   const handleRDECreateJobOrder = async (e) => {
@@ -969,9 +922,7 @@ export default function RDECreateJobOrder() {
 
       try {
         await axios.post(`${apiURL}/coastdown`, testCoastDownPayload);
-        console.log("Test-specific coast down data created:", CoastDownData_id);
       } catch (err) {
-        console.error("Error creating test-specific coast down data:", err);
         showSnackbar(
           "Failed to create coast down data for test: " +
           (err.response?.data?.detail || err.message),
@@ -1079,7 +1030,6 @@ export default function RDECreateJobOrder() {
         `${apiURL}/coastdown/${existingCoastDownId}`,
         coastDownUpdatePayload
       );
-      console.log("Coast down data updated successfully");
     } catch (err) {
       console.error("Error updating coast down data:", err);
       throw err; // Re-throw to handle in calling function
@@ -1093,11 +1043,6 @@ export default function RDECreateJobOrder() {
 
   // Debug useEffect to monitor form state changes
   useEffect(() => {
-    console.log("Form state updated:", form);
-    console.log("Pre-filling state:", isPreFilling);
-    console.log("Loading state:", isLoading);
-    console.log("Has pre-filled:", hasPreFilledRef.current);
-
     // Check if form is being reset unexpectedly
     const hasValues = Object.values(form).some((value) => value !== "");
     if (!hasValues && hasPreFilledRef.current && !isPreFilling) {
@@ -1149,7 +1094,6 @@ export default function RDECreateJobOrder() {
         grouped[order.job_order_id].push(order);
       });
       setAllTestOrders(grouped);
-      console.log("Fetched all test orders:", grouped);
     } catch (err) {
       setAllTestOrders({});
       console.error("Failed to fetch test orders:", err);
@@ -1445,11 +1389,12 @@ export default function RDECreateJobOrder() {
             </div>
           </div>
         </div>
+
         {/* Form Row */}
-        <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 px-8 py-6">
+        <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6 px-8 py-6">
           {/* Project Code */}
-          <div className="flex flex-col">
-            <Label htmlFor="projectCode" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="projectCode" className="text-sm font-medium leading-tight">
               Project <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1458,7 +1403,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1471,21 +1416,21 @@ export default function RDECreateJobOrder() {
             </Select>
           </div>
           {/* Vehicle Body Number */}
-          <div className="flex flex-col">
-            <Label htmlFor="vehicleBodyNumber" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="vehicleBodyNumber" className="text-sm font-medium leading-tight">
               Vehicle Body Number <span className="text-red-500">*</span>
             </Label>
             <Select
               value={form.vehicleBodyNumber}
               onValueChange={handleVehicleBodyChange}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || !form.projectCode}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
-                {vehicleBodyNumbers.map((item, index) => (
+                {projectVehicles.map((item, index) => (
                   <SelectItem
                     key={`${item.vehicle_body_number}-${index}`}
                     value={item.vehicle_body_number}
@@ -1497,36 +1442,36 @@ export default function RDECreateJobOrder() {
             </Select>
           </div>
           {/* Vehicle Number (auto) */}
-          <div className="flex flex-col">
-            <Label htmlFor="vehicleSerialNumber" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="vehicleSerialNumber" className="text-sm font-medium leading-tight">
               Vehicle Number <span className="text-red-500">*</span>
             </Label>
             <Input
               id="vehicleSerialNumber"
               value={form.vehicleSerialNumber}
               readOnly
-              className="w-full"
+              className="w-full h-10"
               placeholder="Auto-fetched"
               required
               disabled={formDisabled}
             />
           </div>
           {/* Engine Number (dropdown) */}
-          <div className="flex flex-col">
-            <Label htmlFor="engineNumber" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="engineNumber" className="text-sm font-medium leading-tight">
               Engine Number <span className="text-red-500">*</span>
             </Label>
             <Select
               value={form.engineNumber}
               onValueChange={handleEngineNumberChange}
               required
-              disabled={formDisabled}
+              disabled={formDisabled || !form.vehicleBodyNumber}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
-                {engineNumbers.map((engineNumber) => (
+                {vehicleEngineNumbers.map((engineNumber) => (
                   <SelectItem key={engineNumber} value={engineNumber}>
                     {engineNumber}
                   </SelectItem>
@@ -1535,8 +1480,8 @@ export default function RDECreateJobOrder() {
             </Select>
           </div>
           {/* Type of Engine */}
-          <div className="flex flex-col">
-            <Label htmlFor="engineType" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="engineType" className="text-sm font-medium leading-tight">
               Type of Engine <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1545,7 +1490,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1558,8 +1503,8 @@ export default function RDECreateJobOrder() {
             </Select>
           </div>
           {/* Domain */}
-          <div className="flex flex-col">
-            <Label htmlFor="domain" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="domain" className="text-sm font-medium leading-tight">
               Domain <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1568,7 +1513,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1581,8 +1526,8 @@ export default function RDECreateJobOrder() {
             </Select>
           </div>
           {/* Department */}
-          <div className="flex flex-col">
-            <Label htmlFor="department" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="department" className="text-sm font-medium leading-tight">
               Department <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1591,7 +1536,7 @@ export default function RDECreateJobOrder() {
               required
               disabled={true}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1606,10 +1551,10 @@ export default function RDECreateJobOrder() {
         </form>
 
         {/* New fields below the main form row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 px-8 pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6 px-8 pb-6">
           {/* WBS Code */}
-          <div className="flex flex-col">
-            <Label htmlFor="wbsCode" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="wbsCode" className="text-sm font-medium leading-tight">
               WBS Code <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -1618,15 +1563,15 @@ export default function RDECreateJobOrder() {
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, wbsCode: e.target.value }))
               }
-              className="w-full"
+              className="w-full h-10"
               required
               disabled={formDisabled}
               placeholder="Enter WBS Code"
             />
           </div>
           {/* Vehicle GVW */}
-          <div className="flex flex-col">
-            <Label htmlFor="vehicleGVW" className="mb-2">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="vehicleGVW" className="text-sm font-medium leading-tight">
               Vehicle GVW (Kg) <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -1635,7 +1580,7 @@ export default function RDECreateJobOrder() {
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, vehicleGVW: e.target.value }))
               }
-              className="w-full"
+              className="w-full h-10"
               required
               disabled={formDisabled}
               placeholder="Enter GVW"
@@ -1644,9 +1589,9 @@ export default function RDECreateJobOrder() {
             />
           </div>
           {/* Vehicle Kerb weight */}
-          <div className="flex flex-col">
-            <Label htmlFor="vehicleKerbWeight" className="mb-2">
-              Vehicle Kerb weight (Kg) <span className="text-red-500">*</span>
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="vehicleKerbWeight" className="text-sm font-medium leading-tight">
+              Vehicle Kerb Weight (Kg) <span className="text-red-500">*</span>
             </Label>
             <Input
               id="vehicleKerbWeight"
@@ -1657,7 +1602,7 @@ export default function RDECreateJobOrder() {
                   vehicleKerbWeight: e.target.value,
                 }))
               }
-              className="w-full"
+              className="w-full h-10"
               required
               disabled={formDisabled}
               placeholder="Enter Kerb Weight"
@@ -1666,10 +1611,9 @@ export default function RDECreateJobOrder() {
             />
           </div>
           {/* Vehicle Test Payload criteria */}
-          <div className="flex flex-col">
-            <Label htmlFor="vehicleTestPayloadCriteria" className="mb-2">
-              Vehicle Test Payload criteria (Kg){" "}
-              <span className="text-red-500">*</span>
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="vehicleTestPayloadCriteria" className="text-sm font-medium leading-tight whitespace-nowrap">
+              Vehicle Test Payload Criteria (Kg) <span className="text-red-500">*</span>
             </Label>
             <Select
               value={form.vehicleTestPayloadCriteria}
@@ -1683,20 +1627,20 @@ export default function RDECreateJobOrder() {
               required
               disabled={formDisabled}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Legislation">Legislation</SelectItem>
-                <SelectItem value="Manual Entry">Manual Entry</SelectItem>
+                <SelectItem value="Manual Entry">Customized Payload</SelectItem>
               </SelectContent>
             </Select>
           </div>
           {/* Show manual entry field only if 'Manual Entry' is selected */}
           {form.vehicleTestPayloadCriteria === "Manual Entry" && (
-            <div className="flex flex-col">
-              <Label htmlFor="requestedPayloadKg" className="mb-2">
-                Requested Payload in kgs <span className="text-red-500">*</span>
+            <div className="flex flex-col space-y-2 space-x-12">
+              <Label htmlFor="requestedPayloadKg" className="text-sm font-medium leading-tight whitespace-nowrap pl-12">
+                Requested Payload (Kg) <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="requestedPayloadKg"
@@ -1709,7 +1653,7 @@ export default function RDECreateJobOrder() {
                 }
                 required
                 disabled={formDisabled}
-                className="w-full"
+                className="w-full h-10"
                 placeholder="Enter Requested Payload"
                 type="number"
                 min="0"
@@ -1717,10 +1661,9 @@ export default function RDECreateJobOrder() {
             </div>
           )}
           {/* Idle Exhaust Mass Flow */}
-          <div className="flex flex-col">
-            <Label htmlFor="idleExhaustMassFlow" className="mb-2">
-              Idle Exhaust Mass Flow (Kg/hr){" "}
-              <span className="text-red-500">*</span>
+          <div className="flex flex-col space-y-2 space-x-14">
+            <Label htmlFor="idleExhaustMassFlow" className="text-sm font-medium leading-tight whitespace-nowrap pl-14">
+              Idle Exhaust Mass Flow (Kg/hr) <span className="text-red-500">*</span>
             </Label>
             <Input
               id="idleExhaustMassFlow"
@@ -1731,7 +1674,7 @@ export default function RDECreateJobOrder() {
                   idleExhaustMassFlow: e.target.value,
                 }))
               }
-              className="w-full"
+              className="w-full h-10"
               required
               disabled={formDisabled}
               placeholder="Enter Idle Exhaust Mass Flow"
@@ -1743,9 +1686,9 @@ export default function RDECreateJobOrder() {
 
         {/* Editable Vehicle Details Accordion */}
         {form.vehicleBodyNumber && vehicleEditable && (
-          <div className="mx-8 mt-2 mb-4 border rounded shadow">
+          <div className="mx-8 mt-4 mb-6 border rounded shadow">
             <div
-              className="flex items-center justify-between bg-gray-100 border-t-4 border-red-600 px-4 py-2 cursor-pointer"
+              className="flex items-center justify-between bg-gray-100 border-t-4 border-red-600 px-4 py-3 cursor-pointer"
               onClick={() => setVehicleAccordionOpen((prev) => !prev)}
             >
               <span className="font-semibold text-sm">
@@ -1754,11 +1697,11 @@ export default function RDECreateJobOrder() {
               <span>{vehicleAccordionOpen ? "▲" : "▼"}</span>
             </div>
             {vehicleAccordionOpen && (
-              <form className="bg-white px-4 py-4">
-                <div className="grid grid-cols-4 gap-4 text-xs">
+              <form className="bg-white px-6 py-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
                   {Object.entries(vehicleEditable).map(([label, value]) => (
-                    <div key={label} className="flex flex-col">
-                      <Label className="font-semibold capitalize">
+                    <div key={label} className="flex flex-col space-y-2">
+                      <Label className="font-medium capitalize leading-tight">
                         {label.replace(/_/g, " ")}
                       </Label>
                       <Input
@@ -1766,14 +1709,12 @@ export default function RDECreateJobOrder() {
                         onChange={(e) =>
                           handleVehicleEditableChange(label, e.target.value)
                         }
-                        className="mt-1"
+                        className="h-10"
                         disabled={!vehicleEditMode || isTestEngineer}
-                      // disabled={formDisabled}
                       />
                     </div>
                   ))}
                 </div>
-                {/* Optionally, add a Save button here */}
               </form>
             )}
           </div>
@@ -1781,9 +1722,9 @@ export default function RDECreateJobOrder() {
 
         {/* Editable Engine Details Accordion */}
         {form.engineNumber && engineEditable && (
-          <div className="mx-8 mt-2 mb-4 border rounded shadow">
+          <div className="mx-8 mt-4 mb-6 border rounded shadow">
             <div
-              className="flex items-center justify-between bg-gray-100 border-t-4 border-blue-600 px-4 py-2 cursor-pointer"
+              className="flex items-center justify-between bg-gray-100 border-t-4 border-blue-600 px-4 py-3 cursor-pointer"
               onClick={() => setEngineAccordionOpen((prev) => !prev)}
             >
               <span className="font-semibold text-sm">
@@ -1792,11 +1733,11 @@ export default function RDECreateJobOrder() {
               <span>{engineAccordionOpen ? "▲" : "▼"}</span>
             </div>
             {engineAccordionOpen && (
-              <form className="bg-white px-4 py-4">
-                <div className="grid grid-cols-4 gap-4 text-xs">
+              <form className="bg-white px-6 py-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
                   {Object.entries(engineEditable).map(([label, value]) => (
-                    <div key={label} className="flex flex-col">
-                      <Label className="font-semibold capitalize">
+                    <div key={label} className="flex flex-col space-y-2">
+                      <Label className="font-medium capitalize leading-tight">
                         {label.replace(/_/g, " ")}
                       </Label>
                       <Input
@@ -1804,24 +1745,22 @@ export default function RDECreateJobOrder() {
                         onChange={(e) =>
                           handleEngineEditableChange(label, e.target.value)
                         }
-                        className="mt-1"
+                        className="h-10"
                         disabled={!engineEditMode || isTestEngineer}
-
                       />
                     </div>
                   ))}
                 </div>
-                {/* Optionally, add a Save button here */}
               </form>
             )}
           </div>
         )}
 
         {/* Coast Down Data (CD) Section */}
-        <div className="mx-8 mb-4 border rounded shadow px-6 py-4">
-          <div className="flex items-center justify-between mb-2">
+        <div className="mx-8 mb-6 border rounded shadow px-6 py-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <Label htmlFor="cdReportRef">
+              <Label htmlFor="cdReportRef" className="text-sm font-medium">
                 Coast Down Test Report Reference
               </Label>
               {location.state?.isEdit && existingCoastDownId && (
@@ -1834,143 +1773,144 @@ export default function RDECreateJobOrder() {
           <Input
             id="cdReportRef"
             placeholder="Enter Coast Test Report Ref."
-            className="w-80 mt-1"
+            className="w-full max-w-md h-10 mb-4"
             value={form.cdReportRef}
             onChange={(e) => handleCDNumberInput("cdReportRef", e.target.value)}
             disabled={formDisabled || isTestEngineer}
           />
           {cdFieldErrors.cdReportRef && (
-            <div className="text-red-600 text-xs mt-1">{cdFieldErrors.cdReportRef}</div>
+            <div className="text-red-600 text-xs mb-4">{cdFieldErrors.cdReportRef}</div>
           )}
-          <div className="mb-2 font-semibold text-xs mt-4">CD Values</div>
 
-          <div className="grid grid-cols-7 gap-4">
-            <div>
-              <Label htmlFor="vehicleRefMass" className="text-xs">
+          <div className="mb-4 font-semibold text-sm">CD Values</div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6">
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="vehicleRefMass" className="text-sm font-medium leading-tight">
                 Vehicle Reference Mass (Kg)
               </Label>
               <Input
                 id="vehicleRefMass"
-                placeholder="Enter Vehicle Reference mass (Kg)"
-                className="mt-1"
+                placeholder="Enter Reference Mass"
+                className="h-10"
                 value={form.vehicleRefMass}
                 onChange={(e) => handleCDNumberInput("vehicleRefMass", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.vehicleRefMass && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.vehicleRefMass}</div>
+                <div className="text-red-600 text-xs">{cdFieldErrors.vehicleRefMass}</div>
               )}
             </div>
-            <div>
-              <Label htmlFor="aN" className="text-xs">
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="aN" className="text-sm font-medium leading-tight">
                 A (N)
               </Label>
               <Input
                 id="aN"
                 placeholder="Enter A (N)"
-                className="mt-1"
+                className="h-10"
                 value={form.aN}
                 onChange={(e) => handleCDNumberInput("aN", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.aN && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.aN}</div>
+                <div className="text-red-600 text-xs">{cdFieldErrors.aN}</div>
               )}
             </div>
-            <div>
-              <Label htmlFor="bNkmph" className="text-xs">
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="bNkmph" className="text-sm font-medium leading-tight">
                 B (N/kmph)
               </Label>
               <Input
                 id="bNkmph"
                 placeholder="Enter B (N/kmph)"
-                className="mt-1"
+                className="h-10"
                 value={form.bNkmph}
                 onChange={(e) => handleCDNumberInput("bNkmph", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.bNkmph && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.bNkmph}</div>
+                <div className="text-red-600 text-xs">{cdFieldErrors.bNkmph}</div>
               )}
             </div>
-            <div>
-              <Label htmlFor="cNkmph2" className="text-xs">
-                C (N/kmph^2)
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="cNkmph2" className="text-sm font-medium leading-tight">
+                C (N/kmph²)
               </Label>
               <Input
                 id="cNkmph2"
-                placeholder="Enter C (N/kmph^2)"
-                className="mt-1"
+                placeholder="Enter C (N/kmph²)"
+                className="h-10"
                 value={form.cNkmph2}
                 onChange={(e) => handleCDNumberInput("cNkmph2", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.cNkmph2 && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.cNkmph2}</div>
+                <div className="text-red-600 text-xs">{cdFieldErrors.cNkmph2}</div>
               )}
             </div>
-            <div>
-              <Label htmlFor="f0N" className="text-xs">
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="f0N" className="text-sm font-medium leading-tight">
                 F0 (N)
               </Label>
               <Input
                 id="f0N"
                 placeholder="Enter F0 (N)"
-                className="mt-1"
+                className="h-10"
                 value={form.f0N}
                 onChange={(e) => handleCDNumberInput("f0N", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.f0N && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.vehicleRefMass}</div>
+                <div className="text-red-600 text-xs">{cdFieldErrors.f0N}</div>
               )}
             </div>
-            <div>
-              <Label htmlFor="f1Nkmph" className="text-xs">
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="f1Nkmph" className="text-sm font-medium leading-tight">
                 F1 (N/kmph)
               </Label>
               <Input
                 id="f1Nkmph"
                 placeholder="Enter F1 (N/kmph)"
-                className="mt-1"
+                className="h-10"
                 value={form.f1Nkmph}
                 onChange={(e) => handleCDNumberInput("f1Nkmph", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.f1Nkmph && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.f1Nkmph}</div>
+                <div className="text-red-600 text-xs">{cdFieldErrors.f1Nkmph}</div>
               )}
             </div>
-            <div>
-              <Label htmlFor="f2Nkmph2" className="text-xs">
-                F2 (N/kmph^2)
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="f2Nkmph2" className="text-sm font-medium leading-tight">
+                F2 (N/kmph²)
               </Label>
               <Input
                 id="f2Nkmph2"
-                placeholder="Enter F2 (N/kmph^2)"
-                className="mt-1"
+                placeholder="Enter F2 (N/kmph²)"
+                className="h-10"
                 value={form.f2Nkmph2}
                 onChange={(e) => handleCDNumberInput("f2Nkmph2", e.target.value)}
                 disabled={formDisabled || isTestEngineer}
               />
               {cdFieldErrors.f2Nkmph2 && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.f2Nkmph2}</div>
+                <div className="text-red-600 text-xs">{cdFieldErrors.f2Nkmph2}</div>
               )}
             </div>
           </div>
           {cdError && (
-            <div className="text-red-600 text-xs mt-2">{cdError}</div>
+            <div className="text-red-600 text-xs mt-4">{cdError}</div>
           )}
-          <div className="flex items-center mt-4 gap-6">
+          <div className="flex items-center mt-6 gap-4">
             <Button
-              className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
+              className="bg-white text-red-900 border border-red-900 text-sm px-6 py-2 rounded hover:bg-red-50"
               onClick={handleRDECreateJobOrder}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
             {location.state?.isEdit && existingCoastDownId && (
               <Button
-                className="bg-blue-600 text-white text-xs px-6 py-2 rounded"
+                className="bg-blue-600 text-white text-sm px-6 py-2 rounded hover:bg-blue-700"
                 onClick={async () => {
                   try {
                     await handleUpdateCoastDownData(existingCoastDownId);
@@ -1988,7 +1928,7 @@ export default function RDECreateJobOrder() {
               </Button>
             )}
             <Button
-              className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
+              className="bg-white text-red-900 border border-red-900 text-sm px-6 py-2 rounded hover:bg-red-50"
               type="button"
               onClick={() =>
                 setForm((prev) => ({
@@ -2024,7 +1964,6 @@ export default function RDECreateJobOrder() {
             className="text-xs text-blue-700 px-0"
             onClick={() => {
               setShowCFTPanel((prev) => !prev);
-              console.log("Toggled CFT panel");
             }}
             disabled={isTestEngineer}
           >
@@ -2069,16 +2008,16 @@ export default function RDECreateJobOrder() {
                   Engine Number <span className="text-red-500">*</span>
                 </Label>
                 <Select
-                    value={test.engineNumber || ""}
-                    onValueChange={(value) => {
-  if (value !== jobOrder.engine_serial_number) {
-    showSnackbar && showSnackbar("Warning: You are selecting a different engine number than the main form.", "warning");
-  }
-  handleTestChange(idx, "engineNumber", value);
-}}
-                    required
-                    disabled={!areTestFieldsEditable(test, idx)}
-                  >
+                  value={test.engineNumber || ""}
+                  onValueChange={(value) => {
+                    if (value !== jobOrder.engine_serial_number) {
+                      showSnackbar && showSnackbar("Warning: You are selecting a different engine number than the main form.", "warning");
+                    }
+                    handleTestChange(idx, "engineNumber", value);
+                  }}
+                  required
+                  disabled={!areTestFieldsEditable(test, idx)}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
@@ -2090,7 +2029,7 @@ export default function RDECreateJobOrder() {
                     ))}
                   </SelectContent>
                 </Select>
-          </div>
+              </div>
               <div>
                 <Label>Test Type</Label>
                 <Select

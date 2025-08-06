@@ -1,21 +1,124 @@
 import { useState, useEffect, useId } from "react";
 import axios from "axios";
 import { Button } from "@/components/UI/button";
-import { ArrowBack } from "@mui/icons-material";
+import { ArrowBack, DirectionsCar, Settings, Engineering, Build, Speed, CameraAlt } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
 import { useNavigate, useLocation } from "react-router-dom";
 import useStore from "@/store/useStore";
 import { useAuth } from "@/context/AuthContext";
 import showSnackbar from "@/utils/showSnackbar";
+import { styled } from "@mui/material/styles";
+import { Box, Paper, Typography, Grid, Divider, Chip, alpha } from "@mui/material";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
 
+// Custom styled components
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  borderRadius: "12px",
+  overflow: "hidden",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+  transition: "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+  "&:hover": {
+    boxShadow: "0 12px 28px rgba(0,0,0,0.15)",
+  },
+}));
+
+const SectionHeader = styled(Box)(({ theme }) => ({
+  background: `linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)`,
+  color: "#ffffff",
+  padding: "10px 6px", // Reduced horizontal padding
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "8px",
+}));
+
+const ActionButton = styled(Button)(({ theme }) => ({
+  borderRadius: "8px",
+  padding: "10px 16px",
+  textTransform: "none",
+  fontWeight: 600,
+  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+  transition: "transform 0.2s ease, box-shadow 0.2s ease",
+  "&:hover": {
+    transform: "translateY(-2px)",
+    boxShadow: "0 6px 16px rgba(0,0,0,0.2)",
+  },
+}));
+
+const StyledInput = styled("input")(({ theme }) => ({
+  border: "1px solid #d1d5db",
+  borderRadius: "8px",
+  padding: "10px 12px",
+  width: "100%",
+  fontSize: "16px",
+  transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+  "&:focus": {
+    outline: "none",
+    borderColor: "#3b82f6",
+    boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.2)",
+  },
+  "&:disabled": {
+    backgroundColor: "#f3f4f6",
+    color: "#6b7280",
+    cursor: "not-allowed",
+  },
+}));
+
+const StyledSelect = styled("select")(({ theme }) => ({
+  border: "1px solid #d1d5db",
+  borderRadius: "8px",
+  padding: "10px 12px",
+  width: "100%",
+  fontSize: "16px",
+  transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+  "&:focus": {
+    outline: "none",
+    borderColor: "#3b82f6",
+    boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.2)",
+  },
+  "&:disabled": {
+    backgroundColor: "#f3f4f6",
+    color: "#6b7280",
+    cursor: "not-allowed",
+  },
+}));
+
+const FormLabel = styled("label")(({ theme }) => ({
+  display: "block",
+  fontSize: "14px",
+  fontWeight: 500,
+  marginBottom: "8px",
+  color: "#374151",
+}));
+
+const RadioGroup = styled(Box)(({ theme }) => ({
+  display: "flex",
+  gap: "16px",
+  alignItems: "center",
+}));
+
+const RadioLabel = styled("label")(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: "6px",
+  fontSize: "14px",
+  cursor: "pointer",
+  userSelect: "none",
+}));
+
 export default function VehicleEngineForm({ onSubmit, onClear }) {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const department = queryParams.get("department") || "VTC_JO Chennai";
+  const isEditMode = queryParams.get("edit") === "true";
+
+  // Check if we have vehicle data from navigation state
+  const vehicleData = location.state?.vehicleData;
+  const originalVehicleData = location.state?.originalVehicleData;
+
   // Use global store for dropdowns
   const projectOptions = useStore((state) => state.projectOptions);
   const setProjectOptions = useStore((state) => state.setProjectOptions);
@@ -31,12 +134,23 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
 
   const { apiUserRole, userId, userName } = useAuth();
 
+  // Helper function to parse ratio strings like "3.42:1" into {numerator: "3.42", denominator: "1"}
+  const parseRatio = (ratioString) => {
+    if (!ratioString) return { numerator: "", denominator: "" };
+    const parts = ratioString.split(":");
+    return {
+      numerator: parts[0] || "",
+      denominator: parts[1] || ""
+    };
+  };
+
+  // Initialize form with empty values or vehicle data if editing
   const [form, setForm] = useState({
     project: "",
     vehicleBuildLevel: "",
     vehicleModel: "",
     vehicleBodyNumber: "",
-    vehicleSerialNumber: "", // Added
+    vehicleSerialNumber: "",
     transmissionType: "",
     finalDriveAxleRatio: { numerator: "", denominator: "" },
     domain: "",
@@ -61,14 +175,73 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     gearRatio5: { numerator: "", denominator: "" },
     reverseGearRatio: { numerator: "", denominator: "" },
     department: department,
+    vehicleKerbWeight: "",
+    vehicleGVW: "",
+    kerbFAW: "",
+    kerbRAW: "",
+    awdRwdFwd: "",
   });
+
+  // Populate form with existing vehicle data when editing
+  useEffect(() => {
+    if (isEditMode && vehicleData) {
+      
+      setForm({
+        project: vehicleData.project_code || "",
+        vehicleBuildLevel: vehicleData.vehicle_build_level || "",
+        vehicleModel: vehicleData.vehicle_model || "",
+        vehicleBodyNumber: vehicleData.vehicle_body_number || "",
+        vehicleSerialNumber: vehicleData.vehicle_serial_number || "",
+        transmissionType: vehicleData.transmission_type || "",
+        finalDriveAxleRatio: parseRatio(vehicleData.final_drive_axle_ratio),
+        domain: vehicleData.domain || "",
+        tyreMake: vehicleData.tyre_make || "",
+        tyreSize: vehicleData.tyre_size || "",
+        tyrePressureFront: vehicleData.tyre_pressure_front || "",
+        tyrePressureRear: vehicleData.tyre_pressure_rear || "",
+        tyreRunIn: vehicleData.tyre_run_in || "",
+        engineRunIn: vehicleData.engine_run_in || "",
+        gearBoxRunIn: vehicleData.gearbox_run_in || "",
+        axleRunIn: vehicleData.axle_run_in || "",
+        engineOilSpecification: vehicleData.engine_oil_specification || "",
+        axleOilSpecification: vehicleData.axle_oil_specification || "",
+        transmissionOilSpecification: vehicleData.transmission_oil_specification || "",
+        driveType: vehicleData.wd_type || "",
+        drivenWheel: vehicleData.driven_wheel || "",
+        intercoolerLocation: vehicleData.intercooler_location || "",
+        gearRatio1: parseRatio(vehicleData.gear_ratio_1),
+        gearRatio2: parseRatio(vehicleData.gear_ratio_2),
+        gearRatio3: parseRatio(vehicleData.gear_ratio_3),
+        gearRatio4: parseRatio(vehicleData.gear_ratio_4),
+        gearRatio5: parseRatio(vehicleData.gear_ratio_5),
+        reverseGearRatio: parseRatio(vehicleData.reverse_gear_ratio),
+        department: vehicleData.department || department,
+        vehicleKerbWeight: vehicleData.vehicle_kerb_weight || "",
+        vehicleGVW: vehicleData.vehicle_gvw || "",
+        kerbFAW: vehicleData.kerb_faw || "",
+        kerbRAW: vehicleData.kerb_raw || "",
+        awdRwdFwd: vehicleData.awd_rwd_fwd || "",
+      });
+    }
+  }, [isEditMode, vehicleData, department]);
+
+  const isEV = form.domain === "EV";
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleRadioChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "driveType") {
+      setForm({
+        ...form,
+        [name]: value,
+        drivenWheel: ""
+      });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
   };
 
   const handleRatioChange = (e, field, part) => {
@@ -79,10 +252,10 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
   };
 
   // Convert current time to IST and format as ISO 8601
-    const currentISTTime = new Date().toLocaleString("en-US", {
-      timeZone: "Asia/Kolkata",
-    });
-    const formattedISTTime = new Date(currentISTTime).toISOString();
+  const currentISTTime = new Date().toLocaleString("en-US", {
+    timeZone: "Asia/Kolkata",
+  });
+  const formattedISTTime = new Date(currentISTTime).toISOString();
 
   // Map form state to API schema
   function mapFormToApi(form) {
@@ -90,7 +263,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       project_code: form.project,
       vehicle_body_number: form.vehicleBodyNumber,
       vehicle_model: form.vehicleModel,
-      vehicle_serial_number: form.vehicleSerialNumber, // Added
+      vehicle_serial_number: form.vehicleSerialNumber,
       vehicle_build_level: form.vehicleBuildLevel,
       transmission_type: form.transmissionType,
       final_drive_axle_ratio:
@@ -110,54 +283,57 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       engine_run_in: form.engineRunIn ? parseFloat(form.engineRunIn) : null,
       gearbox_run_in: form.gearBoxRunIn ? parseFloat(form.gearBoxRunIn) : null,
       axle_run_in: form.axleRunIn ? parseFloat(form.axleRunIn) : null,
-      engine_oil_specification: form.engineOilSpecification,
-      axle_oil_specification: form.axleOilSpecification,
-      transmission_oil_specification: form.transmissionOilSpecification,
+      engine_oil_specification: isEV ? "" : form.engineOilSpecification,
+      axle_oil_specification: isEV ? "" : form.axleOilSpecification,
+      transmission_oil_specification: isEV ? "" : form.transmissionOilSpecification,
       wd_type: form.driveType,
       driven_wheel: form.drivenWheel,
-      intercooler_location: form.intercoolerLocation,
-      gear_ratio_1:
-        form.gearRatio1.numerator && form.gearRatio1.denominator
-          ? `${form.gearRatio1.numerator}:${form.gearRatio1.denominator}`
-          : "",
-      gear_ratio_2:
-        form.gearRatio2.numerator && form.gearRatio2.denominator
-          ? `${form.gearRatio2.numerator}:${form.gearRatio2.denominator}`
-          : "",
-      gear_ratio_3:
-        form.gearRatio3.numerator && form.gearRatio3.denominator
-          ? `${form.gearRatio3.numerator}:${form.gearRatio3.denominator}`
-          : "",
-      gear_ratio_4:
-        form.gearRatio4.numerator && form.gearRatio4.denominator
-          ? `${form.gearRatio4.numerator}:${form.gearRatio4.denominator}`
-          : "",
-      gear_ratio_5:
-        form.gearRatio5.numerator && form.gearRatio5.denominator
-          ? `${form.gearRatio5.numerator}:${form.gearRatio5.denominator}`
-          : "",
-      reverse_gear_ratio:
-        form.reverseGearRatio.numerator && form.reverseGearRatio.denominator
-          ? `${form.reverseGearRatio.numerator}:${form.reverseGearRatio.denominator}`
-          : "",
-      id_of_creator: userId || "", // id_of_creator handled by backend
-      created_on: formattedISTTime,
-      id_of_updater: "", // id_of_updater handled by backend
-      // updated_on: "",
-      // id_of_creator, created_on, id_of_updater, updated_on handled by backend
-      department: form.department, // <-- add department to payload
+      intercooler_location: isEV ? "NA" : form.intercoolerLocation,
+      gear_ratio_1: isEV ? "" : (form.gearRatio1.numerator && form.gearRatio1.denominator
+        ? `${form.gearRatio1.numerator}:${form.gearRatio1.denominator}` : ""),
+      gear_ratio_2: isEV ? "" : (form.gearRatio2.numerator && form.gearRatio2.denominator
+        ? `${form.gearRatio2.numerator}:${form.gearRatio2.denominator}` : ""),
+      gear_ratio_3: isEV ? "" : (form.gearRatio3.numerator && form.gearRatio3.denominator
+        ? `${form.gearRatio3.numerator}:${form.gearRatio3.denominator}` : ""),
+      gear_ratio_4: isEV ? "" : (form.gearRatio4.numerator && form.gearRatio4.denominator
+        ? `${form.gearRatio4.numerator}:${form.gearRatio4.denominator}` : ""),
+      gear_ratio_5: isEV ? "" : (form.gearRatio5.numerator && form.gearRatio5.denominator
+        ? `${form.gearRatio5.numerator}:${form.gearRatio5.denominator}` : ""),
+      reverse_gear_ratio: isEV ? "" : (form.reverseGearRatio.numerator && form.reverseGearRatio.denominator
+        ? `${form.reverseGearRatio.numerator}:${form.reverseGearRatio.denominator}` : ""),
+      department: form.department,
+      vehicle_kerb_weight: form.vehicleKerbWeight ? parseFloat(form.vehicleKerbWeight) : null,
+      vehicle_gvw: form.vehicleGVW ? parseFloat(form.vehicleGVW) : null,
+      kerb_faw: form.kerbFAW ? parseFloat(form.kerbFAW) : null,
+      kerb_raw: form.kerbRAW ? parseFloat(form.kerbRAW) : null,
+      awd_rwd_fwd: form.awdRwdFwd,
+      // final_drive_ratio: form.finalDriveRatio.numerator && form.finalDriveRatio.denominator
+      //   ? `${form.finalDriveRatio.numerator}:${form.finalDriveRatio.denominator}`
+      //   : "",
+      // Add tracking fields
+      ...(isEditMode ? {
+        id_of_updater: userId || "",
+        name_of_updater: userName || "",
+        updated_on: formattedISTTime
+      } : {
+        id_of_creator: userId || "",
+        name_of_creator: userName || "",
+        created_on: formattedISTTime,
+        updated_on: formattedISTTime
+      })
     };
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Map of form keys to user-friendly field names
+
+    // Field validation logic (same as before)
     const fieldNames = {
       project: "Project",
       vehicleBuildLevel: "Vehicle Build Level",
       vehicleModel: "Vehicle Model",
       vehicleBodyNumber: "Vehicle Body Number",
-      vehicleSerialNumber: "Vehicle Serial Number", // Added
+      vehicleSerialNumber: "Vehicle Serial Number",
       transmissionType: "Transmission Type",
       finalDriveAxleRatio: "Final Drive Axle Ratio",
       domain: "Domain",
@@ -181,19 +357,43 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       gearRatio4: "4th Gear Ratio",
       gearRatio5: "5th Gear Ratio",
       reverseGearRatio: "Reverse Gear Ratio",
-      department: "Department", // <-- add department to fieldNames
+      department: "Department",
+      vehicleKerbWeight: "Vehicle Kerb Weight",
+      vehicleGVW: "Vehicle GVW",
+      kerbFAW: "Kerb FAW",
+      kerbRAW: "Kerb RAW",
+      awdRwdFwd: "AWD/RWD/FWD",
     };
 
     // Check for missing fields
     const missingFields = [];
     for (let key in form) {
+      // Skip certain fields if EV
+      if (isEV) {
+        if (
+          [
+            "engineOilSpecification",
+            "axleOilSpecification",
+            "transmissionOilSpecification",
+            "intercoolerLocation",
+            "gearRatio1",
+            "gearRatio2",
+            "gearRatio3",
+            "gearRatio4",
+            "gearRatio5",
+            "reverseGearRatio",
+          ].includes(key)
+        ) {
+          continue;
+        }
+      }
       if (
         typeof form[key] === "object" &&
         form[key] !== null &&
         ("numerator" in form[key] || "denominator" in form[key])
       ) {
         // For ratio fields
-        if (!form[key].numerator || !form[key].denominator) {
+        if (!isEV && (!form[key].numerator || !form[key].denominator)) {
           missingFields.push(fieldNames[key]);
         }
       } else if (!form[key]) {
@@ -207,18 +407,35 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       );
       return;
     }
+
     const payload = mapFormToApi(form);
 
     try {
-      const response = await axios.post(`${apiURL}/vehicles`, payload, {
-        headers: { "Content-Type": "application/json" },
-      });
-      if (onSubmit) onSubmit(response.data);
-      else showSnackbar("Vehicle added successfully!", "success");
+      let response;
+      if (isEditMode) {
+        // Update existing vehicle
+        response = await axios.put(
+          `${apiURL}/vehicles/${form.vehicleSerialNumber}`,
+          payload,
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+        if (onSubmit) onSubmit(response.data);
+        else showSnackbar("Vehicle updated successfully!", "success");
+      } else {
+        // Create new vehicle
+        response = await axios.post(`${apiURL}/vehicles`, payload, {
+          headers: { "Content-Type": "application/json" },
+        });
+        if (onSubmit) onSubmit(response.data);
+        else showSnackbar("Vehicle added successfully!", "success");
+      }
       navigate(-1);
     } catch (err) {
       showSnackbar(
-        "Error adding vehicle: " + (err.response?.data?.detail || err.message),
+        `Error ${isEditMode ? 'updating' : 'adding'} vehicle: ` +
+        (err.response?.data?.detail || err.message),
         "error"
       );
     }
@@ -230,7 +447,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       vehicleBuildLevel: "",
       vehicleModel: "",
       vehicleBodyNumber: "",
-      vehicleSerialNumber: "", // Added
+      vehicleSerialNumber: "",
       transmissionType: "",
       finalDriveAxleRatio: { numerator: "", denominator: "" },
       domain: "",
@@ -247,7 +464,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       transmissionOilSpecification: "",
       driveType: "",
       drivenWheel: "",
-      intercoolerLocation: "",
+      intercoolerLocation: isEV ? "NA" : "",
       gearRatio: { numerator: "", denominator: "" },
       gearRatio1: { numerator: "", denominator: "" },
       gearRatio2: { numerator: "", denominator: "" },
@@ -255,7 +472,12 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       gearRatio4: { numerator: "", denominator: "" },
       gearRatio5: { numerator: "", denominator: "" },
       reverseGearRatio: { numerator: "", denominator: "" },
-      department: department
+      department: department,
+      vehicleKerbWeight: "",
+      vehicleGVW: "",
+      kerbFAW: "",
+      kerbRAW: "",
+      awdRwdFwd: "",
     });
     if (onClear) onClear();
   };
@@ -297,649 +519,925 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     <>
       <Navbar1 />
       {/* Header */}
-      <div className="">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBack}
-                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:border-red-500 dark:hover:bg-red-950 rounded-full border border-red-500"
+      <Box sx={{ py: 2, borderBottom: "1px solid #e5e7eb" }}>
+        <Box sx={{ maxWidth: "1600px", mx: "auto", px: 2 }}> {/* Reduced horizontal padding */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(-1)}
+              sx={{
+                color: "#3b82f6",
+                borderColor: "#3b82f6",
+                borderWidth: "1px",
+                borderStyle: "solid",
+                borderRadius: "50%",
+                p: 1,
+                minWidth: "40px",
+                height: "40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                "&:hover": {
+                  backgroundColor: "rgba(59, 130, 246, 0.05)",
+                },
+              }}
+            >
+              <ArrowBack sx={{ fontSize: 20 }} />
+            </Button>
+            <Box>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 600, 
+                  color: "#111827",
+                  ".dark &": { color: "#3b82f6" } 
+                }}
               >
-                <ArrowBack className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-800 dark:text-red-500">
-                  NEW VEHICLE
-                </h1>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+                {isEditMode ? `EDIT VEHICLE: ${form.vehicleSerialNumber}` : `NEW VEHICLE - ${department}`}
+              </Typography>
+              {isEditMode && (
+                <Typography variant="body2" sx={{ color: "#6b7280" }}>
+                  Editing vehicle: {vehicleData?.vehicle_serial_number} | Department: {department}
+                </Typography>
+              )}
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+
       {/* Main Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg max-w-7xl mx-auto mt-8"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Project */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Project <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="project"
-              value={form.project}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-            >
-              <option value="">Select Project</option>
-              {projectOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* Vehicle Build Level */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Vehicle Build Level <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="vehicleBuildLevel"
-              value={form.vehicleBuildLevel}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Vehicle Build Level"
-            />
-          </div>
-          {/* Vehicle Model */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Vehicle Model <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="vehicleModel"
-              value={form.vehicleModel}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-            >
-              <option value="">Select Model</option>
-              {vehicleModelOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* Vehicle Body Number */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Vehicle Body Number <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="vehicleBodyNumber"
-              value={form.vehicleBodyNumber}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Vehicle Body Number"
-            />
-          </div>
-          {/* Vehicle Serial Number */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Vehicle Serial Number <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="vehicleSerialNumber"
-              value={form.vehicleSerialNumber}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Vehicle Serial Number"
-            />
-          </div>
-          {/* Transmission Type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Transmission Type <span className="text-red-500">*</span>
-            </label>
-            <div className="flex gap-2">
-              <label>
-                <input
-                  type="radio"
-                  name="transmissionType"
-                  value="AT"
-                  checked={form.transmissionType === "AT"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                AT
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="transmissionType"
-                  value="MT"
-                  checked={form.transmissionType === "MT"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                MT
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="transmissionType"
-                  value="AMT"
-                  checked={form.transmissionType === "AMT"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                AMT
-              </label>
-            </div>
-          </div>
-          {/* Final Drive Axle Ratio */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Final Drive Axle Ratio <span className="text-red-500">*</span>
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={form.finalDriveAxleRatio.numerator}
-                onChange={(e) =>
-                  handleRatioChange(e, "finalDriveAxleRatio", "numerator")
-                }
-                required
-                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter numerator"
-              />
-              <span className="text-gray-500">:</span>
-              <input
-                type="number"
-                value={form.finalDriveAxleRatio.denominator}
-                onChange={(e) =>
-                  handleRatioChange(e, "finalDriveAxleRatio", "denominator")
-                }
-                required
-                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter denominator"
-              />
-            </div>
-          </div>
-          {/* Domain */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Domain <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="domain"
-              value={form.domain}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-            >
-              <option value="">Select Domain</option>
-              {domainOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* Tyre Make */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Tyre Make <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="tyreMake"
-              value={form.tyreMake}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Tyre Make"
-            />
-          </div>
-          {/* Tyre Size */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Tyre Size <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="tyreSize"
-              value={form.tyreSize}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Tyre Size"
-            />
-          </div>
-          {/* Tyre Pressure Front */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Tyre Pressure Front(psi) <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="tyrePressureFront"
-              value={form.tyrePressureFront}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Front Tyre Pressure"
-              type="number"
-            />
-          </div>
-          {/* Tyre Pressure Rear */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Tyre Pressure Rear(psi) <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="tyrePressureRear"
-              value={form.tyrePressureRear}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Rear Tyre Pressure"
-              type="number"
-            />
-          </div>
-          {/* Tyre Run-in(Kms) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Tyre Run-in(Kms) <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="tyreRunIn"
-              value={form.tyreRunIn}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Tyre Run-in(Kms)"
-              type="number"
-            />
-          </div>
-          {/* Engine Run-in(Kms) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Engine Run-in(Kms) <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="engineRunIn"
-              value={form.engineRunIn}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Engine Run-in(Kms)"
-              type="number"
-            />
-          </div>
-          {/* Gear Box Run-in(Kms) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Gear Box Run-in(Kms) <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="gearBoxRunIn"
-              value={form.gearBoxRunIn}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Gear Box Run-in(Kms)"
-              type="number"
-            />
-          </div>
-          {/* Axle Run-in(Kms) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Axle Run-in(Kms) <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="axleRunIn"
-              value={form.axleRunIn}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Axle Run-in(Kms)"
-              type="number"
-            />
-          </div>
-          {/* Engine Oil Specification */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Engine Oil Specification <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="engineOilSpecification"
-              value={form.engineOilSpecification}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Engine Oil Specification"
-            />
-          </div>
-          {/* Axle Oil Specification */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Axle Oil Specification <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="axleOilSpecification"
-              value={form.axleOilSpecification}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Axle Oil Specification"
-            />
-          </div>
-          {/* Transmission Oil Specification */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Transmission Oil Specification{" "}
-              <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="transmissionOilSpecification"
-              value={form.transmissionOilSpecification}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter Transmission Oil Specification"
-            />
-          </div>
-          {/* 2WD / 4WD */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              2WD / 4WD <span className="text-red-500">*</span>
-            </label>
-            <div className="flex gap-2">
-              <label>
-                <input
-                  type="radio"
-                  name="driveType"
-                  value="2WD"
-                  checked={form.driveType === "2WD"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                2WD
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="driveType"
-                  value="4WD"
-                  checked={form.driveType === "4WD"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                4WD
-              </label>
-            </div>
-          </div>
-          {/* Driven Wheel */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Driven Wheel <span className="text-red-500">*</span>
-            </label>
-            <div className="flex gap-2">
-              <label>
-                <input
-                  type="radio"
-                  name="drivenWheel"
-                  value="Front"
-                  checked={form.drivenWheel === "Front"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                Front
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="drivenWheel"
-                  value="Rear"
-                  checked={form.drivenWheel === "Rear"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                Rear
-              </label>
-            </div>
-          </div>
-          {/* Intercooler Location */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Intercooler Location <span className="text-red-500">*</span>
-            </label>
-            <div className="flex gap-2">
-              <label>
-                <input
-                  type="radio"
-                  name="intercoolerLocation"
-                  value="Front"
-                  checked={form.intercoolerLocation === "Front"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                Front
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="intercoolerLocation"
-                  value="Rear"
-                  checked={form.intercoolerLocation === "Rear"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                Rear
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="intercoolerLocation"
-                  value="Top"
-                  checked={form.intercoolerLocation === "Top"}
-                  onChange={handleRadioChange}
-                  required
-                />{" "}
-                Top
-              </label>
-            </div>
-          </div>
-          {/* Gear Ratio */}
-          {/* 1st Gear Ratio */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              1st Gear Ratio <span className="text-red-500">*</span>
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={form.gearRatio1.numerator}
-                onChange={(e) => handleRatioChange(e, "gearRatio1", "numerator")}
-                required
-                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter numerator"
-              />
-              <span className="text-gray-500">:</span>
-              <input
-                type="number"
-                value={form.gearRatio1.denominator}
-                onChange={(e) => handleRatioChange(e, "gearRatio1", "denominator")}
-                required
-                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter denominator"
-              />
-            </div>
-          </div>
-          {/* 2nd Gear Ratio */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              2nd Gear Ratio <span className="text-red-500">*</span>
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={form.gearRatio2.numerator}
-                onChange={(e) => handleRatioChange(e, "gearRatio2", "numerator")}
-                required
-                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter numerator"
-              />
-              <span className="text-gray-500">:</span>
-              <input
-                type="number"
-                value={form.gearRatio2.denominator}
-                onChange={(e) => handleRatioChange(e, "gearRatio2", "denominator")}
-                required
-                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter denominator"
-              />
-            </div>
-          </div>
-          {/* 3rd Gear Ratio */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              3rd Gear Ratio <span className="text-red-500">*</span>
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={form.gearRatio3.numerator}
-                onChange={(e) => handleRatioChange(e, "gearRatio3", "numerator")}
-                required
-                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter numerator"
-              />
-              <span className="text-gray-500">:</span>
-              <input
-                type="number"
-                value={form.gearRatio3.denominator}
-                onChange={(e) => handleRatioChange(e, "gearRatio3", "denominator")}
-                required
-                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter denominator"
-              />
-            </div>
-          </div>
-          {/* 4th Gear Ratio */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              4th Gear Ratio <span className="text-red-500">*</span>
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={form.gearRatio4.numerator}
-                onChange={(e) => handleRatioChange(e, "gearRatio4", "numerator")}
-                required
-                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter numerator"
-              />
-              <span className="text-gray-500">:</span>
-              <input
-                type="number"
-                value={form.gearRatio4.denominator}
-                onChange={(e) => handleRatioChange(e, "gearRatio4", "denominator")}
-                required
-                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter denominator"
-              />
-            </div>
-          </div>
-          {/* 5th Gear Ratio */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              5th Gear Ratio <span className="text-red-500">*</span>
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={form.gearRatio5.numerator}
-                onChange={(e) => handleRatioChange(e, "gearRatio5", "numerator")}
-                required
-                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter numerator"
-              />
-              <span className="text-gray-500">:</span>
-              <input
-                type="number"
-                value={form.gearRatio5.denominator}
-                onChange={(e) => handleRatioChange(e, "gearRatio5", "denominator")}
-                required
-                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter denominator"
-              />
-            </div>
-          </div>
-          {/* Reverse Gear Ratio */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Reverse Gear Ratio <span className="text-red-500">*</span>
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={form.reverseGearRatio.numerator}
-                onChange={(e) => handleRatioChange(e, "reverseGearRatio", "numerator")}
-                required
-                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter numerator"
-              />
-              <span className="text-gray-500">:</span>
-              <input
-                type="number"
-                value={form.reverseGearRatio.denominator}
-                onChange={(e) => handleRatioChange(e, "reverseGearRatio", "denominator")}
-                required
-                className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter denominator"
-              />
-            </div>
-          </div>
-          {/* Department */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Department <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="department"
-              value={form.department}
-              readOnly
-              className="border rounded-lg px-3 py-2 w-full bg-gray-100 text-gray-500"
-              placeholder="Department"
-            />
-          </div>
-        </div>
-        {/* Buttons */}
-        <div className="flex gap-4 mt-10 justify-end">
-          <button
-            type="submit"
-            className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg shadow-md transition-all"
-          >
-            ADD VEHICLE
-          </button>
-          <button
-            type="button"
-            onClick={handleClear}
-            className="bg-gray-100 hover:bg-gray-200 text-red-500 border border-red-500 px-6 py-3 rounded-lg shadow-md transition-all"
-          >
-            CLEAR
-          </button>
-        </div>
-      </form>
+      <Box sx={{ maxWidth: "1600px", mx: "auto", px: 2, py: 3 }}> {/* Reduced horizontal padding */}
+        <StyledPaper>
+          <form onSubmit={handleSubmit}>
+            {/* Vehicle Information Section */}
+            <SectionHeader>
+              <DirectionsCar fontSize="medium" />
+              <Typography variant="h6" fontWeight="bold">
+                Vehicle Information
+              </Typography>
+            </SectionHeader>
+
+            <Box sx={{ p: 2 }}> {/* Reduced padding */}
+              <Grid container spacing={2}> {/* Reduced grid spacing */}
+                {/* Vehicle Serial Number */}
+                {/* Project */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Project <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledSelect
+                    name="project"
+                    value={form.project}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Select Project</option>
+                    {projectOptions.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </StyledSelect>
+                </Grid>
+                {/* Vehicle Serial Number */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Vehicle Serial Number <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="vehicleSerialNumber"
+                    value={form.vehicleSerialNumber}
+                    onChange={handleChange}
+                    required
+                    disabled={isEditMode}
+                    placeholder="Enter Vehicle Serial Number"
+                    style={isEditMode ? { backgroundColor: "#f3f4f6", color: "#6b7280" } : {}}
+                  />
+                </Grid>
+
+                {/* Vehicle Build Level */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Vehicle Build Level <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="vehicleBuildLevel"
+                    value={form.vehicleBuildLevel}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter Vehicle Build Level"
+                  />
+                </Grid>
+
+                {/* Vehicle Model */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Vehicle Model <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledSelect
+                    name="vehicleModel"
+                    value={form.vehicleModel}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Select Model</option>
+                    {vehicleModelOptions.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </StyledSelect>
+                </Grid>
+
+                {/* Vehicle Body Number */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Vehicle Body Number <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="vehicleBodyNumber"
+                    value={form.vehicleBodyNumber}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter Vehicle Body Number"
+                  />
+                </Grid>
+
+                {/* Transmission Type */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Transmission Type <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <RadioGroup>
+                    <RadioLabel>
+                      <input
+                        type="radio"
+                        name="transmissionType"
+                        value="AT"
+                        checked={form.transmissionType === "AT"}
+                        onChange={handleRadioChange}
+                        required
+                      />
+                      AT
+                    </RadioLabel>
+                    <RadioLabel>
+                      <input
+                        type="radio"
+                        name="transmissionType"
+                        value="MT"
+                        checked={form.transmissionType === "MT"}
+                        onChange={handleRadioChange}
+                        required
+                      />
+                      MT
+                    </RadioLabel>
+                    <RadioLabel>
+                      <input
+                        type="radio"
+                        name="transmissionType"
+                        value="AMT"
+                        checked={form.transmissionType === "AMT"}
+                        onChange={handleRadioChange}
+                        required
+                      />
+                      AMT
+                    </RadioLabel>
+                  </RadioGroup>
+                </Grid>
+
+                {/* Domain */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Domain <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledSelect
+                    name="domain"
+                    value={form.domain}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Select Domain</option>
+                    {domainOptions.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </StyledSelect>
+                </Grid>
+
+                {/* Department */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Department <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="department"
+                    value={form.department}
+                    readOnly
+                    style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }}
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+
+            {/* Vehicle Weight Information */}
+            <SectionHeader>
+              <Speed fontSize="medium" />
+              <Typography variant="h6" fontWeight="bold">
+                Vehicle Weight Information
+              </Typography>
+            </SectionHeader>
+
+            <Box sx={{ p: 2 }}> {/* Reduced padding */}
+              <Grid container spacing={2}> {/* Reduced grid spacing */}
+                {/* Vehicle Kerb Weight */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Vehicle Kerb Weight (kg) <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="vehicleKerbWeight"
+                    value={form.vehicleKerbWeight}
+                    onChange={handleChange}
+                    required
+                    type="number"
+                    placeholder="Enter Vehicle Kerb Weight"
+                  />
+                </Grid>
+
+                {/* Vehicle GVW */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Vehicle GVW (kg) <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="vehicleGVW"
+                    value={form.vehicleGVW}
+                    onChange={handleChange}
+                    required
+                    type="number"
+                    placeholder="Enter Vehicle GVW"
+                  />
+                </Grid>
+
+                {/* Kerb FAW */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Kerb FAW (kg) <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="kerbFAW"
+                    value={form.kerbFAW}
+                    onChange={handleChange}
+                    required
+                    type="number"
+                    placeholder="Enter Kerb FAW"
+                  />
+                </Grid>
+
+                {/* Kerb RAW */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Kerb RAW (kg) <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="kerbRAW"
+                    value={form.kerbRAW}
+                    onChange={handleChange}
+                    required
+                    type="number"
+                    placeholder="Enter Kerb RAW"
+                  />
+                </Grid>
+
+                {/* AWD/RWD/FWD */}
+                <Grid item xs={12} sm={6} md={6}>
+                  <FormLabel>
+                    AWD/RWD/FWD <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <RadioGroup>
+                    <RadioLabel>
+                      <input
+                        type="radio"
+                        name="awdRwdFwd"
+                        value="AWD"
+                        checked={form.awdRwdFwd === "AWD"}
+                        onChange={handleRadioChange}
+                        required
+                      />
+                      AWD
+                    </RadioLabel>
+                    <RadioLabel>
+                      <input
+                        type="radio"
+                        name="awdRwdFwd"
+                        value="RWD"
+                        checked={form.awdRwdFwd === "RWD"}
+                        onChange={handleRadioChange}
+                        required
+                      />
+                      RWD
+                    </RadioLabel>
+                    <RadioLabel>
+                      <input
+                        type="radio"
+                        name="awdRwdFwd"
+                        value="FWD"
+                        checked={form.awdRwdFwd === "FWD"}
+                        onChange={handleRadioChange}
+                        required
+                      />
+                      FWD
+                    </RadioLabel>
+                  </RadioGroup>
+                </Grid>
+
+                {/* Drive Type */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    2WD / 4WD <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <RadioGroup>
+                    <RadioLabel>
+                      <input
+                        type="radio"
+                        name="driveType"
+                        value="2WD"
+                        checked={form.driveType === "2WD"}
+                        onChange={handleRadioChange}
+                        required
+                      />
+                      2WD
+                    </RadioLabel>
+                    <RadioLabel>
+                      <input
+                        type="radio"
+                        name="driveType"
+                        value="4WD"
+                        checked={form.driveType === "4WD"}
+                        onChange={handleRadioChange}
+                        required
+                      />
+                      4WD
+                    </RadioLabel>
+                  </RadioGroup>
+                </Grid>
+
+                {/* Driven Wheel */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Driven Wheel <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <RadioGroup>
+                    {form.driveType === "2WD" ? (
+                      <>
+                        <RadioLabel>
+                          <input
+                            type="radio"
+                            name="drivenWheel"
+                            value="Front"
+                            checked={form.drivenWheel === "Front"}
+                            onChange={handleRadioChange}
+                            required
+                          />
+                          Front
+                        </RadioLabel>
+                        <RadioLabel>
+                          <input
+                            type="radio"
+                            name="drivenWheel"
+                            value="Rear"
+                            checked={form.drivenWheel === "Rear"}
+                            onChange={handleRadioChange}
+                            required
+                          />
+                          Rear
+                        </RadioLabel>
+                      </>
+                    ) : form.driveType === "4WD" ? (
+                      <>
+                        <RadioLabel>
+                          <input
+                            type="checkbox"
+                            name="drivenWheel"
+                            value="Front"
+                            checked={form.drivenWheel.includes("Front")}
+                            onChange={(e) => {
+                              const { value, checked } = e.target;
+                              let newValue = form.drivenWheel || "";
+                              if (checked) {
+                                newValue = newValue ? `${newValue}, ${value}` : value;
+                              } else {
+                                newValue = newValue.split(", ").filter(item => item !== value).join(", ");
+                              }
+                              setForm({ ...form, drivenWheel: newValue });
+                            }}
+                          />
+                          Front
+                        </RadioLabel>
+                        <RadioLabel>
+                          <input
+                            type="checkbox"
+                            name="drivenWheel"
+                            value="Rear"
+                            checked={form.drivenWheel.includes("Rear")}
+                            onChange={(e) => {
+                              const { value, checked } = e.target;
+                              let newValue = form.drivenWheel || "";
+                              if (checked) {
+                                newValue = newValue ? `${newValue}, ${value}` : value;
+                              } else {
+                                newValue = newValue.split(", ").filter(item => item !== value).join(", ");
+                              }
+                              setForm({ ...form, drivenWheel: newValue });
+                            }}
+                          />
+                          Rear
+                        </RadioLabel>
+                      </>
+                    ) : (
+                      <>
+                        <RadioLabel>
+                          <input
+                            type="radio"
+                            name="drivenWheel"
+                            value="Front"
+                            checked={form.drivenWheel === "Front"}
+                            onChange={handleRadioChange}
+                            required
+                          />
+                          Front
+                        </RadioLabel>
+                        <RadioLabel>
+                          <input
+                            type="radio"
+                            name="drivenWheel"
+                            value="Rear"
+                            checked={form.drivenWheel === "Rear"}
+                            onChange={handleRadioChange}
+                            required
+                          />
+                          Rear
+                        </RadioLabel>
+                      </>
+                    )}
+                  </RadioGroup>
+                </Grid>
+              </Grid>
+            </Box>
+
+            {/* Tyre Information */}
+            <SectionHeader>
+              <Build fontSize="medium" />
+              <Typography variant="h6" fontWeight="bold">
+                Tyre Information
+              </Typography>
+            </SectionHeader>
+
+            <Box sx={{ p: 2 }}> {/* Reduced padding */}
+              <Grid container spacing={2}> {/* Reduced grid spacing */}
+                {/* Tyre Make */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Tyre Make <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="tyreMake"
+                    value={form.tyreMake}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter Tyre Make"
+                  />
+                </Grid>
+
+                {/* Tyre Size */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Tyre Size <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="tyreSize"
+                    value={form.tyreSize}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter Tyre Size"
+                  />
+                </Grid>
+
+                {/* Tyre Pressure Front */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Tyre Pressure Front (psi) <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="tyrePressureFront"
+                    value={form.tyrePressureFront}
+                    onChange={handleChange}
+                    required
+                    type="number"
+                    placeholder="Enter Front Tyre Pressure"
+                  />
+                </Grid>
+
+                {/* Tyre Pressure Rear */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Tyre Pressure Rear (psi) <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="tyrePressureRear"
+                    value={form.tyrePressureRear}
+                    onChange={handleChange}
+                    required
+                    type="number"
+                    placeholder="Enter Rear Tyre Pressure"
+                  />
+                </Grid>
+
+                {/* Tyre Run-in */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Tyre Run-in (Kms) <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="tyreRunIn"
+                    value={form.tyreRunIn}
+                    onChange={handleChange}
+                    required
+                    type="number"
+                    placeholder="Enter Tyre Run-in"
+                  />
+                </Grid>
+
+                {/* Engine Run-in */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Engine Run-in (Kms) <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="engineRunIn"
+                    value={form.engineRunIn}
+                    onChange={handleChange}
+                    required
+                    type="number"
+                    placeholder="Enter Engine Run-in"
+                  />
+                </Grid>
+
+                {/* Gear Box Run-in */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Gear Box Run-in (Kms) <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="gearBoxRunIn"
+                    value={form.gearBoxRunIn}
+                    onChange={handleChange}
+                    required
+                    type="number"
+                    placeholder="Enter Gear Box Run-in"
+                  />
+                </Grid>
+
+                {/* Axle Run-in */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Axle Run-in (Kms) <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <StyledInput
+                    name="axleRunIn"
+                    value={form.axleRunIn}
+                    onChange={handleChange}
+                    required
+                    type="number"
+                    placeholder="Enter Axle Run-in"
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+
+            {/* Transmission Information */}
+            <SectionHeader>
+              <Settings fontSize="medium" />
+              <Typography variant="h6" fontWeight="bold">
+                Transmission Information
+              </Typography>
+            </SectionHeader>
+
+            <Box sx={{ p: 2 }}> {/* Reduced padding */}
+              <Grid container spacing={2}> {/* Reduced grid spacing */}
+                {/* Final Drive Ratio */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormLabel>
+                    Final Drive Axle Ratio <span style={{ color: "#3b82f6" }}>*</span>
+                  </FormLabel>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <StyledInput
+                      type="number"
+                      value={form.finalDriveAxleRatio.numerator}
+                      onChange={(e) => handleRatioChange(e, "finalDriveAxleRatio", "numerator")}
+                      required
+                      placeholder="Numerator"
+                      style={{ width: "calc(50% - 8px)" }}
+                    />
+                    <Typography variant="body1" sx={{ color: "#6b7280" }}>:</Typography>
+                    <StyledInput
+                      type="number"
+                      value={form.finalDriveAxleRatio.denominator}
+                      onChange={(e) => handleRatioChange(e, "finalDriveAxleRatio", "denominator")}
+                      required
+                      placeholder="Denominator"
+                      style={{ width: "calc(50% - 8px)" }}
+                    />
+                  </Box>
+                </Grid>
+
+                {!isEV && (
+                  <>
+                    {/* Engine Oil Specification */}
+                    <Grid item xs={12} sm={6} md={3}>
+                      <FormLabel>
+                        Engine Oil Specification <span style={{ color: "#3b82f6" }}>*</span>
+                      </FormLabel>
+                      <StyledInput
+                        name="engineOilSpecification"
+                        value={form.engineOilSpecification}
+                        onChange={handleChange}
+                        required={!isEV}
+                        placeholder="Enter Engine Oil Specification"
+                      />
+                    </Grid>
+
+                    {/* Axle Oil Specification */}
+                    <Grid item xs={12} sm={6} md={3}>
+                      <FormLabel>
+                        Axle Oil Specification <span style={{ color: "#3b82f6" }}>*</span>
+                      </FormLabel>
+                      <StyledInput
+                        name="axleOilSpecification"
+                        value={form.axleOilSpecification}
+                        onChange={handleChange}
+                        required={!isEV}
+                        placeholder="Enter Axle Oil Specification"
+                      />
+                    </Grid>
+
+                    {/* Transmission Oil Specification */}
+                    <Grid item xs={12} sm={6} md={3}>
+                      <FormLabel>
+                        Transmission Oil Specification <span style={{ color: "#3b82f6" }}>*</span>
+                      </FormLabel>
+                      <StyledInput
+                        name="transmissionOilSpecification"
+                        value={form.transmissionOilSpecification}
+                        onChange={handleChange}
+                        required={!isEV}
+                        placeholder="Enter Transmission Oil Specification"
+                      />
+                    </Grid>
+                  </>
+                )}
+
+                {/* Intercooler Location - Only for non-EV */}
+                {!isEV && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <FormLabel>
+                      Intercooler Location <span style={{ color: "#3b82f6" }}>*</span>
+                    </FormLabel>
+                    <RadioGroup>
+                      <RadioLabel>
+                        <input
+                          type="radio"
+                          name="intercoolerLocation"
+                          value="Front"
+                          checked={form.intercoolerLocation === "Front"}
+                          onChange={handleRadioChange}
+                          required
+                        />
+                        Front
+                      </RadioLabel>
+                      <RadioLabel>
+                        <input
+                          type="radio"
+                          name="intercoolerLocation"
+                          value="Rear"
+                          checked={form.intercoolerLocation === "Rear"}
+                          onChange={handleRadioChange}
+                          required
+                        />
+                        Rear
+                      </RadioLabel>
+                      <RadioLabel>
+                        <input
+                          type="radio"
+                          name="intercoolerLocation"
+                          value="Top"
+                          checked={form.intercoolerLocation === "Top"}
+                          onChange={handleRadioChange}
+                          required
+                        />
+                        Top
+                      </RadioLabel>
+                    </RadioGroup>
+                  </Grid>
+                )}
+
+                {/* Gear Ratios - Only for non-EV */}
+                {!isEV && (
+                  <>
+                    <Grid item xs={12}>
+                      <Divider sx={{ my: 2 }}>
+                        <Chip label="Gear Ratios" color="primary" />
+                      </Divider>
+                    </Grid>
+
+                    {/* 1st Gear Ratio */}
+                    <Grid item xs={12} sm={6} md={4}>
+                      <FormLabel>
+                        1st Gear Ratio <span style={{ color: "#3b82f6" }}>*</span>
+                      </FormLabel>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <StyledInput
+                          type="number"
+                          value={form.gearRatio1.numerator}
+                          onChange={(e) => handleRatioChange(e, "gearRatio1", "numerator")}
+                          required
+                          placeholder="Numerator"
+                          style={{ width: "calc(50% - 8px)" }}
+                        />
+                        <Typography variant="body1" sx={{ color: "#6b7280" }}>:</Typography>
+                        <StyledInput
+                          type="number"
+                          value={form.gearRatio1.denominator}
+                          onChange={(e) => handleRatioChange(e, "gearRatio1", "denominator")}
+                          required
+                          placeholder="Denominator"
+                          style={{ width: "calc(50% - 8px)" }}
+                        />
+                      </Box>
+                    </Grid>
+
+                    {/* 2nd Gear Ratio */}
+                    <Grid item xs={12} sm={6} md={4}>
+                      <FormLabel>
+                        2nd Gear Ratio <span style={{ color: "#3b82f6" }}>*</span>
+                      </FormLabel>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <StyledInput
+                          type="number"
+                          value={form.gearRatio2.numerator}
+                          onChange={(e) => handleRatioChange(e, "gearRatio2", "numerator")}
+                          required
+                          placeholder="Numerator"
+                          style={{ width: "calc(50% - 8px)" }}
+                        />
+                        <Typography variant="body1" sx={{ color: "#6b7280" }}>:</Typography>
+                        <StyledInput
+                          type="number"
+                          value={form.gearRatio2.denominator}
+                          onChange={(e) => handleRatioChange(e, "gearRatio2", "denominator")}
+                          required
+                          placeholder="Denominator"
+                          style={{ width: "calc(50% - 8px)" }}
+                        />
+                      </Box>
+                    </Grid>
+
+                    {/* 3rd Gear Ratio */}
+                    <Grid item xs={12} sm={6} md={4}>
+                      <FormLabel>
+                        3rd Gear Ratio <span style={{ color: "#3b82f6" }}>*</span>
+                      </FormLabel>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <StyledInput
+                          type="number"
+                          value={form.gearRatio3.numerator}
+                          onChange={(e) => handleRatioChange(e, "gearRatio3", "numerator")}
+                          required
+                          placeholder="Numerator"
+                          style={{ width: "calc(50% - 8px)" }}
+                        />
+                        <Typography variant="body1" sx={{ color: "#6b7280" }}>:</Typography>
+                        <StyledInput
+                          type="number"
+                          value={form.gearRatio3.denominator}
+                          onChange={(e) => handleRatioChange(e, "gearRatio3", "denominator")}
+                          required
+                          placeholder="Denominator"
+                          style={{ width: "calc(50% - 8px)" }}
+                        />
+                      </Box>
+                    </Grid>
+
+                    {/* 4th Gear Ratio */}
+                    <Grid item xs={12} sm={6} md={4}>
+                      <FormLabel>
+                        4th Gear Ratio <span style={{ color: "#3b82f6" }}>*</span>
+                      </FormLabel>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <StyledInput
+                          type="number"
+                          value={form.gearRatio4.numerator}
+                          onChange={(e) => handleRatioChange(e, "gearRatio4", "numerator")}
+                          required
+                          placeholder="Numerator"
+                          style={{ width: "calc(50% - 8px)" }}
+                        />
+                        <Typography variant="body1" sx={{ color: "#6b7280" }}>:</Typography>
+                        <StyledInput
+                          type="number"
+                          value={form.gearRatio4.denominator}
+                          onChange={(e) => handleRatioChange(e, "gearRatio4", "denominator")}
+                          required
+                          placeholder="Denominator"
+                          style={{ width: "calc(50% - 8px)" }}
+                        />
+                      </Box>
+                    </Grid>
+
+                    {/* 5th Gear Ratio */}
+                    <Grid item xs={12} sm={6} md={4}>
+                      <FormLabel>
+                        5th Gear Ratio <span style={{ color: "#3b82f6" }}>*</span>
+                      </FormLabel>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <StyledInput
+                          type="number"
+                          value={form.gearRatio5.numerator}
+                          onChange={(e) => handleRatioChange(e, "gearRatio5", "numerator")}
+                          required
+                          placeholder="Numerator"
+                          style={{ width: "calc(50% - 8px)" }}
+                        />
+                        <Typography variant="body1" sx={{ color: "#6b7280" }}>:</Typography>
+                        <StyledInput
+                          type="number"
+                          value={form.gearRatio5.denominator}
+                          onChange={(e) => handleRatioChange(e, "gearRatio5", "denominator")}
+                          required
+                          placeholder="Denominator"
+                          style={{ width: "calc(50% - 8px)" }}
+                        />
+                      </Box>
+                    </Grid>
+
+                    {/* Reverse Gear Ratio */}
+                    <Grid item xs={12} sm={6} md={4}>
+                      <FormLabel>
+                        Reverse Gear Ratio <span style={{ color: "#3b82f6" }}>*</span>
+                      </FormLabel>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <StyledInput
+                          type="number"
+                          value={form.reverseGearRatio.numerator}
+                          onChange={(e) => handleRatioChange(e, "reverseGearRatio", "numerator")}
+                          required
+                          placeholder="Numerator"
+                          style={{ width: "calc(50% - 8px)" }}
+                        />
+                        <Typography variant="body1" sx={{ color: "#6b7280" }}>:</Typography>
+                        <StyledInput
+                          type="number"
+                          value={form.reverseGearRatio.denominator}
+                          onChange={(e) => handleRatioChange(e, "reverseGearRatio", "denominator")}
+                          required
+                          placeholder="Denominator"
+                          style={{ width: "calc(50% - 8px)" }}
+                        />
+                      </Box>
+                    </Grid>
+                  </>
+                )}
+              </Grid>
+            </Box>
+
+            {/* Action Buttons */}
+            <Box sx={{ p: 2, display: "flex", justifyContent: "flex-end", gap: 2, backgroundColor: "#f9fafb" }}> {/* Reduced padding */}
+              <ActionButton
+                type="button"
+                onClick={handleClear}
+                sx={{
+                  backgroundColor: "white",
+                  color: "#3b82f6",
+                  border: "1px solid #3b82f6",
+                  "&:hover": {
+                    backgroundColor: "rgba(59, 130, 246, 0.04)",
+                  },
+                }}
+              >
+                CLEAR
+              </ActionButton>
+              <ActionButton
+                type="submit"
+                sx={{
+                  backgroundColor: "#3b82f6",
+                  color: "white",
+                  "&:hover": {
+                    backgroundColor: "#1e40af",
+                  },
+                }}
+              >
+                {isEditMode ? "UPDATE VEHICLE" : "ADD VEHICLE"}
+              </ActionButton>
+            </Box>
+          </form>
+        </StyledPaper>
+      </Box>
     </>
   );
 }

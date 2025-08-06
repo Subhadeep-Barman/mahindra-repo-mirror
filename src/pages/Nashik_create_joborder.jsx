@@ -71,6 +71,7 @@ export default function NashikCreateJobOrder() {
   const [engineFormData, setEngineFormData] = useState(null);
   const [showCFTPanel, setShowCFTPanel] = useState(false);
   const [cdError, setCdError] = useState("");
+  const [cdFieldErrors, setCdFieldErrors] = useState({});
 
   // State to control pre-filling mode to prevent useEffect conflicts
   const [isPreFilling, setIsPreFilling] = useState(false);
@@ -255,48 +256,44 @@ export default function NashikCreateJobOrder() {
   }, []);
 
 
-  // New: State for fetched vehicles and engines
-  const [vehicleList, setVehicleList] = useState([]);
-  const [engineList, setEngineList] = useState([]);
-  // New: State for vehicle body numbers
-  const [vehicleBodyNumbers, setVehicleBodyNumbers] = useState([]);
-  // New: State for engine numbers from API
-  const [engineNumbers, setEngineNumbers] = useState([]);
-  const [cdFieldErrors, setCdFieldErrors] = useState({});
-
-  // Fetch vehicle and engine lists from API on mount
-  useEffect(() => {
-    // Replace with your actual API endpoints
-    fetch("/api/vehicles")
-      .then((res) => res.json())
-      .then((data) => setVehicleList(data || []));
-    fetch("/api/engines")
-      .then((res) => res.json())
-      .then((data) => setEngineList(data || []));
-    // Fetch vehicle body numbers (now returns both body number and vehicle number)
-    (async () => {
-      try {
-        // Pass department as query param for filtering
-        const res = await axios.get(
-          `${apiURL}/vehicle-body-numbers`
-        );
-        setVehicleBodyNumbers(res.data || []);
-      } catch (err) {
-        setVehicleBodyNumbers([]);
+  // New: State for fetched vehicles by project
+    const [projectVehicles, setProjectVehicles] = useState([]);
+    // New: State for selected vehicle's engine numbers
+    const [vehicleEngineNumbers, setVehicleEngineNumbers] = useState([]);
+  
+    useEffect(() => {
+      // When project code changes, fetch vehicles for that project
+      if (form.projectCode) {
+        axios
+          .get(`${apiURL}/vehicles/by-project/${encodeURIComponent(form.projectCode)}`)
+          .then((res) => {
+            setProjectVehicles(res.data.vehicles || []);
+          })
+          .catch(() => {
+            setProjectVehicles([]);
+          });
+        // Reset vehicle and engine selections
+        setForm((prev) => ({
+          ...prev,
+          vehicleBodyNumber: "",
+          vehicleSerialNumber: "",
+          engineNumber: "",
+          engineType: "",
+        }));
+        setVehicleEngineNumbers([]);
+      } else {
+        setProjectVehicles([]);
+        setVehicleEngineNumbers([]);
+        setForm((prev) => ({
+          ...prev,
+          vehicleBodyNumber: "",
+          vehicleSerialNumber: "",
+          engineNumber: "",
+          engineType: "",
+        }));
       }
-    })();
-    // Fetch engine numbers from FastAPI endpoint
-    (async () => {
-      try {
-        const res = await axios.get(
-          `${apiURL}/engine-numbers`
-        );
-        setEngineNumbers(res.data || []);
-      } catch (err) {
-        setEngineNumbers([]);
-      }
-    })();
-  }, []);
+      // eslint-disable-next-line
+    }, [form.projectCode]);
 
   // Accordion state for vehicle details
   const [vehicleAccordionOpen, setVehicleAccordionOpen] = useState(false);
@@ -310,9 +307,7 @@ export default function NashikCreateJobOrder() {
     // Don't interfere if we're currently pre-filling
     if (isPreFilling) return;
 
-    const found = vehicleBodyNumbers.find(
-      (v) => v.vehicle_body_number === value
-    );
+    const found = projectVehicles.find((v) => v.vehicle_body_number === value);
     setForm((prev) => ({
       ...prev,
       vehicleBodyNumber: value,
@@ -320,6 +315,7 @@ export default function NashikCreateJobOrder() {
       engineSerialNumber: "",
       engineType: "",
     }));
+    setVehicleEngineNumbers(found?.engine_numbers || []);
     // Use the new API endpoint
     if (value) {
       axios
@@ -328,7 +324,6 @@ export default function NashikCreateJobOrder() {
           setVehicleEditable(res.data);
         })
         .catch((error) => {
-          console.log("Could not fetch vehicle details:", error);
           setVehicleEditable(null);
         });
     }
@@ -387,28 +382,12 @@ export default function NashikCreateJobOrder() {
           }));
         })
         .catch((error) => {
-          console.log("Could not fetch engine details:", error);
           setEngineEditable(null);
         });
     }
   };
 
   // Keep engineEditable in sync with API response
-  useEffect(() => {
-    if (form.engineSerialNumber && !isPreFilling) {
-      axios
-        .get(
-          `${apiURL}/engines/by-engine-number/${encodeURIComponent(
-            form.engineSerialNumber
-          )}`
-        )
-        .then((res) => setEngineEditable(res.data))
-        .catch(() => setEngineEditable(null));
-    } else if (!form.engineSerialNumber && !isPreFilling) {
-      setEngineEditable(null);
-    }
-    // eslint-disable-next-line
-  }, [form.engineSerialNumber, isPreFilling]);
 
   // Handler for editable engine form changes
   const handleEngineEditableChange = (field, value) => {
@@ -426,7 +405,6 @@ export default function NashikCreateJobOrder() {
     // Only run once when component mounts and we have job order data
     if (location.state?.jobOrder && !hasPreFilledRef.current) {
       const jobOrder = location.state.jobOrder;
-      console.log("Pre-filling form with job order data:", jobOrder);
 
       // Mark that we've started pre-filling to prevent multiple executions
       hasPreFilledRef.current = true;
@@ -437,10 +415,7 @@ export default function NashikCreateJobOrder() {
 
       // Show success message if this is for creating test orders
       if (location.state.isEdit) {
-        console.log(
-          "Loading job order for creating test orders based on:",
-          location.state.originalJobOrderId
-        );
+        showSnackbar("Job order pre-filled successfully", "success");
       }
 
       // Function to fetch and pre-fill coast down data
@@ -451,7 +426,6 @@ export default function NashikCreateJobOrder() {
               `${apiURL}/coastdown/${coastDownDataId}`
             );
             const coastDownData = response.data;
-            console.log("Fetched coast down data:", coastDownData);
 
             return {
               cdReportRef: coastDownData.coast_down_reference || "",
@@ -572,7 +546,6 @@ export default function NashikCreateJobOrder() {
             "",
         };
 
-        console.log("Setting form data to:", newFormData);
         setForm(newFormData);
 
         // Prefill vehicleEditable and engineEditable if present
@@ -587,7 +560,6 @@ export default function NashikCreateJobOrder() {
 
         // Use setTimeout to allow form state to settle before enabling other useEffects
         setTimeout(() => {
-          console.log("Pre-filling completed, enabling other useEffects");
           setIsPreFilling(false);
           setIsLoading(false);
         }, 1000); // Increased timeout to 1 second
@@ -703,7 +675,7 @@ export default function NashikCreateJobOrder() {
       }
       showSnackbar("Job Order Created! ID: " + jobOrderRes.data.job_order_id, "success");
       // Optionally, reset form or navigate
-      handleSendMail(1, jobOrderRes.data.job_order_id,null);
+      handleSendMail(1, jobOrderRes.data.job_order_id, null);
       navigate(-1);
     } catch (err) {
       console.error("Error creating job order:", err);
@@ -730,7 +702,7 @@ export default function NashikCreateJobOrder() {
     // Get job_order_id from location state or create a new one if not available
     const job_order_id = location.state?.jobOrder?.job_order_id || null;
 
-    
+
 
     // Create or update coast down data for this specific test
     let CoastDownData_id =
@@ -788,7 +760,6 @@ export default function NashikCreateJobOrder() {
 
       try {
         await axios.post(`${apiURL}/coastdown`, testCoastDownPayload);
-        console.log("Test-specific coast down data created:", CoastDownData_id);
       } catch (err) {
         console.error("Error creating test-specific coast down data:", err);
         showSnackbar("Failed to create coast down data for test: " + (err.response?.data?.detail || err.message), "error");
@@ -890,7 +861,6 @@ export default function NashikCreateJobOrder() {
         `${apiURL}/coastdown/${existingCoastDownId}`,
         coastDownUpdatePayload
       );
-      console.log("Coast down data updated successfully");
     } catch (err) {
       console.error("Error updating coast down data:", err);
       throw err; // Re-throw to handle in calling function
@@ -904,12 +874,6 @@ export default function NashikCreateJobOrder() {
 
   // Debug useEffect to monitor form state changes
   useEffect(() => {
-    console.log("Form state updated:", form);
-    console.log("Pre-filling state:", isPreFilling);
-    console.log("Loading state:", isLoading);
-    console.log("Has pre-filled:", hasPreFilledRef.current);
-
-    // Check if form is being reset unexpectedly
     const hasValues = Object.values(form).some((value) => value !== "");
     if (!hasValues && hasPreFilledRef.current && !isPreFilling) {
       console.warn("⚠️ Form was reset unexpectedly after pre-filling!");
@@ -960,7 +924,6 @@ export default function NashikCreateJobOrder() {
         grouped[order.job_order_id].push(order);
       });
       setAllTestOrders(grouped);
-      console.log("Fetched all test orders:", grouped);
     } catch (err) {
       setAllTestOrders({});
       console.error("Failed to fetch test orders:", err);
@@ -1195,23 +1158,20 @@ export default function NashikCreateJobOrder() {
     return !test.disabled && (!test.testOrderId || editingTestOrderIdx === idx);
   };
 
-const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = null) => {
+  const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = null) => {
     setMailLoading(true);
     try {
       // First try to use the direct job order ID passed to this function
       // Then fall back to other sources if not provided
-      const resolvedJobOrderId = directJobOrderId || 
-                                jobOrderId || 
-                                useStore.getState().backendJobOrderID;
+      const resolvedJobOrderId = directJobOrderId ||
+        jobOrderId ||
+        useStore.getState().backendJobOrderID;
 
       if (!resolvedJobOrderId) {
         showSnackbar("Job Order ID is missing. Cannot send mail.", "error");
         setMailLoading(false);
         return;
       }
-
-      // Debug log to verify job order ID
-      console.log("Sending mail with job order ID:", resolvedJobOrderId);
 
       // Compose payload as per new API
       const payload = {
@@ -1306,13 +1266,13 @@ const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = nul
               value={form.vehicleBodyNumber}
               onValueChange={handleVehicleBodyChange}
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || !form.projectCode}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
-                {vehicleBodyNumbers.map((item, index) => (
+                {projectVehicles.map((item, index) => (
                   <SelectItem
                     key={`${item.vehicle_body_number}-${index}`}
                     value={item.vehicle_body_number}
@@ -1347,13 +1307,13 @@ const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = nul
               value={form.engineSerialNumber}
               onValueChange={handleEngineNumberChange}
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || !form.vehicleBodyNumber}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
-                {engineNumbers.map((engineSerialNumber) => (
+                {vehicleEngineNumbers.map((engineSerialNumber) => (
                   <SelectItem key={engineSerialNumber} value={engineSerialNumber}>
                     {engineSerialNumber}
                   </SelectItem>
@@ -1711,7 +1671,6 @@ const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = nul
             className="text-xs text-blue-700 px-0"
             onClick={() => {
               setShowCFTPanel((prev) => !prev);
-              console.log("Toggled CFT panel");
             }}
             disabled={isTestEngineer}
           >
@@ -1752,27 +1711,27 @@ const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = nul
             </div>
             <div className="grid grid-cols-4 gap-4 mb-2">
               <div className="flex flex-col">
-                                            <Label htmlFor={`engineNumber${idx}`} className="mb-2">
-                                              Engine Number <span className="text-red-500">*</span>
-                                            </Label>
-                                            <Select
-                                              value={test.engineNumber || ""}
-                                              onValueChange={(value) => handleTestChange(idx, "engineNumber", value)}
-                                              required
-                                              disabled={!areTestFieldsEditable(test, idx)}
-                                            >
-                                              <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Select" />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                {engineNumbers.map((engineNumber) => (
-                                                  <SelectItem key={engineNumber} value={engineNumber}>
-                                                    {engineNumber}
-                                                  </SelectItem>
-                                                ))}
-                                              </SelectContent>
-                                            </Select>
-                                      </div>
+                <Label htmlFor={`engineNumber${idx}`} className="mb-2">
+                  Engine Number <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={test.engineNumber || ""}
+                  onValueChange={(value) => handleTestChange(idx, "engineNumber", value)}
+                  required
+                  disabled={!areTestFieldsEditable(test, idx)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {engineNumbers.map((engineNumber) => (
+                      <SelectItem key={engineNumber} value={engineNumber}>
+                        {engineNumber}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label>Test Type</Label>
                 <Select
@@ -2575,7 +2534,7 @@ const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = nul
                 onClick={() => handleCreateTestOrder(idx)}
                 disabled={editingTestOrderIdx === idx || isTestEngineer}
               >
-                 CREATE TEST ORDER
+                CREATE TEST ORDER
               </Button>
               {editingTestOrderIdx === idx && (
                 <Button

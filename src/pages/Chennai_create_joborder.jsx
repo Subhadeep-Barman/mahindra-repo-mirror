@@ -20,6 +20,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import CFTMembers from "@/components/CFTMembers";
 import showSnackbar from "@/utils/showSnackbar";
+import { GrClone } from "react-icons/gr";
+import { MdPeopleAlt } from "react-icons/md";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL
 
@@ -101,11 +103,20 @@ export default function CreateJobOrder() {
   const [modes, setModes] = useState([]);
   const [fuelTypes, setFuelTypes] = useState([]);
 
-  // Handler to add a new test
+  // Add state for clone modal
+  const [cloneModalOpen, setCloneModalOpen] = useState(false);
+  const [cloneDropdownOpen, setCloneDropdownOpen] = useState(false);
+  const [selectedTestOrderForClone, setSelectedTestOrderForClone] = useState("");
+
   const handleAddTest = () => {
+    const existingTestOrdersCount = (allTestOrders[location.state?.originalJobOrderId] || []).length;
+    const currentTestsCount = tests.length;
+    const nextTestNumber = existingTestOrdersCount + currentTestsCount + 1;
+
     setTests((prev) => [
       ...prev,
       {
+        testNumber: nextTestNumber, // Add test number
         engineNumber: "",
         testType: "",
         objective: "",
@@ -152,6 +163,92 @@ export default function CreateJobOrder() {
     ]);
   };
 
+  const handleCloneTest = async () => {
+    setCloneDropdownOpen(!cloneDropdownOpen);
+  };
+
+  // Add function to handle cloning a specific test order
+  const handleCloneSpecificTestOrder = async (testOrderId) => {
+    try {
+      // Fetch the specific test order details
+      const testOrderData = await fetchTestOrderById(testOrderId);
+
+      if (!testOrderData) {
+        showSnackbar("Failed to fetch test order details", "error");
+        return;
+      }
+
+      // Calculate the next test number
+      const existingTestOrdersCount = (allTestOrders[location.state?.originalJobOrderId] || []).length;
+      const currentTestsCount = tests.length;
+      const nextTestNumber = existingTestOrdersCount + currentTestsCount + 1;
+
+      // Create a new test with prefilled values from the cloned test order
+      const clonedTest = {
+        testNumber: nextTestNumber,
+        engineNumber: testOrderData.engine_number || "",
+        testType: testOrderData.test_type || "",
+        objective: testOrderData.test_objective || "",
+        vehicleLocation: testOrderData.vehicle_location || "",
+        cycleGearShift: testOrderData.cycle_gear_shift || "",
+        datasetName: testOrderData.dataset_name || "",
+        inertiaClass: testOrderData.inertia_class || "",
+        dpf: testOrderData.dpf || "",
+        dpfRegenOccurs: testOrderData.dpf_regen_occurs || "",
+        datasetflashed: testOrderData.dataset_flashed === true ? "Yes" : testOrderData.dataset_flashed === false ? "No" : "",
+        ess: testOrderData.ess || "",
+        mode: testOrderData.mode || "",
+        hardwareChange: testOrderData.hardware_change || "",
+        equipmentRequired: testOrderData.equipment_required || "",
+        shift: testOrderData.shift || "",
+        fuelType: testOrderData.fuel_type || "",
+        preferredDate: testOrderData.preferred_date || "",
+        emissionCheckDate: testOrderData.emission_check_date || "",
+        specificInstruction: testOrderData.specific_instruction || "",
+
+        // Parse attachment fields
+        emissionCheckAttachment: parseAttachment(testOrderData.emission_check_attachment),
+        dataset_attachment: parseAttachment(testOrderData.dataset_attachment),
+        a2l_attachment: parseAttachment(testOrderData.a2l_attachment),
+        experiment_attachment: parseAttachment(testOrderData.experiment_attachment),
+        dbc_attachment: parseAttachment(testOrderData.dbc_attachment),
+        wltp_attachment: parseAttachment(testOrderData.wltp_attachment),
+        pdf_report: parseAttachment(testOrderData.pdf_report),
+        excel_report: parseAttachment(testOrderData.excel_report),
+        dat_file_attachment: parseAttachment(testOrderData.dat_file_attachment),
+        others_attachment: parseAttachment(testOrderData.others_attachement),
+
+        // Reset fields for new test order
+        testOrderId: null,
+        job_order_id: null,
+        status: null,
+        showCoastDownData: false,
+
+        // Coast down data fields (empty for new test)
+        cdReportRef: "",
+        vehicleRefMass: "",
+        aN: "",
+        bNkmph: "",
+        cNkmph2: "",
+        f0N: "",
+        f1Nkmph: "",
+        f2Nkmph2: "",
+      };
+
+      // Add the cloned test to the tests array
+      setTests((prev) => [...prev, clonedTest]);
+
+      // Close the modal and reset selection
+      setCloneModalOpen(false);
+      setSelectedTestOrderForClone("");
+
+      showSnackbar(`Test cloned successfully from Test Order: ${testOrderId}`, "success");
+
+    } catch (err) {
+      console.error("Error cloning test order:", err);
+      showSnackbar("Failed to clone test order: " + (err.response?.data?.detail || err.message), "error");
+    }
+  };
 
   const handleBack = () => {
     navigate(-1);
@@ -248,58 +345,60 @@ export default function CreateJobOrder() {
     fetchFuelTypes();
   }, []);
 
-  // Fetch vehicle and engine lists from API on mount
-  useEffect(() => {
-    // Replace with your actual API endpoints
-    fetch("/api/vehicles")
-      .then((res) => res.json())
-      .then((data) => setVehicleList(data || []));
-    fetch("/api/engines")
-      .then((res) => res.json())
-      .then((data) => setEngineList(data || []));
+  // New: State for fetched vehicles by project
+    const [projectVehicles, setProjectVehicles] = useState([]);
+    // New: State for selected vehicle's engine numbers
+    const [vehicleEngineNumbers, setVehicleEngineNumbers] = useState([]);
+  
+    useEffect(() => {
+      // if(!location.state?.jobOrder) {
+      // When project code changes, fetch vehicles for that project
+      if (form.projectCode) {
+        axios
+          .get(`${apiURL}/vehicles/by-project/${encodeURIComponent(form.projectCode)}`)
+          .then((res) => {
+            setProjectVehicles(res.data.vehicles || []);
+          })
+          .catch(() => {
+            setProjectVehicles([]);
+          });
 
-    // Determine department - check if we have job order data first
-    const currentDepartment = location.state?.jobOrder?.department || form.department || "VTC_JO Chennai";
+        // Reset vehicle and engine selections
+        // setForm((prev) => ({
+        //   ...prev,
+        //   vehicleBodyNumber: "",
+        //   vehicleSerialNumber: "",
+        //   engineNumber: "",
+        //   engineType: "",
+        // }));
 
-    // Fetch vehicle body numbers (now returns both body number and vehicle_serial_number)
-    (async () => {
-      try {
-        // Pass department as query param for filtering
-        const res = await axios.get(
-          `${apiURL}/vehicle-body-numbers`,
-          { params: { department: currentDepartment } }
-        );
-        setVehicleBodyNumbers(res.data || []);
-      } catch (err) {
-        setVehicleBodyNumbers([]);
+        // setVehicleEngineNumbers([]);
+      } else {
+        // setProjectVehicles([]);
+        // setVehicleEngineNumbers([]);
+        // setForm((prev) => ({
+        //   ...prev,
+        //   vehicleBodyNumber: "",
+        //   vehicleSerialNumber: "",
+        //   engineNumber: "",
+        //   engineType: "",
+        // }));
       }
-    })();
-
-    // Fetch engine numbers from FastAPI endpoint
-    (async () => {
-      try {
-        // Pass department as query param for filtering
-        const res = await axios.get(
-          `${apiURL}/engine-numbers`,
-          { params: { department: currentDepartment } }
-        );
-        setEngineNumbers(res.data || []);
-      } catch (err) {
-        setEngineNumbers([]);
-      }
-    })();
-  }, [location.state?.jobOrder?.department]); // Add dependency on job order department
-
-
+    
+      // eslint-disable-next-line
+    }, [form.projectCode]);
 
   // Fetch vehicle details using the new API when body number changes
   const handleVehicleBodyChange = (value) => {
     // Don't interfere if we're currently pre-filling
-    if (isPreFilling) return;
-
-    const found = vehicleBodyNumbers.find(
-      (v) => v.vehicle_body_number === value
-    );
+    // if (isPreFilling){
+    //   console.log("exit"); return;
+    // }
+    // console.log("still")
+    const found = projectVehicles.find((v) => v.vehicle_body_number === value);
+    setVehicleEngineNumbers(found?.engine_numbers || []);
+    console.log("found", found);
+    if( !location.state?.jobOrder) {
     setForm((prev) => ({
       ...prev,
       vehicleBodyNumber: value,
@@ -307,6 +406,7 @@ export default function CreateJobOrder() {
       engineSerialNumber: "",
       engineType: "",
     }));
+  }
     // Use the new API endpoint
     if (value) {
       axios
@@ -322,7 +422,7 @@ export default function CreateJobOrder() {
 
   // Keep vehicleEditable in sync with API response
   useEffect(() => {
-    if (form.vehicleBodyNumber && !isPreFilling) {
+    if (form.vehicleBodyNumber && !isPreFilling && !location.state?.jobOrder) {
       axios
         .get(
           `${apiURL}/vehicles/by-body-number/${encodeURIComponent(
@@ -331,8 +431,11 @@ export default function CreateJobOrder() {
         )
         .then((res) => setVehicleEditable(res.data))
         .catch(() => setVehicleEditable(null));
-    } else if (!form.vehicleBodyNumber && !isPreFilling) {
+
+    } else if (!form.vehicleBodyNumber && !isPreFilling && !location.state?.jobOrder) {
       setVehicleEditable(null);
+                  console.log("satyanash")
+
     }
     // eslint-disable-next-line
   }, [form.vehicleBodyNumber, isPreFilling]);
@@ -348,8 +451,11 @@ export default function CreateJobOrder() {
   // Fetch engine details using the new API when engine number changes
   const handleEngineNumberChange = (value) => {
     // Don't interfere if we're currently pre-filling
-    if (isPreFilling) return;
-
+    if (isPreFilling && location.state?.jobOrder) {
+      console.log("exit");
+      return;
+    }
+    console.log("handleEngineNumberChange with value:", value);
     setForm((prev) => ({
       ...prev,
       engineSerialNumber: value,
@@ -372,21 +478,7 @@ export default function CreateJobOrder() {
   };
 
   // Keep engineEditable in sync with API response
-  useEffect(() => {
-    if (form.engineSerialNumber && !isPreFilling) {
-      axios
-        .get(
-          `${apiURL}/engines/by-engine-number/${encodeURIComponent(
-            form.engineSerialNumber
-          )}`
-        )
-        .then((res) => setEngineEditable(res.data))
-        .catch(() => setEngineEditable(null));
-    } else if (!form.engineSerialNumber && !isPreFilling) {
-      setEngineEditable(null);
-    }
-    // eslint-disable-next-line
-  }, [form.engineSerialNumber, isPreFilling]);
+
 
   // Handler for editable engine form changes
   const handleEngineEditableChange = (field, value) => {
@@ -414,7 +506,6 @@ export default function CreateJobOrder() {
       // Show success message if this is for creating test orders
       if (location.state.isEdit) {
       }
-
       // Function to fetch and pre-fill coast down data
       const fetchAndFillCoastDownData = async (coastDownDataId) => {
         if (coastDownDataId) {
@@ -472,12 +563,47 @@ export default function CreateJobOrder() {
 
           setVehicleBodyNumbers(vehicleBodyRes.data || []);
           setEngineNumbers(engineNumberRes.data || []);
+          
+          // Fetch engine numbers associated with the vehicle body number
+          if (jobOrder.vehicle_body_number) {
+            try {
+              console.log("Fetching engine numbers for vehicle body:", jobOrder.vehicle_body_number);
+              const vehicleEngineRes = await axios.get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(jobOrder.vehicle_body_number)}`);
+              
+              console.log("Vehicle engine response:", vehicleEngineRes.data);
+              
+              if (vehicleEngineRes.data && vehicleEngineRes.data.engine_numbers) {
+                setVehicleEngineNumbers(vehicleEngineRes.data.engine_numbers);
+              }
+              
+              // If the job order's engine serial number is not in the list, add it
+              if (jobOrder.engine_serial_number) {
+                console.log("Job order engine serial number:", jobOrder.engine_serial_number);
+                
+                if (vehicleEngineRes.data && 
+                    (!vehicleEngineRes.data.engine_numbers || 
+                    !vehicleEngineRes.data.engine_numbers.includes(jobOrder.engine_serial_number))) {
+                  console.log("Adding job order engine serial number to vehicleEngineNumbers");
+                  setVehicleEngineNumbers(prev => {
+                    const updatedList = [...prev, jobOrder.engine_serial_number];
+                    console.log("Updated vehicleEngineNumbers:", updatedList);
+                    return updatedList;
+                  });
+                }
+              }
+            } catch (error) {
+              console.error("Error fetching vehicle engine numbers:", error);
+              // If we can't get the vehicle's engine numbers, at least include the job order's engine number
+              if (jobOrder.engine_serial_number) {
+                setVehicleEngineNumbers([jobOrder.engine_serial_number]);
+              }
+            }
+          }
         } catch (error) {
           console.error("Error fetching department-specific data:", error);
           setVehicleBodyNumbers([]);
           setEngineNumbers([]);
         }
-
         const newFormData = {
           ...form, // Preserve existing form state first
           projectCode: jobOrder.project_code || "",
@@ -574,9 +700,7 @@ export default function CreateJobOrder() {
           requestedPayloadKg: jobOrder.requestedPayloadKg || jobOrder.requested_payload || "",
           idleExhaustMassFlow: jobOrder.idleExhaustMassFlow || jobOrder.idle_exhaust_mass_flow || "",
         };
-
         setForm(newFormData);
-
         // Prefill vehicleEditable and engineEditable if present
         if (jobOrder.vehicleDetails)
           setVehicleEditable(jobOrder.vehicleDetails);
@@ -622,18 +746,15 @@ export default function CreateJobOrder() {
     try {
       // First try to use the direct job order ID passed to this function
       // Then fall back to other sources if not provided
-      const resolvedJobOrderId = directJobOrderId || 
-                                jobOrderId || 
-                                useStore.getState().backendJobOrderID;
+      const resolvedJobOrderId = directJobOrderId ||
+        jobOrderId ||
+        useStore.getState().backendJobOrderID;
 
       if (!resolvedJobOrderId) {
         showSnackbar("Job Order ID is missing. Cannot send mail.", "error");
         setMailLoading(false);
         return;
       }
-
-      // Debug log to verify job order ID
-      console.log("Sending mail with job order ID:", resolvedJobOrderId);
 
       // Compose payload as per new API
       const payload = {
@@ -750,7 +871,7 @@ export default function CreateJobOrder() {
 
       // Get the job order ID from the API response
       const createdJobOrderId = jobOrderRes.data.job_order_id || job_order_id;
-      
+
       // Set the job order ID in state (for future reference)
       setJobOrderId(createdJobOrderId);
 
@@ -758,11 +879,11 @@ export default function CreateJobOrder() {
         "Job Order Created! ID: " + createdJobOrderId,
         "success"
       );
-      
+
       // Send mail with the job order ID directly from the API response
       // BEFORE navigation
       await handleSendMail(1, createdJobOrderId, null);
-      
+
       // Navigate only after mail is sent
       navigate(-1);
     } catch (err) {
@@ -785,10 +906,9 @@ export default function CreateJobOrder() {
       );
       return;
     }
-
     const test_order_id = "TO" + Date.now();
-
     const job_order_id = location.state?.jobOrder?.job_order_id || location.state?.originalJobOrderId || "";
+    // const test_order_id = `${job_order_id}/${test.testNumber}`;
 
     const currentISTTime = new Date().toLocaleString("en-US", {
       timeZone: "Asia/Kolkata",
@@ -808,55 +928,32 @@ export default function CreateJobOrder() {
       test.f1Nkmph ||
       test.f2Nkmph2;
 
-    if (hasTestSpecificCoastDownData) {
-      CoastDownData_id = "CD" + Date.now() + "_T" + testIndex;
-
-      // Create coast down data payload for this test
-      const testCoastDownPayload = {
-        CoastDownData_id,
-        job_order_id,
-        coast_down_reference:
-          test.cdReportRef || test.cdReportRef || form.cdReportRef || null,
-        vehicle_reference_mass:
-          test.vehicleRefMass || form.vehicleRefMass
-            ? parseFloat(test.vehicleRefMass || form.vehicleRefMass)
-            : null,
-        a_value: test.aN || form.aN ? parseFloat(test.aN || form.aN) : null,
-        b_value:
-          test.bNkmph || form.bNkmph
-            ? parseFloat(test.bNkmph || form.bNkmph)
-            : null,
-        c_value:
-          test.cNkmph2 || form.cNkmph2
-            ? parseFloat(test.cNkmph2 || form.cNkmph2)
-            : null,
-        f0_value:
-          test.f0N || form.f0N ? parseFloat(test.f0N || form.f0N) : null,
-        f1_value:
-          test.f1Nkmph || form.f1Nkmph
-            ? parseFloat(test.f1Nkmph || form.f1Nkmph)
-            : null,
-        f2_value:
-          test.f2Nkmph2 || form.f2Nkmph2
-            ? parseFloat(test.f2Nkmph2 || form.f2Nkmph2)
-            : null,
-        id_of_creator: userId || "",
-        created_on: formattedISTTime, // Now this is defined
-        id_of_updater: "",
-      };
-
-      try {
-        await axios.post(`${apiURL}/coastdown`, testCoastDownPayload);
-      } catch (err) {
-        console.error("Error creating test-specific coast down data:", err);
-        showSnackbar(
-          "Failed to create coast down data for test: " +
-          (err.response?.data?.detail || err.message),
-          "error"
-        );
-        return;
-      }
-    }
+    // Include coast down data from the main job order form if not filled in the test
+    const testCoastDownPayload = {
+      CoastDownData_id,
+      job_order_id,
+      coast_down_reference: test.cdReportRef || form.cdReportRef || null,
+      vehicle_reference_mass: test.vehicleRefMass || form.vehicleRefMass
+        ? parseFloat(test.vehicleRefMass || form.vehicleRefMass)
+        : null,
+      a_value: test.aN || form.aN ? parseFloat(test.aN || form.aN) : null,
+      b_value: test.bNkmph || form.bNkmph
+        ? parseFloat(test.bNkmph || form.bNkmph)
+        : null,
+      c_value: test.cNkmph2 || form.cNkmph2
+        ? parseFloat(test.cNkmph2 || form.cNkmph2)
+        : null,
+      f0_value: test.f0N || form.f0N ? parseFloat(test.f0N || form.f0N) : null,
+      f1_value: test.f1Nkmph || form.f1Nkmph
+        ? parseFloat(test.f1Nkmph || form.f1Nkmph)
+        : null,
+      f2_value: test.f2Nkmph2 || form.f2Nkmph2
+        ? parseFloat(test.f2Nkmph2 || form.f2Nkmph2)
+        : null,
+      id_of_creator: userId || "",
+      created_on: formattedISTTime,
+      id_of_updater: "",
+    };
 
     const testOrderPayload = {
       test_order_id,
@@ -870,7 +967,7 @@ export default function CreateJobOrder() {
       inertia_class: test.inertiaClass || "",
       dataset_name: test.datasetName || "",
       dpf: test.dpf || "",
-      dpfRegenOccurs: test.dpfRegenOccurs || "",
+      dpf_regen_occurs: test.dpfRegenOccurs || "",
       dataset_flashed:
         test.datasetflashed === "Yes"
           ? true
@@ -893,7 +990,6 @@ export default function CreateJobOrder() {
       id_of_updater: "",
       name_of_updater: "",
       updated_on: formattedISTTime,
-      // Only one set of each attachment key, pass as array
       emission_check_attachment: test.Emission_check || test.emissionCheckAttachment || [],
       dataset_attachment: test.Dataset_attachment || test.dataset_attachment || [],
       a2l_attachment: test.A2L || test.a2l_attachment || [],
@@ -904,6 +1000,8 @@ export default function CreateJobOrder() {
       excel_report: test.Excel_report || test.excel_report || [],
       dat_file_attachment: test.DAT_file_attachment || test.dat_file_attachment || [],
       others_attachement: test.Others_attachment || test.others_attachement || [],
+      // Include coast down data in the payload
+      coast_down_data: testCoastDownPayload,
     };
 
     try {
@@ -929,7 +1027,6 @@ export default function CreateJobOrder() {
           : ""),
         "success"
       );
-      // Send mail with the test order ID
       await handleSendMail(2, job_order_id, response.data.test_order_id);
       navigate(-1);
 
@@ -1168,6 +1265,10 @@ export default function CreateJobOrder() {
       showSnackbar("No test order selected for update.", "warning");
       return;
     }
+    const currentISTTime = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+    const formattedISTTime = new Date(currentISTTime).toISOString();
     // If ProjectTeam is updating a test in Re-edit status, set status to 'Started' (under progress)
     let newStatus = test.status;
     if (isProjectTeam && test.status === "Re-edit") {
@@ -1176,9 +1277,9 @@ export default function CreateJobOrder() {
     // In handleCreateTestOrder function, around line 790-850
     // Update the test order payload creation in handleCreateTestOrder function (around line 790-850)
     const testOrderPayload = {
-      test_order_id,
-      job_order_id: job_order_id || "",
-      CoastDownData_id: CoastDownData_id || "",
+      test_order_id: test.testOrderId,
+      job_order_id: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || "",
+      CoastDownData_id: test.CoastDownData_id || "",
       engine_number: test.engineNumber || "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
@@ -1203,28 +1304,37 @@ export default function CreateJobOrder() {
       preferred_date: test.preferredDate || null,
       emission_check_date: test.emissionCheckDate || null,
       specific_instruction: test.specificInstruction || "",
-      status: "Created",
-      id_of_creator: userId || "",
-      name_of_creator: userName || "",
-      created_on: formattedISTTime,
-      id_of_updater: "",
-      name_of_updater: "",
+      status: newStatus,
+      id_of_updater: userId || "",
+      name_of_updater: userName || "",
       updated_on: formattedISTTime,
-      // Fixed attachment field mapping to match database schema exactly
-      emission_check_attachment: test.Emission_check || test.emissionCheckAttachment || null,
-      dataset_attachment: test.Dataset_attachment || test.dataset_attachment || null,
-      a2l_attachment: test.A2L || test.a2l_attachment || null,
-      experiment_attachment: test.Experiment_attachment || test.experiment_attachment || null,
-      dbc_attachment: test.DBC_attachment || test.dbc_attachment || null,
-      wltp_attachment: test.WLTP_input_sheet || test.wltp_attachment || null,
-      pdf_report: test.PDF_report || test.pdf_report || null,
-      excel_report: test.Excel_report || test.excel_report || null,
-      dat_file_attachment: test.DAT_file_attachment || test.dat_file_attachment || null,
-      others_attachement: test.Others_attachment || test.others_attachement || null, // Note: keep "attachement" spelling as per database
+      // Attachment fields
+      emission_check_attachment: JSON.stringify(test.emissionCheckAttachment || []),
+      dataset_attachment: JSON.stringify(test.dataset_attachment || []),
+      a2l_attachment: JSON.stringify(test.a2l_attachment || []),
+      experiment_attachment: JSON.stringify(test.experiment_attachment || []),
+      dbc_attachment: JSON.stringify(test.dbc_attachment || []),
+      wltp_attachment: JSON.stringify(test.wltp_attachment || []),
+      pdf_report: JSON.stringify(test.pdf_report || []),
+      excel_report: JSON.stringify(test.excel_report || []),
+      dat_file_attachment: JSON.stringify(test.dat_file_attachment || []),
+      others_attachement: JSON.stringify(test.others_attachement || []),
     };
 
     try {
       await updateTestOrder(test.testOrderId, testOrderPayload);
+      const jobOrderId = location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id;
+      if (jobOrderId) {
+        const jobOrderUpdatePayload = {
+          id_of_updater: userId || "",
+          name_of_updater: userName || "",
+          updated_on: formattedISTTime,
+        };
+
+        // Update job order with new updater info from test order
+        await axios.patch(`${apiURL}/joborders/${jobOrderId}`, jobOrderUpdatePayload);
+      }
+
       showSnackbar("Test Order updated successfully!", "success");
       fetchAllTestOrders();
       setEditingTestOrderIdx(null);
@@ -1324,16 +1434,39 @@ export default function CreateJobOrder() {
     }
   };
 
-  // Handler to send status update to backend
   const handleStatusUpdate = async (status, remark = "", testOrderId = null, testIdx = null) => {
     try {
+      // Get current IST time
+      const currentISTTime = new Date().toLocaleString("en-US", {
+        timeZone: "Asia/Kolkata",
+      });
+      const formattedISTTime = new Date(currentISTTime).toISOString();
+
       // Only send test_order_id, status, and remark
       const payload = {
         test_order_id: testOrderId,
         status,
         remark,
+        id_of_updater: userId || "",
+        name_of_updater: userName || "",
+        updated_on: formattedISTTime,
       };
+
       await axios.post(`${apiURL}/testorders/status`, payload);
+
+      // Update the parent job order's "Updated by" and "Updated on" fields with test order update info
+      const jobOrderId = location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id;
+      if (jobOrderId) {
+        const jobOrderUpdatePayload = {
+          id_of_updater: userId || "",
+          name_of_updater: userName || "",
+          updated_on: formattedISTTime,
+        };
+
+        // Update job order with new updater info from test order
+        await axios.patch(`${apiURL}/joborders/${jobOrderId}`, jobOrderUpdatePayload);
+      }
+
       // Update test status and remarks in UI if testIdx is provided
       if (typeof testIdx === "number") {
         setTests((prev) =>
@@ -1374,6 +1507,47 @@ export default function CreateJobOrder() {
     } else {
       setCdFieldErrors((prev) => ({ ...prev, [field]: "Please enter valid numbers" }));
     }
+  };
+
+  // Helper function to get attachment file count
+  const getAttachmentFileCount = (test, attachmentField) => {
+    const attachment = test[attachmentField];
+    if (!attachment) return 0;
+    if (Array.isArray(attachment)) return attachment.length;
+    if (typeof attachment === 'string') {
+      try {
+        const parsed = JSON.parse(attachment);
+        return Array.isArray(parsed) ? parsed.length : (parsed ? 1 : 0);
+      } catch {
+        return attachment ? 1 : 0;
+      }
+    }
+    return 0;
+  };
+
+  // Helper function to get attachment button color based on file count
+  const getAttachmentColor = (fileCount) => {
+    return fileCount > 0 ? '#dc2626' : '#2563eb'; // Red if files exist, Blue if empty
+  };
+
+  // Helper function to get attachment background color
+  const getAttachmentBackgroundColor = (fileCount) => {
+    return fileCount > 0 ? '#fef2f2' : '#eff6ff'; // Light red if files exist, Light blue if empty
+  };
+
+  // Helper function to parse attachments consistently
+  const parseAttachment = (attachment) => {
+    if (!attachment) return [];
+    if (Array.isArray(attachment)) return attachment;
+    if (typeof attachment === 'string') {
+      try {
+        const parsed = JSON.parse(attachment);
+        return Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+      } catch {
+        return attachment ? [attachment] : [];
+      }
+    }
+    return attachment ? [attachment] : [];
   };
 
   // Modal component
@@ -1517,17 +1691,19 @@ export default function CreateJobOrder() {
             <Label htmlFor="vehicleBodyNumber" className="mb-2">
               Vehicle Body No. <span className="text-red-500">*</span>
             </Label>
+            {console.log("Project Vehicles:", form.vehicleBodyNumber)}
             <Select
               value={form.vehicleBodyNumber}
               onValueChange={handleVehicleBodyChange}
               required
-              disabled={formDisabled || isTestEngineer}
+              
+              disabled={formDisabled || isTestEngineer || !form.projectCode}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
-                {vehicleBodyNumbers.map((item, index) => (
+                {projectVehicles.map((item, index) => (
                   <SelectItem
                     key={`${item.vehicle_body_number}-${index}`}
                     value={item.vehicle_body_number}
@@ -1558,6 +1734,7 @@ export default function CreateJobOrder() {
             <Label htmlFor="engineSerialNumber" className="mb-2">
               Engine Serial Number <span className="text-red-500">*</span>
             </Label>
+            {console.log("Engine Serial Numbers:", form.engineSerialNumber)}
             <Select
               value={form.engineSerialNumber}
               onValueChange={handleEngineNumberChange}
@@ -1566,18 +1743,32 @@ export default function CreateJobOrder() {
                 formDisabled ||
                 isTestEngineer ||
                 !!(location.state?.originalJobOrderId &&
-                  (allTestOrders[location.state?.originalJobOrderId] || []).length > 0)
+                  (allTestOrders[location.state?.originalJobOrderId] || []).length > 0 || !form.vehicleBodyNumber)
               }
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
+              {console.log("Vehicle Engine Numbers:", vehicleEngineNumbers)}
               <SelectContent>
-                {engineNumbers.map((engineSerialNumber) => (
-                  <SelectItem key={engineSerialNumber} value={engineSerialNumber}>
-                    {engineSerialNumber}
+                {vehicleEngineNumbers.length > 0 ? (
+                  vehicleEngineNumbers.map((engineSerialNumber) => (
+                    <SelectItem key={engineSerialNumber} value={engineSerialNumber}>
+                      {engineSerialNumber}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <div className="px-2 py-2 text-sm text-gray-500">
+                    No engine numbers available
+                  </div>
+                )}
+                {/* Add the current value as an option if not in the list */}
+                {form.engineSerialNumber && 
+                 !vehicleEngineNumbers.includes(form.engineSerialNumber) && (
+                  <SelectItem key={form.engineSerialNumber} value={form.engineSerialNumber}>
+                    {form.engineSerialNumber} (Current)
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -1720,6 +1911,7 @@ export default function CreateJobOrder() {
                 <span className="text-red-500">*</span>
               </Label>
               <Select
+                id="vehicleTestPayloadCriteria"
                 value={form.vehicleTestPayloadCriteria}
                 onValueChange={(value) => {
                   setForm((prev) => ({
@@ -1736,12 +1928,12 @@ export default function CreateJobOrder() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Legislation">Legislation</SelectItem>
-                  <SelectItem value="Manual Entry">Manual Entry</SelectItem>
+                  <SelectItem value="Manual Entry">Customized Payload</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             {/* Show manual entry field only if 'Manual Entry' is selected */}
-            {form.vehicleTestPayloadCriteria === "Manual Entry" && (
+            {form.vehicleTestPayloadCriteria === "Customized Payload" && (
               <div className="flex flex-col">
                 <Label htmlFor="requestedPayloadKg" className="mb-2">
                   Requested Payload in kgs <span className="text-red-500">*</span>
@@ -1794,7 +1986,7 @@ export default function CreateJobOrder() {
         {vehicleEditable && (
           <div className="mx-8 mt-2 mb-4 border rounded shadow">
             <div
-              className="flex items-center justify-between bg-gray-100 border-t-4 border-red-600 px-4 py-2 cursor-pointer"
+              className="flex items-center justify-between bg-gray-100 dark:bg-black border-t-4 border-red-600 px-4 py-2 cursor-pointer"
               onClick={() => setVehicleAccordionOpen((prev) => !prev)}
             >
               <span className="font-semibold text-sm">
@@ -1803,7 +1995,7 @@ export default function CreateJobOrder() {
               <span>{vehicleAccordionOpen ? "▲" : "▼"}</span>
             </div>
             {vehicleAccordionOpen && (
-              <form className="bg-white px-4 py-4">
+              <form className="bg-white px-4 py-4 dark:bg-black">
                 <div className="grid grid-cols-4 gap-4 text-xs">
                   {Object.entries(vehicleEditable).map(([label, value]) => (
                     <div key={label} className="flex flex-col">
@@ -1830,7 +2022,7 @@ export default function CreateJobOrder() {
         {engineEditable && (
           <div className="mx-8 mt-2 mb-4 border rounded shadow">
             <div
-              className="flex items-center justify-between bg-gray-100 border-t-4 border-blue-600 px-4 py-2 cursor-pointer"
+              className="flex items-center justify-between bg-gray-100 dark:bg-black border-t-4 border-blue-600 px-4 py-2 cursor-pointer"
               onClick={() => setEngineAccordionOpen((prev) => !prev)}
             >
               <span className="font-semibold text-sm">
@@ -1839,7 +2031,7 @@ export default function CreateJobOrder() {
               <span>{engineAccordionOpen ? "▲" : "▼"}</span>
             </div>
             {engineAccordionOpen && (
-              <form className="bg-white px-4 py-4">
+              <form className="bg-white dark:bg-black px-4 py-4">
                 <div className="grid grid-cols-4 gap-4 text-xs">
                   {Object.entries(engineEditable).map(([label, value]) => (
                     <div key={label} className="flex flex-col">
@@ -2005,7 +2197,7 @@ export default function CreateJobOrder() {
           </div>
           <div className="flex items-center mt-4 gap-6">
             <Button
-              className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
+              className="bg-white dark:bg-black text-red-900 dark:text-red-500 border border-red-900 dark:border-red-500 text-xs px-6 py-2 rounded"
               onClick={handleCreateJobOrder}
               disabled={isTestEngineer}
             >
@@ -2062,22 +2254,74 @@ export default function CreateJobOrder() {
           >
             + ADD TEST
           </Button>
+          <div className="relative">
+            <Button
+              variant="ghost"
+              className="text-xs text-blue-700 px-0"
+              onClick={handleCloneTest}
+              disabled={isTestEngineer}
+            >
+              <GrClone />
+              CLONE TEST
+            </Button>
+
+            {cloneDropdownOpen && (
+              <div className="absolute top-full left-0 mt-1 bg-white dark:bg-black border border-gray-300 rounded-lg shadow-lg z-50 w-36">
+                <div className="p-2">
+                  <div className="text-xs font-medium mb-2 text-gray-700 dark:text-white">
+                    Select Test to Clone:
+                  </div>
+                  {(allTestOrders[location.state?.originalJobOrderId] || []).length > 0 ? (
+                    <div className="max-h-48 overflow-y-auto">
+                      {(allTestOrders[location.state?.originalJobOrderId] || []).map((testOrder, index) => (
+                        <button
+                          key={testOrder.test_order_id}
+                          onClick={() => {
+                            handleCloneSpecificTestOrder(testOrder.test_order_id);
+                            setCloneDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-2 py-2 my-1 hover:bg-gray-400 bg-gray-200 dark:hover:bg-gray-800 rounded transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-black text-sm">Test {index + 1}</span>
+                            {/* <span className="text-xs text-gray-500">{testOrder.test_order_id}</span> */}
+                          </div>
+
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500 py-4 text-center">
+                      No test orders available to clone from this job order
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           <Button
             variant="ghost"
-            className="text-xs text-blue-700 px-0"
+            className="text-xs text-blue-700 px-0 flex items-center gap-1"
             onClick={() => {
               setShowCFTPanel((prev) => !prev);
             }}
             disabled={isTestEngineer}
           >
-            {showCFTPanel ? "− CFT MEMBERS" : "+ CFT MEMBERS"}
+            <MdPeopleAlt className="text-sm" />
+            {showCFTPanel ? "CFT MEMBERS" : "CFT MEMBERS"}
           </Button>
           <div className="flex-1"></div>
         </div>
         {showCFTPanel && !isTestEngineer && (
           <div className="mt-4 mx-8 mb-8 bg-white border rounded-lg">
             <CFTMembers
-              jobOrderId={null} // Pass job_order_id if available after creation
+              jobOrderId={
+                location.state?.originalJobOrderId ||
+                location.state?.jobOrder?.job_order_id ||
+                jobOrderId ||
+                null
+              }
               members={cftMembers}
               setMembers={setCftMembers}
               disabled={formDisabled}
@@ -2085,1141 +2329,1233 @@ export default function CreateJobOrder() {
           </div>
         )}
 
+
+
         {/* Test Forms */}
-        {tests.map((test, idx) => (
-          <div
-            key={idx}
-            className="mx-8 mb-8 border rounded-lg shadow-lg px-8 py-6 bg-white"
-            style={{ borderColor: "#e5e7eb", background: "#f9fafb" }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <span className="font-bold text-base text-blue-900">Test {idx + 1}</span>
-                {/* Status Icon and Label */}
-                {test?.status === "Started" && (
-                  <span className="flex items-center bg-yellow-100 border border-yellow-400 text-yellow-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#FFA500" }}>
-                      <circle cx="12" cy="12" r="9" stroke="#FFA500" strokeWidth="2" fill="none" />
-                      <path d="M12 7v5l3 3" stroke="#FFA500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    Started
-                  </span>
-                )}
-                {test?.status === "Rejected" && (
-                  <span className="flex items-center bg-red-100 border border-red-400 text-red-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
-                    <Cancel className="h-4 w-4 mr-1" style={{ color: "#e53935" }} />
-                    Rejected
-                  </span>
-                )}
-                {test?.status === "Re-edit" && (
-                  <span className="flex items-center bg-blue-100 border border-blue-400 text-blue-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
-                    <Edit className="h-4 w-4 mr-1" style={{ color: "#1976d2" }} />
-                    Re-edit
-                  </span>
-                )}
-                {test?.status === "Completed" && (
-                  <span className="flex items-center bg-green-100 border border-green-400 text-green-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
-                    <CheckCircle className="h-4 w-4 mr-1" style={{ color: "#43a047" }} />
-                    Completed
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                {/* Buttons for TestEngineer */}
-                {isTestEngineer && (!test?.status || test?.status === "Created") && (
-                  <>
-                    <Button
-                      className="bg-green-600 text-white text-xs px-3 py-1 rounded"
-                      type="button"
-                      onClick={async () => {
-                        await handleStatusUpdate("Started", "", test.testOrderId, idx);
-                      }}
-                    >
-                      Start
-                    </Button>
-                    <Button
-                      className="bg-red-600 text-white text-xs px-3 py-1 rounded"
-                      type="button"
-                      onClick={() => {
-                        setRemarkType("Reject");
-                        setRemarkModalOpen({ idx, type: "Reject" });
-                      }}
-                    >
-                      Reject
-                    </Button>
-                  </>
-                )}
-                {/* Buttons for ProjectTeam */}
-                {/* ProjectTeam should NOT see the Re-edit button */}
-                {/* Buttons for TestEngineer */}
-                {isTestEngineer && (test?.status === "Started" || test?.status === "Rejected" || test?.status === "Re-edit") && (
-                  <>
-                    <Button
-                      className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
-                      type="button"
-                      onClick={() => handleOpenReEditModal(idx)}
-                    >
+        {tests.map((test, idx) => {
+          // Calculate the display number for this test
+          const existingTestOrdersCount = (allTestOrders[location.state?.originalJobOrderId] || []).length;
+          const displayNumber = existingTestOrdersCount + idx + 1;
+
+          return (
+            <div
+              key={idx}
+              className="mx-8 mb-8 border rounded-lg shadow-lg px-8 py-6 bg-white dark:bg-black"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-base text-blue-900">Test {displayNumber}</span>
+                  {/* Status Icon and Label */}
+                  {test?.status === "Started" && (
+                    <span className="flex items-center bg-yellow-100 border border-yellow-400 text-yellow-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#FFA500" }}>
+                        <circle cx="12" cy="12" r="9" stroke="#FFA500" strokeWidth="2" fill="none" />
+                        <path d="M12 7v5l3 3" stroke="#FFA500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Started
+                    </span>
+                  )}
+                  {test?.status === "Rejected" && (
+                    <span className="flex items-center bg-red-100 border border-red-400 text-red-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+                      <Cancel className="h-4 w-4 mr-1" style={{ color: "#e53935" }} />
+                      Rejected
+                    </span>
+                  )}
+                  {test?.status === "Re-edit" && (
+                    <span className="flex items-center bg-blue-100 border border-blue-400 text-blue-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+                      <Edit className="h-4 w-4 mr-1" style={{ color: "#1976d2" }} />
                       Re-edit
-                    </Button>
-                    <Button
-                      className="bg-green-600 text-white text-xs px-3 py-1 rounded"
-                      type="button"
-                      onClick={async () => {
-                        await handleStatusUpdate("Completed", "", test.testOrderId, idx);
-                      }}
-                    >
+                    </span>
+                  )}
+                  {test?.status === "Completed" && (
+                    <span className="flex items-center bg-green-100 border border-green-400 text-green-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+                      <CheckCircle className="h-4 w-4 mr-1" style={{ color: "#43a047" }} />
                       Completed
-                    </Button>
-                  </>
-                )}
-                {/* Close button always available for ProjectTeam */}
-                {!isTestEngineer && (
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteTest(idx)}
-                    className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 hover:bg-red-200 transition-colors border border-gray-300 text-gray-600 hover:text-red-600 focus:outline-none"
-                    title="Close"
-                    style={{ minWidth: 0, padding: 0 }}
-                  >
-                    <CloseIcon fontSize="small" />
-                  </button>
-                )}
-              </div>
-            </div>
-            {/* Make form editable if status is Rejected */}
-            {test?.status === "Rejected" && (
-              <div className="bg-red-100 border border-red-400 rounded-lg p-4 mt-4 mb-2 shadow-inner">
-                <div className="font-semibold text-sm text-red-700 mb-2">
-                  Rejected Reason
+                    </span>
+                  )}
                 </div>
-                <textarea
-                  value={test.rejection_remarks}
-                  onChange={(e) =>
-                    handleTestChange(idx, "rejection_remarks", e.target.value)
-                  }
-                  placeholder="Enter rejection remarks"
-                  className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical"
-                  style={{ minWidth: "100%", fontSize: "1rem" }}
-                  rows={3}
-                />
-              </div>
-            )}
-            {/* Display re-edit remarks if status is Re-edit */}
-            {test?.status === "Re-edit" && (
-              <div className="bg-blue-100 border border-blue-400 rounded-lg p-4 mt-4 mb-2 shadow-inner">
-                <div className="font-semibold text-sm text-blue-700 mb-2">
-                  Re-edit Reason from Test Engineer
+                <div className="flex items-center gap-3">
+                  {/* Buttons for TestEngineer */}
+                  {isTestEngineer && (!test?.status || test?.status === "Created") && (
+                    <>
+                      <Button
+                        className="bg-green-600 text-white text-xs px-3 py-1 rounded"
+                        type="button"
+                        onClick={async () => {
+                          await handleStatusUpdate("Started", "", test.testOrderId, idx);
+                        }}
+                      >
+                        Start
+                      </Button>
+                      <Button
+                        className="bg-red-600 text-white text-xs px-3 py-1 rounded"
+                        type="button"
+                        onClick={() => {
+                          setRemarkType("Reject");
+                          setRemarkModalOpen({ idx, type: "Reject" });
+                        }}
+                      >
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                  {/* Buttons for ProjectTeam */}
+                  {/* ProjectTeam should NOT see the Re-edit button */}
+                  {/* Buttons for TestEngineer */}
+                  {isTestEngineer && (test?.status === "Started" || test?.status === "Rejected" || test?.status === "Re-edit") && (
+                    <>
+                      <Button
+                        className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
+                        type="button"
+                        onClick={() => handleOpenReEditModal(idx)}
+                      >
+                        Re-edit
+                      </Button>
+                      <Button
+                        className="bg-green-600 text-white text-xs px-3 py-1 rounded"
+                        type="button"
+                        onClick={async () => {
+                          await handleStatusUpdate("Completed", "", test.testOrderId, idx);
+                        }}
+                      >
+                        Completed
+                      </Button>
+                    </>
+                  )}
+                  {/* Close button always available for ProjectTeam */}
+                  {!isTestEngineer && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteTest(idx)}
+                      className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 hover:bg-red-200 transition-colors border border-gray-300 text-gray-600 hover:text-red-600 focus:outline-none"
+                      title="Close"
+                      style={{ minWidth: 0, padding: 0 }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </button>
+                  )}
                 </div>
-                <div className="w-full border rounded p-2 min-h-[60px] bg-white">
-                  {test.re_edit_remarks || "No re-edit remarks provided"}
-                </div>
               </div>
-            )}
-            {/* Inputs above attachments */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
-              {/* All test fields disabled for TestEngineer except status actions */}
-               <div className="flex flex-col">
-                <Label htmlFor={`engineNumber${idx}`} className="mb-2">
-                  Engine Number <span className="text-red-500">*</span>
-                </Label>
-                <Select
+              {/* Make form editable if status is Rejected */}
+              {test?.status === "Rejected" && (
+                <div className="bg-red-100 border border-red-400 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+                  <div className="font-semibold text-sm text-red-700 mb-2">
+                    Rejected Reason
+                  </div>
+                  <textarea
+                    value={test.rejection_remarks}
+                    onChange={(e) =>
+                      handleTestChange(idx, "rejection_remarks", e.target.value)
+                    }
+                    placeholder="Enter rejection remarks"
+                    className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical"
+                    style={{ minWidth: "100%", fontSize: "1rem" }}
+                    rows={3}
+                  />
+                </div>
+              )}
+              {/* Display re-edit remarks if status is Re-edit */}
+              {test?.status === "Re-edit" && (
+                <div className="bg-blue-100 border border-blue-400 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+                  <div className="font-semibold text-sm text-blue-700 mb-2">
+                    Re-edit Reason from Test Engineer
+                  </div>
+                  <div className="w-full border rounded p-2 min-h-[60px] bg-white">
+                    {test.re_edit_remarks || "No re-edit remarks provided"}
+                  </div>
+                </div>
+              )}
+              {/* Inputs above attachments */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
+                {/* All test fields disabled for TestEngineer except status actions */}
+                <div className="flex flex-col">
+                  <Label htmlFor={`engineNumber${idx}`} className="mb-2">
+                    Engine Number <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
                     value={test.engineNumber || ""}
                     onValueChange={(value) => {
-  if (value !== form.engineSerialNumber) {
-    showSnackbar && showSnackbar("Warning: You are selecting a different engine number than the main form.", "warning");
-  }
-  handleTestChange(idx, "engineNumber", value);
-}}
+                      if (value !== form.engineSerialNumber) {
+                        showSnackbar && showSnackbar("Warning: You are selecting a different engine number than the main form.", "warning");
+                      }
+                      handleTestChange(idx, "engineNumber", value);
+                    }}
                     required
                     disabled={!areTestFieldsEditable(test, idx)}
                   >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {engineNumbers.map((engineNumber) => (
-                      <SelectItem key={engineNumber} value={engineNumber}>
-                        {engineNumber}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-          </div>
-              <div>
-                <Label>Test Type</Label>
-                <Select
-                  value={test.testType}
-                  onValueChange={(v) => handleTestChange(idx, "testType", v)}
-                  disabled={!areTestFieldsEditable(test, idx)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {testTypes.map((testType, index) => (
-                      <SelectItem key={`${testType}-${index}`} value={testType}>
-                        {testType}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>
-                  Objective of the Test <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  value={test.objective}
-                  onChange={(e) =>
-                    handleTestChange(idx, "objective", e.target.value)
-                  }
-                  placeholder="TESTING"
-                  disabled={!areTestFieldsEditable(test, idx)}
-                />
-              </div>
-              <div>
-                <Label>Vehicle Location</Label>
-                <Input
-                  value={test.vehicleLocation}
-                  onChange={(e) =>
-                    handleTestChange(idx, "vehicleLocation", e.target.value)
-                  }
-                  placeholder="Enter Vehicle Location"
-                  disabled={!areTestFieldsEditable(test, idx)}
-                />
-              </div>
-              <div>
-                <Label>Cycle Gear Shift</Label>
-                <Input
-                  value={test.cycleGearShift}
-                  onChange={(e) =>
-                    handleTestChange(idx, "cycleGearShift", e.target.value)
-                  }
-                  placeholder="Enter Cycle Gear Shift"
-                  disabled={!areTestFieldsEditable(test, idx)}
-                />
-              </div>
-              <div>
-                <Label>Inertia Class</Label>
-                <Select
-                  value={test.inertiaClass}
-                  onValueChange={(v) =>
-                    handleTestChange(idx, "inertiaClass", v)
-                  }
-                  disabled={!areTestFieldsEditable(test, idx)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {inertiaClasses.map((inertiaClass, index) => (
-                      <SelectItem
-                        key={`${inertiaClass}-${index}`}
-                        value={inertiaClass}
-                      >
-                        {inertiaClass}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Dataset Name</Label>
-                <Input
-                  value={test.datasetName}
-                  onChange={(e) =>
-                    handleTestChange(idx, "datasetName", e.target.value)
-                  }
-                  placeholder="Enter Dataset Name"
-                  disabled={!areTestFieldsEditable(test, idx)}
-                />
-              </div>
-              <div>
-                <Label>DPF</Label>
-                <div className="flex gap-2 mt-2">
-                  <label>
-                    <input
-                      type="radio"
-                      name={`dpf${idx}`}
-                      value="Yes"
-                      checked={test.dpf === "Yes"}
-                      onChange={() => handleTestChange(idx, "dpf", "Yes")}
-                      disabled={!areTestFieldsEditable(test, idx)}
-                    />{" "}
-                    Yes
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name={`dpf${idx}`}
-                      value="No"
-                      checked={test.dpf === "No"}
-                      onChange={() => handleTestChange(idx, "dpf", "No")}
-                      disabled={!areTestFieldsEditable(test, idx)}
-                    />{" "}
-                    No
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name={`dpf${idx}`}
-                      value="NA"
-                      checked={test.dpf === "NA"}
-                      onChange={() => handleTestChange(idx, "dpf", "NA")}
-                      disabled={!areTestFieldsEditable(test, idx)}
-                    />{" "}
-                    NA
-                  </label>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {engineNumbers.map((engineNumber) => (
+                        <SelectItem key={engineNumber} value={engineNumber}>
+                          {engineNumber}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-              {test.dpf === "Yes" && (
                 <div>
-                  <Label>DPF Regen Occurs (g)*</Label>
+                  <Label>Test Type</Label>
+                  <Select
+                    value={test.testType}
+                    onValueChange={(v) => handleTestChange(idx, "testType", v)}
+                    disabled={!areTestFieldsEditable(test, idx)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {testTypes.map((testType, index) => (
+                        <SelectItem key={`${testType}-${index}`} value={testType}>
+                          {testType}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>
+                    Objective of the Test <span className="text-red-500">*</span>
+                  </Label>
                   <Input
-                    value={test.dpfRegenOccurs || ""}
-                    onChange={(e) => handleTestChange(idx, "dpfRegenOccurs", e.target.value)}
-                    placeholder="Enter DPF Regen Occurs (g)"
+                    value={test.objective}
+                    onChange={(e) =>
+                      handleTestChange(idx, "objective", e.target.value)
+                    }
+                    placeholder="TESTING"
                     disabled={!areTestFieldsEditable(test, idx)}
                   />
                 </div>
-              )}
-              <div>
-                <Label>Dataset flashed</Label>
-                <div className="flex gap-2 mt-2">
-                  <label>
-                    <input
-                      type="radio"
-                      name={`datasetflashed${idx}`}
-                      value="Yes"
-                      checked={test.datasetflashed === "Yes"}
-                      onChange={() =>
-                        handleTestChange(idx, "datasetflashed", "Yes")
-                      }
-                      disabled={!areTestFieldsEditable(test, idx)}
-                    />{" "}
-                    Yes
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name={`datasetflashed${idx}`}
-                      value="No"
-                      checked={test.datasetflashed === "No"}
-                      onChange={() =>
-                        handleTestChange(idx, "datasetflashed", "No")
-                      }
-                      disabled={!areTestFieldsEditable(test, idx)}
-                    />{" "}
-                    No
-                  </label>
-                </div>
-              </div>
-              <div>
-                <Label>ESS</Label>
-                <div className="flex gap-2 mt-2">
-                  <label>
-                    <input
-                      type="radio"
-                      name={`ess${idx}`}
-                      value="On"
-                      checked={test.ess === "On"}
-                      onChange={() => handleTestChange(idx, "ess", "On")}
-                      disabled={!areTestFieldsEditable(test, idx)}
-                    />{" "}
-                    On
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name={`ess${idx}`}
-                      value="Off"
-                      checked={test.ess === "Off"}
-                      onChange={() => handleTestChange(idx, "ess", "Off")}
-                      disabled={!areTestFieldsEditable(test, idx)}
-                    />{" "}
-                    Off
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name={`ess${idx}`}
-                      value="NA"
-                      checked={test.ess === "NA"}
-                      onChange={() => handleTestChange(idx, "ess", "NA")}
-                      disabled={!areTestFieldsEditable(test, idx)}
-                    />{" "}
-                    NA
-                  </label>
-                </div>
-              </div>
-              <div>
-                <Label>Mode</Label>
-                <Select
-                  value={test.mode}
-                  onValueChange={(v) => handleTestChange(idx, "mode", v)}
-                  disabled={!areTestFieldsEditable(test, idx)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {modes.map((mode, index) => (
-                      <SelectItem key={`${mode}-${index}`} value={mode}>
-                        {mode}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Hardware Change</Label>
-                <Input
-                  value={test.hardwareChange}
-                  onChange={(e) =>
-                    handleTestChange(idx, "hardwareChange", e.target.value)
-                  }
-                  placeholder="Enter Hardware Change"
-                  disabled={!areTestFieldsEditable(test, idx)}
-                />
-              </div>
-              <div>
-                <Label>Shift</Label>
-                <Select
-                  value={test.shift}
-                  onValueChange={(v) => handleTestChange(idx, "shift", v)}
-                  disabled={!areTestFieldsEditable(test, idx)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Shift1">Shift1</SelectItem>
-                    <SelectItem value="Shift2">Shift2</SelectItem>
-                    <SelectItem value="Shift3">Shift3</SelectItem>
-                    <SelectItem value="General">General</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Fuel Type</Label>
-                <Select
-                  value={test.fuelType}
-                  onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
-                  disabled={!areTestFieldsEditable(test, idx)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fuelTypes.map((fuelType, index) => (
-                      <SelectItem key={`${fuelType}-${index}`} value={fuelType}>
-                        {fuelType}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Equipment Required</Label>
-                <Input
-                  value={test.equipmentRequired}
-                  onChange={(e) =>
-                    handleTestChange(idx, "equipmentRequired", e.target.value)
-                  }
-                  placeholder="Enter Equipment Required"
-                  disabled={!areTestFieldsEditable(test, idx)}
-                />
-              </div>
-              <div>
-                <Label>Preferred Date</Label>
-                <Input
-
-                  type="date"
-                  value={test.preferredDate}
-                  onChange={(e) =>
-                    handleTestChange(idx, "preferredDate", e.target.value)
-                  }
-                  disabled={!areTestFieldsEditable(test, idx)}
-                />
-              </div>
-              <div>
-                <Label>Emission Check Date</Label>
-                <Input
-                  type="date"
-                  value={test.emissionCheckDate}
-                  onChange={(e) =>
-                    handleTestChange(idx, "emissionCheckDate", e.target.value)
-                  }
-                  disabled={!areTestFieldsEditable(test, idx)}
-                />
-              </div>
-              <div className="col-span-2">
-                <Label>Specific Instruction</Label>
-                <textarea
-                  value={test.specificInstruction}
-                  onChange={(e) =>
-                    handleTestChange(idx, "specificInstruction", e.target.value)
-                  }
-                  placeholder="Enter Specific Instructions"
-                  disabled={!areTestFieldsEditable(test, idx)}
-                  className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical"
-                  style={{ minWidth: "100%", fontSize: "1rem" }}
-                  rows={3}
-                />
-              </div>
-            </div>
-            {/* Attachments Card */}
-            <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
-              <div className="font-semibold text-sm text-gray-700 mb-2">
-                Attachments
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label>
-                    Emission Check Attachment
-                    {test.emissionCheckAttachment && test.emissionCheckAttachment.length > 0 && (
-                      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                        {Array.isArray(test.emissionCheckAttachment) ? test.emissionCheckAttachment.length : 1}
-                      </span>
-                    )}
-                  </Label>
-                  <DropzoneFileList
-                    buttonText="Emission Check Attachment"
-                    name="emission_check_attachment"
-                    maxFiles={5}
-                    formData={{
-                      ...test,
-                      // Ensure job_order_id and test_order_id are properly set
-                      job_order_id: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || "",
-                      test_order_id: test.testOrderId || "",
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
-                    }}
-                    setFormData={(updatedTest) => {
-                      setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                      );
-                    }}
-                    id={`test${idx}`}
-                    submitted={false}
-                    setSubmitted={() => { }}
-                    openModal={!!emissionCheckModals[idx]}
-                    handleOpenModal={() =>
-                      setEmissionCheckModals((prev) => ({ ...prev, [idx]: true }))
+                  <Label>Vehicle Location</Label>
+                  <Input
+                    value={test.vehicleLocation}
+                    onChange={(e) =>
+                      handleTestChange(idx, "vehicleLocation", e.target.value)
                     }
-                    handleCloseModal={() =>
-                      setEmissionCheckModals((prev) => ({ ...prev, [idx]: false }))
+                    placeholder="Enter Vehicle Location"
+                    disabled={!areTestFieldsEditable(test, idx)}
+                  />
+                </div>
+                <div>
+                  <Label>Cycle Gear Shift</Label>
+                  <Input
+                    value={test.cycleGearShift}
+                    onChange={(e) =>
+                      handleTestChange(idx, "cycleGearShift", e.target.value)
+                    }
+                    placeholder="Enter Cycle Gear Shift"
+                    disabled={!areTestFieldsEditable(test, idx)}
+                  />
+                </div>
+                <div>
+                  <Label>Inertia Class</Label>
+                  <Select
+                    value={test.inertiaClass}
+                    onValueChange={(v) =>
+                      handleTestChange(idx, "inertiaClass", v)
                     }
                     disabled={!areTestFieldsEditable(test, idx)}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                    viewOnly={userRole === "TestEngineer"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {inertiaClasses.map((inertiaClass, index) => (
+                        <SelectItem
+                          key={`${inertiaClass}-${index}`}
+                          value={inertiaClass}
+                        >
+                          {inertiaClass}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Dataset Name</Label>
+                  <Input
+                    value={test.datasetName}
+                    onChange={(e) =>
+                      handleTestChange(idx, "datasetName", e.target.value)
+                    }
+                    placeholder="Enter Dataset Name"
+                    disabled={!areTestFieldsEditable(test, idx)}
                   />
                 </div>
                 <div>
-                  <Label>
-                    Dataset Attachment
-                    {test.dataset_attachment && test.dataset_attachment.length > 0 && (
-                      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                        {Array.isArray(test.dataset_attachment) ? test.dataset_attachment.length : 1}
-                      </span>
-                    )}
-                  </Label>
-                  <DropzoneFileList
-                    buttonText="Dataset Attachment"
-                    name="dataset_attachment"
-                    maxFiles={5}
-                    formData={{
-                      ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
-                    }}
-                    setFormData={(updatedTest) => {
-                      setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                      );
-                    }}
-                    id={`test${idx}`}
-                    submitted={false}
-                    setSubmitted={() => { }}
-                    openModal={!!datasetModals[idx]}
-                    handleOpenModal={() =>
-                      setDatasetModals((prev) => ({ ...prev, [idx]: true }))
-                    }
-                    handleCloseModal={() =>
-                      setDatasetModals((prev) => ({ ...prev, [idx]: false }))
-                    }
-                    disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                    viewOnly={userRole === "TestEngineer"}
-                  />
+                  <Label>DPF</Label>
+                  <div className="flex gap-2 mt-2">
+                    <label>
+                      <input
+                        type="radio"
+                        name={`dpf${idx}`}
+                        value="Yes"
+                        checked={test.dpf === "Yes"}
+                        onChange={() => handleTestChange(idx, "dpf", "Yes")}
+                        disabled={!areTestFieldsEditable(test, idx)}
+                      />{" "}
+                      Yes
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name={`dpf${idx}`}
+                        value="No"
+                        checked={test.dpf === "No"}
+                        onChange={() => handleTestChange(idx, "dpf", "No")}
+                        disabled={!areTestFieldsEditable(test, idx)}
+                      />{" "}
+                      No
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name={`dpf${idx}`}
+                        value="NA"
+                        checked={test.dpf === "NA"}
+                        onChange={() => handleTestChange(idx, "dpf", "NA")}
+                        disabled={!areTestFieldsEditable(test, idx)}
+                      />{" "}
+                      NA
+                    </label>
+                  </div>
                 </div>
-                <div>
-                  <Label>
-                    A2L Attachment
-                    {test.a2l_attachment && test.a2l_attachment.length > 0 && (
-                      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                        {Array.isArray(test.a2l_attachment) ? test.a2l_attachment.length : 1}
-                      </span>
-                    )}
-                  </Label>
-                  <DropzoneFileList
-                    buttonText="A2L Attachment"
-                    name="a2l_attachment"
-                    maxFiles={5}
-                    formData={{
-                      ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
-                    }}
-                    setFormData={(updatedTest) => {
-                      setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                      );
-                    }}
-                    id={`test${idx}`}
-                    submitted={false}
-                    setSubmitted={() => { }}
-                    openModal={!!a2lModals[idx]}
-                    handleOpenModal={() =>
-                      setA2LModals((prev) => ({ ...prev, [idx]: true }))
-                    }
-                    handleCloseModal={() =>
-                      setA2LModals((prev) => ({ ...prev, [idx]: false }))
-                    }
-                    disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                    viewOnly={userRole === "TestEngineer"}
-                  />
-                </div>
-                <div>
-                  <Label>
-                    Experiment Attachment
-                    {test.experiment_attachment && test.experiment_attachment.length > 0 && (
-                      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                        {Array.isArray(test.experiment_attachment) ? test.experiment_attachment.length : 1}
-                      </span>
-                    )}
-                  </Label>
-                  <DropzoneFileList
-                    buttonText="Experiment Attachment"
-                    name="experiment_attachment"
-                    maxFiles={5}
-                    formData={{
-                      ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
-                    }}
-                    setFormData={(updatedTest) => {
-                      setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                      );
-                    }}
-                    id={`test${idx}`}
-                    submitted={false}
-                    setSubmitted={() => { }}
-                    openModal={!!experimentModals[idx]}
-                    handleOpenModal={() =>
-                      setExperimentModals((prev) => ({ ...prev, [idx]: true }))
-                    }
-                    handleCloseModal={() =>
-                      setExperimentModals((prev) => ({ ...prev, [idx]: false }))
-                    }
-                    disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
-                    viewOnly={userRole === "TestEngineer"}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                  />
-                </div>
-                <div>
-                  <Label>
-                    DBC Attachment
-                    {test.dbc_attachment && test.dbc_attachment.length > 0 && (
-                      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                        {Array.isArray(test.dbc_attachment) ? test.dbc_attachment.length : 1}
-                      </span>
-                    )}
-                  </Label>
-                  <DropzoneFileList
-                    buttonText="DBC Attachment"
-                    name="dbc_attachment"
-                    maxFiles={5}
-                    formData={{
-                      ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
-                    }}
-                    setFormData={(updatedTest) => {
-                      setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                      );
-                    }}
-                    id={`test${idx}`}
-                    submitted={false}
-                    setSubmitted={() => { }}
-                    openModal={!!dbcModals[idx]}
-                    handleOpenModal={() =>
-                      setDBCModals((prev) => ({ ...prev, [idx]: true }))
-                    }
-                    handleCloseModal={() =>
-                      setDBCModals((prev) => ({ ...prev, [idx]: false }))
-                    }
-                    disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
-                    viewOnly={userRole === "TestEngineer"}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                  />
-                </div>
-                <div>
-                  <Label>
-                    WLTP Input Sheet
-                    {test.wltp_attachment && test.wltp_attachment.length > 0 && (
-                      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                        {Array.isArray(test.wltp_attachment) ? test.wltp_attachment.length : 1}
-                      </span>
-                    )}
-                  </Label>
-                  <DropzoneFileList
-                    buttonText="WLTP Input Sheet"
-                    name="wltp_attachment"
-                    maxFiles={5}
-                    formData={{
-                      ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
-                    }}
-                    setFormData={(updatedTest) => {
-                      setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                      );
-                    }}
-                    id={`test${idx}`}
-                    submitted={false}
-                    setSubmitted={() => { }}
-                    openModal={!!wltpModals[idx]}
-                    handleOpenModal={() =>
-                      setWLTPModals((prev) => ({ ...prev, [idx]: true }))
-                    }
-                    handleCloseModal={() =>
-                      setWLTPModals((prev) => ({ ...prev, [idx]: false }))
-                    }
-                    disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
-                    viewOnly={userRole === "TestEngineer"}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Testbed Engineers Attachments Card */}
-            <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
-              <div className="font-semibold text-sm text-gray-700 mb-2">
-                Test Engineers Attachments
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label>PDF Reprt</Label>
-                  <DropzoneFileList
-                    buttonText="PDF Report"
-                    name="PDF_report"
-                    maxFiles={5}
-                    formData={{
-                      ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
-                    }}
-                    setFormData={(updatedTest) => {
-                      setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                      );
-                    }}
-                    id={`test${idx}`}
-                    submitted={false}
-                    setSubmitted={() => { }}
-                    openModal={!!pdfReportModals[idx]}
-                    handleOpenModal={() =>
-                      setpdfReportModals((prev) => ({ ...prev, [idx]: true }))
-                    }
-                    handleCloseModal={() =>
-                      setpdfReportModals((prev) => ({ ...prev, [idx]: false }))
-                    }
-                    // Disable upload for ProjectTeam unless they're editing a Re-edit status test, allow only view/download
-                    // disabled={!areTestFieldsEditable(test, idx)}
-                    disabled={userRole === "ProjectTeam"}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                    // viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
-                    viewOnly={userRole === "ProjectTeam"}
-                  />
-                </div>
-                <div>
-                  <Label>Excel Report</Label>
-                  <DropzoneFileList
-                    buttonText="Excel Report"
-                    name="Excel_report"
-                    maxFiles={5}
-                    formData={{
-                      ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
-                    }}
-                    setFormData={(updatedTest) => {
-                      setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                      );
-                    }}
-                    id={`test${idx}`}
-                    submitted={false}
-                    setSubmitted={() => { }}
-                    openModal={!!excelReportModals[idx]}
-                    handleOpenModal={() =>
-                      setexcelReportModals((prev) => ({ ...prev, [idx]: true }))
-                    }
-                    handleCloseModal={() =>
-                      setexcelReportModals((prev) => ({ ...prev, [idx]: false }))
-                    }
-                    // disabled={!areTestFieldsEditable(test, idx)}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                    // viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
-                    disabled={userRole === "ProjectTeam"}
-                    viewOnly={userRole === "ProjectTeam"}
-                  />
-                </div>
-                <div>
-                  <Label>DAT File Attachment</Label>
-                  <DropzoneFileList
-                    buttonText="DAT File Attachment"
-                    name="DAT_file_attachment"
-                    maxFiles={5}
-                    formData={{
-                      ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
-                    }}
-                    setFormData={(updatedTest) => {
-                      setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                      );
-                    }}
-                    id={`test${idx}`}
-                    submitted={false}
-                    setSubmitted={() => { }}
-                    openModal={!!datFileModals[idx]}
-                    handleOpenModal={() =>
-                      setDATModals((prev) => ({ ...prev, [idx]: true }))
-                    }
-                    handleCloseModal={() =>
-                      setDATModals((prev) => ({ ...prev, [idx]: false }))
-                    }
-                    // disabled={!areTestFieldsEditable(test, idx)}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                    // viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
-                    disabled={userRole === "ProjectTeam"}
-                    viewOnly={userRole === "ProjectTeam"}
-                  />
-                </div>
-                <div>
-                  <Label>Others Attachment</Label>
-                  <DropzoneFileList
-                    buttonText="Others Attachment"
-                    name="Others_attachment"
-                    maxFiles={5}
-                    formData={{
-                      ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
-                    }}
-                    setFormData={(updatedTest) => {
-                      setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                      );
-                    }}
-                    id={`test${idx}`}
-                    submitted={false}
-                    setSubmitted={() => { }}
-                    openModal={!!othersModals[idx]}
-                    handleOpenModal={() =>
-                      setOthersModals((prev) => ({ ...prev, [idx]: true }))
-                    }
-                    handleCloseModal={() =>
-                      setOthersModals((prev) => ({ ...prev, [idx]: false }))
-                    }
-                    // disabled={!areTestFieldsEditable(test, idx)}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                    // viewOnly={isProjectTeam && !(test.status === "Re-edit" && editingTestOrderIdx === idx)}
-                    disabled={userRole === "ProjectTeam"}
-                    viewOnly={userRole === "ProjectTeam"}
-                  />
-                </div>
-              </div>
-            </div>
-            {/* Coast Down Data Section for Test */}
-            <div className="mt-6 border rounded shadow px-4 py-3 bg-blue-50">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="font-semibold text-sm text-blue-700">
-                  Coast Down Data for Test {idx + 1}
-                </span>
-                <Switch
-                  checked={!!test.showCoastDownData}
-                  onCheckedChange={(checked) => {
-                    const updatedTests = [...tests];
-                    updatedTests[idx].showCoastDownData = checked;
-                    setTests(updatedTests);
-                  }}
-                  disabled={!areTestFieldsEditable(test, idx)}
-                  className="data-[state=checked]:bg-red-500"
-                />
-              </div>
-              {test.showCoastDownData && (
-                <div>
-                  <div className="mb-3">
-                    <Label className="text-xs">
-                      Coast Down Test Report Reference
-                    </Label>
+                {test.dpf === "Yes" && (
+                  <div>
+                    <Label>DPF Regen Occurs (g)*</Label>
                     <Input
-                      value={test.cdReportRef || form.cdReportRef}
-                      onChange={(e) =>
-                        handleTestChange(idx, "cdReportRef", e.target.value)
-                      }
-                      placeholder="Enter Coast Test Report Ref."
-                      className="mt-1"
+                      value={test.dpfRegenOccurs || ""}
+                      onChange={(e) => handleTestChange(idx, "dpfRegenOccurs", e.target.value)}
+                      placeholder="Enter DPF Regen Occurs (g)"
                       disabled={!areTestFieldsEditable(test, idx)}
                     />
                   </div>
-                  <div className="mb-2 font-semibold text-xs">CD Values</div>
-                  <div className="grid grid-cols-4 gap-3 text-xs">
-                    <div>
+                )}
+                <div>
+                  <Label>Dataset flashed</Label>
+                  <div className="flex gap-2 mt-2">
+                    <label>
+                      <input
+                        type="radio"
+                        name={`datasetflashed${idx}`}
+                        value="Yes"
+                        checked={test.datasetflashed === "Yes"}
+                        onChange={() =>
+                          handleTestChange(idx, "datasetflashed", "Yes")
+                        }
+                        disabled={!areTestFieldsEditable(test, idx)}
+                      />{" "}
+                      Yes
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name={`datasetflashed${idx}`}
+                        value="No"
+                        checked={test.datasetflashed === "No"}
+                        onChange={() =>
+                          handleTestChange(idx, "datasetflashed", "No")
+                        }
+                        disabled={!areTestFieldsEditable(test, idx)}
+                      />{" "}
+                      No
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <Label>ESS</Label>
+                  <div className="flex gap-2 mt-2">
+                    <label>
+                      <input
+                        type="radio"
+                        name={`ess${idx}`}
+                        value="On"
+                        checked={test.ess === "On"}
+                        onChange={() => handleTestChange(idx, "ess", "On")}
+                        disabled={!areTestFieldsEditable(test, idx)}
+                      />{" "}
+                      On
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name={`ess${idx}`}
+                        value="Off"
+                        checked={test.ess === "Off"}
+                        onChange={() => handleTestChange(idx, "ess", "Off")}
+                        disabled={!areTestFieldsEditable(test, idx)}
+                      />{" "}
+                      Off
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name={`ess${idx}`}
+                        value="NA"
+                        checked={test.ess === "NA"}
+                        onChange={() => handleTestChange(idx, "ess", "NA")}
+                        disabled={!areTestFieldsEditable(test, idx)}
+                      />{" "}
+                      NA
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <Label>Mode</Label>
+                  <Select
+                    value={test.mode}
+                    onValueChange={(v) => handleTestChange(idx, "mode", v)}
+                    disabled={!areTestFieldsEditable(test, idx)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modes.map((mode, index) => (
+                        <SelectItem key={`${mode}-${index}`} value={mode}>
+                          {mode}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Hardware Change</Label>
+                  <Input
+                    value={test.hardwareChange}
+                    onChange={(e) =>
+                      handleTestChange(idx, "hardwareChange", e.target.value)
+                    }
+                    placeholder="Enter Hardware Change"
+                    disabled={!areTestFieldsEditable(test, idx)}
+                  />
+                </div>
+                <div>
+                  <Label>Shift</Label>
+                  <Select
+                    value={test.shift}
+                    onValueChange={(v) => handleTestChange(idx, "shift", v)}
+                    disabled={!areTestFieldsEditable(test, idx)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Shift1">Shift1</SelectItem>
+                      <SelectItem value="Shift2">Shift2</SelectItem>
+                      <SelectItem value="Shift3">Shift3</SelectItem>
+                      <SelectItem value="General">General</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Fuel Type</Label>
+                  <Select
+                    value={test.fuelType}
+                    onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
+                    disabled={!areTestFieldsEditable(test, idx)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {fuelTypes.map((fuelType, index) => (
+                        <SelectItem key={`${fuelType}-${index}`} value={fuelType}>
+                          {fuelType}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Equipment Required</Label>
+                  <Input
+                    value={test.equipmentRequired}
+                    onChange={(e) =>
+                      handleTestChange(idx, "equipmentRequired", e.target.value)
+                    }
+                    placeholder="Enter Equipment Required"
+                    disabled={!areTestFieldsEditable(test, idx)}
+                  />
+                </div>
+                <div>
+                  <Label>Preferred Date</Label>
+                  <Input
+
+                    type="date"
+                    value={test.preferredDate}
+                    onChange={(e) =>
+                      handleTestChange(idx, "preferredDate", e.target.value)
+                    }
+                    disabled={!areTestFieldsEditable(test, idx)}
+                  />
+                </div>
+                <div>
+                  <Label>Emission Check Date</Label>
+                  <Input
+                    type="date"
+                    value={test.emissionCheckDate}
+                    onChange={(e) =>
+                      handleTestChange(idx, "emissionCheckDate", e.target.value)
+                    }
+                    disabled={!areTestFieldsEditable(test, idx)}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Specific Instruction</Label>
+                  <textarea
+                    value={test.specificInstruction}
+                    onChange={(e) =>
+                      handleTestChange(idx, "specificInstruction", e.target.value)
+                    }
+                    placeholder="Enter Specific Instructions"
+                    disabled={!areTestFieldsEditable(test, idx)}
+                    className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical dark:bg-black"
+                    style={{ minWidth: "100%", fontSize: "1rem" }}
+                    rows={3}
+                  />
+                </div>
+              </div>
+              {/* Attachments Card */}
+              <div className="bg-gray-100 dark:bg-gray-800 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+                <div className="font-semibold text-sm text-gray-700 dark:text-white mb-2">
+                  Attachments
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>
+                      Emission Check Attachment
+                      {test.emissionCheckAttachment && test.emissionCheckAttachment.length > 0 && (
+                        <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                          {Array.isArray(test.emissionCheckAttachment) ? test.emissionCheckAttachment.length : 1}
+                        </span>
+                      )}
+                    </Label>
+                    <DropzoneFileList
+                      buttonText="Emission Check Attachment"
+                      name="emission_check_attachment"
+                      maxFiles={5}
+                      formData={{
+                        ...test,
+                        job_order_id: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || "",
+                        test_order_id: test.testOrderId || "",
+                        originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      }}
+                      setFormData={(updatedTest) => {
+                        setTests((prev) =>
+                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        );
+                      }}
+                      id={`test${idx}`}
+                      submitted={false}
+                      setSubmitted={() => { }}
+                      openModal={!!emissionCheckModals[idx]}
+                      handleOpenModal={() =>
+                        setEmissionCheckModals((prev) => ({ ...prev, [idx]: true }))
+                      }
+                      handleCloseModal={() =>
+                        setEmissionCheckModals((prev) => ({ ...prev, [idx]: false }))
+                      }
+                      disabled={!areTestFieldsEditable(test, idx)}
+                      originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                      viewOnly={userRole === "TestEngineer"}
+                      // Add custom styling based on file count
+                      customButtonStyle={{
+                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'emissionCheckAttachment')),
+                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'emissionCheckAttachment')),
+                        color: 'white'
+                      }}
+                      customContainerStyle={{
+                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'emissionCheckAttachment'))
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>
+                      Dataset Attachment
+                      {test.dataset_attachment && test.dataset_attachment.length > 0 && (
+                        <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                          {Array.isArray(test.dataset_attachment) ? test.dataset_attachment.length : 1}
+                        </span>
+                      )}
+                    </Label>
+                    <DropzoneFileList
+                      buttonText="Dataset Attachment"
+                      name="dataset_attachment"
+                      maxFiles={5}
+                      formData={{
+                        ...test,
+                        originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      }}
+                      setFormData={(updatedTest) => {
+                        setTests((prev) =>
+                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        );
+                      }}
+                      id={`test${idx}`}
+                      submitted={false}
+                      setSubmitted={() => { }}
+                      openModal={!!datasetModals[idx]}
+                      handleOpenModal={() =>
+                        setDatasetModals((prev) => ({ ...prev, [idx]: true }))
+                      }
+                      handleCloseModal={() =>
+                        setDatasetModals((prev) => ({ ...prev, [idx]: false }))
+                      }
+                      disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
+                      originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                      viewOnly={userRole === "TestEngineer"}
+                      // Add custom styling
+                      customButtonStyle={{
+                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'dataset_attachment')),
+                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'dataset_attachment')),
+                        color: 'white'
+                      }}
+                      customContainerStyle={{
+                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'dataset_attachment'))
+                      }}
+                    />
+                  </div>
+
+                  {/* Continue this pattern for all other attachment fields */}
+                  <div>
+                    <Label>
+                      A2L Attachment
+                      {test.a2l_attachment && test.a2l_attachment.length > 0 && (
+                        <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                          {Array.isArray(test.a2l_attachment) ? test.a2l_attachment.length : 1}
+                        </span>
+                      )}
+                    </Label>
+                    <DropzoneFileList
+                      buttonText="A2L Attachment"
+                      name="a2l_attachment"
+                      maxFiles={5}
+                      formData={{
+                        ...test,
+                        originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      }}
+                      setFormData={(updatedTest) => {
+                        setTests((prev) =>
+                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        );
+                      }}
+                      id={`test${idx}`}
+                      submitted={false}
+                      setSubmitted={() => { }}
+                      openModal={!!a2lModals[idx]}
+                      handleOpenModal={() =>
+                        setA2LModals((prev) => ({ ...prev, [idx]: true }))
+                      }
+                      handleCloseModal={() =>
+                        setA2LModals((prev) => ({ ...prev, [idx]: false }))
+                      }
+                      disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
+                      originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                      viewOnly={userRole === "TestEngineer"}
+                      customButtonStyle={{
+                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'a2l_attachment')),
+                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'a2l_attachment')),
+                        color: 'white'
+                      }}
+                      customContainerStyle={{
+                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'a2l_attachment'))
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label>
+                      Experiment Attachment
+                      {test.experiment_attachment && test.experiment_attachment.length > 0 && (
+                        <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                          {Array.isArray(test.experiment_attachment) ? test.experiment_attachment.length : 1}
+                        </span>
+                      )}
+                    </Label>
+                    <DropzoneFileList
+                      buttonText="Experiment Attachment"
+                      name="experiment_attachment"
+                      maxFiles={5}
+                      formData={{
+                        ...test,
+                        originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      }}
+                      setFormData={(updatedTest) => {
+                        setTests((prev) =>
+                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        );
+                      }}
+                      id={`test${idx}`}
+                      submitted={false}
+                      setSubmitted={() => { }}
+                      openModal={!!experimentModals[idx]}
+                      handleOpenModal={() =>
+                        setExperimentModals((prev) => ({ ...prev, [idx]: true }))
+                      }
+                      handleCloseModal={() =>
+                        setExperimentModals((prev) => ({ ...prev, [idx]: false }))
+                      }
+                      disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
+                      viewOnly={userRole === "TestEngineer"}
+                      originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                      customButtonStyle={{
+                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'experiment_attachment')),
+                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'experiment_attachment')),
+                        color: 'white'
+                      }}
+                      customContainerStyle={{
+                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'experiment_attachment'))
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>
+                      DBC Attachment
+                      {test.dbc_attachment && test.dbc_attachment.length > 0 && (
+                        <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                          {Array.isArray(test.dbc_attachment) ? test.dbc_attachment.length : 1}
+                        </span>
+                      )}
+                    </Label>
+                    <DropzoneFileList
+                      buttonText="DBC Attachment"
+                      name="dbc_attachment"
+                      maxFiles={5}
+                      formData={{
+                        ...test,
+                        originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      }}
+                      setFormData={(updatedTest) => {
+                        setTests((prev) =>
+                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        );
+                      }}
+                      id={`test${idx}`}
+                      submitted={false}
+                      setSubmitted={() => { }}
+                      openModal={!!dbcModals[idx]}
+                      handleOpenModal={() =>
+                        setDBCModals((prev) => ({ ...prev, [idx]: true }))
+                      }
+                      handleCloseModal={() =>
+                        setDBCModals((prev) => ({ ...prev, [idx]: false }))
+                      }
+                      disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
+                      viewOnly={userRole === "TestEngineer"}
+                      originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                      customButtonStyle={{
+                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'dbc_attachment')),
+                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'dbc_attachment')),
+                        color: 'white'
+                      }}
+                      customContainerStyle={{
+                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'dbc_attachment'))
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>
+                      WLTP Input Sheet
+                      {test.wltp_attachment && test.wltp_attachment.length > 0 && (
+                        <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                          {Array.isArray(test.wltp_attachment) ? test.wltp_attachment.length : 1}
+                        </span>
+                      )}
+                    </Label>
+                    <DropzoneFileList
+                      buttonText="WLTP Input Sheet"
+                      name="wltp_attachment"
+                      maxFiles={5}
+                      formData={{
+                        ...test,
+                        originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      }}
+                      setFormData={(updatedTest) => {
+                        setTests((prev) =>
+                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        );
+                      }}
+                      id={`test${idx}`}
+                      submitted={false}
+                      setSubmitted={() => { }}
+                      openModal={!!wltpModals[idx]}
+                      handleOpenModal={() =>
+                        setWLTPModals((prev) => ({ ...prev, [idx]: true }))
+                      }
+                      handleCloseModal={() =>
+                        setWLTPModals((prev) => ({ ...prev, [idx]: false }))
+                      }
+                      disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
+                      viewOnly={userRole === "TestEngineer"}
+                      originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                      customButtonStyle={{
+                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'wltp_attachment')),
+                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'wltp_attachment')),
+                        color: 'white'
+                      }}
+                      customContainerStyle={{
+                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'wltp_attachment'))
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Test Engineers Attachments Card */}
+              <div className="bg-gray-100 border border-gray-300 dark:bg-gray-800 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+                <div className="font-semibold text-sm text-gray-700 mb-2">
+                  Test Engineers Attachments
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>PDF Report</Label>
+                    <DropzoneFileList
+                      buttonText="PDF Report"
+                      name="PDF_report"
+                      maxFiles={5}
+                      formData={{
+                        ...test,
+                        originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      }}
+                      setFormData={(updatedTest) => {
+                        setTests((prev) =>
+                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        );
+                      }}
+                      id={`test${idx}`}
+                      submitted={false}
+                      setSubmitted={() => { }}
+                      openModal={!!pdfReportModals[idx]}
+                      handleOpenModal={() =>
+                        setpdfReportModals((prev) => ({ ...prev, [idx]: true }))
+                      }
+                      handleCloseModal={() =>
+                        setpdfReportModals((prev) => ({ ...prev, [idx]: false }))
+                      }
+                      disabled={userRole === "ProjectTeam"}
+                      originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                      viewOnly={userRole === "ProjectTeam"}
+                      team="testTeam" // Add team prop for test engineer attachments
+                      customButtonStyle={{
+                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'PDF_report')),
+                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'PDF_report')),
+                        color: 'white'
+                      }}
+                      customContainerStyle={{
+                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'PDF_report'))
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Excel Report</Label>
+                    <DropzoneFileList
+                      buttonText="Excel Report"
+                      name="Excel_report"
+                      maxFiles={5}
+                      formData={{
+                        ...test,
+                        originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      }}
+                      setFormData={(updatedTest) => {
+                        setTests((prev) =>
+                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        );
+                      }}
+                      id={`test${idx}`}
+                      submitted={false}
+                      setSubmitted={() => { }}
+                      openModal={!!excelReportModals[idx]}
+                      handleOpenModal={() =>
+                        setexcelReportModals((prev) => ({ ...prev, [idx]: true }))
+                      }
+                      handleCloseModal={() =>
+                        setexcelReportModals((prev) => ({ ...prev, [idx]: false }))
+                      }
+                      originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                      disabled={userRole === "ProjectTeam"}
+                      viewOnly={userRole === "ProjectTeam"}
+                      team="testTeam" // Add team prop
+                      customButtonStyle={{
+                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'Excel_report')),
+                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'Excel_report')),
+                        color: 'white'
+                      }}
+                      customContainerStyle={{
+                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'Excel_report'))
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>DAT File Attachment</Label>
+                    <DropzoneFileList
+                      buttonText="DAT File Attachment"
+                      name="DAT_file_attachment"
+                      maxFiles={5}
+                      formData={{
+                        ...test,
+                        originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      }}
+                      setFormData={(updatedTest) => {
+                        setTests((prev) =>
+                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        );
+                      }}
+                      id={`test${idx}`}
+                      submitted={false}
+                      setSubmitted={() => { }}
+                      openModal={!!datFileModals[idx]}
+                      handleOpenModal={() =>
+                        setDATModals((prev) => ({ ...prev, [idx]: true }))
+                      }
+                      handleCloseModal={() =>
+                        setDATModals((prev) => ({ ...prev, [idx]: false }))
+                      }
+                      originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                      disabled={userRole === "ProjectTeam"}
+                      viewOnly={userRole === "ProjectTeam"}
+                      team="testTeam" // Add team prop
+                      customButtonStyle={{
+                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'DAT_file_attachment')),
+                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'DAT_file_attachment')),
+                        color: 'white'
+                      }}
+                      customContainerStyle={{
+                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'DAT_file_attachment'))
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Others Attachment</Label>
+                    <DropzoneFileList
+                      buttonText="Others Attachment"
+                      name="Others_attachment"
+                      maxFiles={5}
+                      formData={{
+                        ...test,
+                        originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      }}
+                      setFormData={(updatedTest) => {
+                        setTests((prev) =>
+                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        );
+                      }}
+                      id={`test${idx}`}
+                      submitted={false}
+                      setSubmitted={() => { }}
+                      openModal={!!othersModals[idx]}
+                      handleOpenModal={() =>
+                        setOthersModals((prev) => ({ ...prev, [idx]: true }))
+                      }
+                      handleCloseModal={() =>
+                        setOthersModals((prev) => ({ ...prev, [idx]: false }))
+                      }
+                      originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                      disabled={userRole === "ProjectTeam"}
+                      viewOnly={userRole === "ProjectTeam"}
+                      team="testTeam" // Add team prop
+                      customButtonStyle={{
+                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'Others_attachment')),
+                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'Others_attachment')),
+                        color: 'white'
+                      }}
+                      customContainerStyle={{
+                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'Others_attachment'))
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              {/* Coast Down Data Section for Test */}
+              <div className="mt-6 border rounded shadow px-4 py-3 bg-blue-50 dark:bg-inherit">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="font-semibold text-sm text-blue-700">
+                    Coast Down Data for Test {idx + 1}
+                  </span>
+                  <Switch
+                    checked={!!test.showCoastDownData}
+                    onCheckedChange={(checked) => {
+                      const updatedTests = [...tests];
+                      updatedTests[idx].showCoastDownData = checked;
+                      setTests(updatedTests);
+                    }}
+                    disabled={!areTestFieldsEditable(test, idx)}
+                    className="data-[state=checked]:bg-red-500 dark:data-[state=unchecked]:bg-gray-400"
+                  />
+                </div>
+                {test.showCoastDownData && (
+                  <div>
+                    <div className="mb-3">
                       <Label className="text-xs">
-                        Vehicle Reference mass (Kg)
+                        Coast Down Test Report Reference
                       </Label>
                       <Input
-                        value={test.vehicleRefMass || form.vehicleRefMass}
+                        value={test.cdReportRef || form.cdReportRef}
                         onChange={(e) =>
-                          handleTestChange(
-                            idx,
-                            "vehicleRefMass",
-                            e.target.value
-                          )
+                          handleTestChange(idx, "cdReportRef", e.target.value)
                         }
-                        placeholder="Enter Vehicle Reference mass"
+                        placeholder="Enter Coast Test Report Ref."
                         className="mt-1"
                         disabled={!areTestFieldsEditable(test, idx)}
                       />
                     </div>
-                    <div>
-                      <Label className="text-xs">A (N)</Label>
-                      <Input
-                        value={test.aN || form.aN}
-                        onChange={(e) =>
-                          handleTestChange(idx, "aN", e.target.value)
-                        }
-                        placeholder="Enter A (N)"
-                        className="mt-1"
-                        disabled={!areTestFieldsEditable(test, idx)}
-                      />
+                    <div className="mb-2 font-semibold text-xs">CD Values</div>
+                    <div className="grid grid-cols-4 gap-3 text-xs">
+                      <div>
+                        <Label className="text-xs">
+                          Vehicle Reference mass (Kg)
+                        </Label>
+                        <Input
+                          value={test.vehicleRefMass || form.vehicleRefMass}
+                          onChange={(e) =>
+                            handleTestChange(
+                              idx,
+                              "vehicleRefMass",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Enter Vehicle Reference mass"
+                          className="mt-1"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">A (N)</Label>
+                        <Input
+                          value={test.aN || form.aN}
+                          onChange={(e) =>
+                            handleTestChange(idx, "aN", e.target.value)
+                          }
+                          placeholder="Enter A (N)"
+                          className="mt-1"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">B (N/kmph)</Label>
+                        <Input
+                          value={test.bNkmph || form.bNkmph}
+                          onChange={(e) =>
+                            handleTestChange(idx, "bNkmph", e.target.value)
+                          }
+                          placeholder="Enter B (N/kmph)"
+                          className="mt-1"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">C (N/kmph^2)</Label>
+                        <Input
+                          value={test.cNkmph2 || form.cNkmph2}
+                          onChange={(e) =>
+                            handleTestChange(idx, "cNkmph2", e.target.value)
+                          }
+                          placeholder="Enter C (N/kmph^2)"
+                          className="mt-1"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <Label className="text-xs">B (N/kmph)</Label>
-                      <Input
-                        value={test.bNkmph || form.bNkmph}
-                        onChange={(e) =>
-                          handleTestChange(idx, "bNkmph", e.target.value)
-                        }
-                        placeholder="Enter B (N/kmph)"
-                        className="mt-1"
-                        disabled={!areTestFieldsEditable(test, idx)}
-                      />
+                    <div className="grid grid-cols-3 gap-3 text-xs mt-3">
+                      <div>
+                        <Label className="text-xs">F0 (N)</Label>
+                        <Input
+                          value={test.f0N || form.f0N}
+                          onChange={(e) =>
+                            handleTestChange(idx, "f0N", e.target.value)
+                          }
+                          placeholder="Enter F0 (N)"
+                          className="mt-1"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">F1 (N/kmph)</Label>
+                        <Input
+                          value={test.f1Nkmph || form.f1Nkmph}
+                          onChange={(e) =>
+                            handleTestChange(idx, "f1Nkmph", e.target.value)
+                          }
+                          placeholder="Enter F1 (N/kmph)"
+                          className="mt-1"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">F2 (N/kmph^2)</Label>
+                        <Input
+                          value={test.f2Nkmph2 || form.f2Nkmph2}
+                          onChange={(e) =>
+                            handleTestChange(idx, "f2Nkmph2", e.target.value)
+                          }
+                          placeholder="Enter F2 (N/kmph^2)"
+                          className="mt-1"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <Label className="text-xs">C (N/kmph^2)</Label>
-                      <Input
-                        value={test.cNkmph2 || form.cNkmph2}
-                        onChange={(e) =>
-                          handleTestChange(idx, "cNkmph2", e.target.value)
-                        }
-                        placeholder="Enter C (N/kmph^2)"
-                        className="mt-1"
+                    <div className="flex justify-end mt-3">
+                      <Button
+                        type="button"
+                        className="bg-blue-600 text-white text-xs px-4 py-1 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
                         disabled={!areTestFieldsEditable(test, idx)}
-                      />
+                        onClick={() => {
+                          // Copy coast down data from main form to this test
+                          handleTestChange(idx, "cdReportRef", form.cdReportRef);
+                          handleTestChange(idx, "vehicleRefMass", form.vehicleRefMass);
+                          handleTestChange(idx, "aN", form.aN);
+                          handleTestChange(idx, "bNkmph", form.bNkmph);
+                          handleTestChange(idx, "cNkmph2", form.cNkmph2);
+                          handleTestChange(idx, "f0N", form.f0N);
+                          handleTestChange(idx, "f1Nkmph", form.f1Nkmph);
+                          handleTestChange(idx, "f2Nkmph2", form.f2Nkmph2);
+                        }}
+                      >
+                        Load from Main Form
+                      </Button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 text-xs mt-3">
-                    <div>
-                      <Label className="text-xs">F0 (N)</Label>
-                      <Input
-                        value={test.f0N || form.f0N}
-                        onChange={(e) =>
-                          handleTestChange(idx, "f0N", e.target.value)
-                        }
-                        placeholder="Enter F0 (N)"
-                        className="mt-1"
-                        disabled={!areTestFieldsEditable(test, idx)}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">F1 (N/kmph)</Label>
-                      <Input
-                        value={test.f1Nkmph || form.f1Nkmph}
-                        onChange={(e) =>
-                          handleTestChange(idx, "f1Nkmph", e.target.value)
-                        }
-                        placeholder="Enter F1 (N/kmph)"
-                        className="mt-1"
-                        disabled={!areTestFieldsEditable(test, idx)}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">F2 (N/kmph^2)</Label>
-                      <Input
-                        value={test.f2Nkmph2 || form.f2Nkmph2}
-                        onChange={(e) =>
-                          handleTestChange(idx, "f2Nkmph2", e.target.value)
-                        }
-                        placeholder="Enter F2 (N/kmph^2)"
-                        className="mt-1"
-                        disabled={!areTestFieldsEditable(test, idx)}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end mt-3">
-                    <Button
-                      type="button"
-                      className="bg-blue-600 text-white text-xs px-4 py-1 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
-                      disabled={!areTestFieldsEditable(test, idx)}
-                      onClick={() => {
-                        // Copy coast down data from main form to this test
-                        handleTestChange(idx, "cdReportRef", form.cdReportRef);
-                        handleTestChange(idx, "vehicleRefMass", form.vehicleRefMass);
-                        handleTestChange(idx, "aN", form.aN);
-                        handleTestChange(idx, "bNkmph", form.bNkmph);
-                        handleTestChange(idx, "cNkmph2", form.cNkmph2);
-                        handleTestChange(idx, "f0N", form.f0N);
-                        handleTestChange(idx, "f1Nkmph", form.f1Nkmph);
-                        handleTestChange(idx, "f2Nkmph2", form.f2Nkmph2);
-                      }}
-                    >
-                      Load from Main Form
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end mt-6">
-              <Button
-                className="bg-red-600 text-white text-xs px-6 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
-                onClick={() => handleCreateTestOrder(idx)}
-                disabled={!!test.testOrderId || test.disabled}
-              >
-                {test.testOrderId ? " TEST ORDER CREATED" : " CREATE TEST ORDER"}
-              </Button>
-              {editingTestOrderIdx === idx && (
+                )}
+              </div>
+              <div className="flex justify-end mt-6">
                 <Button
-                  className="bg-blue-600 text-white text-xs px-6 py-2 rounded ml-2"
-                  onClick={() => {
-                    if (isProjectTeam) {
-                      handleOpenMailRemarksModal(idx);
-                    } else {
-                      handleUpdateTestOrder(idx);
-                    }
-                  }}
+                  className="bg-red-600 text-white text-xs px-6 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  onClick={() => handleCreateTestOrder(idx)}
+                  disabled={!!test.testOrderId || test.disabled}
                 >
-                  UPDATE TEST ORDER
+                  {test.testOrderId ? " TEST ORDER CREATED" : " CREATE TEST ORDER"}
                 </Button>
+                {editingTestOrderIdx === idx && (
+                  <Button
+                    className="bg-blue-600 text-white text-xs px-6 py-2 rounded ml-2"
+                    onClick={() => {
+                      if (isProjectTeam) {
+                        handleOpenMailRemarksModal(idx);
+                      } else {
+                        handleUpdateTestOrder(idx);
+                      }
+                    }}
+                  >
+                    UPDATE TEST ORDER
+                  </Button>
+                )}
+              </div>
+
+              {/* Re-edit remarks modal */}
+              {reEditModalOpen === idx && (
+                <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                  <div className="bg-white rounded shadow-lg p-6 w-96">
+                    <div className="font-semibold mb-2">Reason for Re-edit</div>
+                    <textarea
+                      className="w-full border rounded p-2 mb-4"
+                      rows={3}
+                      value={reEditRemarks[idx] || ""}
+                      onChange={(e) => setReEditRemarks((prev) => ({ ...prev, [idx]: e.target.value }))}
+                      placeholder="Enter reason for re-edit..."
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        className="bg-gray-300 text-black px-4 py-1 rounded"
+                        type="button"
+                        onClick={() => setReEditModalOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        className="bg-blue-600 text-white px-4 py-1 rounded"
+                        type="button"
+                        onClick={() => handleSubmitReEditRemarks(idx)}
+                        disabled={!reEditRemarks[idx]?.trim()}
+                      >
+                        Submit
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* Rejection remarks modal */}
+              {rejectionModalOpen === idx && (
+                <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                  <div className="bg-white rounded shadow-lg p-6 w-96">
+                    <div className="font-semibold mb-2">Reason for Rejection</div>
+                    <textarea
+                      className="w-full border rounded p-2 mb-4"
+                      rows={3}
+                      value={rejectionRemarks[idx] || ""}
+                      onChange={(e) => setRejectionRemarks((prev) => ({ ...prev, [idx]: e.target.value }))}
+                      placeholder="Enter reason for rejection..."
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        className="bg-gray-300 text-black px-4 py-1 rounded"
+                        type="button"
+                        onClick={() => setRejectionModalOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        className="bg-red-600 text-white px-4 py-1 rounded"
+                        type="button"
+                        onClick={() => handleSubmitRejectionRemarks(idx)}
+                        disabled={!rejectionRemarks[idx]?.trim()}
+                      >
+                        Submit
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* mail remarks modal */}
+              {mailRemarksModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                  <div className="bg-white rounded shadow-lg p-6 w-96">
+                    <div className="font-semibold mb-2">mail remarks</div>
+                    <textarea
+                      className="w-full border rounded p-2 mb-4"
+                      rows={3}
+                      value={mailRemarks}
+                      onChange={(e) => setMailRemarks(e.target.value)}
+                      placeholder="Enter mail remarks..."
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        className="bg-gray-300 text-black px-4 py-1 rounded"
+                        type="button"
+                        onClick={() => setMailRemarksModalOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        className="bg-blue-600 text-white px-4 py-1 rounded"
+                        type="button"
+                        onClick={() => handleSubmitMailRemarks(idx)}
+                        disabled={!mailRemarks.trim()}
+                      >
+                        Submit
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
-
-            {/* Re-edit remarks modal */}
-            {reEditModalOpen === idx && (
-              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                <div className="bg-white rounded shadow-lg p-6 w-96">
-                  <div className="font-semibold mb-2">Reason for Re-edit</div>
-                  <textarea
-                    className="w-full border rounded p-2 mb-4"
-                    rows={3}
-                    value={reEditRemarks[idx] || ""}
-                    onChange={(e) => setReEditRemarks((prev) => ({ ...prev, [idx]: e.target.value }))}
-                    placeholder="Enter reason for re-edit..."
-                  />
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      className="bg-gray-300 text-black px-4 py-1 rounded"
-                      type="button"
-                      onClick={() => setReEditModalOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      className="bg-blue-600 text-white px-4 py-1 rounded"
-                      type="button"
-                      onClick={() => handleSubmitReEditRemarks(idx)}
-                      disabled={!reEditRemarks[idx]?.trim()}
-                    >
-                      Submit
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* Rejection remarks modal */}
-            {rejectionModalOpen === idx && (
-              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                <div className="bg-white rounded shadow-lg p-6 w-96">
-                  <div className="font-semibold mb-2">Reason for Rejection</div>
-                  <textarea
-                    className="w-full border rounded p-2 mb-4"
-                    rows={3}
-                    value={rejectionRemarks[idx] || ""}
-                    onChange={(e) => setRejectionRemarks((prev) => ({ ...prev, [idx]: e.target.value }))}
-                    placeholder="Enter reason for rejection..."
-                  />
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      className="bg-gray-300 text-black px-4 py-1 rounded"
-                      type="button"
-                      onClick={() => setRejectionModalOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      className="bg-red-600 text-white px-4 py-1 rounded"
-                      type="button"
-                      onClick={() => handleSubmitRejectionRemarks(idx)}
-                      disabled={!rejectionRemarks[idx]?.trim()}
-                    >
-                      Submit
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* mail remarks modal */}
-            {mailRemarksModalOpen && (
-              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                <div className="bg-white rounded shadow-lg p-6 w-96">
-                  <div className="font-semibold mb-2">mail remarks</div>
-                  <textarea
-                    className="w-full border rounded p-2 mb-4"
-                    rows={3}
-                    value={mailRemarks}
-                    onChange={(e) => setMailRemarks(e.target.value)}
-                    placeholder="Enter mail remarks..."
-                  />
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      className="bg-gray-300 text-black px-4 py-1 rounded"
-                      type="button"
-                      onClick={() => setMailRemarksModalOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      className="bg-blue-600 text-white px-4 py-1 rounded"
-                      type="button"
-                      onClick={() => handleSubmitMailRemarks(idx)}
-                      disabled={!mailRemarks.trim()}
-                    >
-                      Submit
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
 
         {/* Show all test orders in a table */}
         <div className="mx-8 my-8">
           <div className="font-semibold mb-2">All Test Orders</div>
           <div className="overflow-x-auto">
-            <table className="min-w-full text-xs border">
+            <table className="min-w-full text-xs border ">
               <thead>
-                <tr className="bg-gray-200">
+                <tr className="bg-gray-200 dark:bg-black">
+                  <th className="border px-2 py-1">Test</th> {/* Add sequential number column */}
                   <th className="border px-2 py-1">Job Order ID</th>
                   <th className="border px-2 py-1">Test Order ID</th>
                   <th className="border px-2 py-1">Test Type</th>
@@ -3230,22 +3566,23 @@ export default function CreateJobOrder() {
                 </tr>
               </thead>
               <tbody>
-                {(allTestOrders[location.state?.originalJobOrderId] || []).map((to) => (
+                {(allTestOrders[location.state?.originalJobOrderId] || []).map((to, index) => (
                   <tr key={to.test_order_id}>
-                    <td className="border px-2 py-1">{to.job_order_id}</td> {/* New data */}
+                    <td className="border px-2 py-1">{index + 1}</td> {/* Sequential number */}
+                    <td className="border px-2 py-1">{to.job_order_id}</td>
                     <td className="border px-2 py-1">{to.test_order_id}</td>
                     <td className="border px-2 py-1">{to.test_type}</td>
                     <td className="border px-2 py-1">{to.test_objective}</td>
                     <td className="border px-2 py-1">{to.fuel_type}</td>
                     <td className="border px-2 py-1">{to.status}</td>
-                    <td className="border px-2 py-1">
+                    <td className="border px-2 py-1 flex justify-center items-center gap-2">
                       {/* Show Edit button based on user role and test status */}
                       {(() => {
                         // For ProjectTeam: Show edit button when status is "Re-edit" 
                         if (isProjectTeam && to.status === "Re-edit") {
                           return (
                             <Button
-                              className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
+                              className="bg-blue-600 text-white text-xs px-4 py-1 rounded"
                               onClick={() => navigate('/editTestOrder', {
                                 state: {
                                   testOrder: to,
@@ -3263,7 +3600,7 @@ export default function CreateJobOrder() {
                         else if (!isTestEngineer || (isTestEngineer && to.status !== "Re-edit")) {
                           return (
                             <Button
-                              className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
+                              className="bg-blue-600 text-white text-xs px-4 py-1 rounded"
                               onClick={() => navigate('/editTestOrder', {
                                 state: {
                                   testOrder: to,
