@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, String, Float, Boolean, Text, Date, TIMESTAMP, JSON
+from sqlalchemy import Column, String, String, Float, Boolean, Text, Date, TIMESTAMP, JSON, Integer
 from sqlalchemy.orm import declarative_base
 from datetime import datetime
 
@@ -48,11 +48,21 @@ class Vehicle(Base):
     created_on = Column(TIMESTAMP, nullable=True)
     id_of_updater = Column(String, nullable=True)
     updated_on = Column(TIMESTAMP, nullable=True)
+    vehicle_kerb_weight = Column(String, nullable=True)
+    vehicle_gvw = Column(String, nullable=True)
+    kerb_faw = Column(String, nullable=True)
+    kerb_raw = Column(String, nullable=True)
+    awd_rwd_fwd = Column(String, nullable=True)
 
 
 class Engine(Base):
     __tablename__ = "Engines"
-    engine_serial_number = Column(String, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    engine_serial_number = Column(String, nullable=True)
+    motor_serial_number = Column(String, nullable=True)
+    engine_domain = Column(String, nullable=True)
+    vehicle_body_number = Column(String, nullable=True)
+    project_code = Column(String, nullable=True)
     engine_build_level = Column(String, nullable=True)
     engine_capacity = Column(Float, nullable=True)
     engine_type = Column(String, nullable=True)
@@ -99,6 +109,21 @@ class Engine(Base):
     hv_battery_voltage = Column(Float, nullable=True)
     hv_battery_current = Column(Float, nullable=True)
     ev_motor_power_kw = Column(Float, nullable=True)
+    motor_make = Column(String, nullable=True)
+    motor_front = Column(Boolean, nullable=True)
+    motor_rear = Column(Boolean, nullable=True)
+    front_motor_serial_number = Column(String, nullable=True)
+    rear_motor_serial_number = Column(String, nullable=True)
+    front_motor_max_power = Column(Float, nullable=True)
+    rear_motor_max_power = Column(Float, nullable=True)
+    front_motor_max_torque = Column(Float, nullable=True)
+    rear_motor_max_torque = Column(Float, nullable=True)
+    front_motor_make = Column(String, nullable=True)
+    rear_motor_make = Column(String, nullable=True)
+    motor_max_voltage = Column(Float, nullable=True)
+    battery_capacity_kwh = Column(Float, nullable=True)
+    battery_max_voltage = Column(Float, nullable=True)
+    battery_max_current = Column(Float, nullable=True)
     department = Column(String, nullable=True)
     id_of_creator = Column(String, nullable=True)
     created_on = Column(TIMESTAMP, nullable=True)
@@ -180,6 +205,7 @@ class TestOrder(Base):
     test_order_id = Column(String, primary_key=True)
     job_order_id = Column(String, nullable=True)  # removed ForeignKey
     CoastDownData_id = Column(String, nullable=True)         # removed ForeignKey
+    coast_down_data = Column(JSON, nullable=True)
     test_type = Column(String, nullable=True)
     engine_number = Column(String, nullable=True)
     test_objective = Column(Text, nullable=True)
@@ -211,6 +237,7 @@ class TestOrder(Base):
     remark = Column(String, nullable=True)
     rejection_remarks = Column(String, nullable=True)
     mail_remarks = Column(String, nullable=True)
+    complete_remarks = Column(String, nullable=True)
     specific_instruction = Column(Text, nullable=True)
     status = Column(String, nullable=True)
     id_of_creator = Column(String, nullable=True)

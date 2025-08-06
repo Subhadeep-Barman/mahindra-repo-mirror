@@ -6,7 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.storage.api.api_utils import get_db
-from backend.storage.models.models import JobOrder, TestOrder, Vehicle  # Add Vehicle import
+from backend.storage.models.models import JobOrder, TestOrder, User, Vehicle  # Add Vehicle import
 
 router = APIRouter()
 
@@ -111,6 +111,16 @@ def joborder_to_dict(joborder: JobOrder, db: Session = None):
         "cft_members": joborder.cft_members if joborder.cft_members else []
     }
 
+def generate_job_order_id(vehicle_body_number: str, db: Session) -> str:
+    """
+    Generates a job order ID in the format:
+    JO VTC-<year>-<count>/<vehicle_body_number>
+    """
+    current_year = datetime.utcnow().year % 100  # Get last two digits of the year
+    count = db.query(JobOrder).count() + 1  # Increment count based on total job orders
+    count_str = f"{count:04d}"  # Format count as 4 digits (e.g., 0001)
+    return f"JO VTC-{current_year}-{count_str}/{vehicle_body_number}"
+
 @router.post("/joborders", response_model=JobOrderSchema)
 def create_joborder_api(
     joborder: JobOrderSchema = Body(...),
@@ -120,6 +130,11 @@ def create_joborder_api(
     # Ensure cft_members is a list of dicts or set to []
     if "cft_members" in joborder_data and joborder_data["cft_members"] is None:
         joborder_data["cft_members"] = []
+    # Generate job_order_id if not provided
+    if not joborder_data.get("job_order_id"):
+        if not joborder_data.get("vehicle_body_number"):
+            raise HTTPException(status_code=400, detail="Vehicle body number is required to generate job_order_id")
+        joborder_data["job_order_id"] = generate_job_order_id(joborder_data["vehicle_body_number"], db)
     new_joborder = JobOrder(**joborder_data)
     db.add(new_joborder)
     db.commit()
@@ -134,13 +149,48 @@ def get_departments(db: Session = Depends(get_db)):
     departments = db.query(JobOrder.department).distinct().filter(JobOrder.department.isnot(None)).all()
     return [dept[0] for dept in departments if dept[0]]
 
+def is_user_in_cft_members(cft_members, user_id):
+    """
+    Checks if the user_id is present in the cft_members list.
+    Matches either 'id' or 'code' field in cft_members.
+    """
+    if not cft_members:
+        return False
+    for member in cft_members:
+        # Accept both 'id' and 'code' as possible keys for user_id
+        if str(member.get("id", "")) == str(user_id) or str(member.get("code", "")) == str(user_id):
+            return True
+    return False
+
 @router.get("/joborders", response_model=List[JobOrderSchema])
-def read_joborders(department: str = None, db: Session = Depends(get_db)):
+def read_joborders(
+    department: str = None,
+    user_id: str = None,
+    role: str = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Returns job orders filtered by department and user_id (id_of_creator or cft_members).
+    TestEngineer and Admin roles can see all job orders.
+    """
+    if not user_id and (not role or role not in ["TestEngineer", "Admin"]):
+        raise HTTPException(status_code=400, detail="user_id is required")
+    query = db.query(JobOrder)
     if department:
-        joborders = db.query(JobOrder).filter(JobOrder.department == department).all()
-    else:
-        joborders = db.query(JobOrder).all()
-    return [joborder_to_dict(j, db) for j in joborders]
+        query = query.filter(JobOrder.department == department)
+    joborders = query.all()
+    # If role is TestEngineer or Admin, return all job orders
+    if role in ["TestEngineer", "Admin"]:
+        return [joborder_to_dict(j, db) for j in joborders]
+    # Otherwise, filter by creator or cft_members
+    filtered_joborders = []
+    for j in joborders:
+        if j.id_of_creator == user_id:
+            filtered_joborders.append(j)
+            continue
+        if is_user_in_cft_members(j.cft_members, user_id):
+            filtered_joborders.append(j)
+    return [joborder_to_dict(j, db) for j in filtered_joborders]
 
 @router.get("/joborders/{job_order_id}", response_model=JobOrderSchema)
 def read_joborder(job_order_id: str, db: Session = Depends(get_db)):

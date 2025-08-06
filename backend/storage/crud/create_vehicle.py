@@ -46,4 +46,9 @@ def vehicle_to_dict(vehicle):
         "created_on": vehicle.created_on,
         "id_of_updater": vehicle.id_of_updater,
         "updated_on": vehicle.updated_on,
+        "vehicle_kerb_weight": vehicle.vehicle_kerb_weight,
+        "vehicle_gvw": vehicle.vehicle_gvw,
+        "kerb_faw": vehicle.kerb_faw,
+        "kerb_raw": vehicle.kerb_raw,
+        "awd_rwd_fwd": vehicle.awd_rwd_fwd,
     }
