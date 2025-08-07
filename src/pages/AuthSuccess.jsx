@@ -5,8 +5,11 @@ import Spinner from "../components/UI/spinner";
 import showSnackbar from "../utils/showSnackbar";
 import useStore from "../store/useStore";
 import { jwtDecode } from "jwt-decode";
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 import CryptoJS from "crypto-js";
+import base64url from "base64url";
+import { decode as base64urlDecode } from "base64url";
+
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 // Secret key for decryption
@@ -15,17 +18,18 @@ const SECRET_KEY = "MySecretKey12345";
 // Decrypt function
 function decrypt(encryptedText, secretKey) {
   const key = CryptoJS.enc.Utf8.parse(secretKey);
-  console.log("Encrypted text:", encryptedText);
-  console.log("Key for decryption:", key);
   const decrypted = CryptoJS.AES.decrypt(encryptedText, key, {
     mode: CryptoJS.mode.ECB,
     padding: CryptoJS.pad.Pkcs7,
   });
-  console.log("Decrypted text:", decrypted.toString(CryptoJS.enc.Utf8));
-  console.log("key:", key);
   return decrypted.toString(CryptoJS.enc.Utf8);
 }
-
+function base64UrlToBase64(base64UrlString) {
+  return base64UrlString
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(Math.ceil(base64UrlString.length / 4) * 4, "=");
+}
 
 function isValidUserRole(role) {
   return typeof role === "string" && /^[A-Za-z0-9 _-]{1,50}$/.test(role);
@@ -34,10 +38,11 @@ function isValidUserRole(role) {
 // Validate that the userloyee data from the API conforms to expected types and values
 const validateUserData = (data) => {
   if (!Array.isArray(data)) return false;
-  return data.every(user =>
-    typeof user === "object" &&
-    typeof user.id === "string" &&
-    isValidUserRole(user.role)
+  return data.every(
+    (user) =>
+      typeof user === "object" &&
+      typeof user.id === "string" &&
+      isValidUserRole(user.role)
   );
 };
 
@@ -57,14 +62,20 @@ export default function AuthSuccess() {
           navigate("/login");
           return;
         }
-
         // Fix: decode URI and replace spaces with '+'
-        encryptedJwtToken = decodeURIComponent(encryptedJwtToken.replace(/ /g, '+'));
+        // encryptedJwtToken = decodeURIComponent(
+        //   encryptedJwtToken.replace(/ /g, "+")
+        // );
+        const decodedBytes = atob(base64UrlToBase64(encryptedJwtToken));
 
-        // Decrypt the JWT token from the URL
-        const jwtToken = decrypt(encryptedJwtToken, SECRET_KEY);
-        console.log("Decrypted JWT Token:", jwtToken);
-        console.log("secret key:", SECRET_KEY);
+        // 2. Convert to string (already a string after atob)
+        const encryptedJwt = decodedBytes;
+
+        // 3. Decrypt (assuming your decrypt function is similar to EncryptDecrypt.decrypt)
+        const encodedJwt1 = decrypt(encryptedJwt, SECRET_KEY);
+
+        // 4. URL decode the result
+        const jwtToken = decodeURIComponent(encodedJwt1);
 
         if (!jwtToken) {
           showSnackbar("Invalid authentication token", "error");
@@ -133,13 +144,12 @@ export default function AuthSuccess() {
           LoggedIn: "true",
           userEmail: userDetails.emailaddress,
           userId: userDetails.user,
-          userName: userDetails.displayname
+          userName: userDetails.displayname,
         });
 
         console.log("User authenticated successfully:", userDetails);
         showSnackbar("User authenticated successfully", "success");
         navigate("/home");
-
       } catch (error) {
         console.error("Authentication Error:", error);
         showSnackbar("Error processing JWT token", "warning");
