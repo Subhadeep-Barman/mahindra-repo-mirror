@@ -1232,11 +1232,11 @@ export default function EditTestOrder() {
                 <Button
                   className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
                   type="button"
-                  onClick={async () => {
+                  onClick={() => {
                     setModalActionType("re-edit");
                     setMailRemarks("");
                     setMailRemarksModal(true);
-                    await handleSendMail("3", jobOrderId, test.testOrderId);
+                    // Removed mail call from here
                   }}
                 >
                   Re-edit
@@ -1249,6 +1249,7 @@ export default function EditTestOrder() {
                     setMailRemarks("");
                     setCompleteRemarks("");
                     setMailRemarksModal(true);
+                    // Removed mail call from here
                   }}
                 >
                   Complete
@@ -1335,13 +1336,14 @@ export default function EditTestOrder() {
                   onClick={async () => {
                     if (modalActionType === "complete") {
                       await handleCompleteTestOrder();
-                      await handleSendMail("6", jobOrderId, test.testOrderId);
+                      await handleSendMail("6", jobOrderId, test.testOrderId); // Mail called after remarks filled and submit
                       setMailRemarksModal(false);
                     } else if (isProjectTeam) {
                       handleSubmitMailRemarks();
                     } else if (isTestEngineer) {
                       if (modalActionType === "re-edit") {
-                        handleStatusUpdate("Re-edit", mailRemarks);
+                        await handleStatusUpdate("Re-edit", mailRemarks);
+                        await handleSendMail("3", jobOrderId, test.testOrderId); // Mail called after remarks filled and submit
                       } else if (modalActionType === "reject") {
                         handleStatusUpdate("Rejected", mailRemarks);
                       }

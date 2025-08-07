@@ -351,6 +351,7 @@ export default function CreateJobOrder() {
     const [vehicleEngineNumbers, setVehicleEngineNumbers] = useState([]);
   
     useEffect(() => {
+      // if(!location.state?.jobOrder) {
       // When project code changes, fetch vehicles for that project
       if (form.projectCode) {
         axios
@@ -361,35 +362,43 @@ export default function CreateJobOrder() {
           .catch(() => {
             setProjectVehicles([]);
           });
+
         // Reset vehicle and engine selections
-        setForm((prev) => ({
-          ...prev,
-          vehicleBodyNumber: "",
-          vehicleSerialNumber: "",
-          engineNumber: "",
-          engineType: "",
-        }));
-        setVehicleEngineNumbers([]);
+        // setForm((prev) => ({
+        //   ...prev,
+        //   vehicleBodyNumber: "",
+        //   vehicleSerialNumber: "",
+        //   engineNumber: "",
+        //   engineType: "",
+        // }));
+
+        // setVehicleEngineNumbers([]);
       } else {
-        setProjectVehicles([]);
-        setVehicleEngineNumbers([]);
-        setForm((prev) => ({
-          ...prev,
-          vehicleBodyNumber: "",
-          vehicleSerialNumber: "",
-          engineNumber: "",
-          engineType: "",
-        }));
+        // setProjectVehicles([]);
+        // setVehicleEngineNumbers([]);
+        // setForm((prev) => ({
+        //   ...prev,
+        //   vehicleBodyNumber: "",
+        //   vehicleSerialNumber: "",
+        //   engineNumber: "",
+        //   engineType: "",
+        // }));
       }
+    
       // eslint-disable-next-line
     }, [form.projectCode]);
 
   // Fetch vehicle details using the new API when body number changes
   const handleVehicleBodyChange = (value) => {
     // Don't interfere if we're currently pre-filling
-    if (isPreFilling) return;
-
+    // if (isPreFilling){
+    //   console.log("exit"); return;
+    // }
+    // console.log("still")
     const found = projectVehicles.find((v) => v.vehicle_body_number === value);
+    setVehicleEngineNumbers(found?.engine_numbers || []);
+    console.log("found", found);
+    if( !location.state?.jobOrder) {
     setForm((prev) => ({
       ...prev,
       vehicleBodyNumber: value,
@@ -397,7 +406,7 @@ export default function CreateJobOrder() {
       engineSerialNumber: "",
       engineType: "",
     }));
-    setVehicleEngineNumbers(found?.engine_numbers || []);
+  }
     // Use the new API endpoint
     if (value) {
       axios
@@ -413,7 +422,7 @@ export default function CreateJobOrder() {
 
   // Keep vehicleEditable in sync with API response
   useEffect(() => {
-    if (form.vehicleBodyNumber && !isPreFilling) {
+    if (form.vehicleBodyNumber && !isPreFilling && !location.state?.jobOrder) {
       axios
         .get(
           `${apiURL}/vehicles/by-body-number/${encodeURIComponent(
@@ -422,8 +431,11 @@ export default function CreateJobOrder() {
         )
         .then((res) => setVehicleEditable(res.data))
         .catch(() => setVehicleEditable(null));
-    } else if (!form.vehicleBodyNumber && !isPreFilling) {
+
+    } else if (!form.vehicleBodyNumber && !isPreFilling && !location.state?.jobOrder) {
       setVehicleEditable(null);
+                  console.log("satyanash")
+
     }
     // eslint-disable-next-line
   }, [form.vehicleBodyNumber, isPreFilling]);
@@ -439,8 +451,11 @@ export default function CreateJobOrder() {
   // Fetch engine details using the new API when engine number changes
   const handleEngineNumberChange = (value) => {
     // Don't interfere if we're currently pre-filling
-    if (isPreFilling) return;
-
+    if (isPreFilling && location.state?.jobOrder) {
+      console.log("exit");
+      return;
+    }
+    console.log("handleEngineNumberChange with value:", value);
     setForm((prev) => ({
       ...prev,
       engineSerialNumber: value,
@@ -491,7 +506,6 @@ export default function CreateJobOrder() {
       // Show success message if this is for creating test orders
       if (location.state.isEdit) {
       }
-
       // Function to fetch and pre-fill coast down data
       const fetchAndFillCoastDownData = async (coastDownDataId) => {
         if (coastDownDataId) {
@@ -549,12 +563,47 @@ export default function CreateJobOrder() {
 
           setVehicleBodyNumbers(vehicleBodyRes.data || []);
           setEngineNumbers(engineNumberRes.data || []);
+          
+          // Fetch engine numbers associated with the vehicle body number
+          if (jobOrder.vehicle_body_number) {
+            try {
+              console.log("Fetching engine numbers for vehicle body:", jobOrder.vehicle_body_number);
+              const vehicleEngineRes = await axios.get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(jobOrder.vehicle_body_number)}`);
+              
+              console.log("Vehicle engine response:", vehicleEngineRes.data);
+              
+              if (vehicleEngineRes.data && vehicleEngineRes.data.engine_numbers) {
+                setVehicleEngineNumbers(vehicleEngineRes.data.engine_numbers);
+              }
+              
+              // If the job order's engine serial number is not in the list, add it
+              if (jobOrder.engine_serial_number) {
+                console.log("Job order engine serial number:", jobOrder.engine_serial_number);
+                
+                if (vehicleEngineRes.data && 
+                    (!vehicleEngineRes.data.engine_numbers || 
+                    !vehicleEngineRes.data.engine_numbers.includes(jobOrder.engine_serial_number))) {
+                  console.log("Adding job order engine serial number to vehicleEngineNumbers");
+                  setVehicleEngineNumbers(prev => {
+                    const updatedList = [...prev, jobOrder.engine_serial_number];
+                    console.log("Updated vehicleEngineNumbers:", updatedList);
+                    return updatedList;
+                  });
+                }
+              }
+            } catch (error) {
+              console.error("Error fetching vehicle engine numbers:", error);
+              // If we can't get the vehicle's engine numbers, at least include the job order's engine number
+              if (jobOrder.engine_serial_number) {
+                setVehicleEngineNumbers([jobOrder.engine_serial_number]);
+              }
+            }
+          }
         } catch (error) {
           console.error("Error fetching department-specific data:", error);
           setVehicleBodyNumbers([]);
           setEngineNumbers([]);
         }
-
         const newFormData = {
           ...form, // Preserve existing form state first
           projectCode: jobOrder.project_code || "",
@@ -651,9 +700,7 @@ export default function CreateJobOrder() {
           requestedPayloadKg: jobOrder.requestedPayloadKg || jobOrder.requested_payload || "",
           idleExhaustMassFlow: jobOrder.idleExhaustMassFlow || jobOrder.idle_exhaust_mass_flow || "",
         };
-
         setForm(newFormData);
-
         // Prefill vehicleEditable and engineEditable if present
         if (jobOrder.vehicleDetails)
           setVehicleEditable(jobOrder.vehicleDetails);
@@ -859,9 +906,9 @@ export default function CreateJobOrder() {
       );
       return;
     }
-
+    const test_order_id = "TO" + Date.now();
     const job_order_id = location.state?.jobOrder?.job_order_id || location.state?.originalJobOrderId || "";
-    const test_order_id = `${job_order_id}/${test.testNumber}`;
+    // const test_order_id = `${job_order_id}/${test.testNumber}`;
 
     const currentISTTime = new Date().toLocaleString("en-US", {
       timeZone: "Asia/Kolkata",
@@ -1644,10 +1691,12 @@ export default function CreateJobOrder() {
             <Label htmlFor="vehicleBodyNumber" className="mb-2">
               Vehicle Body No. <span className="text-red-500">*</span>
             </Label>
+            {console.log("Project Vehicles:", form.vehicleBodyNumber)}
             <Select
               value={form.vehicleBodyNumber}
               onValueChange={handleVehicleBodyChange}
               required
+              
               disabled={formDisabled || isTestEngineer || !form.projectCode}
             >
               <SelectTrigger className="w-full">
@@ -1685,6 +1734,7 @@ export default function CreateJobOrder() {
             <Label htmlFor="engineSerialNumber" className="mb-2">
               Engine Serial Number <span className="text-red-500">*</span>
             </Label>
+            {console.log("Engine Serial Numbers:", form.engineSerialNumber)}
             <Select
               value={form.engineSerialNumber}
               onValueChange={handleEngineNumberChange}
@@ -1699,12 +1749,26 @@ export default function CreateJobOrder() {
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
+              {console.log("Vehicle Engine Numbers:", vehicleEngineNumbers)}
               <SelectContent>
-                {vehicleEngineNumbers.map((engineSerialNumber) => (
-                  <SelectItem key={engineSerialNumber} value={engineSerialNumber}>
-                    {engineSerialNumber}
+                {vehicleEngineNumbers.length > 0 ? (
+                  vehicleEngineNumbers.map((engineSerialNumber) => (
+                    <SelectItem key={engineSerialNumber} value={engineSerialNumber}>
+                      {engineSerialNumber}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <div className="px-2 py-2 text-sm text-gray-500">
+                    No engine numbers available
+                  </div>
+                )}
+                {/* Add the current value as an option if not in the list */}
+                {form.engineSerialNumber && 
+                 !vehicleEngineNumbers.includes(form.engineSerialNumber) && (
+                  <SelectItem key={form.engineSerialNumber} value={form.engineSerialNumber}>
+                    {form.engineSerialNumber} (Current)
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
