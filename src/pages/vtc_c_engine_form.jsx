@@ -614,7 +614,7 @@ export default function VTCCEngineForm() {
                     <SelectValue placeholder="Select engine_domain" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ICE">ICS</SelectItem>
+                    <SelectItem value="ICE">ICE</SelectItem>
                     <SelectItem value="EV">EV</SelectItem>
                     <SelectItem value="Hybrid">Hybrid</SelectItem>
                   </SelectContent>
@@ -632,8 +632,8 @@ export default function VTCCEngineForm() {
             {/* Form Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-              {/* Project (EV only, now dropdown) */}
-              {engine_domain === "EV" && (
+              {/* Project (EV and Hybrid only, now dropdown) */}
+              {(engine_domain === "EV" || engine_domain === "Hybrid") && (
                 <div className="space-y-2">
                   <Label htmlFor="project">Project</Label>
                   <Select
@@ -696,8 +696,8 @@ export default function VTCCEngineForm() {
                 </Select>
               </div>
 
-              {/* Vehicle Body Number (EV only, auto-filled) */}
-              {engine_domain === "EV" && (
+              {/* Vehicle Body Number (EV and Hybrid only, auto-filled) */}
+              {(engine_domain === "EV" || engine_domain === "Hybrid") && (
                 <div className="space-y-2">
                   <Label htmlFor="vehicleBodyNumber">Vehicle Body Number</Label>
                   <Input
@@ -731,48 +731,9 @@ export default function VTCCEngineForm() {
                 />
               </div>
 
-              {/* EV Specific Fields */}
-              {engine_domain === "EV" && (
+              {/* EV Specific Fields - also show for Hybrid */}
+              {(engine_domain === "EV" || engine_domain === "Hybrid") && (
                 <>
-                  {/* Engine Build Level */}
-                  <div className="space-y-2">
-                    <Label htmlFor="engineBuildLevel">Engine Build Level</Label>
-                    <Input
-                      id="engineBuildLevel"
-                      value={formData.engineBuildLevel}
-                      onChange={(e) =>
-                        handleInputChange("engineBuildLevel", e.target.value)
-                      }
-                      placeholder="Enter Engine Build Level"
-                    />
-                  </div>
-
-                  {/* Engine Type */}
-                  <div className="space-y-2">
-                    <Label htmlFor="engineType">Engine Type</Label>
-                    <Input
-                      id="engineType"
-                      value={formData.engineType}
-                      onChange={(e) =>
-                        handleInputChange("engineType", e.target.value)
-                      }
-                      placeholder="Enter Engine Type"
-                    />
-                  </div>
-
-                  {/* Engine Capacity */}
-                  <div className="space-y-2">
-                    <Label htmlFor="engineCapacity">Engine Capacity (cc)</Label>
-                    <Input
-                      id="engineCapacity"
-                      value={formData.engineCapacity}
-                      onChange={(e) =>
-                        handleInputChange("engineCapacity", e.target.value)
-                      }
-                      placeholder="Enter Engine Capacity (cc)"
-                    />
-                  </div>
-
                   {/* Motor Make */}
                   <div className="space-y-2">
                     <Label htmlFor="motorMake">Motor Make</Label>
@@ -986,392 +947,6 @@ export default function VTCCEngineForm() {
                     />
                   </div>
 
-                  {/* Number of Cylinders */}
-                  <div className="space-y-2">
-                    <Label htmlFor="numberOfCylinders">Number of Cylinders</Label>
-                    <Input
-                      id="numberOfCylinders"
-                      value={formData.numberOfCylinders}
-                      onChange={(e) =>
-                        handleInputChange("numberOfCylinders", e.target.value)
-                      }
-                      placeholder="Enter Number of Cylinders"
-                    />
-                  </div>
-
-                  {/* Compression Ratio */}
-                  <div className="space-y-2">
-                    <Label htmlFor="compressionRatio">Compression Ratio</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        id="compressionRatioNumerator"
-                        value={formData.compressionRatio.numerator}
-                        onChange={(e) =>
-                          handleRatioChange("compressionRatio", "numerator", e.target.value)
-                        }
-                        placeholder="Enter numerator"
-                        className="w-1/2"
-                      />
-                      <span className="text-gray-500">:</span>
-                      <Input
-                        id="compressionRatioDenominator"
-                        value={formData.compressionRatio.denominator}
-                        onChange={(e) =>
-                          handleRatioChange("compressionRatio", "denominator", e.target.value)
-                        }
-                        placeholder="Enter denominator"
-                        className="w-1/2"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Bore */}
-                  <div className="space-y-2">
-                    <Label htmlFor="bore">Bore (mm)</Label>
-                    <Input
-                      id="bore"
-                      value={formData.bore}
-                      onChange={(e) =>
-                        handleInputChange("bore", e.target.value)
-                      }
-                      placeholder="Enter Bore (mm)"
-                    />
-                  </div>
-
-                  {/* Stroke */}
-                  <div className="space-y-2">
-                    <Label htmlFor="stroke">Stroke (mm)</Label>
-                    <Input
-                      id="stroke"
-                      value={formData.stroke}
-                      onChange={(e) =>
-                        handleInputChange("stroke", e.target.value)
-                      }
-                      placeholder="Enter Stroke (mm)"
-                    />
-                  </div>
-
-                  {/* Vacuum Modulator Make */}
-                  <div className="space-y-2">
-                    <Label htmlFor="vacuumModulatorMake">Vacuum Modulator Make</Label>
-                    <Input
-                      id="vacuumModulatorMake"
-                      value={formData.vacuumModulatorMake}
-                      onChange={(e) =>
-                        handleInputChange("vacuumModulatorMake", e.target.value)
-                      }
-                      placeholder="Enter Vacuum Modulator Make"
-                    />
-                  </div>
-
-                  {/* Vacuum Modulator Details */}
-                  <div className="space-y-2">
-                    <Label htmlFor="vacuumModulatorDetails">Vacuum Modulator Details</Label>
-                    <Input
-                      id="vacuumModulatorDetails"
-                      value={formData.vacuumModulatorDetails}
-                      onChange={(e) =>
-                        handleInputChange("vacuumModulatorDetails", e.target.value)
-                      }
-                      placeholder="Enter Vacuum Modulator Details"
-                    />
-                  </div>
-
-                  {/* ECU Make */}
-                  <div className="space-y-2">
-                    <Label htmlFor="ecuMake">ECU Make</Label>
-                    <Input
-                      id="ecuMake"
-                      value={formData.ecuMake}
-                      onChange={(e) =>
-                        handleInputChange("ecuMake", e.target.value)
-                      }
-                      placeholder="Enter ECU Make"
-                    />
-                  </div>
-
-                  {/* ECU ID Number */}
-                  <div className="space-y-2">
-                    <Label htmlFor="ecuIdNumber">ECU ID Number</Label>
-                    <Input
-                      id="ecuIdNumber"
-                      value={formData.ecuIdNumber}
-                      onChange={(e) =>
-                        handleInputChange("ecuIdNumber", e.target.value)
-                      }
-                      placeholder="Enter ECU ID Number"
-                    />
-                  </div>
-
-                  {/* ECU Dataset Number */}
-                  <div className="space-y-2">
-                    <Label htmlFor="ecuDatasetNumber">ECU Dataset Number</Label>
-                    <Input
-                      id="ecuDatasetNumber"
-                      value={formData.ecuDatasetNumber}
-                      onChange={(e) =>
-                        handleInputChange("ecuDatasetNumber", e.target.value)
-                      }
-                      placeholder="Enter ECU Dataset Number"
-                    />
-                  </div>
-
-                  {/* ECU Dataset Details */}
-                  <div className="space-y-2">
-                    <Label htmlFor="ecuDatasetDetails">ECU Dataset Details</Label>
-                    <Input
-                      id="ecuDatasetDetails"
-                      value={formData.ecuDatasetDetails}
-                      onChange={(e) =>
-                        handleInputChange("ecuDatasetDetails", e.target.value)
-                      }
-                      placeholder="Enter ECU Dataset Details"
-                    />
-                  </div>
-
-                  {/* Injector Type */}
-                  <div className="space-y-2">
-                    <Label htmlFor="injectorType">Injector Type</Label>
-                    <Input
-                      id="injectorType"
-                      value={formData.injectorType}
-                      onChange={(e) =>
-                        handleInputChange("injectorType", e.target.value)
-                      }
-                      placeholder="Enter Injector Type"
-                    />
-                  </div>
-
-                  {/* Turbocharger Type */}
-                  <div className="space-y-2">
-                    <Label htmlFor="turbochargerType">Turbo charger Type</Label>
-                    <Input
-                      id="turbochargerType"
-                      value={formData.turbochargerType}
-                      onChange={(e) =>
-                        handleInputChange("turbochargerType", e.target.value)
-                      }
-                      placeholder="Enter Turbocharger Type"
-                    />
-                  </div>
-
-                  {/* Blow by Recirculation */}
-                  <div className="space-y-2">
-                    <Label>Blow by Recirculation</Label>
-                    <RadioGroup
-                      value={formData.blowByRecirculation}
-                      onValueChange={(value) =>
-                        handleInputChange("blowByRecirculation", value)
-                      }
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="Yes" id="blow-yes" />
-                          <Label htmlFor="blow-yes">Yes</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="No" id="blow-no" />
-                          <Label htmlFor="blow-no">No</Label>
-                        </div>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  {/* Blow by Recirculation Details */}
-                  <div className="space-y-2">
-                    <Label htmlFor="blowByRecirculationDetails">Blow by Recirculation Details</Label>
-                    <Input
-                      id="blowByRecirculationDetails"
-                      value={formData.blowByRecirculationDetails}
-                      onChange={(e) =>
-                        handleInputChange("blowByRecirculationDetails", e.target.value)
-                      }
-                      placeholder="Enter Blow by Recirculation Details"
-                    />
-                  </div>
-
-                  {/* Nozzle Number of Holes */}
-                  <div className="space-y-2">
-                    <Label htmlFor="nozzleNumberOfHoles">Nozzle Number of Holes</Label>
-                    <Input
-                      id="nozzleNumberOfHoles"
-                      value={formData.nozzleNumberOfHoles}
-                      onChange={(e) =>
-                        handleInputChange("nozzleNumberOfHoles", e.target.value)
-                      }
-                      placeholder="Enter Nozzle Number of Holes"
-                    />
-                  </div>
-
-                  {/* Nozzle Through Flow */}
-                  <div className="space-y-2">
-                    <Label htmlFor="nozzleThroughFlow">Nozzle Through Flow</Label>
-                    <Input
-                      id="nozzleThroughFlow"
-                      value={formData.nozzleThroughFlow}
-                      onChange={(e) =>
-                        handleInputChange("nozzleThroughFlow", e.target.value)
-                      }
-                      placeholder="Enter Nozzle Through Flow"
-                    />
-                  </div>
-
-                  {/* EGR Valve Make */}
-                  <div className="space-y-2">
-                    <Label htmlFor="egrValveMake">EGR Valve Make</Label>
-                    <Input
-                      id="egrValveMake"
-                      value={formData.egrValveMake}
-                      onChange={(e) =>
-                        handleInputChange("egrValveMake", e.target.value)
-                      }
-                      placeholder="Enter EGR Valve Make"
-                    />
-                  </div>
-
-                  {/* EGR Valve Type */}
-                  <div className="space-y-2">
-                    <Label htmlFor="egrValveType">EGR Valve Type</Label>
-                    <Input
-                      id="egrValveType"
-                      value={formData.egrValveType}
-                      onChange={(e) =>
-                        handleInputChange("egrValveType", e.target.value)
-                      }
-                      placeholder="Enter EGR Valve Type"
-                    />
-                  </div>
-
-                  {/* EGR Valve Diameter */}
-                  <div className="space-y-2">
-                    <Label htmlFor="egrValveDiameter">EGR Valve Diameter (mm)</Label>
-                    <Input
-                      id="egrValveDiameter"
-                      value={formData.egrValveDiameter}
-                      onChange={(e) =>
-                        handleInputChange("egrValveDiameter", e.target.value)
-                      }
-                      placeholder="Enter EGR Valve Diameter (mm)"
-                    />
-                  </div>
-
-                  {/* EGR Cooler Make */}
-                  <div className="space-y-2">
-                    <Label htmlFor="egrCoolerMake">EGR Cooler Make</Label>
-                    <Input
-                      id="egrCoolerMake"
-                      value={formData.egrCoolerMake}
-                      onChange={(e) =>
-                        handleInputChange("egrCoolerMake", e.target.value)
-                      }
-                      placeholder="Enter EGR Cooler Make"
-                    />
-                  </div>
-
-                  {/* EGR Cooler Capacity */}
-                  <div className="space-y-2">
-                    <Label htmlFor="egrCoolerCapacity">EGR Cooler Capacity (KW)</Label>
-                    <Input
-                      id="egrCoolerCapacity"
-                      value={formData.egrCoolerCapacity}
-                      onChange={(e) =>
-                        handleInputChange("egrCoolerCapacity", e.target.value)
-                      }
-                      placeholder="Enter EGR Cooler Capacity (kW)"
-                    />
-                  </div>
-
-                  {/* CATCON Make */}
-                  <div className="space-y-2">
-                    <Label htmlFor="catconMass">CATCON Make</Label>
-                    <Input
-                      id="catconMass"
-                      value={formData.catconMass}
-                      onChange={(e) =>
-                        handleInputChange("catconMass", e.target.value)
-                      }
-                      placeholder="Enter CATCON Make"
-                    />
-                  </div>
-
-                  {/* CATCON Type */}
-                  <div className="space-y-2">
-                    <Label htmlFor="catconType">CATCON Type</Label>
-                    <Input
-                      id="catconType"
-                      value={formData.catconType}
-                      onChange={(e) =>
-                        handleInputChange("catconType", e.target.value)
-                      }
-                      placeholder="Enter CATCON Type"
-                    />
-                  </div>
-
-                  {/* CATCON Loading */}
-                  <div className="space-y-2">
-                    <Label htmlFor="catconLoading">CATCON Loading</Label>
-                    <Input
-                      id="catconLoading"
-                      value={formData.catconLoading}
-                      onChange={(e) =>
-                        handleInputChange("catconLoading", e.target.value)
-                      }
-                      placeholder="Enter CATCON Loading"
-                    />
-                  </div>
-
-                  {/* DPF Make */}
-                  <div className="space-y-2">
-                    <Label htmlFor="dpfMake">DPF Make</Label>
-                    <Input
-                      id="dpfMake"
-                      value={formData.dpfMake}
-                      onChange={(e) =>
-                        handleInputChange("dpfMake", e.target.value)
-                      }
-                      placeholder="Enter DPF Make"
-                    />
-                  </div>
-
-                  {/* DPF Capacity */}
-                  <div className="space-y-2">
-                    <Label htmlFor="dpfCapacity">DPF Capacity</Label>
-                    <Input
-                      id="dpfCapacity"
-                      value={formData.dpfCapacity}
-                      onChange={(e) =>
-                        handleInputChange("dpfCapacity", e.target.value)
-                      }
-                      placeholder="Enter DPF Capacity"
-                    />
-                  </div>
-
-                  {/* SCR Make */}
-                  <div className="space-y-2">
-                    <Label htmlFor="scrMake">SCR Make</Label>
-                    <Input
-                      id="scrMake"
-                      value={formData.scrMake}
-                      onChange={(e) =>
-                        handleInputChange("scrMake", e.target.value)
-                      }
-                      placeholder="Enter SCR Make"
-                    />
-                  </div>
-
-                  {/* SCR Capacity */}
-                  <div className="space-y-2">
-                    <Label htmlFor="scrCapacity">SCR Capacity</Label>
-                    <Input
-                      id="scrCapacity"
-                      value={formData.scrCapacity}
-                      onChange={(e) =>
-                        handleInputChange("scrCapacity", e.target.value)
-                      }
-                      placeholder="Enter SCR Capacity"
-                    />
-                  </div>
-
                   {/* A/C Compressor */}
                   <div className="space-y-2">
                     <Label>A/C Compressor</Label>
@@ -1394,148 +969,6 @@ export default function VTCCEngineForm() {
                     </RadioGroup>
                   </div>
 
-                  {/* A/C Compressor Details */}
-                  <div className="space-y-2">
-                    <Label htmlFor="acCompressorDetails">A/C Compressor Details</Label>
-                    <Input
-                      id="acCompressorDetails"
-                      value={formData.acCompressorDetails}
-                      onChange={(e) =>
-                        handleInputChange("acCompressorDetails", e.target.value)
-                      }
-                      placeholder="Enter A/C Compressor Details"
-                    />
-                  </div>
-
-                  {/* Power Steering Pump */}
-                  <div className="space-y-2">
-                    <Label htmlFor="powerSteeringPump">Power Steering Pump</Label>
-                    <Input
-                      id="powerSteeringPump"
-                      value={formData.powerSteeringPump}
-                      onChange={(e) =>
-                        handleInputChange("powerSteeringPump", e.target.value)
-                      }
-                      placeholder="Enter Power Steering Pump"
-                    />
-                  </div>
-
-                  {/* Power Steering Details */}
-                  <div className="space-y-2">
-                    <Label htmlFor="powerSteeringDetails">Power Steering Details</Label>
-                    <Input
-                      id="powerSteeringDetails"
-                      value={formData.powerSteeringDetails}
-                      onChange={(e) =>
-                        handleInputChange("powerSteeringDetails", e.target.value)
-                      }
-                      placeholder="Enter Power Steering Details"
-                    />
-                  </div>
-
-                  {/* Water by pass */}
-                  <div className="space-y-2">
-                    <Label htmlFor="waterByPass">Water by pass</Label>
-                    <Input
-                      id="waterByPass"
-                      value={formData.waterByPass}
-                      onChange={(e) =>
-                        handleInputChange("waterByPass", e.target.value)
-                      }
-                      placeholder="Enter Water by pass"
-                    />
-                  </div>
-
-                  {/* Kerb Weight FAW */}
-                  <div className="space-y-2">
-                    <Label htmlFor="kerbWeightFaw">
-                      Kerb Weight FAW (Kg){" "}
-                      <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="kerbWeightFaw"
-                      value={formData.kerbWeightFaw}
-                      onChange={(e) =>
-                        handleInputChange("kerbWeightFaw", e.target.value)
-                      }
-                      placeholder="Enter Kerb Weight FAW (Kg)"
-                    />
-                  </div>
-
-                  {/* Kerb Weight RAW */}
-                  <div className="space-y-2">
-                    <Label htmlFor="kerbWeightRaw">
-                      Kerb Weight RAW (Kg){" "}
-                      <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="kerbWeightRaw"
-                      value={formData.kerbWeightRaw}
-                      onChange={(e) =>
-                        handleInputChange("kerbWeightRaw", e.target.value)
-                      }
-                      placeholder="Enter Kerb Weight RAW (Kg)"
-                    />
-                  </div>
-
-                  {/* Emission Status */}
-                  <div className="space-y-2">
-                    <Label htmlFor="emissionStatus">Emission Status of the Vehicle</Label>
-                    <Input
-                      id="emissionStatus"
-                      value={formData.emissionStatus}
-                      onChange={(e) =>
-                        handleInputChange("emissionStatus", e.target.value)
-                      }
-                      placeholder="Enter Emission Status of the Vehicle"
-                    />
-                  </div>
-
-                  {/* Thermostat Details */}
-                  <div className="space-y-2">
-                    <Label htmlFor="thermostatDetails">Thermostat Details</Label>
-                    <Textarea
-                      id="thermostatDetails"
-                      value={formData.thermostatDetails}
-                      onChange={(e) =>
-                        handleInputChange("thermostatDetails", e.target.value)
-                      }
-                      placeholder="Enter Thermostat Details"
-                      className="min-h-[80px]"
-                    />
-                  </div>
-
-                  {/* Engine Family */}
-                  <div className="space-y-2">
-                    <Label htmlFor="engineFamily">Engine Family</Label>
-                    <Select
-                      value={formData.engineFamily}
-                      onValueChange={(value) =>
-                        handleInputChange("engineFamily", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Engine Family" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {engineFamilies.length > 0 ? (
-                          engineFamilies.map((family) => (
-                            <SelectItem
-                              key={family.value || family.id || family}
-                              value={family}
-                            >
-                              {family}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem disabled>
-                            No Engine Families Available
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   {/* HV Battery Make */}
                   <div className="space-y-2">
                     <Label htmlFor="hvBatteryMake">HV Battery Make</Label>
@@ -1548,59 +981,6 @@ export default function VTCCEngineForm() {
                       placeholder="Enter HV Battery Make"
                     />
                   </div>
-
-                  {/* HV Battery Capacity */}
-                  <div className="space-y-2">
-                    <Label htmlFor="hvBatteryCapacity">HV Battery Capacity</Label>
-                    <Input
-                      id="hvBatteryCapacity"
-                      value={formData.hvBatteryCapacity}
-                      onChange={(e) =>
-                        handleInputChange("hvBatteryCapacity", e.target.value)
-                      }
-                      placeholder="Enter HV Battery Capacity"
-                    />
-                  </div>
-
-                  {/* HV Battery Voltage (V) */}
-                  <div className="space-y-2">
-                    <Label htmlFor="hvBatteryVoltage">HV Battery Voltage (V)</Label>
-                    <Input
-                      id="hvBatteryVoltage"
-                      value={formData.hvBatteryVoltage}
-                      onChange={(e) =>
-                        handleInputChange("hvBatteryVoltage", e.target.value)
-                      }
-                      placeholder="Enter HV Battery Voltage (V)"
-                    />
-                  </div>
-
-                  {/* HV Battery Current (A) */}
-                  <div className="space-y-2">
-                    <Label htmlFor="hvBatteryCurrent">HV Battery Current (A)</Label>
-                    <Input
-                      id="hvBatteryCurrent"
-                      value={formData.hvBatteryCurrent}
-                      onChange={(e) =>
-                        handleInputChange("hvBatteryCurrent", e.target.value)
-                      }
-                      placeholder="Enter HV Battery Current (A)"
-                    />
-                  </div>
-
-                  {/* EV Motor Power (KW) */}
-                  <div className="space-y-2">
-                    <Label htmlFor="evMotorPower">EV Motor Power (KW)</Label>
-                    <Input
-                      id="evMotorPower"
-                      value={formData.evMotorPower}
-                      onChange={(e) =>
-                        handleInputChange("evMotorPower", e.target.value)
-                      }
-                      placeholder="Enter EV Motor Power (KW)"
-                    />
-                  </div>
-
                 </>
               )}
 
@@ -1979,7 +1359,7 @@ export default function VTCCEngineForm() {
                       placeholder="Enter CATCON Loading"
                     />
                   </div>
-
+                  
                   {/* DPF Make */}
                   <div className="space-y-2">
                     <Label htmlFor="dpfMake">DPF Make</Label>
@@ -2032,265 +1412,36 @@ export default function VTCCEngineForm() {
                     />
                   </div>
 
-                  {/* A/C Compressor */}
+                  {/* Department (fixed, read-only) */}
                   <div className="space-y-2">
-                    <Label>A/C Compressor</Label>
-                    <RadioGroup
-                      value={formData.acCompressor}
-                      onValueChange={(value) =>
-                        handleInputChange("acCompressor", value)
-                      }
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="Yes" id="ac-yes" />
-                          <Label htmlFor="ac-yes">Yes</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="No" id="ac-no" />
-                          <Label htmlFor="ac-no">No</Label>
-                        </div>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  {/* A/C Compressor Details */}
-                  <div className="space-y-2">
-                    <Label htmlFor="acCompressorDetails">A/C Compressor Details</Label>
+                    <Label htmlFor="department">Department <span className="text-red-500">*</span></Label>
                     <Input
-                      id="acCompressorDetails"
-                      value={formData.acCompressorDetails}
-                      onChange={(e) =>
-                        handleInputChange("acCompressorDetails", e.target.value)
-                      }
-                      placeholder="Enter A/C Compressor Details"
-                    />
-                  </div>
-
-                  {/* Power Steering Pump */}
-                  <div className="space-y-2">
-                    <Label htmlFor="powerSteeringPump">Power Steering Pump</Label>
-                    <Input
-                      id="powerSteeringPump"
-                      value={formData.powerSteeringPump}
-                      onChange={(e) =>
-                        handleInputChange("powerSteeringPump", e.target.value)
-                      }
-                      placeholder="Enter Power Steering Pump"
-                    />
-                  </div>
-
-                  {/* Power Steering Details */}
-                  <div className="space-y-2">
-                    <Label htmlFor="powerSteeringDetails">Power Steering Details</Label>
-                    <Input
-                      id="powerSteeringDetails"
-                      value={formData.powerSteeringDetails}
-                      onChange={(e) =>
-                        handleInputChange("powerSteeringDetails", e.target.value)
-                      }
-                      placeholder="Enter Power Steering Details"
-                    />
-                  </div>
-
-                  {/* Water by pass */}
-                  <div className="space-y-2">
-                    <Label htmlFor="waterByPass">Water by pass</Label>
-                    <Input
-                      id="waterByPass"
-                      value={formData.waterByPass}
-                      onChange={(e) =>
-                        handleInputChange("waterByPass", e.target.value)
-                      }
-                      placeholder="Enter Water by pass"
-                    />
-                  </div>
-
-                  {/* Kerb Weight FAW */}
-                  <div className="space-y-2">
-                    <Label htmlFor="kerbWeightFaw">
-                      Kerb Weight FAW (Kg){" "}
-                      <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="kerbWeightFaw"
-                      value={formData.kerbWeightFaw}
-                      onChange={(e) =>
-                        handleInputChange("kerbWeightFaw", e.target.value)
-                      }
-                      placeholder="Enter Kerb Weight FAW (Kg)"
-                    />
-                  </div>
-
-                  {/* Kerb Weight RAW */}
-                  <div className="space-y-2">
-                    <Label htmlFor="kerbWeightRaw">
-                      Kerb Weight RAW (Kg){" "}
-                      <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="kerbWeightRaw"
-                      value={formData.kerbWeightRaw}
-                      onChange={(e) =>
-                        handleInputChange("kerbWeightRaw", e.target.value)
-                      }
-                      placeholder="Enter Kerb Weight RAW (Kg)"
-                    />
-                  </div>
-
-                  {/* Emission Status */}
-                  <div className="space-y-2">
-                    <Label htmlFor="emissionStatus">Emission Status of the Vehicle</Label>
-                    <Input
-                      id="emissionStatus"
-                      value={formData.emissionStatus}
-                      onChange={(e) =>
-                        handleInputChange("emissionStatus", e.target.value)
-                      }
-                      placeholder="Enter Emission Status of the Vehicle"
-                    />
-                  </div>
-
-                  {/* Thermostat Details */}
-                  <div className="space-y-2">
-                    <Label htmlFor="thermostatDetails">Thermostat Details</Label>
-                    <Textarea
-                      id="thermostatDetails"
-                      value={formData.thermostatDetails}
-                      onChange={(e) =>
-                        handleInputChange("thermostatDetails", e.target.value)
-                      }
-                      placeholder="Enter Thermostat Details"
-                      className="min-h-[80px]"
-                    />
-                  </div>
-
-                  {/* Engine Family */}
-                  <div className="space-y-2">
-                    <Label htmlFor="engineFamily">Engine Family</Label>
-                    <Select
-                      value={formData.engineFamily}
-                      onValueChange={(value) =>
-                        handleInputChange("engineFamily", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Engine Family" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {engineFamilies.length > 0 ? (
-                          engineFamilies.map((family) => (
-                            <SelectItem
-                              key={family.value || family.id || family}
-                              value={family}
-                            >
-                              {family}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem disabled>
-                            No Engine Families Available
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* HV Battery Make */}
-                  <div className="space-y-2">
-                    <Label htmlFor="hvBatteryMake">HV Battery Make</Label>
-                    <Input
-                      id="hvBatteryMake"
-                      value={formData.hvBatteryMake}
-                      onChange={(e) =>
-                        handleInputChange("hvBatteryMake", e.target.value)
-                      }
-                      placeholder="Enter HV Battery Make"
-                    />
-                  </div>
-
-                  {/* HV Battery Capacity */}
-                  <div className="space-y-2">
-                    <Label htmlFor="hvBatteryCapacity">HV Battery Capacity</Label>
-                    <Input
-                      id="hvBatteryCapacity"
-                      value={formData.hvBatteryCapacity}
-                      onChange={(e) =>
-                        handleInputChange("hvBatteryCapacity", e.target.value)
-                      }
-                      placeholder="Enter HV Battery Capacity"
-                    />
-                  </div>
-
-                  {/* HV Battery Voltage (V) */}
-                  <div className="space-y-2">
-                    <Label htmlFor="hvBatteryVoltage">HV Battery Voltage (V)</Label>
-                    <Input
-                      id="hvBatteryVoltage"
-                      value={formData.hvBatteryVoltage}
-                      onChange={(e) =>
-                        handleInputChange("hvBatteryVoltage", e.target.value)
-                      }
-                      placeholder="Enter HV Battery Voltage (V)"
-                    />
-                  </div>
-
-                  {/* HV Battery Current (A) */}
-                  <div className="space-y-2">
-                    <Label htmlFor="hvBatteryCurrent">HV Battery Current (A)</Label>
-                    <Input
-                      id="hvBatteryCurrent"
-                      value={formData.hvBatteryCurrent}
-                      onChange={(e) =>
-                        handleInputChange("hvBatteryCurrent", e.target.value)
-                      }
-                      placeholder="Enter HV Battery Current (A)"
-                    />
-                  </div>
-
-                  {/* EV Motor Power (KW) */}
-                  <div className="space-y-2">
-                    <Label htmlFor="evMotorPower">EV Motor Power (KW)</Label>
-                    <Input
-                      id="evMotorPower"
-                      value={formData.evMotorPower}
-                      onChange={(e) =>
-                        handleInputChange("evMotorPower", e.target.value)
-                      }
-                      placeholder="Enter EV Motor Power (KW)"
+                      id="department"
+                      value={formData.department}
+                      readOnly
+                      className="bg-gray-100 text-gray-500"
+                      placeholder="Department"
                     />
                   </div>
                 </>
               )}
 
-              {/* Department (fixed, read-only) */}
-              <div className="space-y-2">
-                <Label htmlFor="department">Department <span className="text-red-500">*</span></Label>
-                <Input
-                  id="department"
-                  value={formData.department}
-                  readOnly
-                  className="bg-gray-100 text-gray-500"
-                  placeholder="Department"
-                />
+              {/* Action Buttons */}
+              <div className="mt-6 flex justify-end gap-3">
+                <Button
+                  onClick={handleAddEngine}
+                  className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
+                >
+                  {isEditMode ? `✓ UPDATE ${engine_domain === "EV" ? "MOTOR" : "ENGINE"}` : `✓ ADD ${engine_domain === "EV" ? "MOTOR" : "ENGINE"}`}
+                </Button>
+                <Button
+                  onClick={handleClear}
+                  variant="outline"
+                  className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
+                >
+                  ✕ CLEAR
+                </Button>
               </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="mt-6 flex justify-end gap-3">
-              <Button
-                onClick={handleAddEngine}
-                className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
-              >
-                {isEditMode ? `✓ UPDATE ${engine_domain === "EV" ? "MOTOR" : "ENGINE"}` : `✓ ADD ${engine_domain === "EV" ? "MOTOR" : "ENGINE"}`}
-              </Button>
-              <Button
-                onClick={handleClear}
-                variant="outline"
-                className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
-              >
-                ✕ CLEAR
-              </Button>
             </div>
           </CardContent>
         </Card>
