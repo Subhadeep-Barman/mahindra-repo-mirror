@@ -2420,7 +2420,7 @@ export default function CreateJobOrder() {
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <span className="font-bold text-base text-blue-900">Test {displayNumber}</span>
+                  <span className="font-semibold text-lg text-gray-800">Test {displayNumber}</span>
                   {/* Status Icon and Label */}
                   {test?.status === "Started" && (
                     <span className="flex items-center bg-yellow-100 border border-yellow-400 text-yellow-800 font-semibold text-xs px-2 py-1 rounded shadow ml-2">

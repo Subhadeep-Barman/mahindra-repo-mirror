@@ -1768,7 +1768,7 @@ export default function NashikCreateJobOrder() {
             className="mx-8 mb-4 border rounded shadow-lg shadow-gray-300/40 px-6 py-4 bg-gray-50 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer"
           >
             <div className="flex items-center justify-between mb-2">
-              <div className="font-semibold text-sm text-yellow-700">
+              <div className="font-semibold text-lg text-gray-800">
                 Test {idx + 1}
               </div>
               {!isTestEngineer && (
@@ -2449,24 +2449,21 @@ export default function NashikCreateJobOrder() {
             </div>
 
             {/* Coast Down Data Section for Test */}
-            <div className="mt-4 border rounded shadow px-4 py-3 bg-blue-50">
-              <div className="flex items-center justify-between mb-3">
+            <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
+              <div className="flex items-center gap-3 mb-3">
                 <span className="font-semibold text-sm text-blue-700">
                   Coast Down Data for Test {idx + 1}
                 </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="text-xs text-blue-600 px-2 py-1"
-                  onClick={() => {
+                <Switch
+                  checked={!!test.showCoastDownData}
+                  onCheckedChange={(checked) => {
                     const updatedTests = [...tests];
-                    updatedTests[idx].showCoastDownData =
-                      !updatedTests[idx].showCoastDownData;
+                    updatedTests[idx].showCoastDownData = checked;
                     setTests(updatedTests);
                   }}
-                >
-                  {test.showCoastDownData ? "Hide" : "Show"} Coast Down Data
-                </Button>
+                  disabled={formDisabled || isTestEngineer}
+                  className="data-[state=checked]:bg-red-500"
+                />
               </div>
 
               {test.showCoastDownData && (

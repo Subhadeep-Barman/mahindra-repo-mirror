@@ -2466,8 +2466,8 @@ export default function RDECreateJobOrder() {
             </div>
 
             {/* Attachments Card */}
-            <div className="border rounded shadow px-6 py-4 mb-4">
-              <div className="font-semibold text-md text-gray-800 mb-4">
+            <div className="bg-gray-100 dark:bg-gray-800 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+              <div className="font-semibold text-sm text-gray-700 dark:text-white mb-2">
                 Attachments
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -2714,8 +2714,8 @@ export default function RDECreateJobOrder() {
             </div>
 
             {/* Test Engineers Attachments Card */}
-            <div className="border rounded shadow px-6 py-4 mb-4">
-              <div className="font-semibold text-md text-gray-800 mb-4">
+            <div className="bg-gray-100 border border-gray-300 dark:bg-gray-800 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+              <div className="font-semibold text-sm text-gray-700 mb-2">
                 Test Engineers Attachments
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
