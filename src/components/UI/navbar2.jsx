@@ -51,7 +51,7 @@ export default function Navbar2() {
           {/* Logo */}
           <img 
             src={isDarkMode ? darkLogo : lightLogo} 
-            height="40px" 
+            height="85px" 
             width="40px" 
             alt="Logo" 
             style={{ marginRight: '12px' }}
@@ -102,7 +102,7 @@ export default function Navbar2() {
 
             {/* Theme Toggle */}
             <div className="flex items-center gap-2 px-2">
-              <LightMode sx={{ color: '#ffa726', fontSize: '16px' }} />
+              <LightMode sx={{ color: '#ffc56dff', fontSize: '16px' }} />
               <Switch
                 checked={isDarkMode}
                 onCheckedChange={toggleDarkMode}

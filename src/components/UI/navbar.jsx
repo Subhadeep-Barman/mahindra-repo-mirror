@@ -34,15 +34,15 @@ export default function Navbar() {
   }, [isDarkMode]);
 
   return (
-    <nav className="bg-red-50 dark:bg-red-900/20 shadow-sm border border-red-200 dark:border-red-800 transition-colors duration-200 rounded-2xl mt-2 mx-2 md:mx-4">
+    <nav className="bg-red-50 dark:bg-red-900/20 shadow-sm border border-red-200 dark:border-red-800 transition-colors duration-200 rounded-2xl mt-5 mx-2 md:mx-4">
       <div className="flex items-center justify-between h-12 px-4 md:px-8">
         {/* Logo - Left Corner */}
         <div className="flex-shrink-0">
           <img
             src={isDarkMode ? darkLogo : lightLogo}
             alt="MAI Logo"
-            width={60}
-            height={30}
+            width={85}
+            height={40}
             className="object-contain"
           />
         </div>
@@ -56,7 +56,7 @@ export default function Navbar() {
             <Home className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
-            <LightMode className="h-4 w-4 text-yellow-500" />
+            <LightMode className="h-4 w-4 text-yellow-400" />
             <Switch
               checked={isDarkMode}
               onCheckedChange={toggleDarkMode}

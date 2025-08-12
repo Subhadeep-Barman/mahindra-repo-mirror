@@ -19,7 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
-import { ArrowBack } from "@mui/icons-material";
+import { ArrowBack, Close as CloseIcon } from "@mui/icons-material";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
@@ -1425,7 +1425,7 @@ export default function RDECreateJobOrder() {
         <div className="mb-6" />
 
         {/* Main Job Order Form */}
-        <div className="bg-white-300 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+        <div className="bg-white-300 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
           <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Project Code */}
             <div>
@@ -1687,7 +1687,7 @@ export default function RDECreateJobOrder() {
 
         {/* Vehicle Details Card */}
         {form.vehicleBodyNumber && vehicleEditable && (
-          <div className="bg-white border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+          <div className="bg-white border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
             <div
               className="flex items-center justify-between mb-6 cursor-pointer"
               onClick={() => setVehicleAccordionOpen((prev) => !prev)}
@@ -1723,7 +1723,7 @@ export default function RDECreateJobOrder() {
 
         {/* Engine Details Card */}
         {form.engineNumber && engineEditable && (
-          <div className="bg-white border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+          <div className="bg-white border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
             <div
               className="flex items-center justify-between mb-6 cursor-pointer"
               onClick={() => setEngineAccordionOpen((prev) => !prev)}
@@ -1758,17 +1758,7 @@ export default function RDECreateJobOrder() {
         )}
 
         {/* Coast Down Test Report Reference Card */}
-        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
-          <div className="flex items-center justify-between mb-6">
-            <div className="text-lg font-medium text-blue-700">
-              Coast Down Test Report Reference
-            </div>
-            {location.state?.isEdit && existingCoastDownId && (
-              <span className="text-sm text-blue-600">
-                {/* (Editing existing data - ID: {existingCoastDownId}) */}
-              </span>
-            )}
-          </div>
+        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
 
           <div className="mb-6">
             <Label
@@ -2007,7 +1997,7 @@ export default function RDECreateJobOrder() {
 
         {/* Test Actions */}
         {/* Test Actions */}
-        <div className="flex items-center mt-4 gap-6 px-8">
+        <div className="flex items-center mt-4 gap-6 px-8 mb-8">
           <Button
             variant="ghost"
             className="text-xs text-blue-700 px-0"
@@ -2040,19 +2030,20 @@ export default function RDECreateJobOrder() {
 
         {/* Test Forms */}
         {tests.map((test, idx) => (
-          <div key={idx} className="mx-8 mb-4 border rounded shadow-lg shadow-gray-300/40 px-6 py-4 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+          <div key={idx} className="mx-8 mb-4 border rounded shadow-lg shadow-gray-300/40 px-6 py-4 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
             <div className="flex items-center justify-between mb-4">
               <div className="font-semibold text-lg text-gray-800">
                 Test {idx + 1}
               </div>
-              <Button
-                variant="ghost"
-                className="text-red-600 hover:bg-red-50 px-3 py-1"
+              <button
                 type="button"
                 onClick={() => handleDeleteTest(idx)}
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 hover:bg-red-200 transition-colors border border-gray-300 text-gray-600 hover:text-red-600 focus:outline-none"
+                title="Close"
+                style={{ minWidth: 0, padding: 0 }}
               >
-                Delete
-              </Button>
+                <CloseIcon fontSize="small" />
+              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -2893,7 +2884,7 @@ export default function RDECreateJobOrder() {
             </div>
 
             {/* Coast Down Data Section for Test */}
-            <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+            <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
               <div className="flex items-center gap-3 mb-3">
                 <span className="font-semibold text-sm text-blue-700">
                   Coast Down Data for Test {idx + 1}
@@ -3184,7 +3175,7 @@ export default function RDECreateJobOrder() {
         ))}
 
         {/* All Test Orders Card */}
-        <div className="mx-8 my-8 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-300/40 px-6 py-4 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+        <div className="mx-8 my-8 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-300/40 px-6 py-4 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
           <div className="font-semibold text-lg text-gray-800 mb-4">
             All Test Orders
           </div>

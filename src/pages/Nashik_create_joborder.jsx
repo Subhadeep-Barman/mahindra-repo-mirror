@@ -18,7 +18,7 @@ import { Switch } from "@/components/UI/switch";
 import useStore from "@/store/useStore";
 import axios from "axios";
 import CFTMembers from "@/components/CFTMembers";
-import { ArrowBack } from "@mui/icons-material";
+import { ArrowBack, Close as CloseIcon } from "@mui/icons-material";
 import { useAuth } from "@/context/AuthContext";
 import showSnackbar from "@/utils/showSnackbar";
 
@@ -1237,7 +1237,7 @@ export default function NashikCreateJobOrder() {
         <div className="mb-6" />
         
         {/* Main Job Order Form */}
-        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
           {/* Form Row */}
           <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Project Code */}
@@ -1419,7 +1419,7 @@ export default function NashikCreateJobOrder() {
 
         {/* Editable Vehicle Details Accordion */}
         {vehicleEditable && (
-          <div className="mx-8 mt-2 mb-4 border rounded shadow">
+          <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
             <div
               className="flex items-center justify-between bg-gray-100 border-t-4 border-red-600 px-4 py-2 cursor-pointer"
               onClick={() => setVehicleAccordionOpen((prev) => !prev)}
@@ -1456,7 +1456,7 @@ export default function NashikCreateJobOrder() {
 
         {/* Editable Engine Details Accordion */}
         {engineEditable && (
-          <div className="mx-8 mt-2 mb-4 border rounded shadow">
+          <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
             <div
               className="flex items-center justify-between bg-gray-100 border-t-4 border-blue-600 px-4 py-2 cursor-pointer"
               onClick={() => setEngineAccordionOpen((prev) => !prev)}
@@ -1492,149 +1492,196 @@ export default function NashikCreateJobOrder() {
         )}
 
         {/* Coast Down Data (CD) Section */}
-        <div className="mx-8 mb-4 bg-WHITE-50 border border-gray-200 rounded-lg shadow-lg shadow-gray-300/40 px-6 py-4 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <Label htmlFor="cdReportRef">
-                Coast Down Test Report Reference
-              </Label>
-              {location.state?.isEdit && existingCoastDownId && (
-                <span className="text-sm text-blue-600 ml-2">
-                  {/* (Editing existing data - ID: {existingCoastDownId}) */}
-                </span>
-              )}
-            </div>
-          </div>
-          <Input
-            id="cdReportRef"
-            placeholder="Enter Coast Test Report Ref."
-            className="w-80 mt-1"
-            value={form.cdReportRef}
-            onChange={(e) => handleCDNumberInput("cdReportRef", e.target.value)}
-            disabled={formDisabled || isTestEngineer}
-          />
-          {cdFieldErrors.cdReportRef && (
-            <div className="text-red-600 text-xs mt-1">{cdFieldErrors.cdReportRef}</div>
-          )}
-          <div className="mb-2 font-semibold text-xs mt-4">CD Values</div>
+        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
 
-          <div className="grid grid-cols-7 gap-4">
-            <div>
-              <Label htmlFor="vehicleRefMass" className="text-xs">
-                Vehicle Reference Mass (Kg)
-              </Label>
-              <Input
-                id="vehicleRefMass"
-                placeholder="Enter Vehicle Reference mass (Kg)"
-                className="mt-1"
-                value={form.vehicleRefMass}
-                onChange={(e) => handleCDNumberInput("vehicleRefMass", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.vehicleRefMass && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.vehicleRefMass}</div>
-              )}
+          <div className="mb-6">
+            <Label
+              htmlFor="cdReportRef"
+              className="text-sm text-gray-600 mb-1 block"
+            >
+              Coast Down Test Report Reference
+            </Label>
+            <Input
+              id="cdReportRef"
+              placeholder="Enter Coast Test Report Ref."
+              className="w-full h-10 border-gray-300"
+              value={form.cdReportRef}
+              onChange={(e) =>
+                handleCDNumberInput("cdReportRef", e.target.value)
+              }
+              disabled={formDisabled || isTestEngineer}
+            />
+            {cdFieldErrors.cdReportRef && (
+              <div className="text-red-600 text-sm mt-1">
+                {cdFieldErrors.cdReportRef}
+              </div>
+            )}
+          </div>
+
+          <div className="mb-4">
+            <div className="text-sm font-medium text-gray-700 mb-4">
+              CD Values
             </div>
-            <div>
-              <Label htmlFor="aN" className="text-xs">
-                A (N)
-              </Label>
-              <Input
-                id="aN"
-                placeholder="Enter A (N)"
-                className="mt-1"
-                value={form.aN}
-                onChange={(e) => handleCDNumberInput("aN", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.aN && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.aN}</div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="bNkmph" className="text-xs">
-                B (N/kmph)
-              </Label>
-              <Input
-                id="bNkmph"
-                placeholder="Enter B (N/kmph)"
-                className="mt-1"
-                value={form.bNkmph}
-                onChange={(e) => handleCDNumberInput("bNkmph", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.bNkmph && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.bNkmph}</div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="cNkmph2" className="text-xs">
-                C (N/kmph^2)
-              </Label>
-              <Input
-                id="cNkmph2"
-                placeholder="Enter C (N/kmph^2)"
-                className="mt-1"
-                value={form.cNkmph2}
-                onChange={(e) => handleCDNumberInput("cNkmph2", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.cNkmph2 && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.cNkmph2}</div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="f0N" className="text-xs">
-                F0 (N)
-              </Label>
-              <Input
-                id="f0N"
-                placeholder="Enter F0 (N)"
-                className="mt-1"
-                value={form.f0N}
-                onChange={(e) => handleCDNumberInput("f0N", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.f0N && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.vehicleRefMass}</div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="f1Nkmph" className="text-xs">
-                F1 (N/kmph)
-              </Label>
-              <Input
-                id="f1Nkmph"
-                placeholder="Enter F1 (N/kmph)"
-                className="mt-1"
-                value={form.f1Nkmph}
-                onChange={(e) => handleCDNumberInput("f1Nkmph", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.f1Nkmph && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.f1Nkmph}</div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="f2Nkmph2" className="text-xs">
-                F2 (N/kmph^2)
-              </Label>
-              <Input
-                id="f2Nkmph2"
-                placeholder="Enter F2 (N/kmph^2)"
-                className="mt-1"
-                value={form.f2Nkmph2}
-                onChange={(e) => handleCDNumberInput("f2Nkmph2", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdError && (
-                <div className="text-red-600 text-xs mt-2">{cdError}</div>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <Label
+                  htmlFor="vehicleRefMass"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  Vehicle Reference mass (Kg)
+                </Label>
+                <Input
+                  id="vehicleRefMass"
+                  placeholder="Enter Reference Mass"
+                  className="w-full h-10 border-gray-300"
+                  value={form.vehicleRefMass}
+                  onChange={(e) =>
+                    handleCDNumberInput("vehicleRefMass", e.target.value)
+                  }
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.vehicleRefMass && (
+                  <div className="text-red-600 text-sm mt-1">
+                    {cdFieldErrors.vehicleRefMass}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="aN"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  A (N)
+                </Label>
+                <Input
+                  id="aN"
+                  placeholder="Enter A (N)"
+                  className="w-full h-10 border-gray-300"
+                  value={form.aN}
+                  onChange={(e) => handleCDNumberInput("aN", e.target.value)}
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.aN && (
+                  <div className="text-red-600 text-sm mt-1">
+                    {cdFieldErrors.aN}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="bNkmph"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  B (N/kmph)
+                </Label>
+                <Input
+                  id="bNkmph"
+                  placeholder="Enter B (N/kmph)"
+                  className="w-full h-10 border-gray-300"
+                  value={form.bNkmph}
+                  onChange={(e) => handleCDNumberInput("bNkmph", e.target.value)}
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.bNkmph && (
+                  <div className="text-red-600 text-sm mt-1">
+                    {cdFieldErrors.bNkmph}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="cNkmph2"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  C (N/kmph^2)
+                </Label>
+                <Input
+                  id="cNkmph2"
+                  placeholder="Enter C (N/kmph^2)"
+                  className="w-full h-10 border-gray-300"
+                  value={form.cNkmph2}
+                  onChange={(e) => handleCDNumberInput("cNkmph2", e.target.value)}
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.cNkmph2 && (
+                  <div className="text-red-600 text-sm mt-1">
+                    {cdFieldErrors.cNkmph2}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="f0N"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  F0 (N)
+                </Label>
+                <Input
+                  id="f0N"
+                  placeholder="Enter F0 (N)"
+                  className="w-full h-10 border-gray-300"
+                  value={form.f0N}
+                  onChange={(e) => handleCDNumberInput("f0N", e.target.value)}
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.f0N && (
+                  <div className="text-red-600 text-sm mt-1">
+                    {cdFieldErrors.f0N}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="f1Nkmph"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  F1 (N/kmph)
+                </Label>
+                <Input
+                  id="f1Nkmph"
+                  placeholder="Enter F1 (N/kmph)"
+                  className="w-full h-10 border-gray-300"
+                  value={form.f1Nkmph}
+                  onChange={(e) => handleCDNumberInput("f1Nkmph", e.target.value)}
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.f1Nkmph && (
+                  <div className="text-red-600 text-sm mt-1">
+                    {cdFieldErrors.f1Nkmph}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="f2Nkmph2"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  F2 (N/kmph^2)
+                </Label>
+                <Input
+                  id="f2Nkmph2"
+                  placeholder="Enter F2 (N/kmph^2)"
+                  className="w-full h-10 border-gray-300"
+                  value={form.f2Nkmph2}
+                  onChange={(e) => handleCDNumberInput("f2Nkmph2", e.target.value)}
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdError && (
+                  <div className="text-red-600 text-sm mt-1">{cdError}</div>
+                )}
+              </div>
             </div>
           </div>
-          <div className="flex items-center mt-4 gap-6">
+
+          <div className="flex items-center gap-4">
             <Button
-              className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
+              className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
               onClick={handleCreateJobOrder}
               disabled={isTestEngineer}
             >
@@ -1642,7 +1689,7 @@ export default function NashikCreateJobOrder() {
             </Button>
             {location.state?.isEdit && existingCoastDownId && (
               <Button
-                className="bg-blue-600 text-white text-xs px-6 py-2 rounded"
+                className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
                 onClick={async () => {
                   try {
                     await handleUpdateCoastDownData(existingCoastDownId);
@@ -1660,7 +1707,7 @@ export default function NashikCreateJobOrder() {
               </Button>
             )}
             <Button
-              className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
+              className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400"
               type="button"
               onClick={() =>
                 setForm((prev) => ({
@@ -1682,7 +1729,7 @@ export default function NashikCreateJobOrder() {
         </div>
 
         {/* Test Actions */}
-        <div className="flex items-center mt-4 gap-6 px-8">
+        <div className="flex items-center mt-4 gap-6 px-8 mb-8">
           <Button
             variant="ghost"
             className="text-xs text-blue-700 px-0"
@@ -1718,21 +1765,23 @@ export default function NashikCreateJobOrder() {
         {tests.map((test, idx) => (
           <div
             key={idx}
-            className="mx-8 mb-4 border rounded shadow-lg shadow-gray-300/40 px-6 py-4 bg-gray-50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer"
+            className="mx-8 mb-4 border rounded shadow-lg shadow-gray-300/40 px-6 py-4 bg-gray-50 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer"
           >
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold text-sm text-yellow-700">
                 Test {idx + 1}
               </div>
-              <Button
-                variant="ghost"
-                className="text-xs text-red-600 px-2 py-0"
-                type="button"
-                onClick={() => handleDeleteTest(idx)}
-                disabled={isTestEngineer}
-              >
-                Delete
-              </Button>
+              {!isTestEngineer && (
+                <button
+                  type="button"
+                  onClick={() => handleDeleteTest(idx)}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 hover:bg-red-200 transition-colors border border-gray-300 text-gray-600 hover:text-red-600 focus:outline-none"
+                  title="Close"
+                  style={{ minWidth: 0, padding: 0 }}
+                >
+                  <CloseIcon fontSize="small" />
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-4 gap-4 mb-2">
               <div className="flex flex-col">
@@ -2591,7 +2640,7 @@ export default function NashikCreateJobOrder() {
         ))}
 
         {/* Show all test orders in a table */}
-        <div className="mx-8 my-8 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-300/40 p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+        <div className="mx-8 my-8 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-300/40 p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
           <div className="font-semibold mb-4 text-lg text-gray-800">All Test Orders</div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-xs border">

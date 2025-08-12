@@ -1665,7 +1665,7 @@ export default function CreateJobOrder() {
         <div className="mb-6" />
         
         {/* Main Job Order Form */}
-        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
           {/* Form Row */}
           <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Project Code */}
@@ -1875,7 +1875,7 @@ export default function CreateJobOrder() {
 
         {/* Extra fields for RDE JO */}
         {form.department === "RDE JO" && (
-          <div className="bg-blue-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+          <div className="bg-blue-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* WBS Code */}
               <div>
@@ -2024,7 +2024,7 @@ export default function CreateJobOrder() {
 
         {/* Editable Vehicle Details Accordion */}
         {vehicleEditable && (
-          <div className="mx-8 mt-2 mb-4 border rounded shadow">
+          <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
             <div
               className="flex items-center justify-between bg-gray-100 dark:bg-black border-t-4 border-red-600 px-4 py-2 cursor-pointer"
               onClick={() => setVehicleAccordionOpen((prev) => !prev)}
@@ -2060,7 +2060,7 @@ export default function CreateJobOrder() {
 
         {/* Editable Engine Details Accordion */}
         {engineEditable && (
-          <div className="mx-8 mt-2 mb-4 border rounded shadow">
+          <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
             <div
               className="flex items-center justify-between bg-gray-100 dark:bg-black border-t-4 border-blue-600 px-4 py-2 cursor-pointer"
               onClick={() => setEngineAccordionOpen((prev) => !prev)}
@@ -2095,17 +2095,7 @@ export default function CreateJobOrder() {
         )}
 
         {/* Coast Down Data (CD) Section */}
-        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
-          <div className="flex items-center justify-between mb-6">
-            <div className="text-lg font-medium text-blue-700">
-              Coast Down Test Report Reference
-            </div>
-            {location.state?.isEdit && existingCoastDownId && (
-              <span className="text-sm text-blue-600 ml-2">
-                {/* (Editing existing data - ID: {existingCoastDownId}) */}
-              </span>
-            )}
-          </div>
+        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
           
           <div className="mb-6">
             <Label
@@ -2283,15 +2273,15 @@ export default function CreateJobOrder() {
 
           <div className="flex items-center gap-4">
             <Button
-              className="bg-white dark:bg-black text-red-900 dark:text-red-500 border border-red-900 dark:border-red-500 text-xs px-6 py-2 rounded"
+              className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
               onClick={handleCreateJobOrder}
               disabled={isTestEngineer}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
-            {/* {location.state?.isEdit && existingCoastDownId && (
+            {location.state?.isEdit && existingCoastDownId && (
               <Button
-                className="bg-blue-600 text-white text-xs px-6 py-2 rounded"
+                className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
                 onClick={async () => {
                   try {
                     await handleUpdateCoastDownData(existingCoastDownId);
@@ -2307,9 +2297,9 @@ export default function CreateJobOrder() {
               >
                 UPDATE COAST DOWN DATA
               </Button>
-            )} */}
-            {/* <Button
-              className="bg-white text-red-900 border border-red-900 text-xs px-6 py-2 rounded"
+            )}
+            <Button
+              className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400"
               type="button"
               onClick={() =>
                 setForm((prev) => ({
@@ -2326,12 +2316,12 @@ export default function CreateJobOrder() {
               }
             >
               CLEAR
-            </Button> */}
+            </Button>
           </div>
         </div>
 
         {/* Test Actions */}
-        <div className="flex items-center mt-4 gap-6 px-8">
+        <div className="flex items-center mt-4 gap-6 px-8 mb-8">
           <Button
             variant="ghost"
             className="text-xs text-blue-700 px-0"
@@ -2426,7 +2416,7 @@ export default function CreateJobOrder() {
           return (
             <div
               key={idx}
-              className="mx-8 mb-8 border rounded-lg shadow-lg shadow-gray-300/40 px-8 py-6 bg-white dark:bg-black transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer"
+              className="mx-8 mb-8 border rounded-lg shadow-lg shadow-gray-300/40 px-8 py-6 bg-white dark:bg-black transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -3360,7 +3350,7 @@ export default function CreateJobOrder() {
                 </div>
               </div>
               {/* Coast Down Data Section for Test */}
-              <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 dark:bg-inherit transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+              <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 dark:bg-inherit transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="font-semibold text-sm text-blue-700">
                     Coast Down Data for Test {idx + 1}
@@ -3635,7 +3625,7 @@ export default function CreateJobOrder() {
         })}
 
         {/* Show all test orders in a table */}
-        <div className="mx-8 my-8 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-300/40 p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+        <div className="mx-8 my-8 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-300/40 p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
           <div className="font-semibold mb-4 text-lg text-gray-800">All Test Orders</div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-xs border ">
