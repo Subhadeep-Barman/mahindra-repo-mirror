@@ -125,6 +125,7 @@ export default function RDECreateJobOrder() {
   const [reEditModalOpen, setReEditModalOpen] = useState(false);
   const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
   const [mailRemarksModalOpen, setMailRemarksModalOpen] = useState(false);
+  const [engineNumbers, setEngineNumbers] = useState([]);
 
   // Add handler to open re-edit modal
   const handleOpenReEditModal = (idx) => {
