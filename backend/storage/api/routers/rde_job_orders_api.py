@@ -94,7 +94,7 @@ def generate_job_order_id(vehicle_body_number: str, db: Session) -> str:
     current_year = datetime.utcnow().year % 100  # Get last two digits of the year
     count = db.query(RDEJobOrder).count() + 1  # Increment count based on total job orders
     count_str = f"{count:04d}"  # Format count as 4 digits (e.g., 0001)
-    job_order_id = f"JO VTC-{current_year}-{count_str}/{vehicle_body_number}"
+    job_order_id = f"JO RDE-{current_year}-{count_str}/{vehicle_body_number}"
     print(f"Generated job_order_id: {job_order_id}")  # Debug print statement
     return job_order_id
 
