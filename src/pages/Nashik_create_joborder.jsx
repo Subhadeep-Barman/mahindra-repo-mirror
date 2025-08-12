@@ -95,6 +95,7 @@ export default function NashikCreateJobOrder() {
   const [modes, setModes] = useState([]);
 
   const [fuelTypes, setFuelTypes] = useState([]);
+  const [engineNumbers, setEngineNumbers] = useState([]);
 
   const [emissionCheckModals, setEmissionCheckModals] = useState({});
   const [datasetModals, setDatasetModals] = useState({});
@@ -1217,7 +1218,7 @@ export default function NashikCreateJobOrder() {
             </Button>
             <Button
               variant="outline"
-              className="bg-red-600 text-white px-3 py-1 rounded"
+              className="bg-red-600 text-white px-3 py-1 rounded-full"
             >
               Nashik Job Order
             </Button>
@@ -1232,11 +1233,19 @@ export default function NashikCreateJobOrder() {
             </div>
           </div>
         </div>
-        {/* Form Row */}
-        <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 px-8 py-6">
+
+        <div className="mb-6" />
+        
+        {/* Main Job Order Form */}
+        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+          {/* Form Row */}
+          <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Project Code */}
-          <div className="flex flex-col">
-            <Label htmlFor="projectCode" className="mb-2">
+          <div>
+            <Label
+              htmlFor="projectCode"
+              className="text-sm text-gray-600 mb-1 block"
+            >
               Project <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1245,7 +1254,7 @@ export default function NashikCreateJobOrder() {
               required
               disabled={formDisabled || isTestEngineer}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1258,8 +1267,11 @@ export default function NashikCreateJobOrder() {
             </Select>
           </div>
           {/* Vehicle Body Number */}
-          <div className="flex flex-col">
-            <Label htmlFor="vehicleBodyNumber" className="mb-2">
+          <div>
+            <Label
+              htmlFor="vehicleBodyNumber"
+              className="text-sm text-gray-600 mb-1 block"
+            >
               Vehicle Body Number <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1268,7 +1280,7 @@ export default function NashikCreateJobOrder() {
               required
               disabled={formDisabled || isTestEngineer || !form.projectCode}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1299,8 +1311,11 @@ export default function NashikCreateJobOrder() {
             />
           </div>
           {/* Engine Number (dropdown) */}
-          <div className="flex flex-col">
-            <Label htmlFor="engineSerialNumber" className="mb-2">
+          <div>
+            <Label
+              htmlFor="engineSerialNumber"
+              className="text-sm text-gray-600 mb-1 block"
+            >
               Engine Number <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1309,7 +1324,7 @@ export default function NashikCreateJobOrder() {
               required
               disabled={formDisabled || isTestEngineer || !form.vehicleBodyNumber}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1322,8 +1337,11 @@ export default function NashikCreateJobOrder() {
             </Select>
           </div>
           {/* Type of Engine */}
-          <div className="flex flex-col">
-            <Label htmlFor="engineType" className="mb-2">
+          <div>
+            <Label
+              htmlFor="engineType"
+              className="text-sm text-gray-600 mb-1 block"
+            >
               Type of Engine <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1332,7 +1350,7 @@ export default function NashikCreateJobOrder() {
               required
               disabled={formDisabled || isTestEngineer}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1345,8 +1363,11 @@ export default function NashikCreateJobOrder() {
             </Select>
           </div>
           {/* Domain */}
-          <div className="flex flex-col">
-            <Label htmlFor="domain" className="mb-2">
+          <div>
+            <Label
+              htmlFor="domain"
+              className="text-sm text-gray-600 mb-1 block"
+            >
               Domain <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1355,7 +1376,7 @@ export default function NashikCreateJobOrder() {
               required
               disabled={formDisabled || isTestEngineer}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1368,8 +1389,11 @@ export default function NashikCreateJobOrder() {
             </Select>
           </div>
           {/* Department */}
-          <div className="flex flex-col">
-            <Label htmlFor="department" className="mb-2">
+          <div>
+            <Label
+              htmlFor="department"
+              className="text-sm text-gray-600 mb-1 block"
+            >
               Department <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1378,7 +1402,7 @@ export default function NashikCreateJobOrder() {
               required
               disabled={true}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1391,6 +1415,7 @@ export default function NashikCreateJobOrder() {
             </Select>
           </div>
         </form>
+        </div>
 
         {/* Editable Vehicle Details Accordion */}
         {vehicleEditable && (
@@ -1467,7 +1492,7 @@ export default function NashikCreateJobOrder() {
         )}
 
         {/* Coast Down Data (CD) Section */}
-        <div className="mx-8 mb-4 border rounded shadow px-6 py-4">
+        <div className="mx-8 mb-4 bg-WHITE-50 border border-gray-200 rounded-lg shadow-lg shadow-gray-300/40 px-6 py-4 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
           <div className="flex items-center justify-between mb-2">
             <div>
               <Label htmlFor="cdReportRef">
@@ -1693,7 +1718,7 @@ export default function NashikCreateJobOrder() {
         {tests.map((test, idx) => (
           <div
             key={idx}
-            className="mx-8 mb-4 border rounded shadow px-6 py-4 bg-gray-50"
+            className="mx-8 mb-4 border rounded shadow-lg shadow-gray-300/40 px-6 py-4 bg-gray-50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer"
           >
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold text-sm text-yellow-700">
@@ -2566,8 +2591,8 @@ export default function NashikCreateJobOrder() {
         ))}
 
         {/* Show all test orders in a table */}
-        <div className="mx-8 my-8">
-          <div className="font-semibold mb-2">All Test Orders</div>
+        <div className="mx-8 my-8 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-300/40 p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+          <div className="font-semibold mb-4 text-lg text-gray-800">All Test Orders</div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-xs border">
               <thead>

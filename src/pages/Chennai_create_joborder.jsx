@@ -1632,7 +1632,7 @@ export default function CreateJobOrder() {
             </Button>
             <Button
               variant="outline"
-              className="bg-red-600 text-white px-3 py-1 rounded"
+              className="bg-red-600 text-white px-3 py-1 rounded-full"
             >
               {location.state?.isEdit && (location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id)
                 ? (location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id)
@@ -1661,11 +1661,19 @@ export default function CreateJobOrder() {
             </Button>
           </div> */}
         </div>
-        {/* Form Row */}
-        <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 px-8 py-6">
+
+        <div className="mb-6" />
+        
+        {/* Main Job Order Form */}
+        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+          {/* Form Row */}
+          <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Project Code */}
-          <div className="flex flex-col">
-            <Label htmlFor="projectCode" className="mb-2">
+          <div>
+            <Label
+              htmlFor="projectCode"
+              className="text-sm text-gray-600 mb-1 block"
+            >
               Project <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1674,7 +1682,7 @@ export default function CreateJobOrder() {
               required
               disabled={formDisabled || isTestEngineer}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1686,20 +1694,22 @@ export default function CreateJobOrder() {
               </SelectContent>
             </Select>
           </div>
+          
           {/* Vehicle Body Number */}
-          <div className="flex flex-col">
-            <Label htmlFor="vehicleBodyNumber" className="mb-2">
-              Vehicle Body No. <span className="text-red-500">*</span>
+          <div>
+            <Label
+              htmlFor="vehicleBodyNumber"
+              className="text-sm text-gray-600 mb-1 block"
+            >
+              Vehicle Body Number <span className="text-red-500">*</span>
             </Label>
-            {console.log("Project Vehicles:", form.vehicleBodyNumber)}
             <Select
               value={form.vehicleBodyNumber}
               onValueChange={handleVehicleBodyChange}
               required
-              
               disabled={formDisabled || isTestEngineer || !form.projectCode}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1714,27 +1724,34 @@ export default function CreateJobOrder() {
               </SelectContent>
             </Select>
           </div>
-          {/* vehicle_serial_number (auto) */}
-          <div className="flex flex-col">
-            <Label htmlFor="vehicleSerialNumber" className="mb-2">
+          
+          {/* Vehicle Serial Number */}
+          <div>
+            <Label
+              htmlFor="vehicleSerialNumber"
+              className="text-sm text-gray-600 mb-1 block"
+            >
               Vehicle Serial Number <span className="text-red-500">*</span>
             </Label>
             <Input
               id="vehicleSerialNumber"
               value={form.vehicleSerialNumber}
               readOnly
-              className="w-full"
+              className="w-full h-10 border-gray-300 bg-gray-50"
               placeholder="Auto-fetched"
               required
-              disabled={!formDisabled || isTestEngineer}
+              disabled={formDisabled}
             />
           </div>
-          {/* Engine Number (dropdown) */}
-          <div className="flex flex-col">
-            <Label htmlFor="engineSerialNumber" className="mb-2">
+          
+          {/* Engine Serial Number */}
+          <div>
+            <Label
+              htmlFor="engineNumber"
+              className="text-sm text-gray-600 mb-1 block"
+            >
               Engine Serial Number <span className="text-red-500">*</span>
             </Label>
-            {console.log("Engine Serial Numbers:", form.engineSerialNumber)}
             <Select
               value={form.engineSerialNumber}
               onValueChange={handleEngineNumberChange}
@@ -1746,7 +1763,7 @@ export default function CreateJobOrder() {
                   (allTestOrders[location.state?.originalJobOrderId] || []).length > 0 || !form.vehicleBodyNumber)
               }
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               {console.log("Vehicle Engine Numbers:", vehicleEngineNumbers)}
@@ -1772,9 +1789,13 @@ export default function CreateJobOrder() {
               </SelectContent>
             </Select>
           </div>
+          
           {/* Type of Engine */}
-          <div className="flex flex-col">
-            <Label htmlFor="engineType" className="mb-2">
+          <div>
+            <Label
+              htmlFor="engineType"
+              className="text-sm text-gray-600 mb-1 block"
+            >
               Type of Engine <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1783,7 +1804,7 @@ export default function CreateJobOrder() {
               required
               disabled={formDisabled || isTestEngineer}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1795,9 +1816,13 @@ export default function CreateJobOrder() {
               </SelectContent>
             </Select>
           </div>
+          
           {/* Domain */}
-          <div className="flex flex-col">
-            <Label htmlFor="domain" className="mb-2">
+          <div>
+            <Label
+              htmlFor="domain"
+              className="text-sm text-gray-600 mb-1 block"
+            >
               Domain <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1806,7 +1831,7 @@ export default function CreateJobOrder() {
               required
               disabled={formDisabled || isTestEngineer}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1818,9 +1843,13 @@ export default function CreateJobOrder() {
               </SelectContent>
             </Select>
           </div>
+          
           {/* Department */}
-          <div className="flex flex-col">
-            <Label htmlFor="department" className="mb-2">
+          <div>
+            <Label
+              htmlFor="department"
+              className="text-sm text-gray-600 mb-1 block"
+            >
               Department <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -1829,7 +1858,7 @@ export default function CreateJobOrder() {
               required
               disabled={true} // Always disabled for Chennai
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -1842,48 +1871,58 @@ export default function CreateJobOrder() {
             </Select>
           </div>
         </form>
+        </div>
 
         {/* Extra fields for RDE JO */}
         {form.department === "RDE JO" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 px-8 pb-4">
-            {/* WBS Code */}
-            <div className="flex flex-col">
-              <Label htmlFor="wbsCode" className="mb-2">
-                WBS Code <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="wbsCode"
-                value={form.wbsCode}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, wbsCode: e.target.value }))
-                }
-                className="w-full"
-                required
-                disabled={formDisabled}
-                placeholder="Enter WBS Code"
-              />
-            </div>
-            {/* Vehicle GVW */}
-            <div className="flex flex-col">
-              <Label htmlFor="vehicleGVW" className="mb-2">
-                Vehicle GVW (Kg) <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="vehicleGVW"
-                value={form.vehicleGVW}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, vehicleGVW: e.target.value }))
-                }
-                className="w-full"
-                required
-                disabled={formDisabled}
-                placeholder="Enter GVW"
-                type="number"
-                min="0"
-              />
-            </div>
-            {/* Vehicle Kerb weight */}
-            <div className="flex flex-col">
+          <div className="bg-blue-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* WBS Code */}
+              <div>
+                <Label
+                  htmlFor="wbsCode"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  WBS Code <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="wbsCode"
+                  value={form.wbsCode}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, wbsCode: e.target.value }))
+                  }
+                  className="w-full h-10 border-gray-300"
+                  required
+                  disabled={formDisabled}
+                  placeholder="Enter WBS Code"
+                />
+              </div>
+              
+              {/* Vehicle GVW */}
+              <div>
+                <Label
+                  htmlFor="vehicleGVW"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  Vehicle GVW (Kg) <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="vehicleGVW"
+                  value={form.vehicleGVW}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, vehicleGVW: e.target.value }))
+                  }
+                  className="w-full h-10 border-gray-300"
+                  required
+                  disabled={formDisabled}
+                  placeholder="Enter GVW"
+                  type="number"
+                  min="0"
+                />
+              </div>
+
+              {/* Vehicle Kerb Weight */}
+              <div>
               <Label htmlFor="vehicleKerbWeight" className="mb-2">
                 Vehicle Kerb weight (Kg) <span className="text-red-500">*</span>
               </Label>
@@ -1980,6 +2019,7 @@ export default function CreateJobOrder() {
               />
             </div>
           </div>
+          </div>
         )}
 
         {/* Editable Vehicle Details Accordion */}
@@ -2055,147 +2095,193 @@ export default function CreateJobOrder() {
         )}
 
         {/* Coast Down Data (CD) Section */}
-        <div className="mx-8 mb-4 border rounded shadow px-6 py-4">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <Label htmlFor="cdReportRef" className="mb-2">
-                Coast Down Test Report Reference
-              </Label>
-              {location.state?.isEdit && existingCoastDownId && (
-                <span className="text-sm text-blue-600 ml-2">
-                  {/* (Editing existing data - ID: {existingCoastDownId}) */}
-                </span>
-              )}
+        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+          <div className="flex items-center justify-between mb-6">
+            <div className="text-lg font-medium text-blue-700">
+              Coast Down Test Report Reference
             </div>
+            {location.state?.isEdit && existingCoastDownId && (
+              <span className="text-sm text-blue-600 ml-2">
+                {/* (Editing existing data - ID: {existingCoastDownId}) */}
+              </span>
+            )}
           </div>
-          <Input
-            id="cdReportRef"
-            placeholder="Enter Coast Test Report Ref."
-            className="w-80 mt-1"
-            value={form.cdReportRef}
-            onChange={(e) => handleCDNumberInput("cdReportRef", e.target.value)}
-            disabled={formDisabled || isTestEngineer}
-          />
-          {cdFieldErrors.cdReportRef && (
-            <div className="text-red-600 text-xs mt-1">{cdFieldErrors.cdReportRef}</div>
-          )}
-          <div className="mb-2 font-semibold text-xs mt-4">CD Values</div>
+          
+          <div className="mb-6">
+            <Label
+              htmlFor="cdReportRef"
+              className="text-sm text-gray-600 mb-1 block"
+            >
+              Coast Down Test Report Reference
+            </Label>
+            <Input
+              id="cdReportRef"
+              placeholder="Enter Coast Test Report Ref."
+              className="w-full h-10 border-gray-300"
+              value={form.cdReportRef}
+              onChange={(e) => handleCDNumberInput("cdReportRef", e.target.value)}
+              disabled={formDisabled || isTestEngineer}
+            />
+            {cdFieldErrors.cdReportRef && (
+              <div className="text-red-600 text-sm mt-1">{cdFieldErrors.cdReportRef}</div>
+            )}
+          </div>
 
-          <div className="grid grid-cols-7 gap-4">
-            <div>
-              <Label htmlFor="vehicleRefMass" className="text-xs mb-2">
-                Vehicle Reference Mass (Kg)
-              </Label>
-              <Input
-                id="vehicleRefMass"
-                placeholder="Enter Vehicle Reference mass (Kg)"
-                className="mt-1"
-                value={form.vehicleRefMass}
-                onChange={(e) => handleCDNumberInput("vehicleRefMass", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.vehicleRefMass && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.vehicleRefMass}</div>
-              )}
+          <div className="mb-4">
+
+            <div className="text-sm font-medium text-gray-700 mb-4">
+              CD Values
             </div>
-            <div>
-              <Label htmlFor="aN" className="text-xs mb-2">
-                A (N)
-              </Label>
-              <Input
-                id="aN"
-                placeholder="Enter A (N)"
-                className="mt-1"
-                value={form.aN}
-                onChange={(e) => handleCDNumberInput("aN", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.aN && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.aN}</div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="bNkmph" className="text-xs mb-2">
-                B (N/kmph)
-              </Label>
-              <Input
-                id="bNkmph"
-                placeholder="Enter B (N/kmph)"
-                className="mt-1"
-                value={form.bNkmph}
-                onChange={(e) => handleCDNumberInput("bNkmph", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.bNkmph && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.bNkmph}</div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="cNkmph2" className="text-xs mb-2">
-                C (N/kmph^2)
-              </Label>
-              <Input
-                id="cNkmph2"
-                placeholder="Enter C (N/kmph^2)"
-                className="mt-1"
-                value={form.cNkmph2}
-                onChange={(e) => handleCDNumberInput("cNkmph2", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.cNkmph2 && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.cNkmph2}</div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="f0N" className="text-xs mb-2">
-                F0 (N)
-              </Label>
-              <Input
-                id="f0N"
-                placeholder="Enter F0 (N)"
-                className="mt-1"
-                value={form.f0N}
-                onChange={(e) => handleCDNumberInput("f0N", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.f0N && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.vehicleRefMass}</div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="f1Nkmph" className="text-xs mb-2">
-                F1 (N/kmph)
-              </Label>
-              <Input
-                id="f1Nkmph"
-                placeholder="Enter F1 (N/kmph)"
-                className="mt-1"
-                value={form.f1Nkmph}
-                onChange={(e) => handleCDNumberInput("f1Nkmph", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.f1Nkmph && (
-                <div className="text-red-600 text-xs mt-1">{cdFieldErrors.f1Nkmph}</div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="f2Nkmph2" className="text-xs mb-2">
-                F2 (N/kmph^2)
-              </Label>
-              <Input
-                id="f2Nkmph2"
-                placeholder="Enter F2 (N/kmph^2)"
-                className="mt-1"
-                value={form.f2Nkmph2}
-                onChange={(e) => handleCDNumberInput("f2Nkmph2", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdError && (
-                <div className="text-red-600 text-xs mt-2">{cdError}</div>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <Label
+                  htmlFor="vehicleRefMass"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  Vehicle Reference mass (Kg)
+                </Label>
+                <Input
+                  id="vehicleRefMass"
+                  placeholder="Enter Reference Mass"
+                  className="w-full h-10 border-gray-300"
+                  value={form.vehicleRefMass}
+                  onChange={(e) => handleCDNumberInput("vehicleRefMass", e.target.value)}
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.vehicleRefMass && (
+                  <div className="text-red-600 text-sm mt-1">
+                    {cdFieldErrors.vehicleRefMass}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="aN"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  A (N)
+                </Label>
+                <Input
+                  id="aN"
+                  placeholder="Enter A (N)"
+                  className="w-full h-10 border-gray-300"
+                  value={form.aN}
+                  onChange={(e) => handleCDNumberInput("aN", e.target.value)}
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.aN && (
+                  <div className="text-red-600 text-sm mt-1">{cdFieldErrors.aN}</div>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="bNkmph"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  B (N/kmph)
+                </Label>
+                <Input
+                  id="bNkmph"
+                  placeholder="Enter B (N/kmph)"
+                  className="w-full h-10 border-gray-300"
+                  value={form.bNkmph}
+                  onChange={(e) => handleCDNumberInput("bNkmph", e.target.value)}
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.bNkmph && (
+                  <div className="text-red-600 text-sm mt-1">{cdFieldErrors.bNkmph}</div>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="cNkmph2"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  C (N/kmph²)
+                </Label>
+                <Input
+                  id="cNkmph2"
+                  placeholder="Enter C (N/kmph²)"
+                  className="w-full h-10 border-gray-300"
+                  value={form.cNkmph2}
+                  onChange={(e) => handleCDNumberInput("cNkmph2", e.target.value)}
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.cNkmph2 && (
+                  <div className="text-red-600 text-sm mt-1">{cdFieldErrors.cNkmph2}</div>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="f0N"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  F0 (N)
+                </Label>
+                <Input
+                  id="f0N"
+                  placeholder="Enter F0 (N)"
+                  className="w-full h-10 border-gray-300"
+                  value={form.f0N}
+                  onChange={(e) => handleCDNumberInput("f0N", e.target.value)}
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.f0N && (
+                  <div className="text-red-600 text-sm mt-1">{cdFieldErrors.f0N}</div>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="f1Nkmph"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  F1 (N/kmph)
+                </Label>
+                <Input
+                  id="f1Nkmph"
+                  placeholder="Enter F1 (N/kmph)"
+                  className="w-full h-10 border-gray-300"
+                  value={form.f1Nkmph}
+                  onChange={(e) => handleCDNumberInput("f1Nkmph", e.target.value)}
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.f1Nkmph && (
+                  <div className="text-red-600 text-sm mt-1">{cdFieldErrors.f1Nkmph}</div>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="f2Nkmph2"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  F2 (N/kmph²)
+                </Label>
+                <Input
+                  id="f2Nkmph2"
+                  placeholder="Enter F2 (N/kmph²)"
+                  className="w-full h-10 border-gray-300"
+                  value={form.f2Nkmph2}
+                  onChange={(e) => handleCDNumberInput("f2Nkmph2", e.target.value)}
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.f2Nkmph2 && (
+                  <div className="text-red-600 text-sm mt-1">{cdFieldErrors.f2Nkmph2}</div>
+                )}
+              </div>
             </div>
           </div>
-          <div className="flex items-center mt-4 gap-6">
+
+          {cdError && (
+            <div className="text-red-600 text-sm mb-4">{cdError}</div>
+          )}
+
+          <div className="flex items-center gap-4">
             <Button
               className="bg-white dark:bg-black text-red-900 dark:text-red-500 border border-red-900 dark:border-red-500 text-xs px-6 py-2 rounded"
               onClick={handleCreateJobOrder}
@@ -2340,7 +2426,7 @@ export default function CreateJobOrder() {
           return (
             <div
               key={idx}
-              className="mx-8 mb-8 border rounded-lg shadow-lg px-8 py-6 bg-white dark:bg-black"
+              className="mx-8 mb-8 border rounded-lg shadow-lg shadow-gray-300/40 px-8 py-6 bg-white dark:bg-black transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -3274,7 +3360,7 @@ export default function CreateJobOrder() {
                 </div>
               </div>
               {/* Coast Down Data Section for Test */}
-              <div className="mt-6 border rounded shadow px-4 py-3 bg-blue-50 dark:bg-inherit">
+              <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 dark:bg-inherit transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="font-semibold text-sm text-blue-700">
                     Coast Down Data for Test {idx + 1}
@@ -3549,8 +3635,8 @@ export default function CreateJobOrder() {
         })}
 
         {/* Show all test orders in a table */}
-        <div className="mx-8 my-8">
-          <div className="font-semibold mb-2">All Test Orders</div>
+        <div className="mx-8 my-8 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-300/40 p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300/50 hover:-translate-y-2 cursor-pointer">
+          <div className="font-semibold mb-4 text-lg text-gray-800">All Test Orders</div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-xs border ">
               <thead>
