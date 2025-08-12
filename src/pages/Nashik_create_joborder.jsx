@@ -1765,7 +1765,7 @@ export default function NashikCreateJobOrder() {
         {tests.map((test, idx) => (
           <div
             key={idx}
-            className="mx-8 mb-4 border rounded shadow-lg shadow-gray-300/40 px-6 py-4 bg-gray-50 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer"
+            className="mx-8 mb-4 border rounded shadow-lg shadow-gray-300/40 px-6 py-4 bg-white transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer"
           >
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold text-lg text-gray-800">
@@ -1846,16 +1846,6 @@ export default function NashikCreateJobOrder() {
                     handleTestChange(idx, "vehicleLocation", e.target.value)
                   }
                   placeholder="Enter Vehicle Location"
-                  disabled={!areTestFieldsEditable(test, idx)}
-                />
-              </div>
-              <div>
-                <Label>Upload Documents</Label>
-                <Input
-                  type="file"
-                  onChange={(e) =>
-                    handleTestChange(idx, "uploadDocuments", e.target.files[0])
-                  }
                   disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>

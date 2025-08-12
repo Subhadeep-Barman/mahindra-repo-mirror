@@ -271,13 +271,25 @@ const DropzoneFileList = ({
               height: "50px",
               backgroundColor: buttonColor,
               color: "#fff",
+              border: "2px solid",
+              borderColor: buttonColor,
+              borderRadius: "8px",
+              fontWeight: "600",
+              fontSize: "0.95rem",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
               '&:hover': {
                 boxShadow: `0 6px 20px ${hasFiles ? 'rgba(220, 53, 69, 0.6)' : 'rgba(0, 123, 255, 0.6)'}`,
                 transform: "translateY(-2px)",
                 backgroundColor: buttonHoverColor,
+                borderColor: buttonHoverColor,
+              },
+              '&:active': {
+                transform: "translateY(0px)",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
               },
               transition: "all 0.3s ease",
-              position: "relative"
+              position: "relative",
+              cursor: "pointer"
             }}
             disabled={disabled}
           >
@@ -326,13 +338,25 @@ const DropzoneFileList = ({
               height: "50px",
               backgroundColor: buttonColor,
               color: "#fff",
+              border: "2px solid",
+              borderColor: buttonColor,
+              borderRadius: "8px",
+              fontWeight: "600",
+              fontSize: "0.95rem",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
               '&:hover': {
                 boxShadow: `0 6px 20px ${hasFiles ? 'rgba(220, 53, 69, 0.6)' : 'rgba(0, 123, 255, 0.6)'}`,
                 transform: "translateY(-2px)",
                 backgroundColor: buttonHoverColor,
+                borderColor: buttonHoverColor,
+              },
+              '&:active': {
+                transform: "translateY(0px)",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
               },
               transition: "all 0.3s ease",
-              position: "relative"
+              position: "relative",
+              cursor: "pointer"
             }}
           >
             {buttonText}
