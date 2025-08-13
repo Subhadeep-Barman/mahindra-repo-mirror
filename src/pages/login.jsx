@@ -63,7 +63,7 @@ function Login() {
               backdropFilter: 'blur(24px)',
               WebkitBackdropFilter: 'blur(24px)',
               border: '2px solid rgba(255,255,255,0.18)',
-              boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 1px 8px 0 rgba(255,255,255,0.12)'
+              boxShadow: '0 8px 32px 0 rgba(255, 0, 0, 0.25), 0 1.5px 12px 0 rgba(255,0,0,0.12), inset 0 1px 8px 0 rgba(255,255,255,0.12)'
             }}
           >
             {/* Logo Section Removed (now at top left) */}
@@ -81,7 +81,7 @@ function Login() {
                   onClick={handleSubmit}
                   onMouseEnter={() => setIsHovered(true)}
                   onMouseLeave={() => setIsHovered(false)}
-                  className="group relative w-full py-5 px-10 bg-red-700 hover:bg-red-800 rounded-2xl text-white font-extrabold text-xl tracking-widest shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-red-500/25 hover:shadow-2xl overflow-hidden uppercase font-sans"
+                  className="group relative max-w-xs mx-auto py-3 px-6 bg-red-700 hover:bg-red-800 rounded-2xl text-white font-extrabold text-xl tracking-widest shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-red-500/25 hover:shadow-2xl overflow-hidden uppercase font-sans"
                 >
                   <span className="relative z-10 flex items-center justify-center space-x-3">
                     <span>SSO Login</span>
