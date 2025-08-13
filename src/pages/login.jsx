@@ -115,18 +115,53 @@ function Login() {
 
         {/* Right Column - Image and Content */}
         <div className="hidden lg:block relative bg-gradient-to-br from-red-500 to-red-600 dark:from-red-600 dark:to-red-700 transition-colors duration-300 p-8 mt-8 mb-8 mr-8 rounded-2xl">
-          <div
-            className="absolute top-4 right-4 flex items-center gap-2 bg-red-500 dark:bg-red-700 px-3 py-1.5 rounded-full shadow-lg cursor-pointer"
-            onClick={() => setIsDark(!isDark)}
-          >
-            <span className="text-sm font-medium text-white">
-              {isDark ? "Dark" : "Light"}
-            </span>
-            <Switch
-              checked={isDark}
-              onCheckedChange={setIsDark}
-              className="bg-white data-[state=checked]:bg-white w-[40px] h-[24px] after:w-[20px] after:h-[20px] after:left-[2px] peer-checked:after:translate-x-[16px] cursor-pointer"
-            />
+          {/* Enhanced Theme Toggle */}
+          <div className="absolute top-4 right-4">
+            <button
+              onClick={toggleTheme}
+              className={`
+                theme-toggle relative flex items-center justify-between w-20 h-10 rounded-full p-1 transition-all duration-500 ease-in-out
+                ${isDark 
+                  ? 'bg-gradient-to-r from-gray-800 to-gray-900 shadow-lg shadow-gray-900/30 theme-toggle-dark' 
+                  : 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg shadow-amber-500/30 theme-toggle-light'
+                }
+                hover:scale-105 active:scale-95 cursor-pointer
+                focus:outline-none focus:ring-4 focus:ring-white/20
+              `}
+              aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+            >
+              {/* Toggle Handle */}
+              <div
+                className={`
+                  absolute top-1 w-8 h-8 rounded-full transition-all duration-500 ease-in-out
+                  ${isDark 
+                    ? 'translate-x-10 bg-gradient-to-r from-gray-300 to-gray-400 shadow-lg' 
+                    : 'translate-x-0 bg-white shadow-lg'
+                  }
+                `}
+              />
+              
+              {/* Icons */}
+              <div className="flex items-center justify-center w-8 h-8">
+                <Sun 
+                  className={`h-4 w-4 transition-all duration-300 ${
+                    isDark 
+                      ? 'text-amber-400 opacity-60 scale-75' 
+                      : 'text-amber-600 opacity-100 scale-100'
+                  }`} 
+                />
+              </div>
+              
+              <div className="flex items-center justify-center w-8 h-8">
+                <Moon 
+                  className={`h-4 w-4 transition-all duration-300 ${
+                    isDark 
+                      ? 'text-gray-300 opacity-100 scale-100' 
+                      : 'text-gray-600 opacity-60 scale-75'
+                  }`} 
+                />
+              </div>
+            </button>
           </div>
 
           <div className="absolute inset-8 flex flex-col justify-center items-center text-white">

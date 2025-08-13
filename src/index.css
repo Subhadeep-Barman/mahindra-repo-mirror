@@ -78,7 +78,60 @@
   @apply bg-gray-400 dark:bg-gray-500;
 }
 
+/* Theme Toggle Animations */
+@keyframes toggleBounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
 
+@keyframes toggleGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.5); }
+}
+
+@keyframes toggleGlowDark {
+  0%, 100% { box-shadow: 0 0 20px rgba(156, 163, 175, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(156, 163, 175, 0.5); }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.theme-toggle-light {
+  animation: toggleBounce 0.6s ease-out, toggleGlow 2s ease-in-out infinite;
+}
+
+.theme-toggle-dark {
+  animation: toggleBounce 0.6s ease-out, toggleGlowDark 2s ease-in-out infinite;
+}
+
+.theme-toggle-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  animation: ripple 0.6s linear;
+  pointer-events: none;
+}
+
+/* Smooth theme transition for all elements */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Enhanced focus states for theme toggle */
+.theme-toggle:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
+}
 
 @layer base {
   * {

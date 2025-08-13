@@ -1,6 +1,7 @@
 import { useState, useEffect, useId } from "react";
 import axios from "axios";
 import { Button } from "@/components/UI/button";
+import { Card, CardContent } from "@/components/UI/card";
 import { ArrowBack } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -448,28 +449,29 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           </div>
         </div>
       </div>
-      {/* Main Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg max-w-7xl mx-auto mt-8"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Vehicle Serial Number - Disable editing in edit mode */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Vehicle Serial Number <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="vehicleSerialNumber"
-              value={form.vehicleSerialNumber}
-              onChange={handleChange}
-              required
-              disabled={isEditMode}
-              className={`border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500 ${isEditMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
-                }`}
-              placeholder="Enter Vehicle Serial Number"
-            />
-          </div>
+      {/* Main Content */}
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <Card className="relative">
+          <CardContent className="p-6">
+            {/* Form Grid */}
+            <form onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Vehicle Serial Number - Disable editing in edit mode */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Vehicle Serial Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="vehicleSerialNumber"
+                    value={form.vehicleSerialNumber}
+                    onChange={handleChange}
+                    required
+                    disabled={isEditMode}
+                    className={`border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500 ${isEditMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                      }`}
+                    placeholder="Enter Vehicle Serial Number"
+                  />
+                </div>
 
           {/* Project */}
           <div>
@@ -1231,37 +1233,41 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               </div>
             </>
           )}
-          {/* Department */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Department <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="department"
-              value={form.department}
-              readOnly
-              className="border rounded-lg px-3 py-2 w-full bg-gray-100 text-gray-500"
-              placeholder="Department"
-            />
-          </div>
-        </div>
-        {/* Buttons */}
-        <div className="flex gap-4 mt-10 justify-end">
-          <button
-            type="submit"
-            className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg shadow-md transition-all"
-          >
-            {isEditMode ? "UPDATE VEHICLE" : "ADD VEHICLE"}
-          </button>
-          <button
-            type="button"
-            onClick={handleClear}
-            className="bg-gray-100 hover:bg-gray-200 text-red-500 border border-red-500 px-6 py-3 rounded-lg shadow-md transition-all"
-          >
-            CLEAR
-          </button>
-        </div>
-      </form>
+                {/* Department */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Department <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="department"
+                    value={form.department}
+                    readOnly
+                    className="border rounded-lg px-3 py-2 w-full bg-gray-100 text-gray-500"
+                    placeholder="Department"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons - Positioned at bottom right corner */}
+              <div className="absolute bottom-4 right-4 flex gap-3">
+                <Button
+                  type="submit"
+                  className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
+                >
+                  {isEditMode ? "✓ UPDATE VEHICLE" : "✓ ADD VEHICLE"}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleClear}
+                  className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
+                >
+                  ✕ CLEAR
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </>
   );
 }

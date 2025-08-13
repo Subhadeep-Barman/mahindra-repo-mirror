@@ -1237,7 +1237,7 @@ export default function NashikCreateJobOrder() {
         <div className="mb-6" />
         
         {/* Main Job Order Form */}
-        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
+        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
           {/* Form Row */}
           <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Project Code */}
@@ -1419,7 +1419,7 @@ export default function NashikCreateJobOrder() {
 
         {/* Editable Vehicle Details Accordion */}
         {vehicleEditable && (
-          <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
+          <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
             <div
               className="flex items-center justify-between bg-gray-100 border-t-4 border-red-600 px-4 py-2 cursor-pointer"
               onClick={() => setVehicleAccordionOpen((prev) => !prev)}
@@ -1456,7 +1456,7 @@ export default function NashikCreateJobOrder() {
 
         {/* Editable Engine Details Accordion */}
         {engineEditable && (
-          <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
+          <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
             <div
               className="flex items-center justify-between bg-gray-100 border-t-4 border-blue-600 px-4 py-2 cursor-pointer"
               onClick={() => setEngineAccordionOpen((prev) => !prev)}
@@ -1492,7 +1492,7 @@ export default function NashikCreateJobOrder() {
         )}
 
         {/* Coast Down Data (CD) Section */}
-        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
+        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
 
           <div className="mb-6">
             <Label
@@ -1765,7 +1765,7 @@ export default function NashikCreateJobOrder() {
         {tests.map((test, idx) => (
           <div
             key={idx}
-            className="mx-8 mb-4 border rounded shadow-lg shadow-gray-300/40 px-6 py-4 bg-white transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer"
+            className="mx-8 mb-4 border rounded shadow-lg shadow-gray-300/40 px-6 py-4 bg-white transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer"
           >
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold text-lg text-gray-800">
@@ -2439,7 +2439,7 @@ export default function NashikCreateJobOrder() {
             </div>
 
             {/* Coast Down Data Section for Test */}
-            <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
+            <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
               <div className="flex items-center gap-3 mb-3">
                 <span className="font-semibold text-sm text-blue-700">
                   Coast Down Data for Test {idx + 1}
@@ -2562,29 +2562,7 @@ export default function NashikCreateJobOrder() {
                     </div>
                   </div>
 
-                  <div className="flex justify-end mt-3">
-                    <Button
-                      type="button"
-                      className="bg-blue-600 text-white text-xs px-4 py-1 rounded"
-                      onClick={() => {
-                        // Copy coast down data from main form to this test
-                        handleTestChange(idx, "cdReportRef", form.cdReportRef);
-                        handleTestChange(
-                          idx,
-                          "vehicleRefMass",
-                          form.vehicleRefMass
-                        );
-                        handleTestChange(idx, "aN", form.aN);
-                        handleTestChange(idx, "bNkmph", form.bNkmph);
-                        handleTestChange(idx, "cNkmph2", form.cNkmph2);
-                        handleTestChange(idx, "f0N", form.f0N);
-                        handleTestChange(idx, "f1Nkmph", form.f1Nkmph);
-                        handleTestChange(idx, "f2Nkmph2", form.f2Nkmph2);
-                      }}
-                    >
-                      Load from Main Form
-                    </Button>
-                  </div>
+
                 </div>
               )}
             </div>
@@ -2627,7 +2605,7 @@ export default function NashikCreateJobOrder() {
         ))}
 
         {/* Show all test orders in a table */}
-        <div className="mx-8 my-8 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-300/40 p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-400/60 hover:-translate-y-2 cursor-pointer">
+        <div className="mx-8 my-8 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-300/40 p-6 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
           <div className="font-semibold mb-4 text-lg text-gray-800">All Test Orders</div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-xs border">
