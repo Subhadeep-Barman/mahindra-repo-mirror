@@ -147,7 +147,7 @@ export default function HomePage() {
                   return (
                                           <Card
                         key={service.id}
-                        className={`group relative overflow-hidden border-0 bg-white dark:bg-gray-900 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${service.bgColor} ${service.borderColor}`}
+                        className={`group relative overflow-hidden border dark:border-gray-700 border-gray-200 bg-white dark:bg-gray-800/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${service.bgColor} ${service.borderColor}`}
                       >
                       {/* Gradient Overlay */}
                       <div className={`absolute inset-0 bg-gradient-to-br ${service.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
