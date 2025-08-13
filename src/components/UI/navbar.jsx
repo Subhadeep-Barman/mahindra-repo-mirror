@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 
 import AccountMenu from "@/components/UI/accountmenu";
 import darkLogo from "../../assets/mai_dark.png";
-import lightLogo from "../../assets/mai_light.png";
+import lightLogo from "../../assets/mai_dark.png";
 import useStore from "@/store/useStore";
 
 export default function Navbar() {
@@ -63,7 +63,7 @@ export default function Navbar() {
   }, [isDarkMode]);
 
   return (
-    <nav className="bg-gradient-to-r from-red-50 via-white to-red-50 dark:from-gray-900 dark:via-black dark:to-gray-900 shadow-xl border border-red-200/60 dark:border-red-800/40 transition-all duration-300 rounded-2xl mt-5 mx-2 md:mx-4 hover:shadow-2xl hover:shadow-red-200/50 dark:hover:shadow-red-900/30 relative z-50">
+  <nav className="bg-black shadow-xl border border-black-200/60 dark:border-red-800/40 transition-all duration-300 rounded-2xl mt-5 mx-2 md:mx-4 hover:shadow-2xl hover:shadow-black-200/50 dark:hover:shadow-black-900/30 relative z-50">
       <div className="flex items-center justify-between h-14 px-4 md:px-8">
         {/* Logo - Left Corner */}
         <div className="flex-shrink-0">

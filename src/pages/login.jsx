@@ -1,245 +1,136 @@
 import React, { useState, useEffect } from "react";
-import { Switch } from "@/components/UI/switch";
-import { Sun, Moon } from "lucide-react";
-import Cookies from 'js-cookie';
 import darkLogo from "../assets/mai_dark.png";
 import lightLogo from "../assets/mai_light.png";
+import vid1 from "../assets/vid1.mp4";
 import { useNavigate } from "react-router-dom";
 
 function Login() {
-  const [isDark, setIsDark] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
+  const [isHovered, setIsHovered] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDark]);
-
-  const toggleTheme = () => {
-    setIsDark(!isDark);
-  };
+    setIsLoaded(true);
+    const handleMouseMove = (e) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   const handleSubmit = (e) => {
     window.location.href = import.meta.env.VITE_AUTH_SUCCESS_URL;
   };
 
-  const slides = [
-    {
-      image:
-        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-05-26%20111445-o8mr9bS8sM0idBARzUcNQIQ47mYDk9.png",
-      title: "TESTING AUTOMATION",
-      description:
-        "These visuals are used to analyze and understand various aspects of payment activity, trends, and patterns.",
-    },
-    {
-      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71",
-      title: "DATA ANALYTICS",
-      description:
-        "Advanced analytics tools to help visualize and understand complex data patterns and trends.",
-    },
-    {
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f",
-      title: "PERFORMANCE METRICS",
-      description:
-        "Real-time monitoring and analysis of key performance indicators and business metrics.",
-    },
-    {
-      image: "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3",
-      title: "BUSINESS INTELLIGENCE",
-      description:
-        "Comprehensive business analytics platform for data-driven decision making and insights.",
-    },
-  ];
-
-  const handleNextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
-  };
-
-  const handlePrevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-  };
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      handleNextSlide();
-    }, 5000); // Change slide every 5 seconds
-
-    return () => clearInterval(interval);
-  }, []);
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black transition-colors duration-300">
-      <div className="min-h-screen lg:grid lg:grid-cols-2">
-        {/* Left Column - Login Form */}
-        <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-white dark:bg-black transition-colors duration-300">
-          <div className="max-w-md w-full space-y-8">
-            {/* Logo */}
-            <div className="absolute top-4 left-4">
-              <img
-                src={isDark ? darkLogo : lightLogo}
-                alt="MAI Logo"
-                width={80}
-                height={40}
-                className="object-contain"
-              />
-            </div>
+    <div className="min-h-screen w-full relative overflow-hidden bg-black">
+      {/* Background Video */}
+      <video
+        className="absolute inset-0 w-full h-full object-fill z-0"
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{ width: '100vw', height: '100vh', left: 0, top: 0 }}
+      >
+        <source src={vid1} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+      
+      {/* Dynamic Gradient Overlay */}
+      <div 
+        className="absolute inset-0 z-10 transition-all duration-1000"
 
-            {/* Form Header */}
-            <div className="flex flex-col items-center justify-center h-full space-y-6">
-              <h2 className="text-5xl font-bold text-red-500">VTC & RDE TOOL</h2>
-              <p className="text-xl">
-                {/* <span className="text-red-500 font-semibold">MAI SSO</span>{" "}
-                <span className="text-black dark:text-white">login</span> */}
-              </p>
-              <button
-                onClick={handleSubmit}
-                className="mt-8 w-64 py-3 px-6 border border-red-500 bg-red-500 rounded-full text-white transition-colors duration-300 hover:bg-red-600"
-              >
-                Login
-              </button>
+      />
+      
+      {/* Main Content */}
+      <div className="relative z-20 min-h-screen flex items-center justify-center p-4">
+        <div className={`w-full max-w-lg transform transition-all duration-1000 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+          {/* Main Card */}
+          <div className="relative backdrop-blur-2xl bg-gradient-to-br from-white/10 via-white/5 to-transparent border-2 border-red-500/30 rounded-3xl shadow-2xl p-12 text-center transform transition-all duration-500 hover:scale-105 hover:border-red-400/50 group">
+            {/* Animated Background Pattern */}
+            <div className="absolute inset-0 rounded-3xl overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 via-transparent to-red-600/5 animate-pulse"></div>
+              <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-red-400 to-transparent opacity-50"></div>
+              <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-red-400 to-transparent opacity-50"></div>
             </div>
-
-            {/* Version - Moved to bottom left */}
-            <div className="fixed bottom-4 left-4">
-              <p className="text-lg text-gray-500 dark:text-gray-400">
-                <span className="text-red-500 font-semibold">VERSION</span>{" "}
-                <span className="text-black dark:text-white">1.2.1</span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column - Image and Content */}
-        <div className="hidden lg:block relative bg-gradient-to-br from-red-500 to-red-600 dark:from-red-600 dark:to-red-700 transition-colors duration-300 p-8 mt-8 mb-8 mr-8 rounded-2xl">
-          {/* Enhanced Theme Toggle */}
-          <div className="absolute top-4 right-4">
-            <button
-              onClick={toggleTheme}
-              className={`
-                theme-toggle relative flex items-center justify-between w-20 h-10 rounded-full p-1 transition-all duration-500 ease-in-out
-                ${isDark 
-                  ? 'bg-gradient-to-r from-gray-800 to-gray-900 shadow-lg shadow-gray-900/30 theme-toggle-dark' 
-                  : 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg shadow-amber-500/30 theme-toggle-light'
-                }
-                hover:scale-105 active:scale-95 cursor-pointer
-                focus:outline-none focus:ring-4 focus:ring-white/20
-              `}
-              aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-            >
-              {/* Toggle Handle */}
-              <div
-                className={`
-                  absolute top-1 w-8 h-8 rounded-full transition-all duration-500 ease-in-out
-                  ${isDark 
-                    ? 'translate-x-10 bg-gradient-to-r from-gray-300 to-gray-400 shadow-lg' 
-                    : 'translate-x-0 bg-white shadow-lg'
-                  }
-                `}
-              />
-              
-              {/* Icons */}
-              <div className="flex items-center justify-center w-8 h-8">
-                <Sun 
-                  className={`h-4 w-4 transition-all duration-300 ${
-                    isDark 
-                      ? 'text-amber-400 opacity-60 scale-75' 
-                      : 'text-amber-600 opacity-100 scale-100'
-                  }`} 
+            
+            {/* Glow Effect */}
+            <div className="absolute inset-0 rounded-3xl bg-red-500/10 blur-xl group-hover:bg-red-500/20 transition-all duration-500 -z-10"></div>
+            
+            {/* Logo Section */}
+            <div className="relative mb-10">
+              <div className="relative inline-block">
+                <img
+                  src={darkLogo}
+                  alt="MAI Logo"
+                  width={140}
+                  height={70}
+                  className="mx-auto mb-6 filter drop-shadow-2xl transform transition-transform duration-500 hover:scale-110"
                 />
+                <div className="absolute -inset-4 bg-gradient-to-r from-red-500/20 via-transparent to-red-500/20 rounded-full blur-lg animate-pulse"></div>
               </div>
-              
-              <div className="flex items-center justify-center w-8 h-8">
-                <Moon 
-                  className={`h-4 w-4 transition-all duration-300 ${
-                    isDark 
-                      ? 'text-gray-300 opacity-100 scale-100' 
-                      : 'text-gray-600 opacity-60 scale-75'
-                  }`} 
-                />
+              <div className="w-20 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent mx-auto rounded-full animate-pulse"></div>
+            </div>
+            
+            {/* Title Section */}
+            <div className="mb-12 relative">
+              <h1 className="text-6xl font-black bg-gradient-to-r from-white via-red-200 to-white bg-clip-text text-transparent mb-6 tracking-wider transform transition-all duration-700 hover:scale-110 relative">
+                DBMRS
+                <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 via-transparent to-red-500/20 blur-2xl -z-10"></div>
+              </h1>
+              {/* <h2 className="text-2xl font-light text-white/90 mb-6 tracking-widest uppercase">
+                Testing Portal
+              </h2> */}
+              <div className="relative">
+                <p className="text-white/70 text-lg font-light leading-relaxed">
+                  VTC & RDE LAB VEHICLE TESTING PORTAL
+                </p>
+                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-red-400/50 to-transparent"></div>
               </div>
-            </button>
-          </div>
-
-          <div className="absolute inset-8 flex flex-col justify-center items-center text-white">
-            {/* Main Image */}
-            <div className="mb-8 relative w-full max-w-md rounded-full p-2 shadow-lg bg-gray-200mb-8">
-              {/* Carousel Navigation Arrows */}
-              <button
-                className="absolute top-1/2 -left-12 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-2 transition-all"
-                onClick={handlePrevSlide}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-              </button>
-              <button
-                className="absolute top-1/2 -right-12 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-2 transition-all"
-                onClick={handleNextSlide}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
-
-              <img
-                src={slides[currentSlide].image}
-                alt={slides[currentSlide].title}
-                className="rounded-lg shadow-2xl w-full"
-              />
             </div>
-
-            {/* Content */}
-            <div className="text-center max-w-md">
-              <h3 className="text-2xl font-bold mb-4">
-                {slides[currentSlide].title}
-              </h3>
-              <p className="text-red-100 text-sm leading-relaxed">
-                {slides[currentSlide].description}
-              </p>
-            </div>
-
-            {/* Navigation dots */}
-            <div className="flex space-x-2 mt-8">
-              {slides.map((_, index) => (
+            
+            {/* Login Button */}
+            <div className="space-y-8">
+              <div className="relative">
                 <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`w-2 h-2 rounded-full bg-white ${
-                    index === currentSlide ? "opacity-100" : "opacity-50"
-                  }`}
-                />
-              ))}
+                  onClick={handleSubmit}
+                  onMouseEnter={() => setIsHovered(true)}
+                  onMouseLeave={() => setIsHovered(false)}
+                  className="group relative w-full py-5 px-10 bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-500 hover:via-red-400 hover:to-red-500 rounded-2xl text-white font-bold text-xl tracking-widest shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-red-500/25 hover:shadow-2xl overflow-hidden uppercase"
+                >
+                  <span className="relative z-10 flex items-center justify-center space-x-3">
+                    <span>SSO Login</span>
+                    {/* <div className={`w-2 h-2 bg-white rounded-full transition-all duration-300 ${isHovered ? 'animate-ping' : ''}`}></div> */}
+                  </span>
+                  {/* <div className={`absolute inset-0 bg-gradient-to-r from-white/30 via-white/10 to-transparent transform transition-transform duration-500 ${isHovered ? 'translate-x-0' : '-translate-x-full'}`}></div> */}
+                  {/* <div className="absolute inset-0 bg-gradient-to-r from-red-400/20 to-red-600/20 animate-pulse"></div> */}
+                </button>
+                {/* Button Glow */}
+                <div className="absolute inset-0 bg-red-500/30 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* <div className="absolute inset-0 z-30 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse"></div>
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse delay-1000"></div>
+        <div className="absolute top-0 left-0 h-full w-1 bg-gradient-to-b from-transparent via-red-500/30 to-transparent animate-pulse delay-500"></div>
+        <div className="absolute top-0 right-0 h-full w-1 bg-gradient-to-b from-transparent via-red-500/30 to-transparent animate-pulse delay-1500"></div>
+      </div>
+      
+      <div className="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-red-500/50 z-30"></div>
+      <div className="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-red-500/50 z-30"></div>
+      <div className="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-red-500/50 z-30"></div>
+      <div className="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-red-500/50 z-30"></div> */}
+    {/* Version label at bottom left */}
+    <div className="absolute left-4 bottom-4 z-50 text-lg text-white bg-black/40 px-4 py-2 rounded-lg shadow-lg pointer-events-none select-none font-bold">
+      Version 1.2.0
     </div>
+  </div>
   );
 }
 
