@@ -906,6 +906,18 @@ export default function CreateJobOrder() {
       );
       return;
     }
+
+    // Validate Coast Down Data if toggle is enabled
+    if (test.showCoastDownData) {
+      const missingFields = validateCoastDownData(test);
+      if (missingFields.length > 0) {
+        showSnackbar(
+          `Coast Down Data is incomplete. Please fill in the following fields: ${missingFields.join(', ')}`,
+          "error"
+        );
+        return;
+      }
+    }
     const test_order_id = "TO" + Date.now();
     const job_order_id = location.state?.jobOrder?.job_order_id || location.state?.originalJobOrderId || "";
     // const test_order_id = `${job_order_id}/${test.testNumber}`;
@@ -1509,6 +1521,32 @@ export default function CreateJobOrder() {
     }
   };
 
+  // Validation function for Coast Down Data fields
+  const validateCoastDownData = (test) => {
+    const requiredFields = [
+      { field: 'cdReportRef', label: 'Coast Down Test Report Reference' },
+      { field: 'vehicleRefMass', label: 'Vehicle Reference Mass' },
+      { field: 'aN', label: 'A (N)' },
+      { field: 'bNkmph', label: 'B (N/kmph)' },
+      { field: 'cNkmph2', label: 'C (N/kmph^2)' },
+      { field: 'f0N', label: 'F0 (N)' },
+      { field: 'f1Nkmph', label: 'F1 (N/kmph)' },
+      { field: 'f2Nkmph2', label: 'F2 (N/kmph^2)' }
+    ];
+
+    const missingFields = [];
+
+    for (const { field, label } of requiredFields) {
+      const testValue = test[field];
+      const formValue = form[field];
+      if (!testValue && !formValue) {
+        missingFields.push(label);
+      }
+    }
+
+    return missingFields;
+  };
+
   // Helper function to get attachment file count
   const getAttachmentFileCount = (test, attachmentField) => {
     const attachment = test[attachmentField];
@@ -2094,7 +2132,7 @@ export default function CreateJobOrder() {
           </div>
         )}
 
-        {/* Coast Down Data (CD) Section */}
+        {/* Coast Down Data (CD) Section
         <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
           
           <div className="mb-6">
@@ -2318,7 +2356,7 @@ export default function CreateJobOrder() {
               CLEAR
             </Button>
           </div>
-        </div>
+        </div> */}
 
         {/* Test Actions */}
         <div className="flex items-center mt-4 gap-6 px-8 mb-8">
@@ -3353,7 +3391,7 @@ export default function CreateJobOrder() {
               <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 dark:bg-inherit transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="font-semibold text-sm text-blue-700">
-                    Coast Down Data for Test {idx + 1}
+                    Coast Down Data (CD)
                   </span>
                   <Switch
                     checked={!!test.showCoastDownData}

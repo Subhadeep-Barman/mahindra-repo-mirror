@@ -7,6 +7,7 @@ import {
   Delete,
   ChevronLeft,
   ChevronRight,
+  Close as CloseIcon,
 } from "@mui/icons-material";
 import { Button } from "@/components/UI/button";
 import { Badge } from "@/components/UI/badge";
@@ -44,6 +45,7 @@ import showSnackbar from "@/utils/showSnackbar";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function SystemUsersPage() {
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
@@ -150,13 +152,20 @@ export default function SystemUsersPage() {
     }
   };
 
+  // Filter users by search term
+  const filteredUsers = users.filter(
+    (user) =>
+      user.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.role.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   // Calculate pagination
-  // Guard against invalid itemsPerPage and ensure totalPages is at least 1
   const safeItemsPerPage = Math.max(1, itemsPerPage);
-  const totalPages = Math.max(1, Math.ceil(users.length / safeItemsPerPage));
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / safeItemsPerPage));
   const startIndex = (currentPage - 1) * safeItemsPerPage;
   const endIndex = startIndex + safeItemsPerPage;
-  const currentUsers = users.slice(startIndex, endIndex);
+  const currentUsers = filteredUsers.slice(startIndex, endIndex);
 
   const handleBack = () => {
     navigate(-1);
@@ -287,7 +296,7 @@ export default function SystemUsersPage() {
       {/* Header */}
       <div className="bg-white dark:bg-black">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex flex-wrap items-center justify-between h-16 gap-2">
             <div className="flex items-center space-x-4">
               <Button
                 variant="ghost"
@@ -301,13 +310,35 @@ export default function SystemUsersPage() {
                 System Users ({users.length})
               </h1>
             </div>
-            <Button
-              onClick={handleAddUser}
-              className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
-            >
-              <PersonAdd className="h-4 w-4 mr-2" />
-              ADD NEW USER
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="relative w-64 h-11">
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="px-3 h-11 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 w-full pr-11 text-base"
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow flex items-center justify-center"
+                    style={{ height: '28px', width: '28px' }}
+                    aria-label="Clear search"
+                  >
+                    <CloseIcon style={{ fontSize: 18 }} />
+                  </button>
+                )}
+              </div>
+              <Button
+                onClick={handleAddUser}
+                className="bg-red-500 hover:bg-red-600 text-white rounded-xl h-11 px-3 text-sm flex items-center min-w-fit"
+              >
+                <PersonAdd className="h-5 w-5 mr-1" />
+                ADD NEW USERS
+              </Button>
+            </div>
           </div>
         </div>
       </div>
