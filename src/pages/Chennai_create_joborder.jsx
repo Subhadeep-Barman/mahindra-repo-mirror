@@ -1512,7 +1512,15 @@ export default function CreateJobOrder() {
       setForm((prev) => ({ ...prev, [field]: "" }));
       return;
     }
-    // Allow only numbers (including decimals)
+    
+    // Special handling for cdReportRef - allow any text
+    if (field === "cdReportRef") {
+      setCdFieldErrors((prev) => ({ ...prev, [field]: "" }));
+      setForm((prev) => ({ ...prev, [field]: value }));
+      return;
+    }
+    
+    // Allow only numbers (including decimals) for other fields
     if (/^-?\d*\.?\d*$/.test(value)) {
       setCdFieldErrors((prev) => ({ ...prev, [field]: "" }));
       setForm((prev) => ({ ...prev, [field]: value }));
@@ -3650,7 +3658,7 @@ export default function CreateJobOrder() {
             <table className="min-w-full text-xs border ">
               <thead>
                 <tr className="bg-gray-200 dark:bg-black">
-                  <th className="border px-2 py-1">Test</th> {/* Add sequential number column */}
+                  <th className="border px-2 py-1">Test</th> 
                   <th className="border px-2 py-1">Job Order ID</th>
                   <th className="border px-2 py-1">Test Order ID</th>
                   <th className="border px-2 py-1">Test Type</th>
@@ -3661,9 +3669,9 @@ export default function CreateJobOrder() {
                 </tr>
               </thead>
               <tbody>
-                {(allTestOrders[location.state?.originalJobOrderId] || []).map((to, index) => (
+                {(allTestOrders[location.state?.originalJobOrderId] || []).slice().reverse().map((to, index) => (
                   <tr key={to.test_order_id}>
-                    <td className="border px-2 py-1">{index + 1}</td> {/* Sequential number */}
+                    <td className="border px-2 py-1">{index + 1}</td> 
                     <td className="border px-2 py-1">{to.job_order_id}</td>
                     <td className="border px-2 py-1">{to.test_order_id}</td>
                     <td className="border px-2 py-1">{to.test_type}</td>

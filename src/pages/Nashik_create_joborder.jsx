@@ -167,7 +167,15 @@ export default function NashikCreateJobOrder() {
       setForm((prev) => ({ ...prev, [field]: "" }));
       return;
     }
-    // Allow only numbers (including decimals)
+    
+    // Special handling for cdReportRef - allow any text
+    if (field === "cdReportRef") {
+      setCdFieldErrors((prev) => ({ ...prev, [field]: "" }));
+      setForm((prev) => ({ ...prev, [field]: value }));
+      return;
+    }
+    
+    // Allow only numbers (including decimals) for other fields
     if (/^-?\d*\.?\d*$/.test(value)) {
       setCdFieldErrors((prev) => ({ ...prev, [field]: "" }));
       setForm((prev) => ({ ...prev, [field]: value }));
@@ -2657,7 +2665,7 @@ export default function NashikCreateJobOrder() {
                 </tr>
               </thead>
               <tbody>
-                {(allTestOrders[location.state?.originalJobOrderId] || []).map(
+                {(allTestOrders[location.state?.originalJobOrderId] || []).slice().reverse().map(
                   (to) => (
                     <tr key={to.test_order_id}>
                       <td className="border px-2 py-1">{to.test_order_id}</td>
