@@ -1332,7 +1332,8 @@ export default function CreateJobOrder() {
         };
 
         // Update job order with new updater info from test order
-        await axios.patch(`${apiURL}/joborders/${jobOrderId}`, jobOrderUpdatePayload);
+        console.log("PATCH URL:", `${apiURL}/joborders/${encodeURIComponent(jobOrderId)}`);
+        await axios.patch(`${apiURL}/joborders/${encodeURIComponent(jobOrderId)}`, jobOrderUpdatePayload);
       }
 
       showSnackbar("Test Order updated successfully!", "success");
@@ -1464,7 +1465,8 @@ export default function CreateJobOrder() {
         };
 
         // Update job order with new updater info from test order
-        await axios.patch(`${apiURL}/joborders/${jobOrderId}`, jobOrderUpdatePayload);
+        console.log("PATCH URL:", `${apiURL}/joborders/${encodeURIComponent(jobOrderId)}`);
+        await axios.patch(`${apiURL}/joborders/${encodeURIComponent(jobOrderId)}`, jobOrderUpdatePayload);
       }
 
       // Update test status and remarks in UI if testIdx is provided

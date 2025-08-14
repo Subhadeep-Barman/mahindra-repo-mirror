@@ -40,9 +40,11 @@ export default function VTCVehiclePage() {
           vehicle_serial_number: v.vehicle_serial_number,
           vehicle_body_number: v.vehicle_body_number,
           vehicle_model: v.vehicle_model,
+          name_of_creator: v.name_of_creator || userName || "NA",
           id_of_creator: v.id_of_creator || "",
           created_on: v.created_on,
           id_of_updater: v.id_of_updater,
+          name_of_updater: v.name_of_updater || "NA",
           updated_on: v.updated_on,
         }));
         setVehicles(minimalVehicles);
@@ -245,7 +247,7 @@ export default function VTCVehiclePage() {
                       {vehicle.vehicle_model}
                     </TableCell>
                     <TableCell className="text-xs text-gray-600 px-4 py-2">
-                      {vehicle.id_of_creator}
+                      {vehicle.name_of_creator}
                     </TableCell>
                     <TableCell className="text-xs text-gray-600 px-4 py-2">
                       {new Date(vehicle.created_on).toLocaleString("en-IN", {
@@ -259,7 +261,7 @@ export default function VTCVehiclePage() {
                       })}
                     </TableCell>
                     <TableCell className="text-xs text-gray-600 px-4 py-2">
-                      {vehicle.id_of_updater}
+                      {vehicle.name_of_updater || "NA"}
                     </TableCell>
                     <TableCell className="text-xs text-gray-600 px-4 py-2">
                       {new Date(vehicle.updated_on).toLocaleString("en-IN", {

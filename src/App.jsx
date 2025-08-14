@@ -13,6 +13,7 @@ import AdminPortal from "./pages/adminPortal";
 
 // VTC Chennai
 import VTCChennaiPage from "./pages/VTC_Chennai";
+import PDCDChennaiPage from "./pages/PDCD_CHENNAI";
 import VTCCVehiclePage from "./pages/VTC_C_VEHILCE";
 import VTCEnginePage from "./pages/VTC_C_engine_page";
 import EngineForm from "./pages/VTC_C_Engine";
@@ -23,6 +24,9 @@ import RDEnginePage from "./pages/RDE_C_engine_page";
 // VTC Nashik
 import VTCNashikPage from "./pages/VTC_Nashik";
 import NashikJobOrder from "./pages/Nashik_create_joborder";
+import PDCDCreateJobOrder from "./pages/PDCD_Create_JobOrder";
+import PDCDVehicle from "./pages/PDCD_Vehicle";
+import PDCDEnginePage from "./pages/PDCD_Engine";
 import VTCNashikVehicle from "./pages/VTC_N_vehicle";
 import NEngine from "./pages/VTC_N_Engine";
 // import VTCNashikVehicleForm from "./pages/VTC_N_Vehicle_form";
@@ -72,6 +76,12 @@ function App() {
           <Route path="/engineform" element={<EngineForm />} />
           <Route path="/vtcvehicle/new" element={<VehicleForm />} />
           <Route path="/chennai/engine/new" element={<VTCCEngineForm />} />
+
+          {/* PDCD Chennai */}
+          <Route path="/pdcd-lab" element={<PDCDChennaiPage />} />
+          <Route path="/PDCDCreateJobOrder" element={<PDCDCreateJobOrder />} />
+          <Route path="/pdcd/vehicle" element={<PDCDVehicle />} />
+          <Route path="/pdcd/engine" element={<PDCDEnginePage />} />
 
           {/* VTC Nashik */}
           <Route path="/vtc-nashik" element={<VTCNashikPage />} />

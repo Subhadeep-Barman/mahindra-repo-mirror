@@ -8,6 +8,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import useStore from "@/store/useStore";
 import { useAuth } from "@/context/AuthContext";
 import showSnackbar from "@/utils/showSnackbar";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -333,7 +334,9 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           headers: { "Content-Type": "application/json" },
         });
         if (onSubmit) onSubmit(response.data);
-        else showSnackbar("Vehicle added successfully!", "success");
+        // Show popup instead of snackbar
+        setShowSuccessPopup(true);
+        return; // Prevent navigation until popup is closed
       }
       navigate(-1);
     } catch (err) {
@@ -418,6 +421,9 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     setVehicleModelOptions,
     setDomainOptions,
   ]);
+
+  // Popup state for vehicle added
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
   return (
     <>
@@ -1265,6 +1271,26 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
                 </Button>
               </div>
             </form>
+            {/* Success Popup */}
+            {showSuccessPopup && (
+              <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+                <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center min-w-[320px]">
+                  <CheckCircleIcon style={{ fontSize: 64, color: "#22c55e" }} />
+                  <div className="mt-4 text-lg font-semibold text-gray-800">
+                    Vehicle saved successfully
+                  </div>
+                  <Button
+                    className="mt-6 bg-green-500 hover:bg-green-600 text-white rounded-xl px-8"
+                    onClick={() => {
+                      setShowSuccessPopup(false);
+                      navigate(-1);
+                    }}
+                  >
+                    OK
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

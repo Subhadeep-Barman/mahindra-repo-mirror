@@ -27,7 +27,7 @@ import {
 const servicesBase = [
   {
     id: 1,
-    title: "RDE Chennai",
+    title: "RDE LAB",
     description: "Real Driving Emissions testing and analysis",
     icon: Code,
     href: "/rde-chennai",
@@ -38,7 +38,7 @@ const servicesBase = [
   },
   {
     id: 2,
-    title: "VTC Chennai",
+    title: "VTC LAB",
     description: "Vehicle Testing Center operations and management",
     icon: MessageSquare,
     href: "/vtc-chennai",
@@ -49,7 +49,7 @@ const servicesBase = [
   },
   {
     id: 3,
-    title: "VTC Nashik",
+    title: "VTC Nashik LAB",
     description: "Vehicle Testing Center operations and management",
     icon: Flag,
     href: "/vtc-nashik",
@@ -58,6 +58,17 @@ const servicesBase = [
     borderColor: "border-purple-200 dark:border-purple-800",
     iconBg: "bg-purple-500",
   },
+  {
+    id: 4,
+    title: "PDCD LAB",
+    description: "Powertrain Development and Calibration Department laboratory",
+    icon: Zap,
+    href: "/pdcd-lab",
+    color: "from-amber-500 to-yellow-500",
+    bgColor: "bg-amber-50 dark:bg-amber-950/20",
+    borderColor: "border-amber-200 dark:border-amber-800",
+    iconBg: "bg-amber-500",
+  },
 ];
 
 // Change the export to default and rename the component
@@ -65,12 +76,17 @@ export default function HomePage() {
   // Move useAuth hook call inside the component
   const { userRole, userId, userName } = useAuth();
 
+  // Filter servicesBase to show PDCD LAB only for ProjectTeam users
+  const filteredBaseServices = servicesBase.filter(service => 
+    service.title !== "PDCD LAB" || userRole === "ProjectTeam"
+  );
+
   // Conditionally add ADMIN Portal only if user is not Test Engineer or Project Team
   const services = [
-    ...servicesBase,
+    ...filteredBaseServices,
     ...(userRole !== "TestEngineer" && userRole !== "ProjectTeam"
       ? [{
-          id: 4,
+          id: 5,
           title: "ADMIN Portal",
           description: "System administration and configuration",
           icon: Dashboard,
@@ -163,23 +179,6 @@ export default function HomePage() {
                           {service.description}
                         </CardDescription>
                       </CardHeader>
-
-                      <CardContent className="relative pt-0">
-                        <div className="space-y-3">
-                          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                            <Shield className="w-4 h-4 mr-2" />
-                            Secure access
-                          </div>
-                          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                            <BarChart3 className="w-4 h-4 mr-2" />
-                            Real-time data
-                          </div>
-                          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                            <Settings className="w-4 h-4 mr-2" />
-                            Advanced controls
-                          </div>
-                        </div>
-                      </CardContent>
 
                       <CardFooter className="relative pt-4">
                         <Button

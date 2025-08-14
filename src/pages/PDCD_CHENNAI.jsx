@@ -21,7 +21,7 @@ import showSnackbar from "@/utils/showSnackbar";
 import useStore from "../store/useStore";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
-export default function VTCChennaiPage() {
+export default function PDCDChennaiPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 8;
 
@@ -70,7 +70,7 @@ export default function VTCChennaiPage() {
       showSnackbar("User ID not found. Please login again.", "error");
       return;
     }
-    const department = "VTC_JO Chennai";
+    const department = "PDCD_JO Chennai";
     axios
       .get(`${apiURL}/joborders`, { params: { department, user_id: userEmployeeId, role: userRole } })
       .then((res) => {
@@ -173,19 +173,19 @@ export default function VTCChennaiPage() {
     activeTab = "Engine";
 
   const handleTabClick = (tab) => {
-    if (tab === "Job Order") navigate("/vtc-chennai");
-    else if (tab === "Vehicle") navigate("/vtccvehicle");
-    else if (tab === "Engine") navigate("/vtcChennaiEngine");
+    if (tab === "Job Order") navigate("/pdcd-lab");
+    else if (tab === "Vehicle") navigate("/pdcd/vehicle");
+    else if (tab === "Engine") navigate("/pdcd/engine");
   };
 
   const handleBack = () => navigate(-1);
-  const handleCreateJobOrder = () => navigate("/createJobOrder");
+  const handleCreateJobOrder = () => navigate("/PDCDCreateJobOrder");
 
   const handleJobOrderClick = (job_order_id) => {
     axios
       .get(`${apiURL}/joborders/${job_order_id}`)
       .then((res) => {
-        navigate("/createJobOrder", {
+        navigate("/PDCDCreateJobOrder", {
           state: {
             jobOrder: Array.isArray(res.data) ? res.data[0] : res.data,
             isEdit: true, // Flag to indicate this is for editing/creating test orders
@@ -326,7 +326,7 @@ export default function VTCChennaiPage() {
                   <ArrowBack className="h-5 w-5" />
                 </Button>
                 <h1 className="text-sm font-medium text-black-600 dark:text-red-500 ">
-                  VTC CHENNAI
+                  PDCD CHENNAI
                 </h1>
               </div>
               <div className="flex items-center space-x-3">

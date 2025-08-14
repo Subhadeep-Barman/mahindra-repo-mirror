@@ -1,4 +1,4 @@
-import { ArrowBack, Add, Edit as EditIcon } from "@mui/icons-material";
+import { ArrowBack, Add } from "@mui/icons-material";
 import { Button } from "@/components/UI/button";
 import { Badge } from "@/components/UI/badge";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -19,17 +19,26 @@ import showSnackbar from "@/utils/showSnackbar";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
-export default function RDEVehiclePage() {
+export default function PDCDVehicle() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [vehicles, setVehicles] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
   const { apiUserRole, userId, userName } = useAuth();
 
+  // Determine active tab from the current route
+  let activeTab = "Job Order";
+  if (location.pathname.toLowerCase().includes("vehicle"))
+    activeTab = "Vehicle";
+  else if (location.pathname.toLowerCase().includes("engine"))
+    activeTab = "Engine";
+
   // Fetch vehicles from API on mount
   useEffect(() => {
     async function fetchVehicles() {
       try {
-        // Fetch all vehicles
+        // REMOVED: Department filter to get vehicles from all teams
         const response = await axios.get(`${apiURL}/vehicles`);
 
         console.log("Fetched all vehicles:", response.data); // Debug log
@@ -43,7 +52,7 @@ export default function RDEVehiclePage() {
           id_of_creator: v.id_of_creator || "",
           created_on: v.created_on,
           id_of_updater: v.id_of_updater,
-          name_of_updater: v.name_of_updater || "NA", // Use userName if not available
+          name_of_updater: v.name_of_updater || "NA",
           updated_on: v.updated_on,
         }));
         setVehicles(minimalVehicles);
@@ -55,54 +64,45 @@ export default function RDEVehiclePage() {
     fetchVehicles();
   }, []);
 
+  // Pagination calculations
   const totalItems = vehicles.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = vehicles.slice(indexOfFirstItem, indexOfLastItem);
 
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // Determine active tab from the current route
-  let activeTab = "Job Order";
-  if (location.pathname.toLowerCase().includes("vehicle"))
-    activeTab = "Vehicle";
-  else if (location.pathname.toLowerCase().includes("engine"))
-    activeTab = "Engine";
-
-  const handleTabClick = (tab) => {
-    if (tab === "Job Order") navigate("/rde-chennai");
-    else if (tab === "Vehicle") navigate("/rde/vehicle");
-    else if (tab === "Engine") navigate("/rde/engine");
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
   };
 
   const handleBack = () => {
     navigate(-1);
   };
 
-  const handleAddNewVehicle = () => {
-    navigate("/vtcvehicle/new?department=RDE%20JO");
+  const handleTabClick = (tab) => {
+    if (tab === "Job Order") navigate("/pdcd-lab");
+    else if (tab === "Vehicle") navigate("/pdcd/vehicle");
+    else if (tab === "Engine") navigate("/pdcd/engine");
   };
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
+  const handleAddNewVehicle = () => {
+    navigate("/vtcvehicle/new?department=VTC_JO%20Nashik");
   };
 
   // FIXED: Update the handleEditClick function to fetch the SPECIFIC vehicle data
   const handleEditClick = async (vehicle) => {
     try {
-      console.log("Clicking on RDE vehicle:", vehicle.vehicle_serial_number); // Debug log
+      console.log("Clicking on Nashik vehicle:", vehicle.vehicle_serial_number); // Debug log
 
-      // FIXED: Use the correct API endpoint format without the slash before query parameter
+      // Fetch full vehicle details using the specific vehicle serial number
       const response = await axios.get(
         `${apiURL}/vehicles?vehicle_serial_number=${encodeURIComponent(vehicle.vehicle_serial_number)}`
       );
 
-      console.log("RDE API Response:", response.data); // Debug log
+      console.log("Nashik API Response:", response.data); // Debug log
 
       if (response.data && response.data.length > 0) {
-        // FIXED: Find the exact vehicle that matches the clicked serial number
+        // Find the exact vehicle that matches the clicked serial number
         const vehicleData = response.data.find(v =>
           v.vehicle_serial_number === vehicle.vehicle_serial_number
         );
@@ -113,10 +113,10 @@ export default function RDEVehiclePage() {
           return;
         }
 
-        console.log("Found matching RDE vehicle:", vehicleData); // Debug log
+        console.log("Found matching Nashik vehicle:", vehicleData); // Debug log
 
         // Navigate to the vehicle form page with complete vehicle data
-        navigate(`/vtcvehicle/new?department=RDE%20JO&edit=true`, {
+        navigate(`/vtcvehicle/new?department=VTC_JO%20Nashik&edit=true`, {
           state: {
             vehicleData: vehicleData,
             isEdit: true,
@@ -156,7 +156,7 @@ export default function RDEVehiclePage() {
               </Button>
               <div>
                 <h1 className="text-sm font-medium text-black-600 dark:text-red-500">
-                  RDE CHENNAI
+                  PDCD Chennai
                 </h1>
               </div>
             </div>
@@ -246,7 +246,7 @@ export default function RDEVehiclePage() {
                       {vehicle.vehicle_model}
                     </TableCell>
                     <TableCell className="text-xs text-gray-600 px-4 py-2">
-                      {vehicle.name_of_creator || "NA"} {/* Use userName if not available */}
+                      {vehicle.name_of_creator}
                     </TableCell>
                     <TableCell className="text-xs text-gray-600 px-4 py-2">
                       {new Date(vehicle.created_on).toLocaleString("en-IN", {
@@ -260,20 +260,19 @@ export default function RDEVehiclePage() {
                       })}
                     </TableCell>
                     <TableCell className="text-xs text-gray-600 px-4 py-2">
-                      {vehicle.name_of_updater}
+                      {vehicle.name_of_updater || "NA"}
                     </TableCell>
                     <TableCell className="text-xs text-gray-600 px-4 py-2">
-  {new Date(vehicle.updated_on + "Z").toLocaleString("en-IN", {
-    timeZone: "Asia/Kolkata",
-    hour12: true,
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })}
-</TableCell>
-
+                      {new Date(vehicle.updated_on).toLocaleString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                        hour12: true,
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

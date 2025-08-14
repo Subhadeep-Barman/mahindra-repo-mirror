@@ -19,6 +19,7 @@ import { ArrowBack } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
 import showSnackbar from "@/utils/showSnackbar";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 export default function EngineForm() {
   const [activeTab, setActiveTab] = useState("Engine");
@@ -73,6 +74,7 @@ export default function EngineForm() {
     evMotorPower: "",
   });
   const [engineFamilies, setEngineFamilies] = useState([]);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
   const navigate = useNavigate();
@@ -149,7 +151,6 @@ export default function EngineForm() {
   };
 
   const handleAddEngine = async () => {
-
     // Map formData to API schema
     const now = new Date().toISOString();
     const payload = {
@@ -242,9 +243,8 @@ export default function EngineForm() {
       const response = await axios.post(`${apiUrl}/engines`, payload, {
         headers: { "Content-Type": "application/json" },
       });
-      showSnackbar("Engine added successfully!", "success");
-      navigate(-1);
-      // Optionally clear form or navigate
+      setShowSuccessPopup(true); // <-- This will now work
+      // Do not navigate(-1) here, wait for OK
     } catch (err) {
       showSnackbar("Error adding engine: " + (err.response?.data?.detail || err.message), "error");
     }
@@ -1024,6 +1024,26 @@ export default function EngineForm() {
                 ✕ CLEAR
               </Button>
             </div>
+            {/* Success Popup */}
+            {showSuccessPopup && (
+              <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+                <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center min-w-[320px]">
+                  <CheckCircleIcon style={{ fontSize: 64, color: "#22c55e" }} />
+                  <div className="mt-4 text-lg font-semibold text-gray-800">
+                    Engine saved successfully
+                  </div>
+                  <Button
+                    className="mt-6 bg-green-500 hover:bg-green-600 text-white rounded-xl px-8"
+                    onClick={() => {
+                      setShowSuccessPopup(false);
+                      navigate(-1);
+                    }}
+                  >
+                    OK
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
