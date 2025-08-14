@@ -902,10 +902,11 @@ export default function RDECreateJobOrder() {
     }
 
     // Generate test_order_id based on timestamp
-    const test_order_id = "TO" + Date.now();
+    // const test_order_id = "TO" + Date.now();
 
     // Get job_order_id from location state or create a new one if not available
-    const job_order_id = location.state?.jobOrder?.job_order_id || null;
+    const job_order_id = location.state?.jobOrder?.job_order_id || location.state?.originalJobOrderId || "";
+    const test_order_id = `${job_order_id}/${test.testNumber}`;
 
     // Create or update coast down data for this specific test
     let CoastDownData_id =
@@ -2055,25 +2056,6 @@ export default function RDECreateJobOrder() {
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
-            {location.state?.isEdit && existingCoastDownId && (
-              <Button
-                className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-                onClick={async () => {
-                  try {
-                    await handleUpdateCoastDownData(existingCoastDownId);
-                    showSnackbar("Coast Down Data updated successfully!", "success");
-                  } catch (err) {
-                    showSnackbar(
-                      "Failed to update coast down data: " +
-                      (err.response?.data?.detail || err.message),
-                      "error"
-                    );
-                  }
-                }}
-              >
-                UPDATE COAST DOWN DATA
-              </Button>
-            )}
             <Button
               className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400"
               type="button"
