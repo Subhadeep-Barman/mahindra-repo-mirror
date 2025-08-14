@@ -1774,6 +1774,61 @@ export default function NashikCreateJobOrder() {
           </div>
         </div> */}
 
+        {/* Job Order Buttons */}
+        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
+          {cdError && (
+            <div className="text-red-600 text-sm mb-4">{cdError}</div>
+          )}
+
+          <div className="flex items-center gap-4">
+            <Button
+              className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
+              onClick={handleCreateJobOrder}
+              disabled={isTestEngineer}
+            >
+              {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
+            </Button>
+            {location.state?.isEdit && existingCoastDownId && (
+              <Button
+                className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+                onClick={async () => {
+                  try {
+                    await handleUpdateCoastDownData(existingCoastDownId);
+                    showSnackbar("Coast Down Data updated successfully!", "success");
+                  } catch (err) {
+                    showSnackbar(
+                      "Failed to update coast down data: " +
+                      (err.response?.data?.detail || err.message),
+                      "error"
+                    );
+                  }
+                }}
+              >
+                UPDATE COAST DOWN DATA
+              </Button>
+            )}
+            <Button
+              className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400"
+              type="button"
+              onClick={() =>
+                setForm((prev) => ({
+                  ...prev,
+                  cdReportRef: "",
+                  vehicleRefMass: "",
+                  aN: "",
+                  bNkmph: "",
+                  cNkmph2: "",
+                  f0N: "",
+                  f1Nkmph: "",
+                  f2Nkmph2: "",
+                }))
+              }
+            >
+              CLEAR
+            </Button>
+          </div>
+        </div>
+
         {/* Test Actions */}
         <div className="flex items-center mt-4 gap-6 px-8 mb-8">
           <Button
