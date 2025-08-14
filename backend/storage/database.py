@@ -15,10 +15,13 @@ STAGING_DATABASE_URI = "postgresql://postgres:Root123@10.238.0.207:5432/dbmrs-vt
 # Check if LOCAL environment variable is set
 # If LOCAL is True, use SQLALCHEMY_DATABASE_URI, otherwise use STAGING_DATABASE
 
-local = os.getenv("LOCAL")
+local = os.getenv("LOCAL", "False")
+prod = os.getenv("PROD", "False")
 print(f"LOCAL environment variable: {local}")
 if local == "True":
     URI = os.getenv("SQLALCHEMY_DATABASE_URI", SQLALCHEMY_DATABASE_URI)
+elif prod == "True":
+    URI = os.getenv("PRODUCTION_DATABASE_URI", PRODUCTION_DATABASE_URI)
 else:
     URI = os.getenv("STAGING_DATABASE_URI", STAGING_DATABASE_URI)
 

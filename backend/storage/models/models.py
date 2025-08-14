@@ -45,8 +45,10 @@ class Vehicle(Base):
     reverse_gear_ratio = Column(String, nullable=True)
     department = Column(String, nullable=True)
     id_of_creator = Column(String, nullable=True)
+    name_of_creator = Column(String, nullable=True)
     created_on = Column(TIMESTAMP, nullable=True)
     id_of_updater = Column(String, nullable=True)
+    name_of_updater = Column(String, nullable=True)
     updated_on = Column(TIMESTAMP, nullable=True)
     vehicle_kerb_weight = Column(String, nullable=True)
     vehicle_gvw = Column(String, nullable=True)
@@ -126,26 +128,10 @@ class Engine(Base):
     battery_max_current = Column(Float, nullable=True)
     department = Column(String, nullable=True)
     id_of_creator = Column(String, nullable=True)
+    name_of_creator = Column(String, nullable=True)
     created_on = Column(TIMESTAMP, nullable=True)
     id_of_updater = Column(String, nullable=True)
-    updated_on = Column(TIMESTAMP, nullable=True)
-
-
-class CoastDownData(Base):
-    __tablename__ = "CoastDownData"
-    CoastDownData_id = Column(String, primary_key=True)
-    job_order_id = Column(String, nullable=True)
-    coast_down_reference = Column(String, nullable=True)
-    vehicle_reference_mass = Column(Float, nullable=True)
-    a_value = Column(Float, nullable=True)
-    b_value = Column(Float, nullable=True)
-    c_value = Column(Float, nullable=True)
-    f0_value = Column(Float, nullable=True)
-    f1_value = Column(Float, nullable=True)
-    f2_value = Column(Float, nullable=True)
-    id_of_creator = Column(String, nullable=True)
-    created_on = Column(TIMESTAMP, nullable=True)
-    id_of_updater = Column(String, nullable=True)
+    name_of_updater = Column(String, nullable=True)
     updated_on = Column(TIMESTAMP, nullable=True)
 
 

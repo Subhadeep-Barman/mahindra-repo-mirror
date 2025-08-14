@@ -82,8 +82,10 @@ class EngineSchema(BaseModel):
     battery_max_current: Optional[float] = None
     department: Optional[str] = None
     id_of_creator: Optional[str] = None
+    name_of_creator: Optional[str] = None
     created_on: Optional[datetime] = None
     id_of_updater: Optional[str] = None
+    name_of_updater: Optional[str] = None
     updated_on: Optional[datetime] = None
 
     class Config:

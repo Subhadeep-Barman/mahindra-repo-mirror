@@ -86,16 +86,16 @@ def rde_joborder_to_dict(rde_joborder: RDEJobOrder, db: Session = None):
         "cft_members": normalize_cft_members(rde_joborder.cft_members)
     }
 
-def generate_job_order_id(vehicle_body_number: str, db: Session) -> str:
+def generate_job_order_id(department: str, db: Session) -> str:
     """
     Generates a job order ID in the format:
     JO VTC-<year>-<count>/<vehicle_body_number>
     """
-    current_year = datetime.utcnow().year % 100  # Get last two digits of the year
-    count = db.query(RDEJobOrder).count() + 1  # Increment count based on total job orders
-    count_str = f"{count:04d}"  # Format count as 4 digits (e.g., 0001)
-    job_order_id = f"JO VTC-{current_year}-{count_str}/{vehicle_body_number}"
-    print(f"Generated job_order_id: {job_order_id}")  # Debug print statement
+    current_year = datetime.utcnow().year % 100  
+    count = db.query(RDEJobOrder).count() + 1 
+    count_str = f"{count:04d}"  
+    job_order_id = f"JO RDE-{current_year}-{count_str}"
+    print(f"Generated job_order_id: {job_order_id}")  
     return job_order_id
 
 def is_user_in_cft_members(cft_members, user_id):

@@ -15,7 +15,7 @@
         {
             "id": "1.1",
             "receivers": "ProjectTeam",
-            "group_email": "projectteam-group@company.com",
+            "group_email": "",
             "case": "Test Started",
             "body": {
                 "subject": "{{test_order_id}}",
@@ -35,7 +35,7 @@
         {
             "id": "3",
             "receivers": "ProjectTeam",
-            "group_email": "projectteam-group@company.com",
+            "group_email": "",
             "case": "Test Re-edit Request",
             "body": {
                 "subject": "{{test_order_id}}",
@@ -45,7 +45,7 @@
         {
             "id": "4",
             "receivers": "ProjectTeam",
-            "group_email": "projectteam-group@company.com",
+            "group_email": "",
             "case": "Test Order Rejection",
             "body": {
                 "subject": "{{test_order_id}}",
@@ -65,7 +65,7 @@
         {
             "id": "6",
             "receivers": "ProjectTeam",
-            "group_email": "projectteam-group@company.com",
+            "group_email": "",
             "case": "Test Order Completed",
             "body": {
                 "subject": "{{test_order_id}}",

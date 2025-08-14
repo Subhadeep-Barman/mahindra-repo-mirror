@@ -43,8 +43,10 @@ class VehicleSchema(BaseModel):
     reverse_gear_ratio: Optional[str] = None
     department: Optional[str] = None
     id_of_creator: Optional[str] = None
+    name_of_creator: Optional[str] = None
     created_on: Optional[datetime] = None
     id_of_updater: Optional[str] = None
+    name_of_updater: Optional[str] = None
     updated_on: Optional[datetime] = None
     vehicle_kerb_weight: Optional[Union[str, float]] = None
     vehicle_gvw: Optional[Union[str, float]] = None

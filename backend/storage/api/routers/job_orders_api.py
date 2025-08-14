@@ -111,15 +111,43 @@ def joborder_to_dict(joborder: JobOrder, db: Session = None):
         "cft_members": joborder.cft_members if joborder.cft_members else []
     }
 
-def generate_job_order_id(vehicle_body_number: str, db: Session) -> str:
+def normalize_cft_members(cft_members):
+    # Convert all items to dicts with at least a 'name' key
+    if not cft_members:
+        return []
+    normalized = []
+    for m in cft_members:
+        if isinstance(m, dict):
+            normalized.append(m)
+        elif isinstance(m, str):
+            normalized.append({"name": m})
+    return normalized
+
+def generate_job_order_id(department: str, db: Session) -> str:
     """
     Generates a job order ID in the format:
-    JO VTC-<year>-<count>/<vehicle_body_number>
+    - For Chennai: JO VTC-<year>-<count>
+    - For Nashik:  JO VTC_N-<year>-<count>
+    - For others:  JO VTC-<year>-<count>
+    The counter is separate for each department.
     """
-    current_year = datetime.utcnow().year % 100  # Get last two digits of the year
-    count = db.query(JobOrder).count() + 1  # Increment count based on total job orders
-    count_str = f"{count:04d}"  # Format count as 4 digits (e.g., 0001)
-    return f"JO VTC-{current_year}-{count_str}/{vehicle_body_number}"
+    current_year = datetime.utcnow().year % 100
+    if department == "VTC_JO Chennai":
+        count = db.query(JobOrder).filter(JobOrder.department == "VTC_JO Chennai").count() + 1
+        count_str = f"{count:04d}"
+        return f"JO VTC-{current_year}-{count_str}"
+    elif department == "VTC_JO Nashik":
+        count = db.query(JobOrder).filter(JobOrder.department == "VTC_JO Nashik").count() + 1
+        count_str = f"{count:04d}"
+        return f"JO VTC_N-{current_year}-{count_str}"
+    elif department == "PDCD_JO Chennai":
+        count = db.query(JobOrder).filter(JobOrder.department == "PDCD_JO Chennai").count() + 1
+        count_str = f"{count:04d}"
+        return f"JO PDCD-{current_year}-{count_str}"
+    else:
+        count = db.query(JobOrder).filter(JobOrder.department == department).count() + 1
+        count_str = f"{count:04d}"
+        return f"JO VTC-{current_year}-{count_str}"
 
 @router.post("/joborders", response_model=JobOrderSchema)
 def create_joborder_api(
@@ -127,20 +155,30 @@ def create_joborder_api(
     db: Session = Depends(get_db)
 ):
     joborder_data = joborder.dict(exclude_unset=True)
-    # Ensure cft_members is a list of dicts or set to []
-    if "cft_members" in joborder_data and joborder_data["cft_members"] is None:
-        joborder_data["cft_members"] = []
-    # Generate job_order_id if not provided
-    if not joborder_data.get("job_order_id"):
-        if not joborder_data.get("vehicle_body_number"):
-            raise HTTPException(status_code=400, detail="Vehicle body number is required to generate job_order_id")
-        joborder_data["job_order_id"] = generate_job_order_id(joborder_data["vehicle_body_number"], db)
+    if "cft_members" in joborder_data:
+        joborder_data["cft_members"] = normalize_cft_members(joborder_data["cft_members"])
+
+    # Always generate job_order_id
+    if not joborder_data.get("department"):
+        print("Error: Department is missing!")  # Debug print statement
+        raise HTTPException(status_code=400, detail="Department is required to generate job_order_id")
+    joborder_data["job_order_id"] = generate_job_order_id(joborder_data["department"], db)
+    print(f"Generated job_order_id: {joborder_data['job_order_id']}")  # Debug print statement
+
+    # Ensure the function is called
+    print("Proceeding to save the job order...")  # Debug print statement
     new_joborder = JobOrder(**joborder_data)
     db.add(new_joborder)
     db.commit()
     db.refresh(new_joborder)
-    return joborder_to_dict(new_joborder, db)
-
+    print(f"Saved job order to database: {new_joborder}")  # Debug print statement
+    print(f"Response data: {new_joborder}")  # Debug print statement
+    # Include the generated job_order_id in the response
+    response_data = joborder_to_dict(new_joborder)
+    response_data["job_order_id"] = new_joborder.job_order_id
+    print(f"Response data: {response_data}")  # Debug print statement
+    return response_data
+    
 @router.get("/departments")
 def get_departments(db: Session = Depends(get_db)):
     """
