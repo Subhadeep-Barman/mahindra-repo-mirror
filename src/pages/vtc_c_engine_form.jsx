@@ -20,6 +20,7 @@ import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import showSnackbar from "@/utils/showSnackbar";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 export default function VTCCEngineForm() {
   const [activeTab, setActiveTab] = useState("Engine");
@@ -215,6 +216,7 @@ export default function VTCCEngineForm() {
   const [vehicleSerialNumbers, setVehicleSerialNumbers] = useState([]);
   const [projectCodes, setProjectCodes] = useState([]); // <-- NEW
   const [vehicleBodyNumberMap, setVehicleBodyNumberMap] = useState({}); // <-- NEW
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const apiUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
 
@@ -499,14 +501,13 @@ export default function VTCCEngineForm() {
           payload
         );
         showSnackbar(`${engine_domain === "EV" ? "Motor" : "Engine"} updated successfully!`, "success");
+        navigate(-1);
       } else {
         response = await axios.post(`${apiUrl}${endpoint}`, payload);
-        showSnackbar(
-          `${engine_domain === "EV" ? "Motor" : "Engine"} added successfully! Serial Number: ${response.data[engine_domain === "EV" ? "motor_serial_number" : "engine_serial_number"] || formData.engineSerialNumber}`,
-          "success"
-        );
+        // Show popup instead of snackbar for new engine creation
+        setShowSuccessPopup(true);
+        return; // Prevent navigation until popup is closed
       }
-      navigate(-1);
     } catch (err) {
       if (err.response && err.response.data && err.response.data.detail) {
         showSnackbar(
@@ -1441,6 +1442,27 @@ export default function VTCCEngineForm() {
                   ✕ CLEAR
                 </Button>
               </div>
+              
+              {/* Success Popup */}
+              {showSuccessPopup && (
+                <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 flex flex-col items-center min-w-[320px] border border-gray-200 dark:border-gray-700">
+                    <CheckCircleIcon style={{ fontSize: 64, color: "#22c55e" }} />
+                    <div className="mt-4 text-lg font-semibold text-gray-800 dark:text-white">
+                      {engine_domain === "EV" ? "Motor" : "Engine"} saved successfully
+                    </div>
+                    <Button
+                      className="mt-6 bg-green-500 hover:bg-green-600 text-white rounded-xl px-8"
+                      onClick={() => {
+                        setShowSuccessPopup(false);
+                        navigate(-1);
+                      }}
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

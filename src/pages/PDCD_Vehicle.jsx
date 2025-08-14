@@ -191,7 +191,7 @@ export default function PDCDVehicle() {
           className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
         >
           <Add className="h-4 w-4 mr-1" />
-          ADD NEW Vehicle
+          ADD NEW VEHICLE
         </Button>
       </div>
 
