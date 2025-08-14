@@ -20,6 +20,7 @@ import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
 import showSnackbar from "@/utils/showSnackbar";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { useAuth } from "@/context/AuthContext";
 
 export default function EngineForm() {
   const [activeTab, setActiveTab] = useState("Engine");
@@ -76,6 +77,7 @@ export default function EngineForm() {
   const [engineFamilies, setEngineFamilies] = useState([]);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const apiUrl = import.meta.env.VITE_BACKEND_URL;
+  const { userId } = useAuth();
 
   const navigate = useNavigate();
 
@@ -243,8 +245,8 @@ export default function EngineForm() {
       const response = await axios.post(`${apiUrl}/engines`, payload, {
         headers: { "Content-Type": "application/json" },
       });
-      setShowSuccessPopup(true); // <-- This will now work
-      // Do not navigate(-1) here, wait for OK
+      // Only show the success popup, no snackbar
+      setShowSuccessPopup(true);
     } catch (err) {
       showSnackbar("Error adding engine: " + (err.response?.data?.detail || err.message), "error");
     }
@@ -1026,10 +1028,10 @@ export default function EngineForm() {
             </div>
             {/* Success Popup */}
             {showSuccessPopup && (
-              <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-                <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center min-w-[320px]">
+              <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 flex flex-col items-center min-w-[320px] border border-gray-200 dark:border-gray-700">
                   <CheckCircleIcon style={{ fontSize: 64, color: "#22c55e" }} />
-                  <div className="mt-4 text-lg font-semibold text-gray-800">
+                  <div className="mt-4 text-lg font-semibold text-gray-800 dark:text-white">
                     Engine saved successfully
                   </div>
                   <Button
