@@ -79,6 +79,11 @@ export default function EngineForm() {
   const apiUrl = import.meta.env.VITE_BACKEND_URL;
   const { userId } = useAuth();
 
+  // Debug log for popup state
+  useEffect(() => {
+    console.log("showSuccessPopup state:", showSuccessPopup);
+  }, [showSuccessPopup]);
+
   const navigate = useNavigate();
 
   const handleInputChange = (field, value) => {
@@ -245,9 +250,11 @@ export default function EngineForm() {
       const response = await axios.post(`${apiUrl}/engines`, payload, {
         headers: { "Content-Type": "application/json" },
       });
+      console.log("Engine added successfully, showing popup"); // Debug log
       // Only show the success popup, no snackbar
       setShowSuccessPopup(true);
     } catch (err) {
+      console.error("Error adding engine:", err); // Debug log
       showSnackbar("Error adding engine: " + (err.response?.data?.detail || err.message), "error");
     }
   };
@@ -1028,7 +1035,7 @@ export default function EngineForm() {
             </div>
             {/* Success Popup */}
             {showSuccessPopup && (
-              <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+              <div className="fixed inset-0 flex items-center justify-center z-[9999] bg-black bg-opacity-50">
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 flex flex-col items-center min-w-[320px] border border-gray-200 dark:border-gray-700">
                   <CheckCircleIcon style={{ fontSize: 64, color: "#22c55e" }} />
                   <div className="mt-4 text-lg font-semibold text-gray-800 dark:text-white">
