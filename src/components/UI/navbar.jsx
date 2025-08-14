@@ -5,7 +5,9 @@ import {
   LightMode,
   DarkMode,
   Home,
+  Settings,
 } from "@mui/icons-material";
+import { HiUserAdd } from "react-icons/hi";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -13,6 +15,7 @@ import AccountMenu from "@/components/UI/accountmenu";
 import darkLogo from "../../assets/mai_dark.png";
 import lightLogo from "../../assets/mai_dark.png";
 import useStore from "@/store/useStore";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const isDarkMode = useStore((s) => s.isDarkMode);
@@ -21,6 +24,7 @@ export default function Navbar() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const navigate = useNavigate();
+  const { userRole } = useAuth();
 
   useEffect(() => {
     setIsMounted(true);
@@ -78,6 +82,18 @@ export default function Navbar() {
 
         {/* Right Side Icons - Hidden on Mobile */}
         <div className="hidden md:flex items-center space-x-6">
+          {userRole === "Admin" && (
+            <button
+              className="flex items-center justify-center gap-2 px-3 py-1 rounded-full bg-red-600 hover:bg-red-500 transition-all duration-200 h-8 transform hover:scale-105 hover:shadow-lg"
+              onClick={() => navigate("/admin-portal")}
+              title="Admin Portal"
+              style={{ minWidth: 0 }}
+            >
+              <HiUserAdd className="h-6 w-6 text-white" />
+              <span className="font-semibold text-sm text-white">Admin Portal</span>
+            </button>
+          )}
+          
           <button
             className="p-2.5 text-red-600 dark:text-red-400 rounded-xl hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 dark:hover:from-red-900/30 dark:hover:to-red-800/30 hover:text-red-700 dark:hover:text-red-300 transition-all duration-300 hover:scale-105"
             onClick={() => navigate("/home")}
@@ -168,6 +184,21 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="md:hidden bg-gradient-to-r from-red-50 to-red-100 dark:from-gray-900 dark:to-black border-t border-red-200/60 dark:border-red-800/40 py-3 transition-all duration-300 rounded-xl mt-2">
           <div className="flex flex-col space-y-4 px-4">
+            {/* Admin Portal Button for Mobile */}
+            {userRole === "Admin" && (
+              <button
+                className="flex items-center justify-center gap-2 px-3 py-1 rounded-full bg-red-600 hover:bg-red-500 transition-all duration-200 h-8 transform hover:scale-105 hover:shadow-lg"
+                onClick={() => {
+                  navigate("/admin-portal");
+                  setIsMenuOpen(false);
+                }}
+                style={{ minWidth: 0 }}
+              >
+                <HiUserAdd className="h-6 w-6 text-white" />
+                <span className="font-semibold text-sm text-white">Admin Portal</span>
+              </button>
+            )}
+            
             {/* Enhanced Mobile Theme Toggle */}
             <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-red-100 to-red-200 dark:from-red-900/30 dark:to-red-800/30 border border-red-200/60 dark:border-red-700/40">
               <div className="flex items-center space-x-3 text-red-700 dark:text-red-300">

@@ -61,7 +61,7 @@ const servicesBase = [
   {
     id: 4,
     title: "PDCD LAB",
-    description: "Powertrain Development and Calibration Department laboratory",
+    description: "Powertrain Development and Calibration Department",
     icon: Zap,
     href: "/pdcd-lab",
     color: "from-amber-500 to-yellow-500",
@@ -73,37 +73,16 @@ const servicesBase = [
 
 // Change the export to default and rename the component
 export default function HomePage() {
-  // Move useAuth hook call inside the component
   const { userRole, userId, userName } = useAuth();
-
-  // Filter servicesBase to show PDCD LAB only for ProjectTeam users
   const filteredBaseServices = servicesBase.filter(service => 
-    service.title !== "PDCD LAB" || userRole === "ProjectTeam"
+    service.title !== "PDCD LAB" || userRole === "ProjectTeam" || userRole === "Admin"
   );
 
-  // Conditionally add ADMIN Portal only if user is not Test Engineer or Project Team
-  const services = [
-    ...filteredBaseServices,
-    ...(userRole !== "TestEngineer" && userRole !== "ProjectTeam"
-      ? [{
-          id: 5,
-          title: "ADMIN Portal",
-          description: "System administration and configuration",
-          icon: Dashboard,
-          href: "/admin-portal",
-          color: "from-orange-500 to-red-500",
-          bgColor: "bg-orange-50 dark:bg-orange-950/20",
-          borderColor: "border-orange-200 dark:border-orange-800",
-          iconBg: "bg-orange-500",
-        }]
-      : []),
-  ];
+  // Use only the filtered base services (no admin portal card)
+  const services = filteredBaseServices;
 
   // Determine grid columns based on number of services
-  const gridCols =
-    services.length === 4
-      ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
-      : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 justify-center";
+  const gridCols = "grid-cols-1 md:grid-cols-2 lg:grid-cols-4";
 
   // Fetch dropdown options globally on home page mount
   const fetchProjects = useStore((state) => state.fetchProjects);
