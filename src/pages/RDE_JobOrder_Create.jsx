@@ -881,10 +881,62 @@ export default function RDECreateJobOrder() {
     const test = tests[testIndex];
 
     // Validate required fields
-    if (!test.objective) {
+    const requiredFields = [
+      { key: 'testType', label: 'Test Type' },
+      { key: 'objective', label: 'Objective of the Test' },
+      { key: 'vehicleLocation', label: 'Vehicle Location' },
+      { key: 'cycleGearShift', label: 'Cycle Gear Shift' },
+      { key: 'inertiaClass', label: 'Inertia Class' },
+      { key: 'datasetName', label: 'Dataset Name' },
+      { key: 'mode', label: 'Mode' },
+      { key: 'shift', label: 'Shift' },
+      { key: 'fuelType', label: 'Fuel Type' },
+      { key: 'hardwareChange', label: 'Hardware Change' },
+      { key: 'equipmentRequired', label: 'Equipment Required' },
+      { key: 'dpf', label: 'DPF' },
+      // datasetflashed vs datasetRefreshed: check both keys below
+      { key: 'ess', label: 'ESS' },
+      { key: 'preferredDate', label: 'Preferred Date' },
+      { key: 'emissionCheckDate', label: 'Emission Check Date' },
+      { key: 'specificInstruction', label: 'Specific Instruction' }
+    ];
+
+    const missing = requiredFields.filter(f => {
+      const val = test[f.key];
+      return val === undefined || val === null || (typeof val === 'string' && val.trim() === '');
+    }).map(f => f.label);
+
+    // Special-case: dataset flashed might be stored as datasetflashed or datasetRefreshed
+    const datasetFlashedVal = (test.datasetflashed || test.datasetRefreshed || '').toString().trim();
+    if (!datasetFlashedVal) {
+      missing.push('Dataset flashed');
+    }
+
+    if (missing.length > 0) {
       showSnackbar(
-        "Please fill in the objective of the test before creating test order.",
-        "warning"
+        `Please fill in required fields before creating test order: ${[...new Set(missing)].join(', ')}`,
+        'warning'
+      );
+      return;
+    }
+
+    // If DPF is Yes, require DPF Regen Occurs (g)
+    if (test.dpf === 'Yes') {
+      const regen = test.dpfRegenOccurs;
+      if (regen === undefined || regen === null || (typeof regen === 'string' && regen.trim() === '')) {
+        showSnackbar('DPF Regen Occurs (g) is required when DPF is Yes.', 'warning');
+        return;
+      }
+    }
+
+    // Require Dataset and Experiment attachments
+    const hasDataset = Array.isArray(test.Dataset_attachment) && test.Dataset_attachment.length > 0;
+    const hasExperiment = Array.isArray(test.Experiment_attachment) && test.Experiment_attachment.length > 0;
+
+    if (!hasDataset || !hasExperiment) {
+      showSnackbar(
+        'Dataset and Experiment attachments are required to create a test order.',
+        'error'
       );
       return;
     }
@@ -1367,6 +1419,53 @@ export default function RDECreateJobOrder() {
     }
 
     return missingFields;
+  };
+
+  // Helper to check if a test object satisfies required fields and attachments
+  const isTestValid = (test) => {
+    if (!test) return false;
+
+    const requiredKeys = [
+      'testType',
+      'objective',
+      'vehicleLocation',
+      'cycleGearShift',
+      'inertiaClass',
+      'datasetName',
+      'mode',
+      'shift',
+      'fuelType',
+      'hardwareChange',
+      'equipmentRequired',
+      'dpf',
+      'ess',
+      'preferredDate',
+      'emissionCheckDate',
+      'specificInstruction'
+    ];
+
+    for (const key of requiredKeys) {
+      const val = test[key];
+      if (val === undefined || val === null) return false;
+      if (typeof val === 'string' && val.trim() === '') return false;
+    }
+
+    // dataset flashed may be stored as datasetflashed or datasetRefreshed
+    const datasetFlashed = (test.datasetflashed || test.datasetRefreshed || '').toString().trim();
+    if (!datasetFlashed) return false;
+
+    // If DPF is Yes, require regen value
+    if (test.dpf === 'Yes') {
+      const regen = test.dpfRegenOccurs;
+      if (regen === undefined || regen === null || (typeof regen === 'string' && regen.trim() === '')) return false;
+    }
+
+    // Require attachments
+    const hasDataset = Array.isArray(test.Dataset_attachment) && test.Dataset_attachment.length > 0;
+    const hasExperiment = Array.isArray(test.Experiment_attachment) && test.Experiment_attachment.length > 0;
+    if (!hasDataset || !hasExperiment) return false;
+
+    return true;
   };
 
   // Modal component
@@ -2130,42 +2229,11 @@ export default function RDECreateJobOrder() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-              {/* Engine Number */}
-              <div className="flex flex-col">
-                <Label htmlFor={`engineNumber${idx}`} className="mb-2">
-                  Engine Number <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={test.engineNumber || ""}
-                  onValueChange={(value) => {
-                    if (value !== jobOrder.engine_serial_number) {
-                      showSnackbar &&
-                        showSnackbar(
-                          "Warning: You are selecting a different engine number than the main form.",
-                          "warning"
-                        );
-                    }
-                    handleTestChange(idx, "engineNumber", value);
-                  }}
-                  required
-                  disabled={!areTestFieldsEditable(test, idx)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {engineNumbers.map((engineNumber) => (
-                      <SelectItem key={engineNumber} value={engineNumber}>
-                        {engineNumber}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Engine Number field removed as requested */}
 
               {/* Test Type */}
               <div className="flex flex-col">
-                <Label className="mb-2">Test Type</Label>
+                <Label className="mb-2">Test Type <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.testType}
                   onValueChange={(v) => handleTestChange(idx, "testType", v)}
@@ -2202,7 +2270,7 @@ export default function RDECreateJobOrder() {
 
               {/* Vehicle Location */}
               <div className="flex flex-col">
-                <Label className="mb-2">Vehicle Location</Label>
+                <Label className="mb-2">Vehicle Location <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.vehicleLocation}
                   onChange={(e) =>
@@ -2216,7 +2284,7 @@ export default function RDECreateJobOrder() {
 
               {/* Cycle Gear Shift */}
               <div className="flex flex-col">
-                <Label className="mb-2">Cycle Gear Shift</Label>
+                <Label className="mb-2">Cycle Gear Shift <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.cycleGearShift}
                   onChange={(e) =>
@@ -2230,7 +2298,7 @@ export default function RDECreateJobOrder() {
 
               {/* Inertia Class */}
               <div className="flex flex-col">
-                <Label className="mb-2">Inertia Class</Label>
+                <Label className="mb-2">Inertia Class <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.inertiaClass}
                   onValueChange={(v) =>
@@ -2256,7 +2324,7 @@ export default function RDECreateJobOrder() {
 
               {/* Dataset Name */}
               <div className="flex flex-col">
-                <Label className="mb-2">Dataset Name</Label>
+                <Label className="mb-2">Dataset Name <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.datasetName}
                   onChange={(e) =>
@@ -2270,7 +2338,7 @@ export default function RDECreateJobOrder() {
 
               {/* DPF */}
               <div className="flex flex-col">
-                <Label className="mb-2">DPF</Label>
+                <Label className="mb-2">DPF <span className="text-red-500">*</span></Label>
                 <div className="flex gap-4 mt-2">
                   <label className="flex items-center">
                     <input
@@ -2332,7 +2400,7 @@ export default function RDECreateJobOrder() {
 
               {/* Dataset flashed */}
               <div className="flex flex-col">
-                <Label className="mb-2">Dataset flashed</Label>
+                <Label className="mb-2">Dataset flashed <span className="text-red-500">*</span></Label>
                 <div className="flex gap-4 mt-2">
                   <label className="flex items-center">
                     <input
@@ -2367,7 +2435,7 @@ export default function RDECreateJobOrder() {
 
               {/* ESS */}
               <div className="flex flex-col">
-                <Label className="mb-2">ESS</Label>
+                <Label className="mb-2">ESS <span className="text-red-500">*</span></Label>
                 <div className="flex gap-4 mt-2">
                   <label className="flex items-center">
                     <input
@@ -2410,7 +2478,7 @@ export default function RDECreateJobOrder() {
 
               {/* Mode */}
               <div className="flex flex-col">
-                <Label className="mb-2">Mode</Label>
+                <Label className="mb-2">Mode <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.mode}
                   onValueChange={(v) => handleTestChange(idx, "mode", v)}
@@ -2434,7 +2502,7 @@ export default function RDECreateJobOrder() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               {/* Hardware Change */}
               <div className="flex flex-col">
-                <Label className="mb-2">Hardware Change</Label>
+                <Label className="mb-2">Hardware Change <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.hardwareChange}
                   onChange={(e) =>
@@ -2448,7 +2516,7 @@ export default function RDECreateJobOrder() {
 
               {/* Shift */}
               <div className="flex flex-col">
-                <Label className="mb-2">Shift</Label>
+                <Label className="mb-2">Shift <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.shift}
                   onValueChange={(v) => handleTestChange(idx, "shift", v)}
@@ -2468,7 +2536,7 @@ export default function RDECreateJobOrder() {
 
               {/* Fuel Type */}
               <div className="flex flex-col">
-                <Label className="mb-2">Fuel Type</Label>
+                <Label className="mb-2">Fuel Type <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.fuelType}
                   onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
@@ -2489,7 +2557,7 @@ export default function RDECreateJobOrder() {
 
               {/* Equipment Required */}
               <div className="flex flex-col">
-                <Label className="mb-2">Equipment Required</Label>
+                <Label className="mb-2">Equipment Required <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.equipmentRequired}
                   onChange={(e) =>
@@ -2506,7 +2574,7 @@ export default function RDECreateJobOrder() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               {/* Preferred Date */}
               <div className="flex flex-col">
-                <Label className="mb-2">Preferred Date</Label>
+                <Label className="mb-2">Preferred Date <span className="text-red-500">*</span></Label>
                 <Input
                   type="date"
                   value={test.preferredDate}
@@ -2520,7 +2588,7 @@ export default function RDECreateJobOrder() {
 
               {/* Emission Check Date */}
               <div className="flex flex-col">
-                <Label className="mb-2">Emission Check Date</Label>
+                <Label className="mb-2">Emission Check Date <span className="text-red-500">*</span></Label>
                 <Input
                   type="date"
                   value={test.emissionCheckDate}
@@ -2534,7 +2602,7 @@ export default function RDECreateJobOrder() {
 
               {/* Specific Instruction - spans 2 columns */}
               <div className="flex flex-col md:col-span-2">
-                <Label className="mb-2">Specific Instruction</Label>
+                <Label className="mb-2">Specific Instruction <span className="text-red-500">*</span></Label>
                 <textarea
                   value={test.specificInstruction}
                   onChange={(e) =>
@@ -2555,7 +2623,7 @@ export default function RDECreateJobOrder() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="flex flex-col">
-                  <Label className="mb-2">Emission Check Attachment</Label>
+                  <Label className="mb-2">Emission Check Attachment <span className="text-red-500">*</span></Label>
                   <DropzoneFileList
                     buttonText="Emission Check Attachment"
                     name="Emission_check"
@@ -2600,7 +2668,7 @@ export default function RDECreateJobOrder() {
                 </div>
 
                 <div className="flex flex-col">
-                  <Label className="mb-2">Dataset Attachment</Label>
+                  <Label className="mb-2">Dataset Attachment <span className="text-red-500">*</span></Label>
                   <DropzoneFileList
                     buttonText="Dataset Attachment"
                     name="Dataset_attachment"
@@ -2678,7 +2746,7 @@ export default function RDECreateJobOrder() {
                 </div>
 
                 <div className="flex flex-col">
-                  <Label className="mb-2">Experiment Attachment</Label>
+                  <Label className="mb-2">Experiment Attachment <span className="text-red-500">*</span></Label>
                   <DropzoneFileList
                     buttonText="Experiment Attachment"
                     name="Experiment_attachment"
@@ -3103,7 +3171,7 @@ export default function RDECreateJobOrder() {
               <Button
                 className="bg-red-600 text-white text-xs px-6 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
                 onClick={() => handleCreateTestOrder(idx)}
-                disabled={!!test.testOrderId || test.disabled}
+                disabled={!!test.testOrderId || test.disabled || !isTestValid(test)}
               >
                 {test.testOrderId
                   ? " TEST ORDER CREATED"
