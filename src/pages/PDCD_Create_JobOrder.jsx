@@ -1879,7 +1879,9 @@ export default function PDCDCreateJobOrder() {
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-3 gap-4 mb-2">
+            {/* Inputs above attachments */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
+              {/* All test fields disabled for TestEngineer except status actions */}
               <div>
                 <Label>Test Type <span className="text-red-500">*</span></Label>
                 <Select
@@ -1923,8 +1925,6 @@ export default function PDCDCreateJobOrder() {
                   disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-4 gap-4 mb-2">
               <div>
                 <Label>Cycle Gear Shift <span className="text-red-500">*</span></Label>
                 <Input
@@ -1933,17 +1933,6 @@ export default function PDCDCreateJobOrder() {
                     handleTestChange(idx, "cycleGearShift", e.target.value)
                   }
                   placeholder="Enter Cycle Gear Shift"
-                  disabled={!areTestFieldsEditable(test, idx)}
-                />
-              </div>
-              <div>
-                <Label>Dataset Name <span className="text-red-500">*</span></Label>
-                <Input
-                  value={test.datasetName}
-                  onChange={(e) =>
-                    handleTestChange(idx, "datasetName", e.target.value)
-                  }
-                  placeholder="Enter Dataset Name"
                   disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
@@ -1972,6 +1961,17 @@ export default function PDCDCreateJobOrder() {
                 </Select>
               </div>
               <div>
+                <Label>Dataset Name <span className="text-red-500">*</span></Label>
+                <Input
+                  value={test.datasetName}
+                  onChange={(e) =>
+                    handleTestChange(idx, "datasetName", e.target.value)
+                  }
+                  placeholder="Enter Dataset Name"
+                  disabled={!areTestFieldsEditable(test, idx)}
+                />
+              </div>
+              <div>
                 <Label>DPF <span className="text-red-500">*</span></Label>
                 <div className="flex gap-2 mt-2">
                   <label>
@@ -1981,6 +1981,7 @@ export default function PDCDCreateJobOrder() {
                       value="Yes"
                       checked={test.dpf === "Yes"}
                       onChange={() => handleTestChange(idx, "dpf", "Yes")}
+                      disabled={!areTestFieldsEditable(test, idx)}
                     />{" "}
                     Yes
                   </label>
@@ -1991,6 +1992,7 @@ export default function PDCDCreateJobOrder() {
                       value="No"
                       checked={test.dpf === "No"}
                       onChange={() => handleTestChange(idx, "dpf", "No")}
+                      disabled={!areTestFieldsEditable(test, idx)}
                     />{" "}
                     No
                   </label>
@@ -2001,13 +2003,23 @@ export default function PDCDCreateJobOrder() {
                       value="NA"
                       checked={test.dpf === "NA"}
                       onChange={() => handleTestChange(idx, "dpf", "NA")}
+                      disabled={!areTestFieldsEditable(test, idx)}
                     />{" "}
                     NA
                   </label>
                 </div>
               </div>
-            </div>
-            <div className="grid grid-cols-4 gap-4 mb-2">
+              {test.dpf === "Yes" && (
+                <div>
+                  <Label>DPF Regen Occurs (g) <span className="text-red-500">*</span></Label>
+                  <Input
+                    value={test.dpfRegenOccurs || ""}
+                    onChange={(e) => handleTestChange(idx, "dpfRegenOccurs", e.target.value)}
+                    placeholder="Enter DPF Regen Occurs (g)"
+                    disabled={!areTestFieldsEditable(test, idx)}
+                  />
+                </div>
+              )}
               <div>
                 <Label>Dataset Refreshed <span className="text-red-500">*</span></Label>
                 <div className="flex gap-2 mt-2">
@@ -2020,6 +2032,7 @@ export default function PDCDCreateJobOrder() {
                       onChange={() =>
                         handleTestChange(idx, "datasetRefreshed", "Yes")
                       }
+                      disabled={!areTestFieldsEditable(test, idx)}
                     />{" "}
                     Yes
                   </label>
@@ -2032,6 +2045,7 @@ export default function PDCDCreateJobOrder() {
                       onChange={() =>
                         handleTestChange(idx, "datasetRefreshed", "No")
                       }
+                      disabled={!areTestFieldsEditable(test, idx)}
                     />{" "}
                     No
                   </label>
@@ -2047,6 +2061,7 @@ export default function PDCDCreateJobOrder() {
                       value="On"
                       checked={test.ess === "On"}
                       onChange={() => handleTestChange(idx, "ess", "On")}
+                      disabled={!areTestFieldsEditable(test, idx)}
                     />{" "}
                     On
                   </label>
@@ -2057,6 +2072,7 @@ export default function PDCDCreateJobOrder() {
                       value="Off"
                       checked={test.ess === "Off"}
                       onChange={() => handleTestChange(idx, "ess", "Off")}
+                      disabled={!areTestFieldsEditable(test, idx)}
                     />{" "}
                     Off
                   </label>
@@ -2067,6 +2083,7 @@ export default function PDCDCreateJobOrder() {
                       value="NA"
                       checked={test.ess === "NA"}
                       onChange={() => handleTestChange(idx, "ess", "NA")}
+                      disabled={!areTestFieldsEditable(test, idx)}
                     />{" "}
                     NA
                   </label>
@@ -2102,8 +2119,6 @@ export default function PDCDCreateJobOrder() {
                   disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-4 gap-4 mb-2">
               <div>
                 <Label>Shift <span className="text-red-500">*</span></Label>
                 <Select
@@ -2121,17 +2136,6 @@ export default function PDCDCreateJobOrder() {
                     <SelectItem value="General">General</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div>
-                <Label>Preferred Date <span className="text-red-500">*</span></Label>
-                <Input
-                  type="date"
-                  value={test.preferredDate}
-                  onChange={(e) =>
-                    handleTestChange(idx, "preferredDate", e.target.value)
-                  }
-                  disabled={!areTestFieldsEditable(test, idx)}
-                />
               </div>
               <div>
                 <Label>Fuel Type <span className="text-red-500">*</span></Label>
@@ -2164,6 +2168,17 @@ export default function PDCDCreateJobOrder() {
                 />
               </div>
               <div>
+                <Label>Preferred Date <span className="text-red-500">*</span></Label>
+                <Input
+                  type="date"
+                  value={test.preferredDate}
+                  onChange={(e) =>
+                    handleTestChange(idx, "preferredDate", e.target.value)
+                  }
+                  disabled={!areTestFieldsEditable(test, idx)}
+                />
+              </div>
+              <div>
                 <Label>Emission Check Date <span className="text-red-500">*</span></Label>
                 <Input
                   type="date"
@@ -2174,32 +2189,18 @@ export default function PDCDCreateJobOrder() {
                   disabled={!areTestFieldsEditable(test, idx)}
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-4 gap-4 mb-2">
-              <div>
-                <Label>Emission Check Attachment</Label>
-                <Input
-                  value={test.emissionCheckAttachment}
-                  onChange={(e) =>
-                    handleTestChange(
-                      idx,
-                      "emissionCheckAttachment",
-                      e.target.value
-                    )
-                  }
-                  placeholder="Enter Attachment Path/URL"
-                  disabled={!areTestFieldsEditable(test, idx)}
-                />
-              </div>
-              <div>
+              <div className="col-span-2">
                 <Label>Specific Instruction <span className="text-red-500">*</span></Label>
-                <Input
+                <textarea
                   value={test.specificInstruction}
                   onChange={(e) =>
                     handleTestChange(idx, "specificInstruction", e.target.value)
                   }
                   placeholder="Enter Specific Instructions"
                   disabled={!areTestFieldsEditable(test, idx)}
+                  className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical dark:bg-black"
+                  style={{ minWidth: "100%", fontSize: "1rem" }}
+                  rows={3}
                 />
               </div>
             </div>

@@ -2224,18 +2224,17 @@ export default function RDECreateJobOrder() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-              {/* Engine Number field removed as requested */}
-
-              {/* Test Type */}
-              <div className="flex flex-col">
-                <Label className="mb-2">Test Type <span className="text-red-500">*</span></Label>
+            {/* Inputs above attachments */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
+              {/* All test fields disabled for TestEngineer except status actions */}
+              <div>
+                <Label>Test Type <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.testType}
                   onValueChange={(v) => handleTestChange(idx, "testType", v)}
                   disabled={!areTestFieldsEditable(test, idx)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -2247,10 +2246,8 @@ export default function RDECreateJobOrder() {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Objective */}
-              <div className="flex flex-col">
-                <Label className="mb-2">
+              <div>
+                <Label>
                   Objective of the Test <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -2260,13 +2257,10 @@ export default function RDECreateJobOrder() {
                   }
                   placeholder="TESTING"
                   disabled={!areTestFieldsEditable(test, idx)}
-                  className="w-full"
                 />
               </div>
-
-              {/* Vehicle Location */}
-              <div className="flex flex-col">
-                <Label className="mb-2">Vehicle Location <span className="text-red-500">*</span></Label>
+              <div>
+                <Label>Vehicle Location <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.vehicleLocation}
                   onChange={(e) =>
@@ -2274,13 +2268,10 @@ export default function RDECreateJobOrder() {
                   }
                   placeholder="Enter Vehicle Location"
                   disabled={!areTestFieldsEditable(test, idx)}
-                  className="w-full"
                 />
               </div>
-
-              {/* Cycle Gear Shift */}
-              <div className="flex flex-col">
-                <Label className="mb-2">Cycle Gear Shift <span className="text-red-500">*</span></Label>
+              <div>
+                <Label>Cycle Gear Shift <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.cycleGearShift}
                   onChange={(e) =>
@@ -2288,13 +2279,10 @@ export default function RDECreateJobOrder() {
                   }
                   placeholder="Enter Cycle Gear Shift"
                   disabled={!areTestFieldsEditable(test, idx)}
-                  className="w-full"
                 />
               </div>
-
-              {/* Inertia Class */}
-              <div className="flex flex-col">
-                <Label className="mb-2">Inertia Class <span className="text-red-500">*</span></Label>
+              <div>
+                <Label>Inertia Class <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.inertiaClass}
                   onValueChange={(v) =>
@@ -2302,7 +2290,7 @@ export default function RDECreateJobOrder() {
                   }
                   disabled={!areTestFieldsEditable(test, idx)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -2317,10 +2305,8 @@ export default function RDECreateJobOrder() {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Dataset Name */}
-              <div className="flex flex-col">
-                <Label className="mb-2">Dataset Name <span className="text-red-500">*</span></Label>
+              <div>
+                <Label>Dataset Name <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.datasetName}
                   onChange={(e) =>
@@ -2328,15 +2314,12 @@ export default function RDECreateJobOrder() {
                   }
                   placeholder="Enter Dataset Name"
                   disabled={!areTestFieldsEditable(test, idx)}
-                  className="w-full"
                 />
               </div>
-
-              {/* DPF */}
-              <div className="flex flex-col">
-                <Label className="mb-2">DPF <span className="text-red-500">*</span></Label>
-                <div className="flex gap-4 mt-2">
-                  <label className="flex items-center">
+              <div>
+                <Label>DPF <span className="text-red-500">*</span></Label>
+                <div className="flex gap-2 mt-2">
+                  <label>
                     <input
                       type="radio"
                       name={`dpf${idx}`}
@@ -2344,11 +2327,10 @@ export default function RDECreateJobOrder() {
                       checked={test.dpf === "Yes"}
                       onChange={() => handleTestChange(idx, "dpf", "Yes")}
                       disabled={!areTestFieldsEditable(test, idx)}
-                      className="mr-2"
-                    />
+                    />{" "}
                     Yes
                   </label>
-                  <label className="flex items-center">
+                  <label>
                     <input
                       type="radio"
                       name={`dpf${idx}`}
@@ -2356,11 +2338,10 @@ export default function RDECreateJobOrder() {
                       checked={test.dpf === "No"}
                       onChange={() => handleTestChange(idx, "dpf", "No")}
                       disabled={!areTestFieldsEditable(test, idx)}
-                      className="mr-2"
-                    />
+                    />{" "}
                     No
                   </label>
-                  <label className="flex items-center">
+                  <label>
                     <input
                       type="radio"
                       name={`dpf${idx}`}
@@ -2368,37 +2349,26 @@ export default function RDECreateJobOrder() {
                       checked={test.dpf === "NA"}
                       onChange={() => handleTestChange(idx, "dpf", "NA")}
                       disabled={!areTestFieldsEditable(test, idx)}
-                      className="mr-2"
-                    />
+                    />{" "}
                     NA
                   </label>
                 </div>
               </div>
-            </div>
-
-            {/* Additional fields row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-              {/* DPF Regen Occurs - only show if DPF is Yes */}
               {test.dpf === "Yes" && (
-                <div className="flex flex-col">
-                  <Label className="mb-2">DPF Regen Occurs (g)*</Label>
+                <div>
+                  <Label>DPF Regen Occurs (g) <span className="text-red-500">*</span></Label>
                   <Input
                     value={test.dpfRegenOccurs || ""}
-                    onChange={(e) =>
-                      handleTestChange(idx, "dpfRegenOccurs", e.target.value)
-                    }
+                    onChange={(e) => handleTestChange(idx, "dpfRegenOccurs", e.target.value)}
                     placeholder="Enter DPF Regen Occurs (g)"
                     disabled={!areTestFieldsEditable(test, idx)}
-                    className="w-full"
                   />
                 </div>
               )}
-
-              {/* Dataset flashed */}
-              <div className="flex flex-col">
-                <Label className="mb-2">Dataset flashed <span className="text-red-500">*</span></Label>
-                <div className="flex gap-4 mt-2">
-                  <label className="flex items-center">
+              <div>
+                <Label>Dataset flashed <span className="text-red-500">*</span></Label>
+                <div className="flex gap-2 mt-2">
+                  <label>
                     <input
                       type="radio"
                       name={`datasetflashed${idx}`}
@@ -2408,11 +2378,10 @@ export default function RDECreateJobOrder() {
                         handleTestChange(idx, "datasetflashed", "Yes")
                       }
                       disabled={!areTestFieldsEditable(test, idx)}
-                      className="mr-2"
-                    />
+                    />{" "}
                     Yes
                   </label>
-                  <label className="flex items-center">
+                  <label>
                     <input
                       type="radio"
                       name={`datasetflashed${idx}`}
@@ -2422,18 +2391,15 @@ export default function RDECreateJobOrder() {
                         handleTestChange(idx, "datasetflashed", "No")
                       }
                       disabled={!areTestFieldsEditable(test, idx)}
-                      className="mr-2"
-                    />
+                    />{" "}
                     No
                   </label>
                 </div>
               </div>
-
-              {/* ESS */}
-              <div className="flex flex-col">
-                <Label className="mb-2">ESS <span className="text-red-500">*</span></Label>
-                <div className="flex gap-4 mt-2">
-                  <label className="flex items-center">
+              <div>
+                <Label>ESS <span className="text-red-500">*</span></Label>
+                <div className="flex gap-2 mt-2">
+                  <label>
                     <input
                       type="radio"
                       name={`ess${idx}`}
@@ -2441,11 +2407,10 @@ export default function RDECreateJobOrder() {
                       checked={test.ess === "On"}
                       onChange={() => handleTestChange(idx, "ess", "On")}
                       disabled={!areTestFieldsEditable(test, idx)}
-                      className="mr-2"
-                    />
+                    />{" "}
                     On
                   </label>
-                  <label className="flex items-center">
+                  <label>
                     <input
                       type="radio"
                       name={`ess${idx}`}
@@ -2453,11 +2418,10 @@ export default function RDECreateJobOrder() {
                       checked={test.ess === "Off"}
                       onChange={() => handleTestChange(idx, "ess", "Off")}
                       disabled={!areTestFieldsEditable(test, idx)}
-                      className="mr-2"
-                    />
+                    />{" "}
                     Off
                   </label>
-                  <label className="flex items-center">
+                  <label>
                     <input
                       type="radio"
                       name={`ess${idx}`}
@@ -2465,22 +2429,19 @@ export default function RDECreateJobOrder() {
                       checked={test.ess === "NA"}
                       onChange={() => handleTestChange(idx, "ess", "NA")}
                       disabled={!areTestFieldsEditable(test, idx)}
-                      className="mr-2"
-                    />
+                    />{" "}
                     NA
                   </label>
                 </div>
               </div>
-
-              {/* Mode */}
-              <div className="flex flex-col">
-                <Label className="mb-2">Mode <span className="text-red-500">*</span></Label>
+              <div>
+                <Label>Mode <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.mode}
                   onValueChange={(v) => handleTestChange(idx, "mode", v)}
                   disabled={!areTestFieldsEditable(test, idx)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -2492,13 +2453,8 @@ export default function RDECreateJobOrder() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            {/* Third row of fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-              {/* Hardware Change */}
-              <div className="flex flex-col">
-                <Label className="mb-2">Hardware Change <span className="text-red-500">*</span></Label>
+              <div>
+                <Label>Hardware Change <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.hardwareChange}
                   onChange={(e) =>
@@ -2506,19 +2462,16 @@ export default function RDECreateJobOrder() {
                   }
                   placeholder="Enter Hardware Change"
                   disabled={!areTestFieldsEditable(test, idx)}
-                  className="w-full"
                 />
               </div>
-
-              {/* Shift */}
-              <div className="flex flex-col">
-                <Label className="mb-2">Shift <span className="text-red-500">*</span></Label>
+              <div>
+                <Label>Shift <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.shift}
                   onValueChange={(v) => handleTestChange(idx, "shift", v)}
                   disabled={!areTestFieldsEditable(test, idx)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -2529,16 +2482,14 @@ export default function RDECreateJobOrder() {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Fuel Type */}
-              <div className="flex flex-col">
-                <Label className="mb-2">Fuel Type <span className="text-red-500">*</span></Label>
+              <div>
+                <Label>Fuel Type <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.fuelType}
                   onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
                   disabled={!areTestFieldsEditable(test, idx)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -2550,10 +2501,8 @@ export default function RDECreateJobOrder() {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Equipment Required */}
-              <div className="flex flex-col">
-                <Label className="mb-2">Equipment Required <span className="text-red-500">*</span></Label>
+              <div>
+                <Label>Equipment Required <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.equipmentRequired}
                   onChange={(e) =>
@@ -2561,16 +2510,10 @@ export default function RDECreateJobOrder() {
                   }
                   placeholder="Enter Equipment Required"
                   disabled={!areTestFieldsEditable(test, idx)}
-                  className="w-full"
                 />
               </div>
-            </div>
-
-            {/* Fourth row of fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-              {/* Preferred Date */}
-              <div className="flex flex-col">
-                <Label className="mb-2">Preferred Date <span className="text-red-500">*</span></Label>
+              <div>
+                <Label>Preferred Date <span className="text-red-500">*</span></Label>
                 <Input
                   type="date"
                   value={test.preferredDate}
@@ -2578,13 +2521,10 @@ export default function RDECreateJobOrder() {
                     handleTestChange(idx, "preferredDate", e.target.value)
                   }
                   disabled={!areTestFieldsEditable(test, idx)}
-                  className="w-full"
                 />
               </div>
-
-              {/* Emission Check Date */}
-              <div className="flex flex-col">
-                <Label className="mb-2">Emission Check Date <span className="text-red-500">*</span></Label>
+              <div>
+                <Label>Emission Check Date <span className="text-red-500">*</span></Label>
                 <Input
                   type="date"
                   value={test.emissionCheckDate}
@@ -2592,13 +2532,10 @@ export default function RDECreateJobOrder() {
                     handleTestChange(idx, "emissionCheckDate", e.target.value)
                   }
                   disabled={!areTestFieldsEditable(test, idx)}
-                  className="w-full"
                 />
               </div>
-
-              {/* Specific Instruction - spans 2 columns */}
-              <div className="flex flex-col md:col-span-2">
-                <Label className="mb-2">Specific Instruction <span className="text-red-500">*</span></Label>
+              <div className="col-span-2">
+                <Label>Specific Instruction <span className="text-red-500">*</span></Label>
                 <textarea
                   value={test.specificInstruction}
                   onChange={(e) =>
@@ -2606,7 +2543,8 @@ export default function RDECreateJobOrder() {
                   }
                   placeholder="Enter Specific Instructions"
                   disabled={!areTestFieldsEditable(test, idx)}
-                  className="w-full border rounded p-3 min-h-[60px] max-h-[120px] resize-vertical"
+                  className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical dark:bg-black"
+                  style={{ minWidth: "100%", fontSize: "1rem" }}
                   rows={3}
                 />
               </div>

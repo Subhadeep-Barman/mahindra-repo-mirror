@@ -547,7 +547,7 @@ export default function VTCCEngineForm() {
   // Fetch vehicle serial numbers and body numbers
   useEffect(() => {
     axios
-      .get(`${apiUrl}/vehicle-body-numbers${department ? `?department=${encodeURIComponent(department)}` : ""}`)
+      .get(`${apiUrl}/vehicle-body-numbers`)
       .then((res) => {
         setVehicleSerialNumbers(res.data.map(v => v.vehicle_serial_number));
         // Build a map: { vehicle_serial_number: vehicle_body_number }
