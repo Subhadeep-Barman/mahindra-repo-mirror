@@ -117,7 +117,6 @@ export default function CreateJobOrder() {
       ...prev,
       {
         testNumber: nextTestNumber, // Add test number
-        engineNumber: "",
         testType: "",
         objective: "",
         vehicleLocation: "",
@@ -186,7 +185,6 @@ export default function CreateJobOrder() {
       // Create a new test with prefilled values from the cloned test order
       const clonedTest = {
         testNumber: nextTestNumber,
-        engineNumber: testOrderData.engine_number || "",
         testType: testOrderData.test_type || "",
         objective: testOrderData.test_objective || "",
         vehicleLocation: testOrderData.vehicle_location || "",
@@ -896,13 +894,72 @@ export default function CreateJobOrder() {
     }
   };
 
+  // Validation helper function
   const handleCreateTestOrder = async (testIndex) => {
     const test = tests[testIndex];
 
-    if (!test.objective) {
+    // Validate required fields (matching RDE implementation)
+    const requiredFields = [
+      { key: 'testType', label: 'Test Type' },
+      { key: 'objective', label: 'Objective of the Test' },
+      { key: 'vehicleLocation', label: 'Vehicle Location' },
+      { key: 'cycleGearShift', label: 'Cycle Gear Shift' },
+      { key: 'inertiaClass', label: 'Inertia Class' },
+      { key: 'datasetName', label: 'Dataset Name' },
+      { key: 'mode', label: 'Mode' },
+      { key: 'shift', label: 'Shift' },
+      { key: 'fuelType', label: 'Fuel Type' },
+      { key: 'hardwareChange', label: 'Hardware Change' },
+      { key: 'equipmentRequired', label: 'Equipment Required' },
+      { key: 'dpf', label: 'DPF' },
+      { key: 'ess', label: 'ESS' },
+      { key: 'preferredDate', label: 'Preferred Date' },
+      { key: 'emissionCheckDate', label: 'Emission Check Date' },
+      { key: 'specificInstruction', label: 'Specific Instruction' }
+    ];
+
+    const missing = requiredFields.filter(f => {
+      const val = test[f.key];
+      return val === undefined || val === null || (typeof val === 'string' && val.trim() === '');
+    }).map(f => f.label);
+
+    // Special-case: dataset flashed
+    const datasetFlashedVal = (test.datasetflashed || '').toString().trim();
+    if (!datasetFlashedVal) {
+      missing.push('Dataset flashed');
+    }
+
+    if (missing.length > 0) {
       showSnackbar(
-        "Please fill in the objective of the test before creating test order.",
-        "warning"
+        `Please fill in required fields before creating test order: ${[...new Set(missing)].join(', ')}`,
+        'warning'
+      );
+      return;
+    }
+
+    // If DPF is Yes, require DPF Regen Occurs (g)
+    if (test.dpf === 'Yes') {
+      const regen = test.dpfRegenOccurs;
+      if (regen === undefined || regen === null || (typeof regen === 'string' && regen.trim() === '')) {
+        showSnackbar('DPF Regen Occurs (g) is required when DPF is Yes.', 'warning');
+        return;
+      }
+    }
+
+    // Require Dataset and Experiment attachments
+    const hasEmissionCheck = Array.isArray(test.emissionCheckAttachment) && test.emissionCheckAttachment.length > 0;
+    const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
+    const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
+
+    if (!hasEmissionCheck || !hasDataset || !hasExperiment) {
+      const missingAttachments = [];
+      if (!hasEmissionCheck) missingAttachments.push('Emission Check Attachment');
+      if (!hasDataset) missingAttachments.push('Dataset Attachment');
+      if (!hasExperiment) missingAttachments.push('Experiment Attachment');
+      
+      showSnackbar(
+        `Required attachments are missing: ${missingAttachments.join(', ')}`,
+        'error'
       );
       return;
     }
@@ -971,7 +1028,7 @@ export default function CreateJobOrder() {
       test_order_id,
       job_order_id: job_order_id || "",
       CoastDownData_id: CoastDownData_id || "",
-      engine_number: test.engineNumber || "",
+      engine_number: "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -1214,7 +1271,6 @@ export default function CreateJobOrder() {
       const updated = [...prev];
       updated[testIdx] = {
         ...updated[testIdx],
-        engineNumber: testOrder.engine_number || "",
         testType: testOrder.test_type || "",
         objective: testOrder.test_objective || "",
         vehicleLocation: testOrder.vehicle_location || "",
@@ -1292,7 +1348,7 @@ export default function CreateJobOrder() {
       test_order_id: test.testOrderId,
       job_order_id: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || "",
       CoastDownData_id: test.CoastDownData_id || "",
-      engine_number: test.engineNumber || "",
+      engine_number: "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -1555,6 +1611,54 @@ export default function CreateJobOrder() {
     }
 
     return missingFields;
+  };
+
+  // Helper function to validate if test is ready for submission
+  const isTestValid = (test) => {
+    if (!test) return false;
+
+    const requiredKeys = [
+      'testType',
+      'objective',
+      'vehicleLocation',
+      'cycleGearShift',
+      'inertiaClass',
+      'datasetName',
+      'mode',
+      'shift',
+      'fuelType',
+      'hardwareChange',
+      'equipmentRequired',
+      'dpf',
+      'ess',
+      'preferredDate',
+      'emissionCheckDate',
+      'specificInstruction'
+    ];
+
+    for (const key of requiredKeys) {
+      const val = test[key];
+      if (val === undefined || val === null) return false;
+      if (typeof val === 'string' && val.trim() === '') return false;
+    }
+
+    // dataset flashed may be stored as datasetflashed or datasetRefreshed
+    const datasetFlashed = (test.datasetflashed || test.datasetRefreshed || '').toString().trim();
+    if (!datasetFlashed) return false;
+
+    // If DPF is Yes, require regen value
+    if (test.dpf === 'Yes') {
+      const regen = test.dpfRegenOccurs;
+      if (regen === undefined || regen === null || (typeof regen === 'string' && regen.trim() === '')) return false;
+    }
+
+    // Require attachments
+    const hasEmissionCheck = Array.isArray(test.emissionCheckAttachment) && test.emissionCheckAttachment.length > 0;
+    const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
+    const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
+    if (!hasEmissionCheck || !hasDataset || !hasExperiment) return false;
+
+    return true;
   };
 
   // Helper function to get attachment file count
@@ -2405,35 +2509,8 @@ export default function CreateJobOrder() {
               {/* Inputs above attachments */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
                 {/* All test fields disabled for TestEngineer except status actions */}
-                <div className="flex flex-col">
-                  <Label htmlFor={`engineNumber${idx}`} className="mb-2">
-                    Engine Number <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={test.engineNumber || ""}
-                    onValueChange={(value) => {
-                      if (value !== form.engineSerialNumber) {
-                        showSnackbar && showSnackbar("Warning: You are selecting a different engine number than the main form.", "warning");
-                      }
-                      handleTestChange(idx, "engineNumber", value);
-                    }}
-                    required
-                    disabled={!areTestFieldsEditable(test, idx)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {engineNumbers.map((engineNumber) => (
-                        <SelectItem key={engineNumber} value={engineNumber}>
-                          {engineNumber}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div>
-                  <Label>Test Type</Label>
+                  <Label>Test Type <span className="text-red-500">*</span></Label>
                   <Select
                     value={test.testType}
                     onValueChange={(v) => handleTestChange(idx, "testType", v)}
@@ -2465,7 +2542,7 @@ export default function CreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>Vehicle Location</Label>
+                  <Label>Vehicle Location <span className="text-red-500">*</span></Label>
                   <Input
                     value={test.vehicleLocation}
                     onChange={(e) =>
@@ -2476,7 +2553,7 @@ export default function CreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>Cycle Gear Shift</Label>
+                  <Label>Cycle Gear Shift <span className="text-red-500">*</span></Label>
                   <Input
                     value={test.cycleGearShift}
                     onChange={(e) =>
@@ -2487,7 +2564,7 @@ export default function CreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>Inertia Class</Label>
+                  <Label>Inertia Class <span className="text-red-500">*</span></Label>
                   <Select
                     value={test.inertiaClass}
                     onValueChange={(v) =>
@@ -2511,7 +2588,7 @@ export default function CreateJobOrder() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Dataset Name</Label>
+                  <Label>Dataset Name <span className="text-red-500">*</span></Label>
                   <Input
                     value={test.datasetName}
                     onChange={(e) =>
@@ -2522,7 +2599,7 @@ export default function CreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>DPF</Label>
+                  <Label>DPF <span className="text-red-500">*</span></Label>
                   <div className="flex gap-2 mt-2">
                     <label>
                       <input
@@ -2561,7 +2638,7 @@ export default function CreateJobOrder() {
                 </div>
                 {test.dpf === "Yes" && (
                   <div>
-                    <Label>DPF Regen Occurs (g)*</Label>
+                    <Label>DPF Regen Occurs (g) <span className="text-red-500">*</span></Label>
                     <Input
                       value={test.dpfRegenOccurs || ""}
                       onChange={(e) => handleTestChange(idx, "dpfRegenOccurs", e.target.value)}
@@ -2571,7 +2648,7 @@ export default function CreateJobOrder() {
                   </div>
                 )}
                 <div>
-                  <Label>Dataset flashed</Label>
+                  <Label>Dataset flashed <span className="text-red-500">*</span></Label>
                   <div className="flex gap-2 mt-2">
                     <label>
                       <input
@@ -2602,7 +2679,7 @@ export default function CreateJobOrder() {
                   </div>
                 </div>
                 <div>
-                  <Label>ESS</Label>
+                  <Label>ESS <span className="text-red-500">*</span></Label>
                   <div className="flex gap-2 mt-2">
                     <label>
                       <input
@@ -2640,7 +2717,7 @@ export default function CreateJobOrder() {
                   </div>
                 </div>
                 <div>
-                  <Label>Mode</Label>
+                  <Label>Mode <span className="text-red-500">*</span></Label>
                   <Select
                     value={test.mode}
                     onValueChange={(v) => handleTestChange(idx, "mode", v)}
@@ -2659,7 +2736,7 @@ export default function CreateJobOrder() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Hardware Change</Label>
+                  <Label>Hardware Change <span className="text-red-500">*</span></Label>
                   <Input
                     value={test.hardwareChange}
                     onChange={(e) =>
@@ -2670,7 +2747,7 @@ export default function CreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>Shift</Label>
+                  <Label>Shift <span className="text-red-500">*</span></Label>
                   <Select
                     value={test.shift}
                     onValueChange={(v) => handleTestChange(idx, "shift", v)}
@@ -2688,7 +2765,7 @@ export default function CreateJobOrder() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Fuel Type</Label>
+                  <Label>Fuel Type <span className="text-red-500">*</span></Label>
                   <Select
                     value={test.fuelType}
                     onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
@@ -2707,7 +2784,7 @@ export default function CreateJobOrder() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Equipment Required</Label>
+                  <Label>Equipment Required <span className="text-red-500">*</span></Label>
                   <Input
                     value={test.equipmentRequired}
                     onChange={(e) =>
@@ -2718,7 +2795,7 @@ export default function CreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>Preferred Date</Label>
+                  <Label>Preferred Date <span className="text-red-500">*</span></Label>
                   <Input
 
                     type="date"
@@ -2730,7 +2807,7 @@ export default function CreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>Emission Check Date</Label>
+                  <Label>Emission Check Date <span className="text-red-500">*</span></Label>
                   <Input
                     type="date"
                     value={test.emissionCheckDate}
@@ -2741,7 +2818,7 @@ export default function CreateJobOrder() {
                   />
                 </div>
                 <div className="col-span-2">
-                  <Label>Specific Instruction</Label>
+                  <Label>Specific Instruction <span className="text-red-500">*</span></Label>
                   <textarea
                     value={test.specificInstruction}
                     onChange={(e) =>
@@ -2763,7 +2840,7 @@ export default function CreateJobOrder() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label>
-                      Emission Check Attachment
+                      Emission Check Attachment <span className="text-red-500">*</span>
                       {test.emissionCheckAttachment && test.emissionCheckAttachment.length > 0 && (
                         <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
                           {Array.isArray(test.emissionCheckAttachment) ? test.emissionCheckAttachment.length : 1}
@@ -2812,7 +2889,7 @@ export default function CreateJobOrder() {
 
                   <div>
                     <Label>
-                      Dataset Attachment
+                      Dataset Attachment <span className="text-red-500">*</span>
                       {test.dataset_attachment && test.dataset_attachment.length > 0 && (
                         <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
                           {Array.isArray(test.dataset_attachment) ? test.dataset_attachment.length : 1}
@@ -2905,7 +2982,7 @@ export default function CreateJobOrder() {
                   </div>
                   <div>
                     <Label>
-                      Experiment Attachment
+                      Experiment Attachment <span className="text-red-500">*</span>
                       {test.experiment_attachment && test.experiment_attachment.length > 0 && (
                         <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
                           {Array.isArray(test.experiment_attachment) ? test.experiment_attachment.length : 1}
@@ -3346,7 +3423,7 @@ export default function CreateJobOrder() {
                 <Button
                   className="bg-red-600 text-white text-xs px-6 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
                   onClick={() => handleCreateTestOrder(idx)}
-                  disabled={!!test.testOrderId || test.disabled}
+                  disabled={!!test.testOrderId || test.disabled || !isTestValid(test)}
                 >
                   {test.testOrderId ? " TEST ORDER CREATED" : " CREATE TEST ORDER"}
                 </Button>

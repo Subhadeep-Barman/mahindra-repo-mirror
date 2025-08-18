@@ -114,7 +114,6 @@ export default function NashikCreateJobOrder() {
     setTests((prev) => [
       ...prev,
       {
-        engineNumber: "", // New field for engine number
         testType: "",
         objective: "",
         vehicleLocation: "",
@@ -208,6 +207,48 @@ export default function NashikCreateJobOrder() {
     }
 
     return missingFields;
+  };
+
+  // Helper function to validate if test is ready for submission
+  const isTestValid = (test) => {
+    if (!test) return false;
+
+    const requiredKeys = [
+      'testType',
+      'objective',
+      'vehicleLocation',
+      'cycleGearShift',
+      'inertiaClass',
+      'datasetName',
+      'mode',
+      'shift',
+      'fuelType',
+      'hardwareChange',
+      'equipmentRequired',
+      'dpf',
+      'ess',
+      'preferredDate',
+      'emissionCheckDate',
+      'specificInstruction'
+    ];
+
+    for (const key of requiredKeys) {
+      const val = test[key];
+      if (val === undefined || val === null) return false;
+      if (typeof val === 'string' && val.trim() === '') return false;
+    }
+
+    // dataset refreshed may be stored as datasetRefreshed
+    const datasetRefreshed = (test.datasetRefreshed || '').toString().trim();
+    if (!datasetRefreshed) return false;
+
+    // Require attachments
+    const hasEmissionCheck = Array.isArray(test.Emission_check) && test.Emission_check.length > 0;
+    const hasDataset = Array.isArray(test.Dataset_attachment) && test.Dataset_attachment.length > 0;
+    const hasExperiment = Array.isArray(test.Experiment_attachment) && test.Experiment_attachment.length > 0;
+    if (!hasEmissionCheck || !hasDataset || !hasExperiment) return false;
+
+    return true;
   };
 
   // Fetch vehicle and engine form data from localStorage
@@ -725,9 +766,60 @@ export default function NashikCreateJobOrder() {
   const handleCreateTestOrder = async (testIndex) => {
     const test = tests[testIndex];
 
-    // Validate required fields
-    if (!test.objective) {
-      showSnackbar("Please fill in the objective of the test before creating test order.", "error");
+    // Validate required fields (matching RDE implementation)
+    const requiredFields = [
+      { key: 'testType', label: 'Test Type' },
+      { key: 'objective', label: 'Objective of the Test' },
+      { key: 'vehicleLocation', label: 'Vehicle Location' },
+      { key: 'cycleGearShift', label: 'Cycle Gear Shift' },
+      { key: 'inertiaClass', label: 'Inertia Class' },
+      { key: 'datasetName', label: 'Dataset Name' },
+      { key: 'mode', label: 'Mode' },
+      { key: 'shift', label: 'Shift' },
+      { key: 'fuelType', label: 'Fuel Type' },
+      { key: 'hardwareChange', label: 'Hardware Change' },
+      { key: 'equipmentRequired', label: 'Equipment Required' },
+      { key: 'dpf', label: 'DPF' },
+      { key: 'ess', label: 'ESS' },
+      { key: 'preferredDate', label: 'Preferred Date' },
+      { key: 'emissionCheckDate', label: 'Emission Check Date' },
+      { key: 'specificInstruction', label: 'Specific Instruction' }
+    ];
+
+    const missing = requiredFields.filter(f => {
+      const val = test[f.key];
+      return val === undefined || val === null || (typeof val === 'string' && val.trim() === '');
+    }).map(f => f.label);
+
+    // Special-case: dataset refreshed
+    const datasetRefreshedVal = (test.datasetRefreshed || '').toString().trim();
+    if (!datasetRefreshedVal) {
+      missing.push('Dataset Refreshed');
+    }
+
+    if (missing.length > 0) {
+      showSnackbar(
+        `Please fill in required fields before creating test order: ${[...new Set(missing)].join(', ')}`,
+        'warning'
+      );
+      return;
+    }
+
+    // Require Dataset and Experiment attachments
+    const hasEmissionCheck = Array.isArray(test.Emission_check) && test.Emission_check.length > 0;
+    const hasDataset = Array.isArray(test.Dataset_attachment) && test.Dataset_attachment.length > 0;
+    const hasExperiment = Array.isArray(test.Experiment_attachment) && test.Experiment_attachment.length > 0;
+
+    if (!hasEmissionCheck || !hasDataset || !hasExperiment) {
+      const missingAttachments = [];
+      if (!hasEmissionCheck) missingAttachments.push('Emission Check Attachment');
+      if (!hasDataset) missingAttachments.push('Dataset Attachment');
+      if (!hasExperiment) missingAttachments.push('Experiment Attachment');
+      
+      showSnackbar(
+        `Required attachments are missing: ${missingAttachments.join(', ')}`,
+        'error'
+      );
       return;
     }
 
@@ -820,7 +912,7 @@ export default function NashikCreateJobOrder() {
       test_order_id,
       job_order_id,
       CoastDownData_id,
-      engine_number: test.engineNumber || "",
+      engine_number: "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -1074,7 +1166,7 @@ export default function NashikCreateJobOrder() {
       job_order_id: location.state?.jobOrder?.job_order_id || null,
       CoastDownData_id:
         location.state?.jobOrder?.CoastDownData_id || existingCoastDownId,
-      engine_number: test.engineNumber || "",
+      engine_number: "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -1867,30 +1959,8 @@ export default function NashikCreateJobOrder() {
               )}
             </div>
             <div className="grid grid-cols-4 gap-4 mb-2">
-              <div className="flex flex-col">
-                <Label htmlFor={`engineNumber${idx}`} className="mb-2">
-                  Engine Number <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={test.engineNumber || ""}
-                  onValueChange={(value) => handleTestChange(idx, "engineNumber", value)}
-                  required
-                  disabled={!areTestFieldsEditable(test, idx)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {engineNumbers.map((engineNumber) => (
-                      <SelectItem key={engineNumber} value={engineNumber}>
-                        {engineNumber}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               <div>
-                <Label>Test Type</Label>
+                <Label>Test Type <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.testType}
                   onValueChange={(v) => handleTestChange(idx, "testType", v)}
@@ -1922,7 +1992,7 @@ export default function NashikCreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Vehicle Location</Label>
+                <Label>Vehicle Location <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.vehicleLocation}
                   onChange={(e) =>
@@ -1935,7 +2005,7 @@ export default function NashikCreateJobOrder() {
             </div>
             <div className="grid grid-cols-4 gap-4 mb-2">
               <div>
-                <Label>Cycle Gear Shift</Label>
+                <Label>Cycle Gear Shift <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.cycleGearShift}
                   onChange={(e) =>
@@ -1946,7 +2016,7 @@ export default function NashikCreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Dataset Name</Label>
+                <Label>Dataset Name <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.datasetName}
                   onChange={(e) =>
@@ -1957,7 +2027,7 @@ export default function NashikCreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Inertia Class</Label>
+                <Label>Inertia Class <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.inertiaClass}
                   onValueChange={(v) =>
@@ -1981,7 +2051,7 @@ export default function NashikCreateJobOrder() {
                 </Select>
               </div>
               <div>
-                <Label>DPF</Label>
+                <Label>DPF <span className="text-red-500">*</span></Label>
                 <div className="flex gap-2 mt-2">
                   <label>
                     <input
@@ -2018,7 +2088,7 @@ export default function NashikCreateJobOrder() {
             </div>
             <div className="grid grid-cols-4 gap-4 mb-2">
               <div>
-                <Label>Dataset Refreshed</Label>
+                <Label>Dataset Refreshed <span className="text-red-500">*</span></Label>
                 <div className="flex gap-2 mt-2">
                   <label>
                     <input
@@ -2047,7 +2117,7 @@ export default function NashikCreateJobOrder() {
                 </div>
               </div>
               <div>
-                <Label>ESS</Label>
+                <Label>ESS <span className="text-red-500">*</span></Label>
                 <div className="flex gap-2 mt-2">
                   <label>
                     <input
@@ -2082,7 +2152,7 @@ export default function NashikCreateJobOrder() {
                 </div>
               </div>
               <div>
-                <Label>Mode</Label>
+                <Label>Mode <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.mode}
                   onValueChange={(v) => handleTestChange(idx, "mode", v)}
@@ -2101,7 +2171,7 @@ export default function NashikCreateJobOrder() {
                 </Select>
               </div>
               <div>
-                <Label>Hardware Change</Label>
+                <Label>Hardware Change <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.hardwareChange}
                   onChange={(e) =>
@@ -2114,7 +2184,7 @@ export default function NashikCreateJobOrder() {
             </div>
             <div className="grid grid-cols-4 gap-4 mb-2">
               <div>
-                <Label>Shift</Label>
+                <Label>Shift <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.shift}
                   onValueChange={(v) => handleTestChange(idx, "shift", v)}
@@ -2132,7 +2202,7 @@ export default function NashikCreateJobOrder() {
                 </Select>
               </div>
               <div>
-                <Label>Preferred Date</Label>
+                <Label>Preferred Date <span className="text-red-500">*</span></Label>
                 <Input
                   type="date"
                   value={test.preferredDate}
@@ -2143,7 +2213,7 @@ export default function NashikCreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Fuel Type</Label>
+                <Label>Fuel Type <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.fuelType}
                   onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
@@ -2162,7 +2232,7 @@ export default function NashikCreateJobOrder() {
                 </Select>
               </div>
               <div>
-                <Label>Equipment Required</Label>
+                <Label>Equipment Required <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.equipmentRequired}
                   onChange={(e) =>
@@ -2173,7 +2243,7 @@ export default function NashikCreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Emission Check Date</Label>
+                <Label>Emission Check Date <span className="text-red-500">*</span></Label>
                 <Input
                   type="date"
                   value={test.emissionCheckDate}
@@ -2201,7 +2271,7 @@ export default function NashikCreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Specific Instruction</Label>
+                <Label>Specific Instruction <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.specificInstruction}
                   onChange={(e) =>
@@ -2220,7 +2290,7 @@ export default function NashikCreateJobOrder() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label>Emission Check Attachment</Label>
+                  <Label>Emission Check Attachment <span className="text-red-500">*</span></Label>
                   <DropzoneFileList
                     buttonText="Emission Check Attachment"
                     name="Emission_check"
@@ -2249,7 +2319,7 @@ export default function NashikCreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>Dataset Attachment</Label>
+                  <Label>Dataset Attachment <span className="text-red-500">*</span></Label>
                   <DropzoneFileList
                     buttonText="Dataset Attachment"
                     name="Dataset_attachment"
@@ -2307,7 +2377,7 @@ export default function NashikCreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>Experiment Attachment</Label>
+                  <Label>Experiment Attachment <span className="text-red-500">*</span></Label>
                   <DropzoneFileList
                     buttonText="Experiment Attachment"
                     name="Experiment_attachment"
@@ -2652,9 +2722,9 @@ export default function NashikCreateJobOrder() {
 
             <div className="flex justify-end mt-4">
               <Button
-                className="bg-red-600 text-white text-xs px-6 py-2 rounded"
+                className="bg-red-600 text-white text-xs px-6 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
                 onClick={() => handleCreateTestOrder(idx)}
-                disabled={editingTestOrderIdx === idx || isTestEngineer}
+                disabled={editingTestOrderIdx === idx || isTestEngineer || !isTestValid(test)}
               >
                 CREATE TEST ORDER
               </Button>

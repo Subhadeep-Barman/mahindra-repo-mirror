@@ -1831,74 +1831,70 @@ export default function RDECreateJobOrder() {
           </div>
         </div>
 
-        {/* Vehicle Details Card */}
+        {/* Vehicle Details Card (Chennai style) */}
         {form.vehicleBodyNumber && vehicleEditable && (
-          <div className="bg-white border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
+          <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
             <div
-              className="flex items-center justify-between mb-6 cursor-pointer"
+              className="flex items-center justify-between bg-gray-100 dark:bg-black border-t-4 border-red-600 px-4 py-2 cursor-pointer"
               onClick={() => setVehicleAccordionOpen((prev) => !prev)}
             >
-              <div className="text-lg font-medium text-gray-900">
-                Vehicle Details
-              </div>
-              <span className="text-gray-400">
-                {vehicleAccordionOpen ? "▲" : "▼"}
-              </span>
+              <span className="font-semibold text-sm">Vehicle Details</span>
+              <span>{vehicleAccordionOpen ? "▲" : "▼"}</span>
             </div>
             {vehicleAccordionOpen && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {Object.entries(vehicleEditable).map(([label, value]) => (
-                  <div key={label}>
-                    <Label className="text-sm text-gray-600 mb-1 block font-medium capitalize">
-                      {label.replace(/_/g, " ")}
-                    </Label>
-                    <Input
-                      value={value ?? ""}
-                      onChange={(e) =>
-                        handleVehicleEditableChange(label, e.target.value)
-                      }
-                      className="w-full h-10 border-gray-300"
-                      disabled={!vehicleEditMode || isTestEngineer}
-                    />
-                  </div>
-                ))}
-              </div>
+              <form className="bg-white px-4 py-4 dark:bg-black">
+                <div className="grid grid-cols-4 gap-4 text-xs">
+                  {Object.entries(vehicleEditable).map(([label, value]) => (
+                    <div key={label} className="flex flex-col">
+                      <Label className="font-semibold capitalize">
+                        {label.replace(/_/g, " ")}
+                      </Label>
+                      <Input
+                        value={value ?? ""}
+                        onChange={(e) =>
+                          handleVehicleEditableChange(label, e.target.value)
+                        }
+                        className="mt-1"
+                        disabled={!vehicleEditMode || isTestEngineer}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </form>
             )}
           </div>
         )}
 
-        {/* Engine Details Card */}
+        {/* Engine Details Card (Chennai style) */}
         {form.engineNumber && engineEditable && (
-          <div className="bg-white border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
+          <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
             <div
-              className="flex items-center justify-between mb-6 cursor-pointer"
+              className="flex items-center justify-between bg-gray-100 dark:bg-black border-t-4 border-blue-600 px-4 py-2 cursor-pointer"
               onClick={() => setEngineAccordionOpen((prev) => !prev)}
             >
-              <div className="text-lg font-medium text-gray-900">
-                Engine Details
-              </div>
-              <span className="text-gray-400">
-                {engineAccordionOpen ? "▲" : "▼"}
-              </span>
+              <span className="font-semibold text-sm">Engine Details</span>
+              <span>{engineAccordionOpen ? "▲" : "▼"}</span>
             </div>
             {engineAccordionOpen && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {Object.entries(engineEditable).map(([label, value]) => (
-                  <div key={label}>
-                    <Label className="text-sm text-gray-600 mb-1 block font-medium capitalize">
-                      {label.replace(/_/g, " ")}
-                    </Label>
-                    <Input
-                      value={value ?? ""}
-                      onChange={(e) =>
-                        handleEngineEditableChange(label, e.target.value)
-                      }
-                      className="w-full h-10 border-gray-300"
-                      disabled={!engineEditMode || isTestEngineer}
-                    />
-                  </div>
-                ))}
-              </div>
+              <form className="bg-white dark:bg-black px-4 py-4">
+                <div className="grid grid-cols-4 gap-4 text-xs">
+                  {Object.entries(engineEditable).map(([label, value]) => (
+                    <div key={label} className="flex flex-col">
+                      <Label className="font-semibold capitalize">
+                        {label.replace(/_/g, " ")}
+                      </Label>
+                      <Input
+                        value={value ?? ""}
+                        onChange={(e) =>
+                          handleEngineEditableChange(label, e.target.value)
+                        }
+                        className="mt-1"
+                        disabled={!engineEditMode || isTestEngineer}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </form>
             )}
           </div>
         )}

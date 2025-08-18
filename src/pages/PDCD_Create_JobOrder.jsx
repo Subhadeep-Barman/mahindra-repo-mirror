@@ -687,13 +687,58 @@ export default function PDCDCreateJobOrder() {
     }
   };
 
+  // Helper function to validate test data
+  const isTestValid = (test) => {
+    const requiredFields = [
+      'testType',
+      'objective',
+      'vehicleLocation',
+      'cycleGearShift',
+      'datasetName',
+      'inertiaClass',
+      'dpf',
+      'datasetRefreshed',
+      'ess',
+      'mode',
+      'hardwareChange',
+      'shift',
+      'preferredDate',
+      'fuelType',
+      'equipmentRequired',
+      'emissionCheckDate',
+      'specificInstruction'
+    ];
+
+    // Check if all required fields are filled
+    for (const field of requiredFields) {
+      if (!test[field] || test[field].toString().trim() === '') {
+        return false;
+      }
+    }
+
+    // Check if required attachments are present
+    const requiredAttachments = [
+      'emissionCheckAttachments',
+      'datasetAttachments', 
+      'experimentAttachments'
+    ];
+
+    for (const attachment of requiredAttachments) {
+      if (!test[attachment] || !Array.isArray(test[attachment]) || test[attachment].length === 0) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   // Handler for creating test order
   const handleCreateTestOrder = async (testIndex) => {
     const test = tests[testIndex];
 
-    // Validate required fields
-    if (!test.objective) {
-      showSnackbar("Please fill in the objective of the test before creating test order.", "error");
+    // Use comprehensive validation
+    if (!isTestValid(test)) {
+      showSnackbar("Please fill in all required fields and upload all mandatory attachments before creating test order.", "error");
       return;
     }
 
@@ -774,7 +819,7 @@ export default function PDCDCreateJobOrder() {
       test_order_id,
       job_order_id,
       CoastDownData_id,
-      engine_number: test.engineNumber || "",
+      engine_number: "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -1028,7 +1073,7 @@ export default function PDCDCreateJobOrder() {
       job_order_id: location.state?.jobOrder?.job_order_id || null,
       CoastDownData_id:
         location.state?.jobOrder?.CoastDownData_id || existingCoastDownId,
-      engine_number: test.engineNumber || "",
+      engine_number: "",
       test_type: test.testType || "",
       test_objective: test.objective || "",
       vehicle_location: test.vehicleLocation || "",
@@ -1820,31 +1865,9 @@ export default function PDCDCreateJobOrder() {
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-4 gap-4 mb-2">
-              <div className="flex flex-col">
-                <Label htmlFor={`engineNumber${idx}`} className="mb-2">
-                  Engine Number <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={test.engineNumber || ""}
-                  onValueChange={(value) => handleTestChange(idx, "engineNumber", value)}
-                  required
-                  disabled={!areTestFieldsEditable(test, idx)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {engineNumbers.map((engineNumber) => (
-                      <SelectItem key={engineNumber} value={engineNumber}>
-                        {engineNumber}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid grid-cols-3 gap-4 mb-2">
               <div>
-                <Label>Test Type</Label>
+                <Label>Test Type <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.testType}
                   onValueChange={(v) => handleTestChange(idx, "testType", v)}
@@ -1876,7 +1899,7 @@ export default function PDCDCreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Vehicle Location</Label>
+                <Label>Vehicle Location <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.vehicleLocation}
                   onChange={(e) =>
@@ -1889,7 +1912,7 @@ export default function PDCDCreateJobOrder() {
             </div>
             <div className="grid grid-cols-4 gap-4 mb-2">
               <div>
-                <Label>Cycle Gear Shift</Label>
+                <Label>Cycle Gear Shift <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.cycleGearShift}
                   onChange={(e) =>
@@ -1900,7 +1923,7 @@ export default function PDCDCreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Dataset Name</Label>
+                <Label>Dataset Name <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.datasetName}
                   onChange={(e) =>
@@ -1911,7 +1934,7 @@ export default function PDCDCreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Inertia Class</Label>
+                <Label>Inertia Class <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.inertiaClass}
                   onValueChange={(v) =>
@@ -1935,7 +1958,7 @@ export default function PDCDCreateJobOrder() {
                 </Select>
               </div>
               <div>
-                <Label>DPF</Label>
+                <Label>DPF <span className="text-red-500">*</span></Label>
                 <div className="flex gap-2 mt-2">
                   <label>
                     <input
@@ -1972,7 +1995,7 @@ export default function PDCDCreateJobOrder() {
             </div>
             <div className="grid grid-cols-4 gap-4 mb-2">
               <div>
-                <Label>Dataset Refreshed</Label>
+                <Label>Dataset Refreshed <span className="text-red-500">*</span></Label>
                 <div className="flex gap-2 mt-2">
                   <label>
                     <input
@@ -2001,7 +2024,7 @@ export default function PDCDCreateJobOrder() {
                 </div>
               </div>
               <div>
-                <Label>ESS</Label>
+                <Label>ESS <span className="text-red-500">*</span></Label>
                 <div className="flex gap-2 mt-2">
                   <label>
                     <input
@@ -2036,7 +2059,7 @@ export default function PDCDCreateJobOrder() {
                 </div>
               </div>
               <div>
-                <Label>Mode</Label>
+                <Label>Mode <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.mode}
                   onValueChange={(v) => handleTestChange(idx, "mode", v)}
@@ -2055,7 +2078,7 @@ export default function PDCDCreateJobOrder() {
                 </Select>
               </div>
               <div>
-                <Label>Hardware Change</Label>
+                <Label>Hardware Change <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.hardwareChange}
                   onChange={(e) =>
@@ -2068,7 +2091,7 @@ export default function PDCDCreateJobOrder() {
             </div>
             <div className="grid grid-cols-4 gap-4 mb-2">
               <div>
-                <Label>Shift</Label>
+                <Label>Shift <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.shift}
                   onValueChange={(v) => handleTestChange(idx, "shift", v)}
@@ -2086,7 +2109,7 @@ export default function PDCDCreateJobOrder() {
                 </Select>
               </div>
               <div>
-                <Label>Preferred Date</Label>
+                <Label>Preferred Date <span className="text-red-500">*</span></Label>
                 <Input
                   type="date"
                   value={test.preferredDate}
@@ -2097,7 +2120,7 @@ export default function PDCDCreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Fuel Type</Label>
+                <Label>Fuel Type <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.fuelType}
                   onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
@@ -2116,7 +2139,7 @@ export default function PDCDCreateJobOrder() {
                 </Select>
               </div>
               <div>
-                <Label>Equipment Required</Label>
+                <Label>Equipment Required <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.equipmentRequired}
                   onChange={(e) =>
@@ -2127,7 +2150,7 @@ export default function PDCDCreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Emission Check Date</Label>
+                <Label>Emission Check Date <span className="text-red-500">*</span></Label>
                 <Input
                   type="date"
                   value={test.emissionCheckDate}
@@ -2155,7 +2178,7 @@ export default function PDCDCreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Specific Instruction</Label>
+                <Label>Specific Instruction <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.specificInstruction}
                   onChange={(e) =>
@@ -2174,7 +2197,7 @@ export default function PDCDCreateJobOrder() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label>Emission Check Attachment</Label>
+                  <Label>Emission Check Attachment <span className="text-red-500">*</span></Label>
                   <DropzoneFileList
                     buttonText="Emission Check Attachment"
                     name="Emission_check"
@@ -2203,7 +2226,7 @@ export default function PDCDCreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>Dataset Attachment</Label>
+                  <Label>Dataset Attachment <span className="text-red-500">*</span></Label>
                   <DropzoneFileList
                     buttonText="Dataset Attachment"
                     name="Dataset_attachment"
@@ -2261,7 +2284,7 @@ export default function PDCDCreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>Experiment Attachment</Label>
+                  <Label>Experiment Attachment <span className="text-red-500">*</span></Label>
                   <DropzoneFileList
                     buttonText="Experiment Attachment"
                     name="Experiment_attachment"
@@ -2608,7 +2631,7 @@ export default function PDCDCreateJobOrder() {
               <Button
                 className="bg-red-600 text-white text-xs px-6 py-2 rounded"
                 onClick={() => handleCreateTestOrder(idx)}
-                disabled={editingTestOrderIdx === idx || isTestEngineer}
+                disabled={editingTestOrderIdx === idx || isTestEngineer || !isTestValid(test)}
               >
                 CREATE TEST ORDER
               </Button>
