@@ -113,9 +113,9 @@ export default function HomePage() {
                     <Zap className="h-4 w-4 mr-2" />
                     Enterprise Testing Platform
                   </div>
-                  <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl lg:text-5xl">
-                    DBMRS
-                    <span className="block bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+                  <h1 className="text-3xl pb-2 font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl lg:text-5xl">
+                    DBMRS 
+                    <span className="block pt-2 bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
                       VTC & RDE Portal
                     </span>
                   </h1>

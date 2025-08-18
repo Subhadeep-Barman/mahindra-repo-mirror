@@ -115,21 +115,19 @@ export default function EditTestOrder() {
     others_attachment: testOrder?.others_attachment || "",
     specificInstruction: testOrder?.specific_instruction || "",
     status: testOrder?.status || "Created",
-    showCoastDownData: false,
-    // Coast down data
-    cdReportRef: testOrder?.coast_down_reference || "",
-    vehicleRefMass: testOrder?.vehicle_reference_mass?.toString() || "",
-    aN: testOrder?.a_value?.toString() || "",
-    bNkmph: testOrder?.b_value?.toString() || "",
-    cNkmph2: testOrder?.c_value?.toString() || "",
-    f0N: testOrder?.f0_value?.toString() || "",
-    f1Nkmph: testOrder?.f1_value?.toString() || "",
-    f2Nkmph2: testOrder?.f2_value?.toString() || "",
+    // Creator info
+    createdBy: testOrder?.name_of_creator || "",
+    createdOn: testOrder?.created_on || "",
+    // Set showCoastDownData to true if backend has coast down data
+    showCoastDownData: testOrder?.coast_down_data || false,
     // Remarks
     rejection_remarks: testOrder?.rejection_remarks || "",
     remark: testOrder?.remark || "",
     coast_down_data: testOrder?.coast_down_data || null, 
   });
+  
+  console.log("coast_down_data from backend:", testOrder?.coast_down_data);
+  console.log("showCoastDownData state value:", test.showCoastDownData);
 
   // States for API data
   const [testTypes, setTestTypes] = useState([]);
@@ -167,6 +165,20 @@ export default function EditTestOrder() {
 
   // Fetch API data on component mount
   useEffect(() => {
+    // Debug log for coast down data after component mount
+    console.log("Component mounted - Coast Down Data state:");
+    console.log("showCoastDownData:", test.showCoastDownData);
+    console.log("Coast down values:", {
+      f0N: test.f0N,
+      f1Nkmph: test.f1Nkmph,
+      f2Nkmph2: test.f2Nkmph2,
+      aN: test.aN,
+      bNkmph: test.bNkmph,
+      cNkmph2: test.cNkmph2,
+      cdReportRef: test.cdReportRef,
+      vehicleRefMass: test.vehicleRefMass
+    });
+    
     // Fetch test types
     const fetchTestTypes = async () => {
       try {
@@ -230,6 +242,24 @@ export default function EditTestOrder() {
     fetchEngineNumbers();
   }, []);
 
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return dateString;
+    }
+  };
+
   // Helper to build the test order payload
   const getTestOrderPayload = (overrideStatus) => ({
     test_order_id: test.testOrderId,
@@ -281,6 +311,16 @@ export default function EditTestOrder() {
     id_of_updater: userId || "",
     name_of_updater: userName || "",
     updated_on: new Date().toISOString(),
+    // Coast down data
+    coast_down_reference: test.cdReportRef || "",
+    vehicle_reference_mass: test.vehicleRefMass || "",
+    a_value: test.aN || "",
+    b_value: test.bNkmph || "",
+    c_value: test.cNkmph2 || "",
+    f0_value: test.f0N || "",
+    f1_value: test.f1Nkmph || "",
+    f2_value: test.f2Nkmph2 || "",
+    coast_down_data: test.coast_down_data || null,
   });
 
   // Handler to update the test order
@@ -437,9 +477,29 @@ export default function EditTestOrder() {
 
         {/* Main Form */}
         <div className="mx-8 mb-8 mt-4 border rounded-lg shadow-lg px-8 py-6 bg-white dark:bg-black dark:border-gray-300">
+          {/* Test Created Info */}
+          <div className="flex flex-col justify-between mb-4">
+            <div className="flex flex-col items-start gap-2 mb-3">
+              {test.createdBy && (
+                <div className="flex items-center gap-2">
+                  <span className="text-red-800 dark:text-red-400 text-sm font-medium">Test Created by:</span>
+                  <span className="font-medium text-red-800 dark:text-red-400 text-sm">{test.createdBy}</span>
+                </div>
+              )}
+              {test.createdOn && (
+                <div className="flex items-center gap-2">
+                  <span className="text-red-800 dark:text-red-400 text-sm font-medium">Test Created on:</span>
+                  <span className="font-medium text-red-800 dark:text-red-400 text-sm">
+                    {formatDate(test.createdOn)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Status Display */}
           <div className="flex items-center gap-3 mb-4">
-            <span className="font-bold text-base text-blue-900 dark:text-blue-300">Test Details</span>
+            <span className="font-bold text-base text-blue-900 dark:text-blue-300">Test{test.testNumber}</span>
             {test.status === "Started" && (
               <span className="flex items-center bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#FFA500" }}>
@@ -1089,17 +1149,24 @@ export default function EditTestOrder() {
 
           {/* Coast Down Data Section */}
           <div className="mt-6 border rounded shadow px-4 py-3 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600">
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center justify-between mb-3">
               <span className="font-semibold text-sm text-blue-700 dark:text-blue-300">
                 Coast Down Data
               </span>
-              <Switch
-                checked={test.showCoastDownData}
-                onCheckedChange={(checked) => {
-                  setTest(prev => ({ ...prev, showCoastDownData: checked }));
-                }}
-                className="data-[state=checked]:bg-red-500"
-              />
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">
+                  {console.log("Coast Down Section Render - showCoastDownData:", test.showCoastDownData)}
+                  Debug: {test.showCoastDownData ? "Visible" : "Hidden"}
+                </span>
+                <Switch
+                  checked={test.showCoastDownData}
+                  onCheckedChange={(checked) => {
+                    console.log("Switch toggled to:", checked);
+                    setTest(prev => ({ ...prev, showCoastDownData: checked }));
+                  }}
+                  className="data-[state=checked]:bg-red-500"
+                />
+              </div>
             </div>
             {test.showCoastDownData && (
               <div>
@@ -1116,7 +1183,7 @@ export default function EditTestOrder() {
                   />
                 </div>
                 <div className="mb-2 font-semibold text-xs dark:text-white">CD Values</div>
-                <div className="grid grid-cols-4 gap-3 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                   <div>
                     <Label className="text-xs dark:text-white">
                       Vehicle Reference mass (Kg)
@@ -1160,7 +1227,7 @@ export default function EditTestOrder() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3 text-xs mt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mt-3">
                   <div>
                     <Label className="text-xs dark:text-white">F0 (N)</Label>
                     <Input

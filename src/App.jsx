@@ -46,6 +46,9 @@ import DefaultLogin from "./pages/defaultlogin";
 // Import EditTestOrder component
 import EditTestOrder from "./pages/EditTestOrder";
 
+// Import AddNewFields component
+import AddNewFields from "./pages/AddNewFields";
+
 function App() {
   // Move snackbar state to App component where Snackbar is rendered
   const {
@@ -100,6 +103,7 @@ function App() {
           <Route path="/createJobOrder" element={<CreateJobOrder />} />
           <Route path="/editTestOrder" element={<EditTestOrder />} />
           <Route path="/authSuccess" element={<AuthSuccess />} />
+          <Route path="/admin/dropdown-options" element={<AddNewFields />} />
         </Routes>
 
         <Snackbar

@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Close as CloseIcon,
+  Settings,
 } from "@mui/icons-material";
 import { Button } from "@/components/UI/button";
 import { Badge } from "@/components/UI/badge";

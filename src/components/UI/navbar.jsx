@@ -83,15 +83,26 @@ export default function Navbar() {
         {/* Right Side Icons - Hidden on Mobile */}
         <div className="hidden md:flex items-center space-x-6">
           {userRole === "Admin" && (
-            <button
-              className="flex items-center justify-center gap-2 px-3 py-1 rounded-full bg-red-600 hover:bg-red-500 transition-all duration-200 h-8 transform hover:scale-105 hover:shadow-lg"
-              onClick={() => navigate("/admin-portal")}
-              title="Admin Portal"
-              style={{ minWidth: 0 }}
-            >
-              <HiUserAdd className="h-6 w-6 text-white" />
-              <span className="font-semibold text-sm text-white">Admin Portal</span>
-            </button>
+            <>
+              <button
+                className="flex items-center justify-center gap-2 px-3 py-1 rounded-full bg-red-600 hover:bg-red-500 transition-all duration-200 h-8 transform hover:scale-105 hover:shadow-lg"
+                onClick={() => navigate("/admin-portal")}
+                title="Admin Portal"
+                style={{ minWidth: 0 }}
+              >
+                <HiUserAdd className="h-6 w-6 text-white" />
+                <span className="font-semibold text-sm text-white">Admin Portal</span>
+              </button>
+              <button
+                className="flex items-center justify-center gap-2 px-3 py-1 rounded-full bg-blue-600 hover:bg-blue-500 transition-all duration-200 h-8 transform hover:scale-105 hover:shadow-lg"
+                onClick={() => navigate("/admin/dropdown-options")}
+                title="Manage Dropdowns"
+                style={{ minWidth: 0 }}
+              >
+                <Settings className="h-6 w-6 text-white" />
+                <span className="font-semibold text-sm text-white">Manage Dropdowns</span>
+              </button>
+            </>
           )}
           
           <button
@@ -184,19 +195,32 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="md:hidden bg-gradient-to-r from-red-50 to-red-100 dark:from-gray-900 dark:to-black border-t border-red-200/60 dark:border-red-800/40 py-3 transition-all duration-300 rounded-xl mt-2">
           <div className="flex flex-col space-y-4 px-4">
-            {/* Admin Portal Button for Mobile */}
+            {/* Admin Portal Buttons for Mobile */}
             {userRole === "Admin" && (
-              <button
-                className="flex items-center justify-center gap-2 px-3 py-1 rounded-full bg-red-600 hover:bg-red-500 transition-all duration-200 h-8 transform hover:scale-105 hover:shadow-lg"
-                onClick={() => {
-                  navigate("/admin-portal");
-                  setIsMenuOpen(false);
-                }}
-                style={{ minWidth: 0 }}
-              >
-                <HiUserAdd className="h-6 w-6 text-white" />
-                <span className="font-semibold text-sm text-white">Admin Portal</span>
-              </button>
+              <div className="flex flex-col space-y-2">
+                <button
+                  className="flex items-center justify-center gap-2 px-3 py-1 rounded-full bg-red-600 hover:bg-red-500 transition-all duration-200 h-8 transform hover:scale-105 hover:shadow-lg"
+                  onClick={() => {
+                    navigate("/admin-portal");
+                    setIsMenuOpen(false);
+                  }}
+                  style={{ minWidth: 0 }}
+                >
+                  <HiUserAdd className="h-6 w-6 text-white" />
+                  <span className="font-semibold text-sm text-white">Admin Portal</span>
+                </button>
+                <button
+                  className="flex items-center justify-center gap-2 px-3 py-1 rounded-full bg-blue-600 hover:bg-blue-500 transition-all duration-200 h-8 transform hover:scale-105 hover:shadow-lg"
+                  onClick={() => {
+                    navigate("/admin/dropdown-options");
+                    setIsMenuOpen(false);
+                  }}
+                  style={{ minWidth: 0 }}
+                >
+                  <Settings className="h-6 w-6 text-white" />
+                  <span className="font-semibold text-sm text-white">Manage Dropdowns</span>
+                </button>
+              </div>
             )}
             
             {/* Enhanced Mobile Theme Toggle */}
