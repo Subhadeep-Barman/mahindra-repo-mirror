@@ -271,24 +271,24 @@ def get_total_tests_for_job(db: Session, job_order_id: str) -> int:
 
 def get_job_creator_info(db: Session, job_order) -> dict:
     """
-    Return a dict with creator's name, email, and job creation time.
+    Return a dict with creator's name, id (token), and job creation time.
     """
     try:
         creator = db.query(User).filter(User.id == job_order.id_of_creator).first()
         creator_name = creator.username if creator and hasattr(creator, "username") else "N/A"
-        creator_email = creator.email if creator and hasattr(creator, "email") else "N/A"
+        creator_id = creator.id if creator and hasattr(creator, "id") else "N/A"
         created_at = job_order.created_on.strftime("%Y-%m-%d %H:%M:%S") if hasattr(job_order, "created_on") and job_order.created_on else "N/A"
         return {
             "creator_name": creator_name,
-            "creator_email": creator_email,
+            "creator_id": creator_id,
             "created_at": created_at
         }
     except Exception as e:
         vtc_logger.error(f"Error in get_job_creator_info: {e}")
         return {
-            "creator_name": "N/A",
-            "creator_email": "N/A",
-            "created_at": "N/A"
+            "creator_name": creator_name,
+            "creator_id": creator_id,
+            "created_at": created_at
         }
 
 

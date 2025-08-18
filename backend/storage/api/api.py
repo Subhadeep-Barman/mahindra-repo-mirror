@@ -11,6 +11,7 @@ from backend.storage.api.routers import auth
 from backend.storage.api.routers import rde_job_orders_api
 from backend.storage.api.routers import email
 from backend.storage.api.routers import cft
+from backend.storage.api.routers import manual_entry
 
 # Configure logging to show DEBUG messages
 logging.basicConfig(
@@ -43,3 +44,4 @@ app.include_router(auth.router)
 app.include_router(rde_job_orders_api.router)
 app.include_router(email.router)
 app.include_router(cft.router)
+app.include_router(manual_entry.router)
