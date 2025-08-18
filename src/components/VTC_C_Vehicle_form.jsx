@@ -1254,8 +1254,8 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
                 </div>
               </div>
 
-              {/* Action Buttons - Positioned at bottom right corner */}
-              <div className="absolute bottom-4 right-4 flex gap-3">
+              {/* Action Buttons - Positioned below the form */}
+              <div className="flex justify-end gap-3 mt-8">
                 <Button
                   type="submit"
                   className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
