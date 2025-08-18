@@ -242,11 +242,16 @@ export default function NashikCreateJobOrder() {
     const datasetRefreshed = (test.datasetRefreshed || '').toString().trim();
     if (!datasetRefreshed) return false;
 
+    // If DPF is Yes, require regen value
+    if (test.dpf === 'Yes') {
+      const regen = test.dpfRegenOccurs;
+      if (regen === undefined || regen === null || (typeof regen === 'string' && regen.trim() === '')) return false;
+    }
+
     // Require attachments
-    const hasEmissionCheck = Array.isArray(test.Emission_check) && test.Emission_check.length > 0;
     const hasDataset = Array.isArray(test.Dataset_attachment) && test.Dataset_attachment.length > 0;
     const hasExperiment = Array.isArray(test.Experiment_attachment) && test.Experiment_attachment.length > 0;
-    if (!hasEmissionCheck || !hasDataset || !hasExperiment) return false;
+    if (!hasDataset || !hasExperiment) return false;
 
     return true;
   };
@@ -805,14 +810,21 @@ export default function NashikCreateJobOrder() {
       return;
     }
 
+    // If DPF is Yes, require DPF Regen Occurs (g)
+    if (test.dpf === 'Yes') {
+      const regen = test.dpfRegenOccurs;
+      if (regen === undefined || regen === null || (typeof regen === 'string' && regen.trim() === '')) {
+        showSnackbar('DPF Regen Occurs (g) is required when DPF is Yes.', 'warning');
+        return;
+      }
+    }
+
     // Require Dataset and Experiment attachments
-    const hasEmissionCheck = Array.isArray(test.Emission_check) && test.Emission_check.length > 0;
     const hasDataset = Array.isArray(test.Dataset_attachment) && test.Dataset_attachment.length > 0;
     const hasExperiment = Array.isArray(test.Experiment_attachment) && test.Experiment_attachment.length > 0;
 
-    if (!hasEmissionCheck || !hasDataset || !hasExperiment) {
+    if (!hasDataset || !hasExperiment) {
       const missingAttachments = [];
-      if (!hasEmissionCheck) missingAttachments.push('Emission Check Attachment');
       if (!hasDataset) missingAttachments.push('Dataset Attachment');
       if (!hasExperiment) missingAttachments.push('Experiment Attachment');
       
@@ -2290,7 +2302,7 @@ export default function NashikCreateJobOrder() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label>Emission Check Attachment <span className="text-red-500">*</span></Label>
+                  <Label>Emission Check Attachment</Label>
                   <DropzoneFileList
                     buttonText="Emission Check Attachment"
                     name="Emission_check"

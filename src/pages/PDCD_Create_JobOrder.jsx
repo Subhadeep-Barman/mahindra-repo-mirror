@@ -716,9 +716,14 @@ export default function PDCDCreateJobOrder() {
       }
     }
 
+    // If DPF is Yes, require regen value
+    if (test.dpf === 'Yes') {
+      const regen = test.dpfRegenOccurs;
+      if (regen === undefined || regen === null || (typeof regen === 'string' && regen.trim() === '')) return false;
+    }
+
     // Check if required attachments are present
     const requiredAttachments = [
-      'emissionCheckAttachments',
       'datasetAttachments', 
       'experimentAttachments'
     ];
@@ -740,6 +745,15 @@ export default function PDCDCreateJobOrder() {
     if (!isTestValid(test)) {
       showSnackbar("Please fill in all required fields and upload all mandatory attachments before creating test order.", "error");
       return;
+    }
+
+    // If DPF is Yes, require DPF Regen Occurs (g)
+    if (test.dpf === 'Yes') {
+      const regen = test.dpfRegenOccurs;
+      if (regen === undefined || regen === null || (typeof regen === 'string' && regen.trim() === '')) {
+        showSnackbar('DPF Regen Occurs (g) is required when DPF is Yes.', 'warning');
+        return;
+      }
     }
 
     // Generate test_order_id based on timestamp
@@ -2197,7 +2211,7 @@ export default function PDCDCreateJobOrder() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label>Emission Check Attachment <span className="text-red-500">*</span></Label>
+                  <Label>Emission Check Attachment</Label>
                   <DropzoneFileList
                     buttonText="Emission Check Attachment"
                     name="Emission_check"

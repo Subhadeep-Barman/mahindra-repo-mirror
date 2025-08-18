@@ -947,13 +947,11 @@ export default function CreateJobOrder() {
     }
 
     // Require Dataset and Experiment attachments
-    const hasEmissionCheck = Array.isArray(test.emissionCheckAttachment) && test.emissionCheckAttachment.length > 0;
     const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
     const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
 
-    if (!hasEmissionCheck || !hasDataset || !hasExperiment) {
+    if (!hasDataset || !hasExperiment) {
       const missingAttachments = [];
-      if (!hasEmissionCheck) missingAttachments.push('Emission Check Attachment');
       if (!hasDataset) missingAttachments.push('Dataset Attachment');
       if (!hasExperiment) missingAttachments.push('Experiment Attachment');
       
@@ -1653,10 +1651,9 @@ export default function CreateJobOrder() {
     }
 
     // Require attachments
-    const hasEmissionCheck = Array.isArray(test.emissionCheckAttachment) && test.emissionCheckAttachment.length > 0;
     const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
     const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
-    if (!hasEmissionCheck || !hasDataset || !hasExperiment) return false;
+    if (!hasDataset || !hasExperiment) return false;
 
     return true;
   };
@@ -2417,7 +2414,7 @@ export default function CreateJobOrder() {
                 </div>
                 <div className="flex items-center gap-3">
                   {/* Buttons for TestEngineer */}
-                  {isTestEngineer && (!test?.status || test?.status === "Created") && (
+                  {isTestEngineer && (!test?.status || test?.status === "Created" || test?.status === "Rejected") && (
                     <>
                       <Button
                         className="bg-green-600 text-white text-xs px-3 py-1 rounded"
@@ -2443,7 +2440,7 @@ export default function CreateJobOrder() {
                   {/* Buttons for ProjectTeam */}
                   {/* ProjectTeam should NOT see the Re-edit button */}
                   {/* Buttons for TestEngineer */}
-                  {isTestEngineer && (test?.status === "Started" || test?.status === "Rejected" || test?.status === "Re-edit") && (
+                  {isTestEngineer && (test?.status === "Started" || test?.status === "Re-edit") && (
                     <>
                       <Button
                         className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
@@ -2840,7 +2837,7 @@ export default function CreateJobOrder() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label>
-                      Emission Check Attachment <span className="text-red-500">*</span>
+                      Emission Check Attachment
                       {test.emissionCheckAttachment && test.emissionCheckAttachment.length > 0 && (
                         <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
                           {Array.isArray(test.emissionCheckAttachment) ? test.emissionCheckAttachment.length : 1}
