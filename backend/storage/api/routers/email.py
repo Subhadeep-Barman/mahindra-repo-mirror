@@ -1,7 +1,7 @@
 from http.client import HTTPException
 from typing import List, Dict
 from fastapi import APIRouter, Depends, HTTPException, Body
-from backend.storage.models.models import JobOrder, TestOrder, User # adjust import as per your models
+from backend.storage.models.models import JobOrder, TestOrder, User, AddFields # adjust import as per your models
 from sqlalchemy.orm import Session
 from backend.storage.api.api_utils import get_db
 import os
@@ -393,13 +393,56 @@ def get_test_order_id(db: Session, test_order_id: str) -> str:
         return ""
 
 
+def get_notify_data(db: Session) -> dict:
+    """
+    Fetch the most recent notify_fields and notify_values from the AddFields table.
+    
+    Args:
+        db (Session): SQLAlchemy database session.
+        
+    Returns:
+        dict: Dictionary containing notify_fields and notify_values.
+    """
+    try:
+        vtc_logger.debug("Fetching notify data from AddFields table")
+        # Get the most recent entry (highest ID)
+        add_fields = db.query(AddFields).order_by(AddFields.id.desc()).first()
+        
+        if not add_fields:
+            vtc_logger.warning("No AddFields record found")
+            return {
+                "notify_fields": [],
+                "notify_values": {}
+            }
+        
+        notify_fields = add_fields.notify_fields or []
+        notify_values = add_fields.notify_values or {}
+        
+        vtc_logger.debug(f"Retrieved notify_fields: {notify_fields}")
+        vtc_logger.debug(f"Retrieved notify_values: {notify_values}")
+        
+        return {
+            "notify_fields": notify_fields,
+            "notify_values": notify_values
+        }
+    except Exception as e:
+        vtc_logger.error(f"Error in get_notify_data: {e}")
+        return {
+            "notify_fields": [],
+            "notify_values": {}
+        }
+
+
 @router.post("/send")
 async def send_email_endpoint(
     job_order_id: str = Body(...),
     caseid: str = Body(...),
     test_order_id: str = Body(None),
+    notify_fields: List[str] = Body(None),
+    notify_values: Dict[str, List[str]] = Body(None),
     db: Session = Depends(get_db),
 ):
+    print("notify fieldsssssssssssssssss",notify_fields, notify_values)
     """
     Send an email to a group email (if defined) or all users of the role specified in mail_body.json for the given caseid.
     Also CC all CFT members added to the job order.
@@ -407,12 +450,28 @@ async def send_email_endpoint(
     try:
         vtc_logger.info(f"Processing email send request for job_order_id: {job_order_id}, caseid: {caseid}, test_order_id: {test_order_id}")
         
+        # Get notify data from AddFields table if not provided in request
+        db_notify_data = get_notify_data(db)
+        
+        # Use provided notify_fields and notify_values if available, otherwise use from database
+        if notify_fields is None:
+            notify_fields = db_notify_data.get("notify_fields", [])
+            vtc_logger.debug(f"Using notify_fields from database: {notify_fields}")
+        else:
+            vtc_logger.debug(f"Using notify_fields from request: {notify_fields}")
+            
+        if notify_values is None:
+            notify_values = db_notify_data.get("notify_values", {})
+            vtc_logger.debug(f"Using notify_values from database: {notify_values}")
+        else:
+            vtc_logger.debug(f"Using notify_values from request: {notify_values}")
+
         # Get role for the caseid
         role = get_role_for_caseid(caseid)
         if not role:
             vtc_logger.warning(f"Role not found for caseid: {caseid}")
             raise HTTPException(status_code=400, detail="Role not found for caseid")
-        
+
         # Check if group email is defined for this caseid
         group_email = get_group_email_for_caseid(caseid)
         if group_email:
@@ -424,7 +483,7 @@ async def send_email_endpoint(
             if not to_emails:
                 vtc_logger.warning(f"No recipient found for the given role: {role}")
                 raise HTTPException(status_code=404, detail="No recipient found for the given role")
-        
+
         # Load email template
         subject, body = load_email_template(caseid)
         vtc_logger.debug(f"Original subject template: {subject}")
@@ -434,11 +493,11 @@ async def send_email_endpoint(
         job_order = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
         if not job_order:
             vtc_logger.warning(f"JobOrder not found for job_order_id: {job_order_id}")
-            
+
         # Gather data for replacements
         total_tests = get_total_tests_for_job(db, job_order_id) if job_order else 0
         vtc_logger.debug(f"Total tests for job order {job_order_id}: {total_tests}")
-        
+
         creator_info = get_job_creator_info(db, job_order) if job_order else {"creator_name": "", "creator_email": "", "created_at": ""}
         vtc_logger.debug(f"Creator info: {creator_info}")
 
@@ -447,7 +506,7 @@ async def send_email_endpoint(
         test_order_type_obj = get_test_order_type_and_objective(db, test_order_id) if test_order_id else {}
         job_test_status = get_job_order_test_status(db, job_order_id) if job_order_id else ""
         job_completed_test_count = get_job_order_completed_test_count(db, job_order_id) if job_order_id else 0
-        
+
         vtc_logger.debug(f"Test order remarks: {test_order_remarks}")
         vtc_logger.debug(f"Test type and objective: {test_order_type_obj}")
         vtc_logger.debug(f"Job test status: {job_test_status}")
@@ -464,6 +523,24 @@ async def send_email_endpoint(
         body = body.replace("{{creator_email}}", creator_info.get("creator_email", ""))
         body = body.replace("{{created_at}}", creator_info.get("created_at", ""))
         body = body.replace("{{redirect_link}}", os.environ.get("REDIRECT_LINK", ""))
+        
+        # Replace notify_fields placeholder with actual field names
+        if "{{notify_fields}}" in body:
+            fields_str = ", ".join(notify_fields) if notify_fields else ""
+            body = body.replace("{{notify_fields}}", fields_str)
+            vtc_logger.debug(f"Replaced {{notify_fields}} with: {fields_str}")
+        
+        # Replace notify_values placeholder with formatted values
+        if "{{notify_values}}" in body:
+            # Format notify_values as a readable string
+            values_parts = []
+            if notify_values:
+                for field, values in notify_values.items():
+                    value_str = ", ".join(values) if values else ""
+                    values_parts.append(f"{field}: {value_str}")
+            values_str = "; ".join(values_parts)
+            body = body.replace("{{notify_values}}", values_str)
+            vtc_logger.debug(f"Replaced {{notify_values}} with: {values_str}")
         
         vtc_logger.debug(f"Processed subject: {subject}")
         vtc_logger.debug(f"Processed body length: {len(body)} characters")
@@ -490,6 +567,20 @@ async def send_email_endpoint(
             body = body.replace("{{test_objective}}", test_order_type_obj.get("test_objective", ""))
             body = body.replace("{{complete_remarks}}", test_order_remarks.get("complete_remarks", ""))
             vtc_logger.debug(f"Case 6 - Added test objective and complete remarks")
+        elif caseid == "7":
+            # Format notify fields and values for email body
+            fields_str = ", ".join(notify_fields) if notify_fields else ""
+            
+            values_parts = []
+            if notify_values:
+                for field, values in notify_values.items():
+                    value_str = ", ".join(values) if values else ""
+                    values_parts.append(f"{field}: {value_str}")
+            values_str = "; ".join(values_parts)
+            
+            body = body.replace("{{notify_fields}}", fields_str)
+            body = body.replace("{{notify_values}}", values_str)
+            vtc_logger.debug(f"Case 7 - Added notify fields: {fields_str} and values: {values_str}")
 
         # Fetch CFT member emails for CC
         cc_emails = get_cft_member_emails(job_order, db) if job_order else []

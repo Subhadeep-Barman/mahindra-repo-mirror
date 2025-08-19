@@ -270,7 +270,7 @@ def read_testorder(test_order_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="TestOrder not found")
     return testorder_to_dict(testorder)
 
-@router.put("/testorders/{test_order_id}", response_model=TestOrderSchema)
+@router.put("/testorders-update", response_model=TestOrderSchema)
 def update_testorder(
     test_order_id: str,
     testorder_update: TestOrderSchema = Body(...),

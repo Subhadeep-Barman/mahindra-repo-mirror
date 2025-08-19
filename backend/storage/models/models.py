@@ -233,3 +233,9 @@ class TestOrder(Base):
     name_of_updater = Column(String, nullable=True)
     updated_on = Column(TIMESTAMP, nullable=True)
     updated_on = Column(TIMESTAMP)
+
+class AddFields(Base):
+    __tablename__ = "AddFields"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    notify_fields = Column(JSON, nullable=True)
+    notify_values = Column(JSON, nullable=True)
