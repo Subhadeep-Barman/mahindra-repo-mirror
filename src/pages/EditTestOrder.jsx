@@ -332,8 +332,7 @@ export default function EditTestOrder() {
         newStatus = "Started";
       }
       const testOrderPayload = getTestOrderPayload(newStatus);
-      const formattedTestOrderId = encodeURIComponent(test.testOrderId).replace(/%20/g, "+"); // Encode and replace spaces with '+'
-      await axios.put(`${apiURL}/testorders/${formattedTestOrderId}`, testOrderPayload);
+      await axios.get(`${apiURL}/testorders-single?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       showSnackbar("Test Order updated successfully!", "success");
       navigate(-1);
     } catch (err) {
@@ -346,8 +345,7 @@ export default function EditTestOrder() {
     try {
       // Always update test order with latest form data and new status
       const testOrderPayload = getTestOrderPayload(status);
-      const formattedTestOrderId = encodeURIComponent(test.testOrderId).replace(/%20/g, "+"); // Encode and replace spaces with '+'
-      await axios.put(`${apiURL}/testorders/${formattedTestOrderId}`, testOrderPayload);
+      await axios.get(`${apiURL}/testorders-single?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
 
       const payload = {
         test_order_id: test.testOrderId,
@@ -383,9 +381,7 @@ export default function EditTestOrder() {
         status: newStatus,
       };
 
-      // await axios.put(`${apiURL}/testorders/${test.testOrderId}`, payload);
-      const formattedTestOrderId = encodeURIComponent(test.testOrderId).replace(/%20/g, "+"); // Encode and replace spaces with '+'
-      await axios.put(`${apiURL}/testorders/${formattedTestOrderId}`, payload);
+      await axios.get(`${apiURL}/testorders-single?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       setMailRemarksModal(false);
       showSnackbar("Test order updated successfully!", "success");
       handleBack();
@@ -398,9 +394,7 @@ export default function EditTestOrder() {
   const handleStartTestOrder = async () => {
     try {
       const testOrderPayload = getTestOrderPayload("Started");
-      // await axios.put(`${apiURL}/testorders/${test.testOrderId}`, testOrderPayload);
-      const formattedTestOrderId = encodeURIComponent(test.testOrderId).replace(/%20/g, "+");
-      await axios.put(`${apiURL}/testorders/${formattedTestOrderId}`, testOrderPayload);
+      await axios.get(`${apiURL}/testorders-single?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       await handleStatusUpdate("Started");
     } catch (err) {
       showSnackbar("Failed to start test order: " + (err.response?.data?.detail || err.message), "error");
@@ -414,9 +408,7 @@ export default function EditTestOrder() {
         ...getTestOrderPayload("Completed"),
         complete_remarks: completeRemarks,
       };
-      // await axios.put(`${apiURL}/testorders/${test.testOrderId}`, testOrderPayload);
-      const formattedTestOrderId = encodeURIComponent(test.testOrderId).replace(/%20/g, "+"); // Encode and replace spaces with '+'
-      await axios.put(`${apiURL}/testorders/${formattedTestOrderId}`, testOrderPayload);
+      await axios.get(`${apiURL}/testorders-single?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       await axios.post(`${apiURL}/testorders/status`, {
         test_order_id: test.testOrderId,
         status: "Completed",
