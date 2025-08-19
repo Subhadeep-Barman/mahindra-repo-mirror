@@ -124,6 +124,9 @@ export default function EditTestOrder() {
     rejection_remarks: testOrder?.rejection_remarks || "",
     remark: testOrder?.remark || "",
     coast_down_data: testOrder?.coast_down_data || null, 
+    // Rating fields
+    rating: testOrder?.rating || 0,
+    rating_remarks: testOrder?.rating_remarks || "",
   });
   
   console.log("coast_down_data from backend:", testOrder?.coast_down_data);
@@ -153,6 +156,11 @@ export default function EditTestOrder() {
   const [mailRemarks, setMailRemarks] = useState("");
   const [modalActionType, setModalActionType] = useState(""); // "re-edit" or "reject" or "update"
   const [completeRemarks, setCompleteRemarks] = useState(""); // New state for complete remarks
+
+  // State for star rating
+  const [starRatingModal, setStarRatingModal] = useState(false);
+  const [rating, setRating] = useState(testOrder?.rating || 0);
+  const [ratingRemarks, setRatingRemarks] = useState(testOrder?.rating_remarks || "");
 
   const handleBack = () => {
     navigate(-1);
@@ -365,13 +373,13 @@ export default function EditTestOrder() {
   // Handler for mail remarks
   const handleSubmitMailRemarks = async () => {
     try {
-      // If ProjectTeam is updating a test in Re-edit or Rejected status, set status to 'Started'
+      // If ProjectTeam is updating a test in Re-edit or Rejected status, set status back to 'Created'
       let newStatus = test.status;
       if (
         isProjectTeam &&
         (newStatus === "Re-edit" || newStatus === "Rejected")
       ) {
-        newStatus = "Started";
+        newStatus = "Created";
       }
 
       const payload = {
@@ -381,6 +389,8 @@ export default function EditTestOrder() {
         status: newStatus,
       };
 
+      // Fix: define testOrderPayload before using it
+      const testOrderPayload = getTestOrderPayload(newStatus);
       await axios.get(`${apiURL}/testorders-single?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       setMailRemarksModal(false);
       showSnackbar("Test order updated successfully!", "success");
@@ -433,6 +443,25 @@ export default function EditTestOrder() {
 
     // For admin or other roles, allow editing
     return true;
+  };
+
+  // Handler for submitting star rating
+  const handleSubmitStarRating = async () => {
+    try {
+      const payload = {
+        test_order_id: test.testOrderId,
+        rating: rating,
+        rating_remarks: ratingRemarks,
+        rated_by: userName,
+        rated_on: new Date().toISOString(),
+      };
+
+      await axios.post(`${apiURL}/testorders/rating`, payload);
+      showSnackbar("Test order rated successfully!", "success");
+      setStarRatingModal(false);
+    } catch (err) {
+      showSnackbar("Failed to submit rating: " + (err.response?.data?.detail || err.message), "error");
+    }
   };
 
   return (
@@ -528,6 +557,40 @@ export default function EditTestOrder() {
                 </svg>
                 Completed
               </span>
+            )}
+            
+            {/* Star Rating Display for Completed Tests */}
+            {test.status === "Completed" && (
+              <div className="flex items-center gap-2 ml-4">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Rating:</span>
+                <div className="flex items-center">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <svg
+                      key={star}
+                      className={`h-4 w-4 ${
+                        star <= (testOrder?.rating || 0) 
+                          ? "text-yellow-400 fill-current" 
+                          : "text-gray-300 dark:text-gray-600"
+                      }`}
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                  <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
+                    ({testOrder?.rating || 0}/5)
+                  </span>
+                </div>
+                {isProjectTeam && (
+                  <Button
+                    className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded ml-2"
+                    onClick={() => setStarRatingModal(true)}
+                  >
+                    {testOrder?.rating ? "Update Rating" : "Rate Test"}
+                  </Button>
+                )}
+              </div>
             )}
           </div>
 
@@ -1285,8 +1348,8 @@ export default function EditTestOrder() {
               </>
             )}
 
-            {/* Buttons for TestEngineer */}
-            {isTestEngineer && (test.status === "Started" || test.status === "Rejected" || test.status === "under progress") && (
+            {/* Buttons for TestEngineer - only show Re-edit and Complete when test is Started or under progress */}
+            {isTestEngineer && (test.status === "Started" || test.status === "under progress") && (
               <>
                 <Button
                   className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
@@ -1417,6 +1480,85 @@ export default function EditTestOrder() {
                   }
                 >
                   Submit
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Star Rating Modal */}
+        {starRatingModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-96">
+              <div className="font-semibold mb-4 dark:text-white">
+                Rate Test Order Performance
+              </div>
+              
+              {/* Star Rating Input */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Rate the quality of test execution (1-5 stars):
+                </label>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      className="focus:outline-none"
+                    >
+                      <svg
+                        className={`h-8 w-8 cursor-pointer transition-colors ${
+                          star <= rating 
+                            ? "text-yellow-400 fill-current" 
+                            : "text-gray-300 dark:text-gray-600 hover:text-yellow-200"
+                        }`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </button>
+                  ))}
+                  <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
+                    ({rating}/5)
+                  </span>
+                </div>
+              </div>
+
+              {/* Rating Comments */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Comments (optional):
+                </label>
+                <textarea
+                  className="w-full border rounded p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                  rows={3}
+                  value={ratingRemarks}
+                  onChange={(e) => setRatingRemarks(e.target.value)}
+                  placeholder="Share your feedback about the test execution quality, accuracy, timeliness, etc..."
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  className="bg-gray-300 dark:bg-gray-600 text-black dark:text-white px-4 py-1 rounded"
+                  type="button"
+                  onClick={() => {
+                    setStarRatingModal(false);
+                    setRating(testOrder?.rating || 0);
+                    setRatingRemarks(testOrder?.rating_remarks || "");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded"
+                  type="button"
+                  onClick={handleSubmitStarRating}
+                  disabled={rating === 0}
+                >
+                  Submit Rating
                 </Button>
               </div>
             </div>
