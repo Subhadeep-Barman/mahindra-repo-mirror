@@ -262,8 +262,9 @@ def read_testorders(db: Session = Depends(get_db)):
     testorders = db.query(TestOrder).all()
     return [testorder_to_dict(t) for t in testorders]
 
-@router.get("/testorders/{test_order_id}", response_model=TestOrderSchema)
+@router.get("/testorders-single", response_model=TestOrderSchema)
 def read_testorder(test_order_id: str, db: Session = Depends(get_db)):
+    print(test_order_id)
     testorder = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
     if not testorder:
         raise HTTPException(status_code=404, detail="TestOrder not found")
