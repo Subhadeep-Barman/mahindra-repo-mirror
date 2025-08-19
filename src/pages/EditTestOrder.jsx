@@ -124,10 +124,15 @@ export default function EditTestOrder() {
     // Remarks
     rejection_remarks: testOrder?.rejection_remarks || "",
     remark: testOrder?.remark || "",
+    complete_remarks: testOrder?.complete_remarks || testOrder?.remark || "", // Add complete_remarks field
     coast_down_data: testOrder?.coast_down_data || null, 
     // Rating fields
     rating: testOrder?.rating || 0,
     rating_remarks: testOrder?.rating_remarks || "",
+    // Validation fields
+    validation_status: testOrder?.validation_status || null,
+    validated_by: testOrder?.validated_by || "",
+    validated_on: testOrder?.validated_on || "",
   });
   
   console.log("coast_down_data from backend:", testOrder?.coast_down_data);
@@ -156,12 +161,15 @@ export default function EditTestOrder() {
   const [mailRemarksModal, setMailRemarksModal] = useState(false);
   const [mailRemarks, setMailRemarks] = useState("");
   const [modalActionType, setModalActionType] = useState(""); // "re-edit" or "reject" or "update"
-  const [completeRemarks, setCompleteRemarks] = useState(""); // New state for complete remarks
+  const [completeRemarks, setCompleteRemarks] = useState(testOrder?.complete_remarks || testOrder?.remark || ""); // Initialize with existing complete remarks
 
   // State for star rating
   const [starRatingModal, setStarRatingModal] = useState(false);
   const [rating, setRating] = useState(testOrder?.rating || 0);
   const [ratingRemarks, setRatingRemarks] = useState(testOrder?.rating_remarks || "");
+
+  // State for validation status
+  const [validationStatus, setValidationStatus] = useState(null); // 'valid' or 'invalid'
 
   const handleBack = () => {
     navigate(-1);
@@ -314,6 +322,7 @@ export default function EditTestOrder() {
     others_attachment: test.others_attachment || "",
     specific_instruction: test.specificInstruction || "",
     status: overrideStatus ?? test.status,
+    complete_remarks: test.complete_remarks || "", // Add complete_remarks to payload
     id_of_creator: testOrder?.id_of_creator || "",
     name_of_creator: testOrder?.name_of_creator || "",
     created_on: testOrder?.created_on || new Date().toISOString(),
@@ -418,16 +427,69 @@ export default function EditTestOrder() {
         ...getTestOrderPayload("Completed"),
         complete_remarks: completeRemarks,
       };
-      await axios.get(`${apiURL}/testorders-single?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
+      
+      // Update the test order with completion status and remarks
+      await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       await axios.post(`${apiURL}/testorders/status`, {
         test_order_id: test.testOrderId,
         status: "Completed",
         remark: completeRemarks,
       });
-      showSnackbar("Test order marked as Completed", "success");
-      handleBack();
+      
+      // Update local state
+      setTest(prev => ({
+        ...prev,
+        status: "Completed",
+        remark: completeRemarks,
+        complete_remarks: completeRemarks
+      }));
+      
+      showSnackbar("Test order marked as Completed. The test can now be validated.", "success");
+      
+      // Close the modal but don't navigate back - stay on the page to show validation section
+      setMailRemarksModal(false);
+      
     } catch (err) {
       showSnackbar("Failed to complete test order: " + (err.response?.data?.detail || err.message), "error");
+    }
+  };
+
+  // Handler for validation decision
+  const handleValidationDecision = async (isValid) => {
+    const validationData = {
+      validation_status: isValid ? 'valid' : 'invalid',
+      validated_by: userName,
+      validated_on: new Date().toISOString(),
+    };
+    
+    setValidationStatus(isValid ? 'valid' : 'invalid');
+    
+    try {
+      // Update the test order with validation status
+      await axios.post(`${apiURL}/testorders/validation`, {
+        test_order_id: test.testOrderId,
+        ...validationData,
+      });
+      
+      // Update local state
+      setTest(prev => ({
+        ...prev,
+        ...validationData
+      }));
+      
+      if (isValid) {
+        // Show star rating modal for project team to rate
+        setStarRatingModal(true);
+        showSnackbar("Test marked as valid. Please rate the test execution.", "success");
+      } else {
+        showSnackbar("Test marked as invalid. No rating will be collected.", "info");
+        // Navigate back since no rating is needed for invalid tests
+        setTimeout(() => {
+          handleBack();
+        }, 1500); // Give time for user to see the message
+      }
+    } catch (err) {
+      showSnackbar("Failed to update validation status: " + (err.response?.data?.detail || err.message), "error");
     }
   };
 
@@ -459,6 +521,13 @@ export default function EditTestOrder() {
       await axios.post(`${apiURL}/testorders/rating`, payload);
       showSnackbar("Test order rated successfully!", "success");
       setStarRatingModal(false);
+      
+      // Update local state with the new rating
+      setTest(prev => ({
+        ...prev,
+        rating: rating,
+        rating_remarks: ratingRemarks
+      }));
     } catch (err) {
       showSnackbar("Failed to submit rating: " + (err.response?.data?.detail || err.message), "error");
     }
@@ -559,8 +628,28 @@ export default function EditTestOrder() {
               </span>
             )}
             
-            {/* Star Rating Display for Completed Tests */}
-            {test.status === "Completed" && (
+            {/* Validation Status Display for Completed Tests */}
+            {test.status === "Completed" && test.validation_status && (
+              <span className={`flex items-center ${
+                test.validation_status === 'valid' 
+                  ? 'bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-600 text-blue-800 dark:text-blue-200' 
+                  : 'bg-orange-100 dark:bg-orange-900 border border-orange-400 dark:border-orange-600 text-orange-800 dark:text-orange-200'
+              } font-semibold text-xs px-2 py-1 rounded shadow ml-2`}>
+                {test.validation_status === 'valid' ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                )}
+                {test.validation_status === 'valid' ? 'Valid' : 'Invalid'}
+              </span>
+            )}
+            
+            {/* Star Rating Display for Completed and Valid Tests */}
+            {test.status === "Completed" && test.validation_status === 'valid' && (test.rating > 0 || testOrder?.rating > 0) && (
               <div className="flex items-center gap-2 ml-4">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Rating:</span>
                 <div className="flex items-center">
@@ -1318,6 +1407,96 @@ export default function EditTestOrder() {
             )}
           </div>
 
+          {/* Completion Remarks and Validation Section for TestEngineer */}
+          {test.status === "Completed" && isTestEngineer && !test.validation_status && (
+            <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Test Validation Required
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  This test has been completed. Please review the completion remarks and validate if the test execution was performed correctly.
+                </p>
+              </div>
+
+              {/* Display Completion Remarks */}
+              {(test.complete_remarks || test.remark) && (
+                <div className="mb-4">
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Completion Remarks:
+                  </Label>
+                  <div className="mt-1 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
+                    <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                      {test.complete_remarks || test.remark}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Validation Buttons */}
+              <div className="flex justify-start gap-3">
+                <Button
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                  type="button"
+                  onClick={() => handleValidationDecision(false)}
+                >
+                  Mark as Invalid
+                </Button>
+                <Button
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                  type="button"
+                  onClick={() => handleValidationDecision(true)}
+                >
+                  Mark as Valid
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Validation Status Display for Completed Tests */}
+          {test.status === "Completed" && test.validation_status && (
+            <div className={`mt-6 p-4 rounded-lg border ${
+              test.validation_status === 'valid'
+                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+            }`}>
+              <div className="mb-3">
+                <h3 className={`text-lg font-semibold mb-2 ${
+                  test.validation_status === 'valid'
+                    ? 'text-green-900 dark:text-green-100'
+                    : 'text-red-900 dark:text-red-100'
+                }`}>
+                  Test Validation: {test.validation_status === 'valid' ? 'VALID' : 'INVALID'}
+                </h3>
+                <p className={`text-sm ${
+                  test.validation_status === 'valid'
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-red-600 dark:text-red-400'
+                }`}>
+                  Validated by: {test.validated_by} on {formatDate(test.validated_on)}
+                </p>
+              </div>
+
+              {/* Display Completion Remarks */}
+              {(test.complete_remarks || test.remark) && (
+                <div className="mb-3">
+                  <Label className={`text-sm font-medium ${
+                    test.validation_status === 'valid'
+                      ? 'text-green-700 dark:text-green-300'
+                      : 'text-red-700 dark:text-red-300'
+                  }`}>
+                    Completion Remarks:
+                  </Label>
+                  <div className="mt-1 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
+                    <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                      {test.complete_remarks || test.remark}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Action Buttons */}
           <div className="flex justify-end mt-6 gap-2">
             {/* Buttons for TestEngineer and admin role */}
@@ -1369,7 +1548,7 @@ export default function EditTestOrder() {
                   onClick={() => {
                     setModalActionType("complete");
                     setMailRemarks("");
-                    setCompleteRemarks("");
+                    setCompleteRemarks(test.complete_remarks || test.remark || ""); // Initialize with existing remarks if available
                     setMailRemarksModal(true);
                     // Removed mail call from here
                   }}
@@ -1458,8 +1637,8 @@ export default function EditTestOrder() {
                   onClick={async () => {
                     if (modalActionType === "complete") {
                       await handleCompleteTestOrder();
-                      await handleSendMail("6", jobOrderId, test.testOrderId); // Mail called after remarks filled and submit
-                      setMailRemarksModal(false);
+                      await handleSendMail("6", jobOrderId, test.testOrderId); // Mail called after completion
+                      // Don't navigate back here - stay on page to show validation section
                     } else if (isProjectTeam) {
                       handleSubmitMailRemarks();
                     } else if (isTestEngineer || isAdmin) {
@@ -1491,7 +1670,16 @@ export default function EditTestOrder() {
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-96">
               <div className="font-semibold mb-4 dark:text-white">
-                Rate Test Order Performance
+                Rate Test Execution Performance
+              </div>
+              
+              <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                <p className="mb-2">
+                  The test has been validated as <span className="text-green-600 font-medium">VALID</span> by the Test Engineer.
+                </p>
+                <p className="mb-2">
+                  Please rate the quality and execution of this test order:
+                </p>
               </div>
               
               {/* Star Rating Input */}
@@ -1548,14 +1736,24 @@ export default function EditTestOrder() {
                     setStarRatingModal(false);
                     setRating(testOrder?.rating || 0);
                     setRatingRemarks(testOrder?.rating_remarks || "");
+                    // Navigate back when modal is closed without rating
+                    if (test.status === "Completed") {
+                      handleBack();
+                    }
                   }}
                 >
-                  Cancel
+                  Skip Rating
                 </Button>
                 <Button
                   className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded"
                   type="button"
-                  onClick={handleSubmitStarRating}
+                  onClick={async () => {
+                    await handleSubmitStarRating();
+                    // Navigate back after successful rating submission
+                    if (test.status === "Completed") {
+                      handleBack();
+                    }
+                  }}
                   disabled={rating === 0}
                 >
                   Submit Rating
