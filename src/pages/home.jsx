@@ -75,7 +75,10 @@ const servicesBase = [
 export default function HomePage() {
   const { userRole, userId, userName } = useAuth();
   const filteredBaseServices = servicesBase.filter(service => 
-    service.title !== "PDCD LAB" || userRole === "ProjectTeam" || userRole === "Admin"
+    service.title !== "PDCD LAB" || 
+    userRole === "ProjectTeam" || 
+    userRole === "Admin" ||
+    userRole === "TestEngineer"
   );
 
   // Use only the filtered base services (no admin portal card)

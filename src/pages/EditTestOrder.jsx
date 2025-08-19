@@ -76,6 +76,7 @@ export default function EditTestOrder() {
   // State to check if user is a Test Engineer
   const isTestEngineer = userRole === "TestEngineer";
   const isProjectTeam = userRole === "ProjectTeam";
+  const isAdmin = userRole === "Admin";
 
   // State for test data
   const [test, setTest] = useState({
@@ -381,7 +382,8 @@ export default function EditTestOrder() {
         status: newStatus,
       };
 
-      await axios.get(`${apiURL}/testorders-single?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
+      const testOrderPayload = getTestOrderPayload("Started");
+      await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       setMailRemarksModal(false);
       showSnackbar("Test order updated successfully!", "success");
       handleBack();
@@ -424,7 +426,7 @@ export default function EditTestOrder() {
   // Helper function to determine if fields should be editable
   const areFieldsEditable = () => {
     // TestEngineer cannot edit fields
-    if (isTestEngineer) return false;
+    if (isTestEngineer || isAdmin) return false;
 
     // ProjectTeam can edit if test is in Re-edit or Rejected status
     if (isProjectTeam) {
@@ -932,7 +934,7 @@ export default function EditTestOrder() {
                   handleCloseModal={() => setDatasetModal(false)}
                   disabled={!areFieldsEditable()}
                   originalJobOrderId={jobOrderId || ""}
-                  viewOnly={isTestEngineer}
+                  viewOnly={isTestEngineer || isAdmin}
                 />
               </div>
               <div>
@@ -956,7 +958,7 @@ export default function EditTestOrder() {
                   handleCloseModal={() => setA2LModal(false)}
                   disabled={!areFieldsEditable()}
                   originalJobOrderId={jobOrderId || ""}
-                  viewOnly={isTestEngineer}
+                  viewOnly={isTestEngineer || isAdmin}
                 />
               </div>
               <div>
@@ -979,7 +981,7 @@ export default function EditTestOrder() {
                   handleOpenModal={() => setExperimentModal(true)}
                   handleCloseModal={() => setExperimentModal(false)}
                   disabled={!areFieldsEditable()}
-                  viewOnly={isTestEngineer}
+                  viewOnly={isTestEngineer || isAdmin}
                   originalJobOrderId={jobOrderId || ""}
                 />
               </div>
@@ -1003,7 +1005,7 @@ export default function EditTestOrder() {
                   handleOpenModal={() => setDBCModal(true)}
                   handleCloseModal={() => setDBCModal(false)}
                   disabled={!areFieldsEditable()}
-                  viewOnly={isTestEngineer}
+                  viewOnly={isTestEngineer || isAdmin}
                   originalJobOrderId={jobOrderId || ""}
                 />
               </div>
@@ -1027,7 +1029,7 @@ export default function EditTestOrder() {
                   handleOpenModal={() => setWLTPModal(true)}
                   handleCloseModal={() => setWLTPModal(false)}
                   disabled={!areFieldsEditable()}
-                  viewOnly={isTestEngineer}
+                  viewOnly={isTestEngineer || isAdmin}
                   originalJobOrderId={jobOrderId || ""}
                 />
               </div>
@@ -1257,8 +1259,8 @@ export default function EditTestOrder() {
 
           {/* Action Buttons */}
           <div className="flex justify-end mt-6 gap-2">
-            {/* Buttons for TestEngineer */}
-            {isTestEngineer && (test.status === "Created") && (
+            {/* Buttons for TestEngineer and admin role */}
+            {(isTestEngineer || isAdmin) && (test.status === "Created") && (
               <>
                 <Button
                   className="bg-green-600 text-white text-xs px-3 py-1 rounded"
@@ -1285,8 +1287,8 @@ export default function EditTestOrder() {
               </>
             )}
 
-            {/* Buttons for TestEngineer */}
-            {isTestEngineer && (test.status === "Started" || test.status === "Rejected" || test.status === "under progress") && (
+            {/* Buttons for TestEngineer and Admin */}
+            {(isTestEngineer || isAdmin) && (test.status === "Started" || test.status === "Rejected" || test.status === "under progress") && (
               <>
                 <Button
                   className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
@@ -1399,7 +1401,7 @@ export default function EditTestOrder() {
                       setMailRemarksModal(false);
                     } else if (isProjectTeam) {
                       handleSubmitMailRemarks();
-                    } else if (isTestEngineer) {
+                    } else if (isTestEngineer || isAdmin) {
                       if (modalActionType === "re-edit") {
                         await handleStatusUpdate("Re-edit", mailRemarks);
                         await handleSendMail("3", jobOrderId, test.testOrderId); // Mail called after remarks filled and submit

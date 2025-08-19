@@ -1296,6 +1296,7 @@ export default function NashikCreateJobOrder() {
   const { userRole, userId, userName } = useAuth();
   const isTestEngineer = userRole === "TestEngineer";
   const isProjectTeam = userRole === "ProjectTeam";
+  const isAdmin = userRole === "Admin";
 
   // Helper function to determine if test fields should be editable
   const areTestFieldsEditable = (test, idx) => {
@@ -1921,7 +1922,7 @@ export default function NashikCreateJobOrder() {
             variant="ghost"
             className="text-xs text-blue-700 px-0"
             onClick={handleAddTest}
-            disabled={isTestEngineer}
+            disabled={isTestEngineer || isAdmin}
           >
             + ADD TEST
           </Button>
@@ -1931,7 +1932,7 @@ export default function NashikCreateJobOrder() {
             onClick={() => {
               setShowCFTPanel((prev) => !prev);
             }}
-            disabled={isTestEngineer}
+            disabled={isTestEngineer || isAdmin}
           >
             {showCFTPanel ? "− CFT MEMBERS" : "+ CFT MEMBERS"}
           </Button>
@@ -2758,7 +2759,7 @@ export default function NashikCreateJobOrder() {
               <Button
                 className="bg-red-600 text-white text-xs px-6 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
                 onClick={() => handleCreateTestOrder(idx)}
-                disabled={editingTestOrderIdx === idx || isTestEngineer || !isTestValid(test)}
+                disabled={editingTestOrderIdx === idx || isTestEngineer || isAdmin || !isTestValid(test)}
               >
                 CREATE TEST ORDER
               </Button>
@@ -2766,7 +2767,7 @@ export default function NashikCreateJobOrder() {
                 <Button
                   className="bg-blue-600 text-white text-xs px-6 py-2 rounded ml-2"
                   onClick={() => handleUpdateTestOrder(idx)}
-                  disabled={isTestEngineer}
+                  disabled={isTestEngineer || isAdmin}
                 >
                   UPDATE TEST ORDER
                 </Button>

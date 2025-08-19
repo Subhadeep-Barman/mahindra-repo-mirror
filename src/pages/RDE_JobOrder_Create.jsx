@@ -1510,6 +1510,7 @@ export default function RDECreateJobOrder() {
   const { userId, userName } = useAuth();
   const isTestEngineer = userRole === "TestEngineer";
   const isProjectTeam = userRole === "ProjectTeam";
+  const isAdmin = userRole == "Admin";
 
   // Helper function to determine if test fields should be editable
   const areTestFieldsEditable = (test, idx) => {
@@ -2180,6 +2181,7 @@ export default function RDECreateJobOrder() {
             variant="ghost"
             className="text-xs text-blue-700 px-0"
             onClick={handleAddTest}
+            disabled={isTestEngineer || isAdmin}
           >
             + ADD TEST
           </Button>
@@ -2189,7 +2191,7 @@ export default function RDECreateJobOrder() {
             onClick={() => {
               setShowCFTPanel((prev) => !prev);
             }}
-            disabled={isTestEngineer}
+            disabled={isTestEngineer || isAdmin}
           >
             {showCFTPanel ? "− CFT MEMBERS" : "+ CFT MEMBERS"}
           </Button>

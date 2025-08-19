@@ -22,6 +22,7 @@ import CFTMembers from "@/components/CFTMembers";
 import showSnackbar from "@/utils/showSnackbar";
 import { GrClone } from "react-icons/gr";
 import { MdPeopleAlt } from "react-icons/md";
+import { is } from "date-fns/locale";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL
 
@@ -1742,6 +1743,7 @@ export default function CreateJobOrder() {
 
   const isTestEngineer = userRole === "TestEngineer";
   const isProjectTeam = userRole === "ProjectTeam";
+  const isAdmin = userRole === "Admin";
 
   // Helper function to determine if test fields should be editable
   const areTestFieldsEditable = (test, idx) => {
@@ -1832,7 +1834,7 @@ export default function CreateJobOrder() {
               value={form.projectCode}
               onValueChange={(value) => handleChange("projectCode", value)}
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || isAdmin}
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -1859,7 +1861,7 @@ export default function CreateJobOrder() {
               value={form.vehicleBodyNumber}
               onValueChange={handleVehicleBodyChange}
               required
-              disabled={formDisabled || isTestEngineer || !form.projectCode}
+              disabled={formDisabled || isTestEngineer || isAdmin || !form.projectCode}
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -1910,7 +1912,7 @@ export default function CreateJobOrder() {
               required
               disabled={
                 formDisabled ||
-                isTestEngineer ||
+                isTestEngineer || isAdmin ||
                 !!(location.state?.originalJobOrderId &&
                   (allTestOrders[location.state?.originalJobOrderId] || []).length > 0 || !form.vehicleBodyNumber)
               }
@@ -1954,7 +1956,7 @@ export default function CreateJobOrder() {
               value={form.engineType}
               onValueChange={(value) => handleChange("engineType", value)}
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || isAdmin}
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -1981,7 +1983,7 @@ export default function CreateJobOrder() {
               value={form.domain}
               onValueChange={(value) => handleChange("domain", value)}
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || isAdmin}
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -2200,7 +2202,7 @@ export default function CreateJobOrder() {
                           handleVehicleEditableChange(label, e.target.value)
                         }
                         className="mt-1"
-                        disabled={!vehicleEditMode || isTestEngineer}
+                        disabled={!vehicleEditMode || isTestEngineer || isAdmin}
                       />
                     </div>
                   ))}
@@ -2236,7 +2238,7 @@ export default function CreateJobOrder() {
                           handleEngineEditableChange(label, e.target.value)
                         }
                         className="mt-1"
-                        disabled={!engineEditMode || isTestEngineer}
+                        disabled={!engineEditMode || isTestEngineer || isAdmin}
                       />
                     </div>
                   ))}
@@ -2259,7 +2261,7 @@ export default function CreateJobOrder() {
             <Button
               className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
               onClick={handleCreateJobOrder}
-              disabled={isTestEngineer}
+              disabled={isTestEngineer || isAdmin}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
@@ -2291,7 +2293,7 @@ export default function CreateJobOrder() {
             variant="ghost"
             className="text-xs text-blue-700 px-0"
             onClick={handleAddTest}
-            disabled={isTestEngineer}
+            disabled={isTestEngineer || isAdmin}
           >
             + ADD TEST
           </Button>
@@ -2300,7 +2302,7 @@ export default function CreateJobOrder() {
               variant="ghost"
               className="text-xs text-blue-700 px-0"
               onClick={handleCloneTest}
-              disabled={isTestEngineer}
+              disabled={isTestEngineer || isAdmin}
             >
               <GrClone />
               CLONE TEST
@@ -2347,7 +2349,7 @@ export default function CreateJobOrder() {
             onClick={() => {
               setShowCFTPanel((prev) => !prev);
             }}
-            disabled={isTestEngineer}
+            disabled={isTestEngineer || isAdmin}
           >
             <MdPeopleAlt className="text-sm" />
             {showCFTPanel ? "CFT MEMBERS" : "CFT MEMBERS"}
@@ -2417,7 +2419,7 @@ export default function CreateJobOrder() {
                 </div>
                 <div className="flex items-center gap-3">
                   {/* Buttons for TestEngineer */}
-                  {isTestEngineer && (!test?.status || test?.status === "Created" || test?.status === "Rejected") && (
+                  {(isTestEngineer || isAdmin) && (!test?.status || test?.status === "Created" || test?.status === "Rejected") && (
                     <>
                       <Button
                         className="bg-green-600 text-white text-xs px-3 py-1 rounded"
@@ -2443,7 +2445,7 @@ export default function CreateJobOrder() {
                   {/* Buttons for ProjectTeam */}
                   {/* ProjectTeam should NOT see the Re-edit button */}
                   {/* Buttons for TestEngineer */}
-                  {isTestEngineer && (test?.status === "Started" || test?.status === "Re-edit") && (
+                  {isTestEngineer && isAdmin && (test?.status === "Started" || test?.status === "Re-edit") && (
                     <>
                       <Button
                         className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
@@ -2464,7 +2466,7 @@ export default function CreateJobOrder() {
                     </>
                   )}
                   {/* Close button always available for ProjectTeam */}
-                  {!isTestEngineer && (
+                  {!isTestEngineer && isAdmin && (
                     <button
                       type="button"
                       onClick={() => handleDeleteTest(idx)}
@@ -3591,8 +3593,8 @@ export default function CreateJobOrder() {
                             </Button>
                           );
                         }
-                        // For other roles (but not TestEngineer when status is "Re-edit"): Show edit button
-                        else if (!isTestEngineer || (isTestEngineer && to.status !== "Re-edit")) {
+                        // For other roles (but not TestEngineer & Admin when status is "Re-edit"): Show edit button
+                        else if (!isTestEngineer || !isAdmin || ((isTestEngineer || isAdmin) && to.status !== "Re-edit")) {
                           return (
                             <Button
                               className="bg-blue-600 text-white text-xs px-4 py-1 rounded"

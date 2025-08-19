@@ -337,7 +337,7 @@ export default function PDCDChennaiPage() {
                 >
                   <SearchIcon className="h-5 w-5" />
                 </Button>
-                {userRole !== "TestEngineer" &&
+                {userRole !== "TestEngineer" && userRole !== "Admin" &&
                   ["Job Order", "Vehicle", "Engine"].map((tab) => (
                     <Button
                       key={tab}
@@ -420,7 +420,7 @@ export default function PDCDChennaiPage() {
             Current Job Orders
           </Badge>
           {/* Hide CREATE JOB ORDER button for TEST ENGINEER */}
-          {userRole !== "TestEngineer" && (
+          {userRole !== "TestEngineer" && userRole !== "Admin" && (
             <Button
               onClick={handleCreateJobOrder}
               className="bg-red-500 hover:bg-red-600 text-white rounded-xl"

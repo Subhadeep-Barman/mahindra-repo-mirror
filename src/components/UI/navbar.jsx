@@ -6,16 +6,23 @@ import {
   DarkMode,
   Home,
   Settings,
+  AddCircleOutline, // <-- Add this import
 } from "@mui/icons-material";
 import { HiUserAdd } from "react-icons/hi";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/UI/button";
+import { Select, MenuItem, Chip, InputLabel, FormControl, OutlinedInput, Box } from "@mui/material";
+import axios from "axios";
 
 import AccountMenu from "@/components/UI/accountmenu";
 import darkLogo from "../../assets/mai_dark.png";
 import lightLogo from "../../assets/mai_dark.png";
 import useStore from "@/store/useStore";
 import { useAuth } from "@/context/AuthContext";
+import showSnackbar from "@/utils/showSnackbar";
+
+const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function Navbar() {
   const isDarkMode = useStore((s) => s.isDarkMode);
@@ -25,6 +32,97 @@ export default function Navbar() {
   const [isMounted, setIsMounted] = useState(false);
   const navigate = useNavigate();
   const { userRole } = useAuth();
+  // Notification popup state
+  const [showBellPopup, setShowBellPopup] = useState(false);
+  const [dropdownValue, setDropdownValue] = useState("");
+  const [selectedFields, setSelectedFields] = useState([]);
+  const [newFields, setNewFields] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // User info for mail
+  const userCookies = useStore.getState().getUserCookieData();
+  const userName = userCookies.userName;
+  const userEmployeeId = userCookies.userId;
+
+  // Field options
+  const fieldOptions = [
+    { value: "projectcode", label: "Project Code" },
+    { value: "domain", label: "Domain" },
+    { value: "mode", label: "Mode" },
+    { value: "vehicle_models", label: "Vehicle Models" },
+    { value: "test_type", label: "Test Type" },
+    { value: "fuel_type", label: "Fuel Type" },
+  ];
+
+  // Multi-select handler
+  const handleFieldSelect = (e) => {
+    const value = e.target.value;
+    setSelectedFields(value);
+    setNewFields(prev => {
+      const updated = { ...prev };
+      value.forEach(f => {
+        if (!updated[f]) updated[f] = [""];
+      });
+      Object.keys(updated).forEach(f => {
+        if (!value.includes(f)) delete updated[f];
+      });
+      return updated;
+    });
+  };
+
+  // Add/Remove/Change field value handlers
+  const handleAddFieldInput = (field) => {
+    setNewFields(prev => ({
+      ...prev,
+      [field]: [...(prev[field] || []), ""],
+    }));
+  };
+  const handleFieldInputChange = (field, idx, value) => {
+    setNewFields(prev => ({
+      ...prev,
+      [field]: prev[field].map((v, i) => i === idx ? value : v),
+    }));
+  };
+  const handleRemoveFieldInput = (field, idx) => {
+    setNewFields(prev => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== idx),
+    }));
+  };
+
+  // Mail API handler
+  const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = null) => {
+    try {
+      const payload = {
+        user_name: userName,
+        token_id: userEmployeeId,
+        role: userRole,
+        job_order_id: directJobOrderId || "",
+        test_order_id: testOrderId || null,
+        caseid: String(caseId),
+        cft_members: "",
+        notify_fields: selectedFields,
+        notify_values: Object.fromEntries(
+          selectedFields.map(f => [f, (newFields[f] || []).filter(v => v.trim() !== "")])
+        ),
+      };
+      await axios.post(`${apiURL}/send`, payload);
+      showSnackbar("Request sent to admin!", "success");
+      setShowBellPopup(false);
+      setDropdownValue("");
+      setSelectedFields([]);
+      setNewFields({});
+    } catch (err) {
+      showSnackbar("Failed to send request.", "error");
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleSubmitNewFields = async () => {
+    setIsSubmitting(true);
+    await handleSendMail(7, "", null);
+    setIsSubmitting(false);
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -104,7 +202,19 @@ export default function Navbar() {
               </button>
             </>
           )}
-          
+
+          {/* Bell Icon for ProjectTeam and Admin */}
+          {(userRole === "ProjectTeam") && (
+            <button
+              className="p-2.5 text-yellow-600 dark:text-yellow-400 rounded-xl hover:bg-gradient-to-r hover:from-yellow-50 hover:to-yellow-100 dark:hover:from-yellow-900/30 dark:hover:to-yellow-800/30 hover:text-yellow-700 dark:hover:text-yellow-300 transition-all duration-300 hover:scale-105"
+              onClick={() => setShowBellPopup(true)}
+              title="Notifications"
+              style={{ display: "flex", alignItems: "center" }}
+            >
+              <Notifications className="h-6 w-6" />
+            </button>
+          )}
+
           <button
             className="p-2.5 text-red-600 dark:text-red-400 rounded-xl hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 dark:hover:from-red-900/30 dark:hover:to-red-800/30 hover:text-red-700 dark:hover:text-red-300 transition-all duration-300 hover:scale-105"
             onClick={() => navigate("/home")}
@@ -289,6 +399,137 @@ export default function Navbar() {
 
             <div className="px-2">
               <AccountMenu />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bell Popup Modal */}
+      {showBellPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-[90vw] max-w-lg">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">Request Admin Action</h2>
+              <Button variant="ghost" onClick={() => setShowBellPopup(false)}>
+                Close
+              </Button>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-1">Select Action</label>
+              <select
+                className="border px-2 py-1 rounded w-full"
+                value={dropdownValue}
+                onChange={e => {
+                  setDropdownValue(e.target.value);
+                  setSelectedFields([]);
+                  setNewFields({});
+                }}
+              >
+                <option value="">-- Select --</option>
+                <option value="add_new_field">Add New Field</option>
+                {/* Add more options if needed */}
+              </select>
+            </div>
+            {dropdownValue === "add_new_field" && (
+              <div>
+                <div className="mb-4">
+                  <FormControl fullWidth>
+                    <InputLabel id="field-multiselect-label">
+                      Which fields do you want to add new values for?
+                    </InputLabel>
+                    <Select
+                      labelId="field-multiselect-label"
+                      multiple
+                      value={selectedFields}
+                      onChange={handleFieldSelect}
+                      input={<OutlinedInput label="Which fields do you want to add new values for?" />}
+                      renderValue={(selected) => (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {selected.map((value) => (
+                            <Chip key={value} label={fieldOptions.find(f => f.value === value)?.label || value} />
+                          ))}
+                        </Box>
+                      )}
+                      MenuProps={{
+                        PaperProps: {
+                          style: {
+                            maxHeight: 48 * 4.5 + 8,
+                            width: 250,
+                          },
+                        },
+                      }}
+                    >
+                      {fieldOptions.map(opt => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </div>
+                {selectedFields.map(field => (
+                  <div key={field} className="mb-4 border rounded p-3 bg-gray-50">
+                    <div className="flex items-center mb-2">
+                      <span className="font-semibold text-sm mr-2">{fieldOptions.find(f => f.value === field)?.label}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="text-green-600"
+                        onClick={() => handleAddFieldInput(field)}
+                      >
+                        <span style={{ display: "flex", alignItems: "center" }}>
+                          <span className="material-icons"><AddCircleOutline /></span> Add More
+                        </span>
+                      </Button>
+                    </div>
+                    {newFields[field]?.map((val, idx) => (
+                      <div key={idx} className="flex items-center mb-2">
+                        <input
+                          className="border px-2 py-1 rounded text-sm flex-1"
+                          value={val}
+                          onChange={e => handleFieldInputChange(field, idx, e.target.value)}
+                          placeholder={`New value #${idx + 1}`}
+                        />
+                        {newFields[field].length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="ml-1 text-red-500"
+                            onClick={() => handleRemoveFieldInput(field, idx)}
+                          >
+                            ×
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-end gap-2 mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowBellPopup(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="bg-yellow-600 text-white"
+                disabled={
+                  isSubmitting ||
+                  !dropdownValue ||
+                  (dropdownValue === "add_new_field" &&
+                    (selectedFields.length === 0 ||
+                      selectedFields.every(f => (newFields[f] || []).filter(v => v.trim() !== "").length === 0)
+                    )
+                  )
+                }
+                onClick={handleSubmitNewFields}
+              >
+                {isSubmitting ? "Submitting..." : "Submit"}
+              </Button>
             </div>
           </div>
         </div>
