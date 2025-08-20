@@ -368,13 +368,13 @@ export default function EditTestOrder() {
   // Handler to update the test order
   const handleUpdateTestOrder = async () => {
     try {
-      // If ProjectTeam is updating a test in Re-edit status, set status to 'Started'
+      // If ProjectTeam is updating a test in Re-edit or Rejected status, set status to 'Created'
       let newStatus = test.status;
-      if (isProjectTeam && newStatus === "Re-edit") {
-        newStatus = "Started";
+      if (isProjectTeam && (newStatus === "Re-edit" || newStatus === "Rejected")) {
+        newStatus = "Created";
       }
       const testOrderPayload = getTestOrderPayload(newStatus);
-      await axios.get(`${apiURL}/testorders-single?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
+      await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       showSnackbar("Test Order updated successfully!", "success");
       navigate(-1);
     } catch (err) {
@@ -387,7 +387,7 @@ export default function EditTestOrder() {
     try {
       // Always update test order with latest form data and new status
       const testOrderPayload = getTestOrderPayload(status);
-      await axios.get(`${apiURL}/testorders-single?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
+      await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
 
       const payload = {
         test_order_id: test.testOrderId,
@@ -423,7 +423,7 @@ export default function EditTestOrder() {
         status: newStatus,
       };
 
-      const testOrderPayload = getTestOrderPayload("Started");
+      const testOrderPayload = getTestOrderPayload(newStatus);
       await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       setMailRemarksModal(false);
       showSnackbar("Test order updated successfully!", "success");
@@ -437,7 +437,7 @@ export default function EditTestOrder() {
   const handleStartTestOrder = async () => {
     try {
       const testOrderPayload = getTestOrderPayload("Started");
-      await axios.get(`${apiURL}/testorders-single?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
+      await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       await handleStatusUpdate("Started");
     } catch (err) {
       showSnackbar("Failed to start test order: " + (err.response?.data?.detail || err.message), "error");
@@ -732,6 +732,28 @@ export default function EditTestOrder() {
               <div className="w-full border rounded p-2 min-h-[60px] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 {test.re_edit_remarks || "No re-edit remarks provided"}
               </div>
+            </div>
+          )}
+
+          {/* Show rejection status and remarks if status is Rejected */}
+          {test.status === "Rejected" && (
+            <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+              <div className="font-semibold text-sm text-red-700 dark:text-red-300 mb-2">
+                Test Order Rejected - Waiting for ProjectTeam Resubmission
+              </div>
+              <div className="text-sm text-red-600 dark:text-red-400 mb-2">
+                This test order has been rejected by the Test Engineer. The ProjectTeam needs to make necessary changes and resubmit.
+              </div>
+              {test.rejection_remarks && (
+                <div>
+                  <div className="font-medium text-sm text-red-700 dark:text-red-300 mb-1">
+                    Rejection Reason:
+                  </div>
+                  <div className="w-full border rounded p-2 min-h-[60px] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    {test.rejection_remarks}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1532,8 +1554,8 @@ export default function EditTestOrder() {
               </>
             )}
 
-            {/* Buttons for TestEngineer and Admin */}
-            {(isTestEngineer || isAdmin) && (test.status === "Started" || test.status === "Rejected" || test.status === "under progress") && (
+            {/* Buttons for TestEngineer and Admin - Only show Re-edit/Complete for Started and under progress */}
+            {(isTestEngineer || isAdmin) && (test.status === "Started" || test.status === "under progress") && (
               <>
                 <Button
                   className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
