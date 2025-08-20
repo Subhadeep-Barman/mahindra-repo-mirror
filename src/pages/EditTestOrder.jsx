@@ -81,7 +81,7 @@ export default function EditTestOrder() {
   // State for test data
   const [test, setTest] = useState({
     testOrderId: testOrder?.test_order_id || "",
-    engineNumber: testOrder?.engine_number || "",
+    // engineNumber removed
     testType: testOrder?.test_type || "",
     objective: testOrder?.test_objective || "",
     vehicleLocation: testOrder?.vehicle_location || "",
@@ -105,22 +105,32 @@ export default function EditTestOrder() {
       : testOrder?.emission_check_attachment
         ? testOrder?.emission_check_attachment
         : [],
-    dataset_attachment: testOrder?.dataset_attachment || "",
-    a2l_attachment: testOrder?.a2l_attachment || "",
-    experiment_attachment: testOrder?.experiment_attachment || "",
-    dbc_attachment: testOrder?.dbc_attachment || "",
-    wltp_attachment: testOrder?.wltp_attachment || "",
-    pdf_report: testOrder?.pdf_report || "",
-    excel_report: testOrder?.excel_report || "",
-    dat_file_attachment: testOrder?.dat_file_attachment || "",
-    others_attachment: testOrder?.others_attachment || "",
+    dataset_attachment: Array.isArray(testOrder?.dataset_attachment) ? testOrder?.dataset_attachment : [],
+    a2l_attachment: Array.isArray(testOrder?.a2l_attachment) ? testOrder?.a2l_attachment : [],
+    experiment_attachment: Array.isArray(testOrder?.experiment_attachment) ? testOrder?.experiment_attachment : [],
+    dbc_attachment: Array.isArray(testOrder?.dbc_attachment) ? testOrder?.dbc_attachment : [],
+    wltp_attachment: Array.isArray(testOrder?.wltp_attachment) ? testOrder?.wltp_attachment : [],
+    pdf_report: Array.isArray(testOrder?.pdf_report) ? testOrder?.pdf_report : [],
+    excel_report: Array.isArray(testOrder?.excel_report) ? testOrder?.excel_report : [],
+    dat_file_attachment: Array.isArray(testOrder?.dat_file_attachment) ? testOrder?.dat_file_attachment : [],
+    // Align with Dropzone name and backend spelling
+    others_attachement: Array.isArray(testOrder?.others_attachement) ? testOrder?.others_attachement : [],
     specificInstruction: testOrder?.specific_instruction || "",
     status: testOrder?.status || "Created",
     // Creator info
     createdBy: testOrder?.name_of_creator || "",
     createdOn: testOrder?.created_on || "",
     // Set showCoastDownData to true if backend has coast down data
-    showCoastDownData: testOrder?.coast_down_data || false,
+    showCoastDownData: Boolean(testOrder?.coast_down_data),
+    // Coast Down Data fields from nested object
+    cdReportRef: testOrder?.coast_down_data?.coast_down_reference || "",
+    vehicleRefMass: testOrder?.coast_down_data?.vehicle_reference_mass || "",
+    aN: testOrder?.coast_down_data?.a_value || "",
+    bNkmph: testOrder?.coast_down_data?.b_value || "",
+    cNkmph2: testOrder?.coast_down_data?.c_value || "",
+    f0N: testOrder?.coast_down_data?.f0_value || "",
+    f1Nkmph: testOrder?.coast_down_data?.f1_value || "",
+    f2Nkmph2: testOrder?.coast_down_data?.f2_value || "",
     // Remarks
     rejection_remarks: testOrder?.rejection_remarks || "",
     remark: testOrder?.remark || "",
@@ -137,13 +147,25 @@ export default function EditTestOrder() {
   
   console.log("coast_down_data from backend:", testOrder?.coast_down_data);
   console.log("showCoastDownData state value:", test.showCoastDownData);
+  console.log("Full testOrder object:", testOrder);
+  console.log("Test state values:", {
+    testType: test.testType,
+    objective: test.objective,
+    vehicleLocation: test.vehicleLocation,
+    dpf: test.dpf,
+    ess: test.ess,
+    mode: test.mode,
+    fuelType: test.fuelType,
+    shift: test.shift,
+    inertiaClass: test.inertiaClass
+  });
 
   // States for API data
   const [testTypes, setTestTypes] = useState([]);
   const [inertiaClasses, setInertiaClasses] = useState([]);
   const [modes, setModes] = useState([]);
   const [fuelTypes, setFuelTypes] = useState([]);
-  const [engineNumbers, setEngineNumbers] = useState([]);
+  // engineNumbers removed
 
   // States for file modals
   const [emissionCheckModal, setEmissionCheckModal] = useState(false);
@@ -200,7 +222,10 @@ export default function EditTestOrder() {
     const fetchTestTypes = async () => {
       try {
         const response = await axios.get(`${apiURL}/test-types`);
-        setTestTypes(response.data || []);
+        const list = Array.isArray(response.data) ? response.data : [];
+        const value = test.testType;
+        const finalList = value && !list.includes(value) ? [value, ...list] : list;
+        setTestTypes(finalList);
       } catch (error) {
         console.error("Error fetching test types:", error);
         setTestTypes([]);
@@ -211,7 +236,10 @@ export default function EditTestOrder() {
     const fetchInertiaClasses = async () => {
       try {
         const response = await axios.get(`${apiURL}/inertia-classes`);
-        setInertiaClasses(response.data || []);
+        const list = Array.isArray(response.data) ? response.data : [];
+        const value = test.inertiaClass;
+        const finalList = value && !list.includes(value) ? [value, ...list] : list;
+        setInertiaClasses(finalList);
       } catch (error) {
         console.error("Error fetching inertia classes:", error);
         setInertiaClasses([]);
@@ -222,7 +250,10 @@ export default function EditTestOrder() {
     const fetchModes = async () => {
       try {
         const response = await axios.get(`${apiURL}/modes`);
-        setModes(response.data || []);
+        const list = Array.isArray(response.data) ? response.data : [];
+        const value = test.mode;
+        const finalList = value && !list.includes(value) ? [value, ...list] : list;
+        setModes(finalList);
       } catch (error) {
         console.error("Error fetching modes:", error);
         setModes([]);
@@ -233,30 +264,24 @@ export default function EditTestOrder() {
     const fetchFuelTypes = async () => {
       try {
         const response = await axios.get(`${apiURL}/fuel-types`);
-        setFuelTypes(response.data || []);
+        const list = Array.isArray(response.data) ? response.data : [];
+        const value = test.fuelType;
+        const finalList = value && !list.includes(value) ? [value, ...list] : list;
+        setFuelTypes(finalList);
       } catch (error) {
         console.error("Error fetching fuel types:", error);
         setFuelTypes([]);
       }
     };
 
-    // Fetch engine numbers
-    const fetchEngineNumbers = async () => {
-      try {
-        const response = await axios.get(`${apiURL}/engine-numbers`);
-        setEngineNumbers(response.data || []);
-      } catch (error) {
-        console.error("Error fetching engine numbers:", error);
-        setEngineNumbers([]);
-      }
-    };
-
-    // Execute fetch functions
+    // Trigger all fetches so select values render correctly
     fetchTestTypes();
     fetchInertiaClasses();
     fetchModes();
     fetchFuelTypes();
-    fetchEngineNumbers();
+
+    // Fetch engine numbers
+  // Removed fetchEngineNumbers and its usage
   }, []);
 
   // Format date for display
@@ -282,7 +307,6 @@ export default function EditTestOrder() {
     test_order_id: test.testOrderId,
     job_order_id: jobOrderId || null,
     CoastDownData_id: testOrder?.CoastDownData_id || null,
-    engine_number: test.engineNumber || "",
     test_type: test.testType || "",
     test_objective: test.objective || "",
     vehicle_location: test.vehicleLocation || "",
@@ -319,7 +343,7 @@ export default function EditTestOrder() {
     pdf_report: test.pdf_report || "",
     excel_report: test.excel_report || "",
     dat_file_attachment: test.dat_file_attachment || "",
-    others_attachment: test.others_attachment || "",
+    others_attachment: test.others_attachement || "",
     specific_instruction: test.specificInstruction || "",
     status: overrideStatus ?? test.status,
     complete_remarks: test.complete_remarks || "", // Add complete_remarks to payload
@@ -713,28 +737,6 @@ export default function EditTestOrder() {
 
           {/* Main form fields */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
-            <div className="flex flex-col">
-              <Label htmlFor="engineNumber" className="mb-2 dark:text-white">
-                Engine Number <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={test.engineNumber || ""}
-                onValueChange={(value) => handleTestChange("engineNumber", value)}
-                required
-                disabled={!areFieldsEditable()}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  {engineNumbers?.map((engineNumber) => (
-                    <SelectItem key={engineNumber} value={engineNumber}>
-                      {engineNumber}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div>
               <Label className="dark:text-white">Test Type</Label>
               <Select
