@@ -232,7 +232,13 @@ class TestOrder(Base):
     id_of_updater = Column(String, nullable=True)
     name_of_updater = Column(String, nullable=True)
     updated_on = Column(TIMESTAMP, nullable=True)
-    updated_on = Column(TIMESTAMP)
+    validated_by = Column(String, nullable=True)
+    validated_on = Column(TIMESTAMP, nullable=True)
+    validation_status = Column(String, nullable=True)
+    rating = Column(Integer, nullable=True)  # 1-5 scale
+    rating_remarks = Column(String, nullable=True)
+    rated_by = Column(String, nullable=True)
+    rated_on = Column(TIMESTAMP, nullable=True)
 
 class AddFields(Base):
     __tablename__ = "AddFields"
