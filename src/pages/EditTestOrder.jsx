@@ -1542,11 +1542,11 @@ export default function EditTestOrder() {
                 <Button
                   className="bg-red-600 text-white text-xs px-3 py-1 rounded"
                   type="button"
-                  onClick={async () => {
+                  onClick={() => {
                     setModalActionType("reject");
                     setMailRemarks("");
                     setMailRemarksModal(true);
-                    await handleSendMail("4", jobOrderId, test.testOrderId);
+                    // Mail will be sent after rejection reason is filled and submitted
                   }}
                 >
                   Reject
@@ -1673,7 +1673,8 @@ export default function EditTestOrder() {
                         await handleStatusUpdate("Re-edit", mailRemarks);
                         await handleSendMail("3", jobOrderId, test.testOrderId); // Mail called after remarks filled and submit
                       } else if (modalActionType === "reject") {
-                        handleStatusUpdate("Rejected", mailRemarks);
+                        await handleStatusUpdate("Rejected", mailRemarks);
+                        await handleSendMail("4", jobOrderId, test.testOrderId); // Mail called after rejection reason is filled and submitted
                       }
                     } else {
                       handleSubmitMailRemarks();
