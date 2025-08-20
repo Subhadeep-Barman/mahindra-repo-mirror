@@ -1032,6 +1032,7 @@ export default function EditTestOrder() {
                 rows={3}
               />
             </div>
+
           </div>
 
           {/* Attachments Section */}
@@ -1288,6 +1289,86 @@ export default function EditTestOrder() {
                   viewOnly={userRole === "ProjectTeam"}
                 />
               </div>
+
+              {/* Test Validation - positioned on the right side */}
+              {test.status === "Completed" && isTestEngineer && !test.validation_status && (
+                <div className="md:col-start-3 md:col-span-1">
+                  <Label className="dark:text-white">Test Validation</Label>
+                  {(test.complete_remarks || test.remark) && (
+                    <div className="mb-3">
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                        Completion Remarks:
+                      </Label>
+                      <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
+                        <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                          {test.complete_remarks || test.remark}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex gap-3 justify-end">
+                    <Button
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                      type="button"
+                      onClick={() => handleValidationDecision(false)}
+                    >
+                      Mark as Invalid
+                    </Button>
+                    <Button
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                      type="button"
+                      onClick={() => handleValidationDecision(true)}
+                    >
+                      Mark as Valid
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Test Validation Status - positioned on the right side */}
+              {test.status === "Completed" && test.validation_status && (
+                <div className="md:col-start-3 md:col-span-1">
+                  <Label className="dark:text-white">Test Validation</Label>
+                  <div className={`mt-2 p-4 rounded-lg border ${
+                    test.validation_status === 'valid'
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                      : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                  }`}>
+                    <div className="mb-3">
+                      <h3 className={`text-lg font-semibold mb-1 ${
+                        test.validation_status === 'valid'
+                          ? 'text-green-900 dark:text-green-100'
+                          : 'text-red-900 dark:text-red-100'
+                      }`}>
+                        Test Validation: {test.validation_status === 'valid' ? 'VALID' : 'INVALID'}
+                      </h3>
+                      <p className={`text-sm ${
+                        test.validation_status === 'valid'
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        Validated by: {test.validated_by} on {formatDate(test.validated_on)}
+                      </p>
+                    </div>
+                    {(test.complete_remarks || test.remark) && (
+                      <div>
+                        <Label className={`text-sm font-medium mb-1 block ${
+                          test.validation_status === 'valid'
+                            ? 'text-green-700 dark:text-green-300'
+                            : 'text-red-700 dark:text-red-300'
+                        }`}>
+                          Completion Remarks:
+                        </Label>
+                        <div className="p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
+                          <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                            {test.complete_remarks || test.remark}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1408,92 +1489,14 @@ export default function EditTestOrder() {
           </div>
 
           {/* Completion Remarks and Validation Section for TestEngineer */}
-          {test.status === "Completed" && isTestEngineer && !test.validation_status && (
+          {false && ( // removed standalone section; now rendered inside the main grid above
             <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Test Validation Required
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                  This test has been completed. Please review the completion remarks and validate if the test execution was performed correctly.
-                </p>
-              </div>
-
-              {/* Display Completion Remarks */}
-              {(test.complete_remarks || test.remark) && (
-                <div className="mb-4">
-                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Completion Remarks:
-                  </Label>
-                  <div className="mt-1 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
-                    <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
-                      {test.complete_remarks || test.remark}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Validation Buttons */}
-              <div className="flex justify-start gap-3">
-                <Button
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                  type="button"
-                  onClick={() => handleValidationDecision(false)}
-                >
-                  Mark as Invalid
-                </Button>
-                <Button
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-                  type="button"
-                  onClick={() => handleValidationDecision(true)}
-                >
-                  Mark as Valid
-                </Button>
-              </div>
             </div>
           )}
 
           {/* Validation Status Display for Completed Tests */}
-          {test.status === "Completed" && test.validation_status && (
-            <div className={`mt-6 p-4 rounded-lg border ${
-              test.validation_status === 'valid'
-                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-            }`}>
-              <div className="mb-3">
-                <h3 className={`text-lg font-semibold mb-2 ${
-                  test.validation_status === 'valid'
-                    ? 'text-green-900 dark:text-green-100'
-                    : 'text-red-900 dark:text-red-100'
-                }`}>
-                  Test Validation: {test.validation_status === 'valid' ? 'VALID' : 'INVALID'}
-                </h3>
-                <p className={`text-sm ${
-                  test.validation_status === 'valid'
-                    ? 'text-green-600 dark:text-green-400'
-                    : 'text-red-600 dark:text-red-400'
-                }`}>
-                  Validated by: {test.validated_by} on {formatDate(test.validated_on)}
-                </p>
-              </div>
-
-              {/* Display Completion Remarks */}
-              {(test.complete_remarks || test.remark) && (
-                <div className="mb-3">
-                  <Label className={`text-sm font-medium ${
-                    test.validation_status === 'valid'
-                      ? 'text-green-700 dark:text-green-300'
-                      : 'text-red-700 dark:text-red-300'
-                  }`}>
-                    Completion Remarks:
-                  </Label>
-                  <div className="mt-1 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
-                    <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
-                      {test.complete_remarks || test.remark}
-                    </p>
-                  </div>
-                </div>
-              )}
+          {false && (
+            <div className={`mt-6 p-4 rounded-lg border`}>
             </div>
           )}
 
