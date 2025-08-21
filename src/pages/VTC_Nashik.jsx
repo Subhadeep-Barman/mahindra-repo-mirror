@@ -44,7 +44,10 @@ export default function VTCNashikPage() {
     created_on: "",
     name_of_updater: "",
     updated_on: "",
+    objective: "", // Added new field for searching test objectives
   });
+  
+  const [testOrders, setTestOrders] = useState([]);
   const rowsPerPage = 8;
   const { userRole, userId } = useAuth();
 
@@ -69,21 +72,62 @@ export default function VTCNashikPage() {
       return;
     }
     const department = "VTC_JO Nashik";
+    
+    // First fetch the job orders
     axios
       .get(`${apiURL}/joborders`, { params: { department, user_id: userEmployeeId, role: userRole } })
       .then((res) => {
-        setJobOrders(res.data || []);
-        setFilteredJobOrders(res.data || []); // set filtered to all on fetch
+        const jobOrdersData = res.data || [];
+        setJobOrders(jobOrdersData);
+        setFilteredJobOrders(jobOrdersData);
+        
+        // Then fetch test orders to enable objective-based filtering
+        console.log("Fetching test orders...");
+        axios
+          .get(`${apiURL}/testorders`)
+          .then((testRes) => {
+            console.log("Test orders API response:", testRes);
+            // Check if response data is nested in a 'data' property or other structure
+            let testOrdersData;
+            if (Array.isArray(testRes.data)) {
+              testOrdersData = testRes.data;
+            } else if (testRes.data && testRes.data.data && Array.isArray(testRes.data.data)) {
+              // Handle case where data is nested in a 'data' property
+              testOrdersData = testRes.data.data;
+            } else if (testRes.data && typeof testRes.data === 'object') {
+              // Handle case where data is an object with values we need to extract
+              testOrdersData = Object.values(testRes.data);
+            } else {
+              testOrdersData = [];
+            }
+            
+            console.log("Processed test orders data:", testOrdersData);
+            setTestOrders(testOrdersData);
+            
+            // Check if test orders have the expected structure
+            if (testOrdersData.length > 0) {
+              console.log("Sample test order:", testOrdersData[0]);
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to fetch test orders:", err);
+            setTestOrders([]);
+          });
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Failed to fetch job orders:", err);
         setJobOrders([]);
         setFilteredJobOrders([]);
+        setTestOrders([]);
       });
   };
 
   // Filtering logic
   const applySearch = () => {
-    const filtered = jobOrders.filter((order) => {
+    let filtered = jobOrders;
+    
+    // First apply standard filtering criteria
+    filtered = filtered.filter((order) => {
       return (
         (search.job_order_id === "" ||
           String(order.job_order_id || "")
@@ -155,6 +199,61 @@ export default function VTCNashikPage() {
               .includes(search.updated_on.toLowerCase())))
       );
     });
+    
+    // If test objective filter is applied, further filter the results
+    if (search.objective && search.objective.trim() !== "") {
+      // Log all test orders for debugging
+      console.log("All Test Orders:", testOrders);
+      
+      try {
+        // Find test orders that match the objective
+        const matchingTestOrders = testOrders.filter(testOrder => {
+          // Check for objective in different possible field names
+          const objective = testOrder.objective || testOrder.test_objective || 
+                          (testOrder.test_details ? testOrder.test_details.objective : null);
+          
+          return objective && 
+                 objective.toLowerCase().includes(search.objective.toLowerCase());
+        });
+        console.log("Test Orders with Matching Objective:", matchingTestOrders);
+        
+        // Extract the job_order_ids from matching test orders - check for different field names
+        const jobOrdersWithMatchingObjective = matchingTestOrders.map(testOrder => {
+          // Check different possible field names for job order ID
+          return testOrder.job_order_id || testOrder.jobOrderId || testOrder.job_id || 
+                 testOrder.orderId || testOrder.order_id || 
+                 (testOrder.job_order ? testOrder.job_order.id : null);
+        }).filter(id => id); // Filter out undefined/null values
+        
+        console.log("Job Order IDs with Matching Objective:", jobOrdersWithMatchingObjective);
+        
+        // Keep only job orders that have test orders with matching objectives
+        filtered = filtered.filter(order => {
+          // Get job order ID, checking multiple possible field names
+          const orderId = order.job_order_id || order.jobOrderId || order.job_id || 
+                         order.orderId || order.order_id || order.id;
+          
+          // Convert both to strings for comparison to avoid type mismatches
+          return jobOrdersWithMatchingObjective.some(id => 
+            String(id) === String(orderId)
+          );
+        });
+      } catch (error) {
+        console.error("Error in objective filtering:", error);
+      }
+      
+      // Check if we have any filtered job orders
+      if (filtered.length === 0) {
+        console.log("No job orders match the filtered test orders");
+        // Examine some job orders to check their structure
+        if (jobOrders.length > 0) {
+          console.log("Sample job order structure:", jobOrders[0]);
+        }
+      }
+    }
+    console.log("Filtered Job Orders:", filtered);
+    console.log("Search objective:", search.objective);
+    
     setFilteredJobOrders(filtered);
     setCurrentPage(1);
   };
@@ -170,6 +269,104 @@ export default function VTCNashikPage() {
   };
 
   const navigate = useNavigate();
+  
+  const handleDownload = () => {
+    if (!filteredJobOrders.length) return;
+    
+    const headers = [
+      "Job Order Number",
+      "Project Code",
+      "Vehicle Number",
+      "Body Number",
+      "Engine Number",
+      "Domain",
+      "Test Orders",
+      "Completed Test Orders",
+      "Created by",
+      "Created on",
+      "Last updated By",
+      "Last updated on",
+      "Test Objectives"
+    ];
+    
+    const rows = filteredJobOrders.map((order) => {
+      // Find all test orders for this job order
+      const relatedTestOrders = testOrders.filter(
+        testOrder => {
+          const testOrderId = testOrder.job_order_id || testOrder.jobOrderId || testOrder.job_id || 
+                          testOrder.orderId || testOrder.order_id;
+          const orderId = order.job_order_id || order.jobOrderId || order.job_id || order.id;
+          return String(testOrderId) === String(orderId);
+        }
+      );
+      
+      // Get all unique objectives from related test orders
+      const objectives = [...new Set(
+        relatedTestOrders
+          .filter(to => {
+            const objective = to.objective || to.test_objective || 
+                          (to.test_details ? to.test_details.objective : null);
+            return objective;
+          })
+          .map(to => {
+            return to.objective || to.test_objective || 
+                (to.test_details ? to.test_details.objective : null);
+          })
+      )].join(', ');
+      
+      return [
+        order.job_order_id || "N/A",
+        order.project_code || "N/A",
+        order.vehicle_serial_number || "N/A",
+        order.vehicle_body_number || "N/A",
+        order.engine_serial_number || "N/A",
+        order.domain || "N/A",
+        order.test_status || "0",
+        order.completed_test_count || "0",
+        order.name_of_creator || "N/A",
+        order.created_on
+          ? new Date(order.created_on).toLocaleString("en-IN", {
+              timeZone: "Asia/Kolkata",
+              hour12: true,
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "",
+        order.name_of_updater || "N/A",
+        order.updated_on
+          ? new Date(order.updated_on).toLocaleString("en-IN", {
+              timeZone: "Asia/Kolkata",
+              hour12: true,
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "N/A",
+        objectives || "N/A"
+      ];
+    });
+    
+    const csvContent =
+      [headers, ...rows]
+        .map((row) =>
+          row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(",")
+        )
+        .join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "job_orders.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const handleBack = () => {
     navigate(-1); // Navigate back to the previous page
@@ -306,6 +503,7 @@ export default function VTCNashikPage() {
               <input placeholder="Created On" className="border px-2 py-1 rounded text-sm" value={search.created_on} onChange={e => setSearch(s => ({ ...s, created_on: e.target.value }))} />
               <input placeholder="Updated By" className="border px-2 py-1 rounded text-sm" value={search.name_of_updater} onChange={e => setSearch(s => ({ ...s, name_of_updater: e.target.value }))} />
               <input placeholder="Updated On" className="border px-2 py-1 rounded text-sm" value={search.updated_on} onChange={e => setSearch(s => ({ ...s, updated_on: e.target.value }))} />
+              <input placeholder="Test Objective" className="border px-2 py-1 rounded text-sm" value={search.objective} onChange={e => setSearch(s => ({ ...s, objective: e.target.value }))} />
             </div>
             <div className="mt-4 flex justify-end space-x-2">
               <Button
@@ -323,6 +521,7 @@ export default function VTCNashikPage() {
                     created_on: "",
                     name_of_updater: "",
                     updated_on: "",
+                    objective: "",
                   });
                   setFilteredJobOrders(jobOrders);
                   setCurrentPage(1);
@@ -338,72 +537,7 @@ export default function VTCNashikPage() {
                 Apply
               </Button>
               <Button
-                onClick={() => {
-                  if (!filteredJobOrders.length) return;
-                  const headers = [
-                    "Job Order Number",
-                    "Project Code",
-                    "Vehicle Number",
-                    "Body Number",
-                    "Engine Number",
-                    "Domain",
-                    "Test Orders",
-                    "Completed Test Orders",
-                    "Created by",
-                    "Created on",
-                    "Last updated By",
-                    "Last updated on",
-                  ];
-                  const rows = filteredJobOrders.map((order) => [
-                    order.job_order_id || "N/A",
-                    order.project_code || "N/A",
-                    order.vehicle_serial_number || "N/A",
-                    order.vehicle_body_number || "N/A",
-                    order.engine_serial_number || "N/A",
-                    order.domain || "N/A",
-                    order.test_status || "0",
-                    order.completed_test_count || "0",
-                    order.name_of_creator || "N/A",
-                    order.created_on
-                      ? new Date(order.created_on).toLocaleString("en-IN", {
-                          timeZone: "Asia/Kolkata",
-                          hour12: true,
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : "",
-                    order.name_of_updater || "N/A",
-                    order.updated_on
-                      ? new Date(order.updated_on).toLocaleString("en-IN", {
-                          timeZone: "Asia/Kolkata",
-                          hour12: true,
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : "N/A",
-                  ]);
-                  const csvContent =
-                    [headers, ...rows]
-                      .map((row) =>
-                        row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(",")
-                      )
-                      .join("\r\n");
-                  const blob = new Blob([csvContent], { type: "text/csv" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = "job_orders.csv";
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url);
-                }}
+                onClick={handleDownload}
                 className="bg-yellow-500 text-black hover:bg-yellow-600"
               >
                 Download

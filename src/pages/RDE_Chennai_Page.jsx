@@ -48,7 +48,10 @@ export default function RDEChennaiPage() {
     name_of_creator: "",
     created_on: "",
     updated_on: "",
+    objective: "", // Added new field for searching test objectives
   });
+  
+  const [testOrders, setTestOrders] = useState([]);
 
   const userCookies = useStore.getState().getUserCookieData();
     const userEmail = userCookies.userEmail;
@@ -69,19 +72,183 @@ export default function RDEChennaiPage() {
       showSnackbar("User ID not found. Please login again.", "error");
       return;
     }
+    
+    // First fetch the job orders
     axios
       .get(`${apiURL}/rde_joborders`,{ params:{ user_id: userEmployeeId, role: userRole } })
-      .then((res) => setJobOrders(res.data || []))
-      .catch(() => setJobOrders([]));
+      .then((res) => {
+        const jobOrdersData = res.data || [];
+        setJobOrders(jobOrdersData);
+        setFilteredJobOrders(jobOrdersData);
+        
+        // Then fetch test orders to enable objective-based filtering
+        console.log("Fetching test orders...");
+        axios
+          .get(`${apiURL}/testorders`)
+          .then((testRes) => {
+            console.log("Test orders API response:", testRes);
+            // Check if response data is nested in a 'data' property or other structure
+            let testOrdersData;
+            if (Array.isArray(testRes.data)) {
+              testOrdersData = testRes.data;
+            } else if (testRes.data && testRes.data.data && Array.isArray(testRes.data.data)) {
+              // Handle case where data is nested in a 'data' property
+              testOrdersData = testRes.data.data;
+            } else if (testRes.data && typeof testRes.data === 'object') {
+              // Handle case where data is an object with values we need to extract
+              testOrdersData = Object.values(testRes.data);
+            } else {
+              testOrdersData = [];
+            }
+            
+            console.log("Processed test orders data:", testOrdersData);
+            setTestOrders(testOrdersData);
+            
+            // Check if test orders have the expected structure
+            if (testOrdersData.length > 0) {
+              console.log("Sample test order:", testOrdersData[0]);
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to fetch test orders:", err);
+            setTestOrders([]);
+          });
+      })
+      .catch((err) => {
+        console.error("Failed to fetch job orders:", err);
+        setJobOrders([]);
+        setFilteredJobOrders([]);
+        setTestOrders([]);
+      });
   };
 
   const applySearch = () => {
-    const filtered = jobOrders.filter((order) =>
-      Object.entries(search).every(([key, value]) =>
-        value === "" ||
-        String(order[key] || "").toLowerCase().includes(value.toLowerCase())
-      )
-    );
+    let filtered = jobOrders;
+    
+    // First apply standard filtering criteria
+    filtered = filtered.filter((order) => {
+      return (
+        (search.job_order_id === "" ||
+          String(order.job_order_id || "")
+            .toLowerCase()
+            .includes(search.job_order_id.toLowerCase())) &&
+        (search.project_code === "" ||
+          String(order.project_code || "")
+            .toLowerCase()
+            .includes(search.project_code.toLowerCase())) &&
+        (search.vehicle_serial_number === "" ||
+          String(order.vehicle_serial_number || "")
+            .toLowerCase()
+            .includes(search.vehicle_serial_number.toLowerCase())) &&
+        (search.vehicle_body_number === "" ||
+          String(order.vehicle_body_number || "")
+            .toLowerCase()
+            .includes(search.vehicle_body_number.toLowerCase())) &&
+        (search.engine_serial_number === "" ||
+          String(order.engine_serial_number || "")
+            .toLowerCase()
+            .includes(search.engine_serial_number.toLowerCase())) &&
+        (search.domain === "" ||
+          String(order.domain || "")
+            .toLowerCase()
+            .includes(search.domain.toLowerCase())) &&
+        (search.test_status === "" ||
+          String(order.test_status || "")
+            .toLowerCase()
+            .includes(search.test_status.toLowerCase())) &&
+        (search.completed_test_count === "" ||
+          String(order.completed_test_count || "")
+            .toLowerCase()
+            .includes(search.completed_test_count.toLowerCase())) &&
+        (search.name_of_creator === "" ||
+          String(order.name_of_creator || "")
+            .toLowerCase()
+            .includes(search.name_of_creator.toLowerCase())) &&
+        (search.created_on === "" ||
+          (order.created_on &&
+            new Date(order.created_on)
+              .toLocaleString("en-IN", {
+                timeZone: "Asia/Kolkata",
+                hour12: true,
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+              .toLowerCase()
+              .includes(search.created_on.toLowerCase()))) &&
+        (search.updated_on === "" ||
+          (order.updated_on &&
+            new Date(order.updated_on)
+              .toLocaleString("en-IN", {
+                timeZone: "Asia/Kolkata",
+                hour12: true,
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+              .toLowerCase()
+              .includes(search.updated_on.toLowerCase())))
+      );
+    });
+    
+    // If test objective filter is applied, further filter the results
+    if (search.objective && search.objective.trim() !== "") {
+      // Log all test orders for debugging
+      console.log("All Test Orders:", testOrders);
+      
+      try {
+        // Find test orders that match the objective
+        const matchingTestOrders = testOrders.filter(testOrder => {
+          // Check for objective in different possible field names
+          const objective = testOrder.objective || testOrder.test_objective || 
+                          (testOrder.test_details ? testOrder.test_details.objective : null);
+          
+          return objective && 
+                 objective.toLowerCase().includes(search.objective.toLowerCase());
+        });
+        console.log("Test Orders with Matching Objective:", matchingTestOrders);
+        
+        // Extract the job_order_ids from matching test orders - check for different field names
+        const jobOrdersWithMatchingObjective = matchingTestOrders.map(testOrder => {
+          // Check different possible field names for job order ID
+          return testOrder.job_order_id || testOrder.jobOrderId || testOrder.job_id || 
+                 testOrder.orderId || testOrder.order_id || 
+                 (testOrder.job_order ? testOrder.job_order.id : null);
+        }).filter(id => id); // Filter out undefined/null values
+        
+        console.log("Job Order IDs with Matching Objective:", jobOrdersWithMatchingObjective);
+        
+        // Keep only job orders that have test orders with matching objectives
+        filtered = filtered.filter(order => {
+          // Get job order ID, checking multiple possible field names
+          const orderId = order.job_order_id || order.jobOrderId || order.job_id || 
+                         order.orderId || order.order_id || order.id;
+          
+          // Convert both to strings for comparison to avoid type mismatches
+          return jobOrdersWithMatchingObjective.some(id => 
+            String(id) === String(orderId)
+          );
+        });
+      } catch (error) {
+        console.error("Error in objective filtering:", error);
+      }
+      
+      // Check if we have any filtered job orders
+      if (filtered.length === 0) {
+        console.log("No job orders match the filtered test orders");
+        // Examine some job orders to check their structure
+        if (jobOrders.length > 0) {
+          console.log("Sample job order structure:", jobOrders[0]);
+        }
+      }
+    }
+    console.log("Filtered Job Orders:", filtered);
+    console.log("Search objective:", search.objective);
+    
     setFilteredJobOrders(filtered);
     setCurrentPage(1);
   };
@@ -100,42 +267,70 @@ export default function RDEChennaiPage() {
       "Created By",
       "Created On",
       "Updated On",
+      "Test Objectives"
     ];
-    const rows = filteredJobOrders.map((order) => [
-      order.job_order_id,
-      order.project_code,
-      order.vehicle_serial_number,
-      order.vehicle_body_number,
-      order.engine_serial_number || "N/A",
-      order.domain,
-      order.test_status,
-      order.completed_test_count == 0
-        ? "0"
-        : `${order.completed_test_count}/${order.test_status}`,
-      order.name_of_creator,
-      order.created_on
-        ? new Date(order.created_on).toLocaleString("en-IN", {
-          timeZone: "Asia/Kolkata",
-          hour12: true,
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-        : "",
-      order.updated_on
-        ? new Date(order.updated_on).toLocaleString("en-IN", {
-          timeZone: "Asia/Kolkata",
-          hour12: true,
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-        : "N/A",
-    ]);
+    const rows = filteredJobOrders.map((order) => {
+      // Find all test orders for this job order
+      const relatedTestOrders = testOrders.filter(
+        testOrder => {
+          const testOrderId = testOrder.job_order_id || testOrder.jobOrderId || testOrder.job_id || 
+                            testOrder.orderId || testOrder.order_id;
+          const orderId = order.job_order_id || order.jobOrderId || order.job_id || order.id;
+          return String(testOrderId) === String(orderId);
+        }
+      );
+      
+      // Get all unique objectives from related test orders
+      const objectives = [...new Set(
+        relatedTestOrders
+          .filter(to => {
+            const objective = to.objective || to.test_objective || 
+                           (to.test_details ? to.test_details.objective : null);
+            return objective;
+          })
+          .map(to => {
+            return to.objective || to.test_objective || 
+                 (to.test_details ? to.test_details.objective : null);
+          })
+      )].join(', ');
+      
+      return [
+        order.job_order_id,
+        order.project_code,
+        order.vehicle_serial_number,
+        order.vehicle_body_number,
+        order.engine_serial_number || "N/A",
+        order.domain,
+        order.test_status,
+        order.completed_test_count == 0
+          ? "0"
+          : `${order.completed_test_count}/${order.test_status}`,
+        order.name_of_creator,
+        order.created_on
+          ? new Date(order.created_on).toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            hour12: true,
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+          : "",
+        order.updated_on
+          ? new Date(order.updated_on).toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            hour12: true,
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+          : "N/A",
+        objectives || "N/A"
+      ];
+    });
     const csvContent =
       [headers, ...rows]
         .map((row) =>
@@ -184,7 +379,7 @@ export default function RDEChennaiPage() {
   const handleJobOrderClick = (job_order_id) => {
     // Fetch job order details from backend and redirect to /createJobOrder with all data
     axios
-      .get(`${apiURL}/rde_joborders`, { params: { job_order_id } })
+      .get(`${apiURL}/rde_joborders-single/${encodeURIComponent(job_order_id)}`)
       .then((res) => {
         // Pass the complete job order data to create job order page
         // This will allow the form to be pre-filled with existing values
@@ -293,15 +488,18 @@ export default function RDEChennaiPage() {
         {showSearchCard && (
           <div className="bg-white dark:bg-gray-900 py-4 px-6 border border-gray-300 rounded-lg mx-4 mt-4 shadow">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {Object.keys(search).map((field) => (
-                <input
-                  key={field}
-                  placeholder={field.replace(/_/g, " ").toUpperCase()}
-                  value={search[field]}
-                  onChange={(e) => setSearch((prev) => ({ ...prev, [field]: e.target.value }))}
-                  className="border px-2 py-1 rounded text-sm"
-                />
-              ))}
+              <input placeholder="Job Order Number" className="border px-2 py-1 rounded text-sm" value={search.job_order_id} onChange={e => setSearch(s => ({ ...s, job_order_id: e.target.value }))} />
+              <input placeholder="Project" className="border px-2 py-1 rounded text-sm" value={search.project_code} onChange={e => setSearch(s => ({ ...s, project_code: e.target.value }))} />
+              <input placeholder="Vehicle Number" className="border px-2 py-1 rounded text-sm" value={search.vehicle_serial_number} onChange={e => setSearch(s => ({ ...s, vehicle_serial_number: e.target.value }))} />
+              <input placeholder="Body Number" className="border px-2 py-1 rounded text-sm" value={search.vehicle_body_number} onChange={e => setSearch(s => ({ ...s, vehicle_body_number: e.target.value }))} />
+              <input placeholder="Engine Number" className="border px-2 py-1 rounded text-sm" value={search.engine_serial_number} onChange={e => setSearch(s => ({ ...s, engine_serial_number: e.target.value }))} />
+              <input placeholder="Domain" className="border px-2 py-1 rounded text-sm" value={search.domain} onChange={e => setSearch(s => ({ ...s, domain: e.target.value }))} />
+              <input placeholder="Test Status" className="border px-2 py-1 rounded text-sm" value={search.test_status} onChange={e => setSearch(s => ({ ...s, test_status: e.target.value }))} />
+              <input placeholder="Completed Tests" className="border px-2 py-1 rounded text-sm" value={search.completed_test_count} onChange={e => setSearch(s => ({ ...s, completed_test_count: e.target.value }))} />
+              <input placeholder="Created By" className="border px-2 py-1 rounded text-sm" value={search.name_of_creator} onChange={e => setSearch(s => ({ ...s, name_of_creator: e.target.value }))} />
+              <input placeholder="Created On" className="border px-2 py-1 rounded text-sm" value={search.created_on} onChange={e => setSearch(s => ({ ...s, created_on: e.target.value }))} />
+              <input placeholder="Updated On" className="border px-2 py-1 rounded text-sm" value={search.updated_on} onChange={e => setSearch(s => ({ ...s, updated_on: e.target.value }))} />
+              <input placeholder="Test Objective" className="border px-2 py-1 rounded text-sm" value={search.objective} onChange={e => setSearch(s => ({ ...s, objective: e.target.value }))} />
             </div>
             <div className="mt-4 flex justify-end space-x-2">
               <Button
@@ -318,6 +516,7 @@ export default function RDEChennaiPage() {
                     name_of_creator: "",
                     created_on: "",
                     updated_on: "",
+                    objective: "",
                   });
                   setFilteredJobOrders(jobOrders);
                   setCurrentPage(1);
