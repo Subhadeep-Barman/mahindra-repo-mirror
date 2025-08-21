@@ -72,6 +72,10 @@ export default function PDCDCreateJobOrder() {
   const [showCFTPanel, setShowCFTPanel] = useState(false);
   const [cdError, setCdError] = useState("");
   const [cdFieldErrors, setCdFieldErrors] = useState({});
+  const [jobOrderId, setJobOrderId] = useState();
+  const [vehicleList, setVehicleList] = useState([]);
+  const [engineList, setEngineList] = useState([]);
+  const [vehicleBodyNumbers, setVehicleBodyNumbers] = useState([]);
 
   // State to control pre-filling mode to prevent useEffect conflicts
   const [isPreFilling, setIsPreFilling] = useState(false);
@@ -414,11 +418,6 @@ export default function PDCDCreateJobOrder() {
       setIsPreFilling(true);
       setIsLoading(true);
 
-      // Show success message if this is for creating test orders
-      if (location.state.isEdit) {
-        showSnackbar("Job order pre-filled successfully", "success");
-      }
-
       // Function to fetch and pre-fill coast down data
       const fetchAndFillCoastDownData = async (coastDownDataId) => {
         if (coastDownDataId) {
@@ -466,12 +465,14 @@ export default function PDCDCreateJobOrder() {
             jobOrder.vehicle_build_level || jobOrder.vehicleBuildLevel || "",
           vehicleModel: jobOrder.vehicle_model || jobOrder.vehicleModel || "",
           vehicleBodyNumber: jobOrder.vehicle_body_number || "",
+          vehicleSerialNumber: jobOrder.vehicle_serial_number || "",
           transmissionType:
             jobOrder.transmission_type || jobOrder.transmissionType || "",
           finalDriveAxleRatio:
             jobOrder.final_drive_axle_ratio ||
             jobOrder.finalDriveAxleRatio ||
             "",
+          engineSerialNumber: jobOrder.engine_serial_number || "",
           engineType:
             jobOrder.type_of_engine ||
             jobOrder.engine_type ||
@@ -559,6 +560,20 @@ export default function PDCDCreateJobOrder() {
           setCftMembers(jobOrder.cft_members);
         }
 
+        // Populate vehicleEngineNumbers array with the engine from job order
+        if (jobOrder.engine_serial_number) {
+          setVehicleEngineNumbers([jobOrder.engine_serial_number]);
+        }
+
+        // Populate projectVehicles array with the vehicle from job order for dropdown options
+        if (jobOrder.vehicle_body_number) {
+          setProjectVehicles([{
+            vehicle_body_number: jobOrder.vehicle_body_number,
+            vehicle_serial_number: jobOrder.vehicle_serial_number,
+            engine_numbers: jobOrder.engine_serial_number ? [jobOrder.engine_serial_number] : []
+          }]);
+        }
+
         // Use setTimeout to allow form state to settle before enabling other useEffects
         setTimeout(() => {
           setIsPreFilling(false);
@@ -568,6 +583,10 @@ export default function PDCDCreateJobOrder() {
 
       // Execute the pre-filling
       preFillForm();
+      // If this is an update (read API), disable the form
+      if (location.state?.isEdit) {
+        setFormDisabled(true);
+      }
     }
   }, []); // Empty dependency array - only run once on mount
 
@@ -1281,16 +1300,19 @@ export default function PDCDCreateJobOrder() {
               variant="outline"
               className="bg-red-600 text-white px-3 py-1 rounded-full"
             >
-              PDCD Job Order
+              {location.state?.isEdit && (location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id)
+                ? (location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id)
+                : "PDCD Job Order"}
             </Button>
             <div className="flex flex-col">
+              {/* <span className="font-semibold text-lg">New Job Order</span>
               {location.state?.isEdit && (
-                <span className="text-sm text-blue-600 font-medium">
-                  {isLoading
-                    ? "Loading job order data..."
-                    : `Pre-filled from Job Order: ${location.state.originalJobOrderId}`}
-                </span>
-              )}
+                // <span className="text-sm text-blue-600 font-medium">
+                //   {isLoading
+                //     ? "Loading job order data..."
+                //     : `Pre-filled from Job Order: ${location.state.originalJobOrderId}`}
+                // </span>
+              )} */}
             </div>
           </div>
         </div>
@@ -1313,7 +1335,7 @@ export default function PDCDCreateJobOrder() {
               value={form.projectCode}
               onValueChange={(value) => handleChange("projectCode", value)}
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || isAdmin}
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -1339,7 +1361,7 @@ export default function PDCDCreateJobOrder() {
               value={form.vehicleBodyNumber}
               onValueChange={handleVehicleBodyChange}
               required
-              disabled={formDisabled || isTestEngineer || !form.projectCode}
+              disabled={formDisabled || isTestEngineer || isAdmin || !form.projectCode}
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -1368,7 +1390,7 @@ export default function PDCDCreateJobOrder() {
               className="w-full"
               placeholder="Auto-fetched"
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || isAdmin}
             />
           </div>
           {/* Engine Number (dropdown) */}
@@ -1383,7 +1405,7 @@ export default function PDCDCreateJobOrder() {
               value={form.engineSerialNumber}
               onValueChange={handleEngineNumberChange}
               required
-              disabled={formDisabled || isTestEngineer || !form.vehicleBodyNumber}
+              disabled={formDisabled || isTestEngineer || isAdmin || !form.vehicleBodyNumber}
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -1409,7 +1431,7 @@ export default function PDCDCreateJobOrder() {
               value={form.engineType}
               onValueChange={(value) => handleChange("engineType", value)}
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || isAdmin}
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -1435,7 +1457,7 @@ export default function PDCDCreateJobOrder() {
               value={form.domain}
               onValueChange={(value) => handleChange("domain", value)}
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || isAdmin}
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -1478,8 +1500,8 @@ export default function PDCDCreateJobOrder() {
         </form>
         </div>
 
-        {/* Editable Vehicle Details Accordion */}
-        {vehicleEditable && (
+  {/* Editable Vehicle Details Accordion */}
+  {vehicleEditable && !formDisabled && (
           <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
             <div
               className="flex items-center justify-between bg-gray-100 border-t-4 border-red-600 px-4 py-2 cursor-pointer"
