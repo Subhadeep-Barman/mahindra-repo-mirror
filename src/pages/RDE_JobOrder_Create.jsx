@@ -834,9 +834,9 @@ export default function RDECreateJobOrder() {
     const rdeJobOrderPayload = {
       job_order_id,
       project_code: form.projectCode || null,
-      vehicle_serial_number: vehicleEditable?.vehicle_serial_number || null,
+      vehicle_serial_number: form.vehicleSerialNumber || vehicleEditable?.vehicle_serial_number || null,
       vehicle_body_number: form.vehicleBodyNumber || null,
-      engine_serial_number: engineEditable?.engine_serial_number || null,
+      engine_serial_number: form.engineNumber || engineEditable?.engine_serial_number || null,
       CoastDownData_id,
       type_of_engine: form.engineType || null,
       department: form.department || null,
@@ -1719,6 +1719,84 @@ export default function RDECreateJobOrder() {
                 </SelectContent>
               </Select>
             </div>
+            {/* Type of Engine */}
+                      <div>
+                        <Label
+                          htmlFor="engineType"
+                          className="text-sm text-gray-600 mb-1 block"
+                        >
+                          Type of Engine <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={form.engineType}
+                          onValueChange={(value) => handleChange("engineType", value)}
+                          required
+                          disabled={formDisabled || isTestEngineer}
+                        >
+                          <SelectTrigger className="w-full h-10 border-gray-300">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Gasoline">Gasoline</SelectItem>
+                            <SelectItem value="Diesel">Diesel</SelectItem>
+                            <SelectItem value="CNG">CNG</SelectItem>
+                            <SelectItem value="HYBRID">HYBRID</SelectItem>
+                            <SelectItem value="ePT">ePT</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {/* Domain */}
+                      <div>
+                        <Label
+                          htmlFor="domain"
+                          className="text-sm text-gray-600 mb-1 block"
+                        >
+                          Domain <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={form.domain}
+                          onValueChange={(value) => handleChange("domain", value)}
+                          required
+                          disabled={formDisabled || isTestEngineer}
+                        >
+                          <SelectTrigger className="w-full h-10 border-gray-300">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {domainOptions.map((domain) => (
+                              <SelectItem key={domain} value={domain}>
+                                {domain}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {/* Department */}
+                      <div>
+                        <Label
+                          htmlFor="department"
+                          className="text-sm text-gray-600 mb-1 block"
+                        >
+                          Department <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={form.department}
+                          onValueChange={(value) => handleChange("department", value)}
+                          required
+                          disabled={true}
+                        >
+                          <SelectTrigger className="w-full h-10 border-gray-300">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {departments.map((dep) => (
+                              <SelectItem key={dep} value={dep}>
+                                {dep}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
           </form>
 
           {/* Second row of fields */}
