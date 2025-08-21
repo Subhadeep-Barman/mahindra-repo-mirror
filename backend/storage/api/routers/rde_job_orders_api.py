@@ -159,7 +159,7 @@ def read_rde_joborders(
         return [rde_joborder_to_dict(r, db) for r in filtered]
     return [rde_joborder_to_dict(r, db) for r in rde_joborders]
 
-@router.get("/rde_joborders/{job_order_id}", response_model=RDEJobOrderSchema)
+@router.get("/rde_joborders-single/{job_order_id}", response_model=RDEJobOrderSchema)
 def read_rde_joborder(job_order_id: str, db: Session = Depends(get_db)):
     rde_joborder = db.query(RDEJobOrder).filter(RDEJobOrder.job_order_id == job_order_id).first()
     if not rde_joborder:
