@@ -502,15 +502,12 @@ export default function EditTestOrder() {
       }));
       
       if (isValid) {
-        // Show star rating modal for project team to rate
-        setStarRatingModal(true);
-        showSnackbar("Test marked as valid. Please rate the test execution.", "success");
+        // Test marked as valid - TestEngineer's job is done
+        showSnackbar("Test marked as valid. ProjectTeam can now rate this test.", "success");
+        // Stay on the page to show validation status but don't show rating modal for TestEngineer
       } else {
-        showSnackbar("Test marked as invalid. No rating will be collected.", "info");
-        // Navigate back since no rating is needed for invalid tests
-        setTimeout(() => {
-          handleBack();
-        }, 1500); // Give time for user to see the message
+        showSnackbar("Test marked as invalid. No rating will be available for this test.", "info");
+        // Stay on the page to show validation status
       }
     } catch (err) {
       showSnackbar("Failed to update validation status: " + (err.response?.data?.detail || err.message), "error");
@@ -695,14 +692,18 @@ export default function EditTestOrder() {
                     ({testOrder?.rating || 0}/5)
                   </span>
                 </div>
-                {isProjectTeam && (
-                  <Button
-                    className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded ml-2"
-                    onClick={() => setStarRatingModal(true)}
-                  >
-                    {testOrder?.rating ? "Update Rating" : "Rate Test"}
-                  </Button>
-                )}
+              </div>
+            )}
+
+            {/* Rating Button - Only for ProjectTeam and only when test is valid */}
+            {test.status === "Completed" && test.validation_status === 'valid' && isProjectTeam && (
+              <div className="flex items-center gap-2 ml-4">
+                <Button
+                  className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded"
+                  onClick={() => setStarRatingModal(true)}
+                >
+                  {testOrder?.rating ? "Update Rating" : "Rate Test"}
+                </Button>
               </div>
             )}
           </div>
@@ -1373,6 +1374,20 @@ export default function EditTestOrder() {
                       }`}>
                         Validated by: {test.validated_by} on {formatDate(test.validated_on)}
                       </p>
+                      
+                      {/* Message for ProjectTeam about rating availability */}
+                      {isProjectTeam && (
+                        <div className={`mt-2 p-2 rounded text-xs ${
+                          test.validation_status === 'valid'
+                            ? 'bg-green-100 dark:bg-green-800/50 text-green-700 dark:text-green-300'
+                            : 'bg-red-100 dark:bg-red-800/50 text-red-700 dark:text-red-300'
+                        }`}>
+                          {test.validation_status === 'valid' 
+                            ? '✓ This test can be rated. Use the "Rate Test" button below to provide your feedback.'
+                            : '✗ This test cannot be rated as it has been marked as invalid by the Test Engineer.'
+                          }
+                        </div>
+                      )}
                     </div>
                     {(test.complete_remarks || test.remark) && (
                       <div>
@@ -1693,8 +1708,8 @@ export default function EditTestOrder() {
           </div>
         )}
 
-        {/* Star Rating Modal */}
-        {starRatingModal && (
+        {/* Star Rating Modal - Only accessible by ProjectTeam for valid tests */}
+        {starRatingModal && isProjectTeam && test.validation_status === 'valid' && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-96">
               <div className="font-semibold mb-4 dark:text-white">
@@ -1764,23 +1779,16 @@ export default function EditTestOrder() {
                     setStarRatingModal(false);
                     setRating(testOrder?.rating || 0);
                     setRatingRemarks(testOrder?.rating_remarks || "");
-                    // Navigate back when modal is closed without rating
-                    if (test.status === "Completed") {
-                      handleBack();
-                    }
                   }}
                 >
-                  Skip Rating
+                  Cancel
                 </Button>
                 <Button
                   className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded"
                   type="button"
                   onClick={async () => {
                     await handleSubmitStarRating();
-                    // Navigate back after successful rating submission
-                    if (test.status === "Completed") {
-                      handleBack();
-                    }
+                    // Stay on the page after rating submission
                   }}
                   disabled={rating === 0}
                 >

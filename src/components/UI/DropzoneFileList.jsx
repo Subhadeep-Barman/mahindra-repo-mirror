@@ -59,21 +59,27 @@ const DropzoneFileList = ({
 
   // Helper function to get attachments based on name and team
   const getAttachments = () => {
+    let attachments = [];
+    
     if (name === "Special_adaptation") {
-      return Array.isArray(formData?.calibrationTeam?.engineAdaptation?.Special_adaptation)
+      attachments = Array.isArray(formData?.calibrationTeam?.engineAdaptation?.Special_adaptation)
         ? formData.calibrationTeam.engineAdaptation.Special_adaptation
         : [];
     } else if (team && name) {
-      return Array.isArray(formData[team]?.[name]) ? formData[team][name] : [];
+      attachments = Array.isArray(formData[team]?.[name]) ? formData[team][name] : [];
     } else {
-      return Array.isArray(formData[name]) ? formData[name] : [];
+      attachments = Array.isArray(formData[name]) ? formData[name] : [];
     }
+    
+    console.log(`DropzoneFileList: getAttachments for ${name}:`, attachments);
+    return attachments;
   };
 
   const attachment = getAttachments();
 
-  // Add uploaded file count
-  const uploadedCount = Array.isArray(attachment) ? attachment.length : 0;
+  // Fix: Get uploaded file count from verified files instead of attachment array
+  // This ensures the count reflects actual uploaded files on the server
+  const uploadedCount = verifiedFiles.length > 0 ? verifiedFiles.length : Array.isArray(attachment) ? attachment.length : 0;
 
   const hasFiles = uploadedCount > 0;
   const buttonColor = hasFiles ? "#dc3545" : "#2D68C4"; // Red if has files, Blue if empty
@@ -112,53 +118,164 @@ const DropzoneFileList = ({
     return { jobOrderId, testOrderId };
   };
 
-  // Check if files exist both in GCP and formData
-  const checkFilesExist = async () => {
+  // Enhanced function to get file details with metadata
+  const getFileDetailsWithMetadata = async () => {
     const { jobOrderId, testOrderId } = getJobAndTestOrderId();
+
+    console.log(`DropzoneFileList: Getting file details for ${name} - JobOrder: ${jobOrderId}, TestOrder: ${testOrderId}`);
 
     try {
       setLoading(true);
-      const response = await axios.get(`${apiURL}/check_files_GCP`, {
-        params: {
-          job_order_id: jobOrderId,
-          test_order_id: testOrderId,
-          attachment_type: name,
-        },
-        responseType: "json",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      
+      // First, try to get files with metadata from a more detailed endpoint
+      let detailedFiles = [];
+      
+      try {
+        const detailResponse = await axios.get(`${apiURL}/get_file_details`, {
+          params: {
+            job_order_id: jobOrderId,
+            test_order_id: testOrderId,
+            attachment_type: name,
+          },
+          responseType: "json",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (detailResponse.data.status === true && detailResponse.data.files) {
+          detailedFiles = detailResponse.data.files;
+          console.log(`DropzoneFileList: Got detailed file info for ${name}:`, detailedFiles);
+        }
+      } catch (detailError) {
+        console.log(`DropzoneFileList: Detailed endpoint not available, falling back to basic check for ${name}`);
+      }
 
-      if (response.data.status === true && response.data.files) {
-        // Get attachment data
+      // Fallback to the basic check_files_GCP endpoint
+      if (detailedFiles.length === 0) {
+        const response = await axios.get(`${apiURL}/check_files_GCP`, {
+          params: {
+            job_order_id: jobOrderId,
+            test_order_id: testOrderId,
+            attachment_type: name,
+          },
+          responseType: "json",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        console.log(`DropzoneFileList: Basic API Response for ${name}:`, response.data);
+
+        if (response.data.status === true && response.data.files) {
+          detailedFiles = response.data.files;
+        }
+      }
+
+      if (detailedFiles.length > 0) {
+        // Get attachment data from formData
         const attachmentData = getAttachments();
 
-        // Only keep files that exist in both the API response and attachmentData
-        const apiFiles = response.data.files || [];
-        const matchedFiles = attachmentData.filter(file =>
-          apiFiles.some(apiFile => apiFile === file.path)
-        );
+        // Transform API files with better metadata handling
+        const transformedFiles = detailedFiles.map(file => {
+          // If file is a string (just filename), try to find metadata from attachmentData
+          if (typeof file === 'string') {
+            const localFileData = attachmentData.find(localFile => 
+              localFile.path === file || localFile.name === file || localFile.filename === file
+            );
+            
+            return {
+              path: file,
+              size: localFileData?.size || localFileData?.file_size || 0,
+              user: localFileData?.user || localFileData?.uploaded_by || localFileData?.creator || localFileData?.created_by || 'Unknown',
+              upload_time: localFileData?.upload_time || localFileData?.created_on || localFileData?.timestamp || null
+            };
+          }
+          
+          // If file is already an object, use it with fallbacks
+          const transformedFile = {
+            path: file.path || file.filename || file.name || file,
+            size: file.size || file.file_size || 0,
+            user: file.user || file.uploaded_by || file.creator || file.created_by || 'Unknown',
+            upload_time: file.upload_time || file.created_on || file.timestamp || file.modified_on || null
+          };
 
-        setVerifiedFiles(matchedFiles);
+          // If still missing metadata, try to find from attachmentData
+          if (transformedFile.user === 'Unknown' || transformedFile.size === 0) {
+            const localFileData = attachmentData.find(localFile => 
+              localFile.path === transformedFile.path || 
+              localFile.name === transformedFile.path || 
+              localFile.filename === transformedFile.path
+            );
+            
+            if (localFileData) {
+              transformedFile.size = transformedFile.size || localFileData.size || localFileData.file_size || 0;
+              transformedFile.user = transformedFile.user === 'Unknown' ? 
+                (localFileData.user || localFileData.uploaded_by || localFileData.creator || 'Unknown') : 
+                transformedFile.user;
+              transformedFile.upload_time = transformedFile.upload_time || 
+                localFileData.upload_time || localFileData.created_on || localFileData.timestamp || null;
+            }
+          }
+
+          return transformedFile;
+        });
+
+        // Try to get file sizes for files with 0 size
+        const filesWithSizes = await Promise.all(transformedFiles.map(async (file) => {
+          if (file.size === 0) {
+            try {
+              // Attempt to get file size from server
+              const sizeResponse = await axios.head(`${apiURL}/download_job_order_id/`, {
+                params: {
+                  job_order_id: jobOrderId,
+                  test_order_id: testOrderId,
+                  attachment_type: name,
+                  filename: file.path,
+                },
+              });
+              
+              const contentLength = sizeResponse.headers['content-length'];
+              if (contentLength) {
+                file.size = parseInt(contentLength, 10);
+              }
+            } catch (sizeError) {
+              console.log(`Could not get size for ${file.path}`);
+            }
+          }
+          return file;
+        }));
+
+        console.log(`DropzoneFileList: Final transformed ${filesWithSizes.length} files for ${name}:`, filesWithSizes);
+        setVerifiedFiles(filesWithSizes);
       } else {
+        console.log(`DropzoneFileList: No files found for ${name}`);
         setVerifiedFiles([]);
       }
     } catch (error) {
-      console.error("Error checking if files exist:", error);
-      showSnackbar("Error checking files", "warning");
+      console.error(`DropzoneFileList: Error getting file details for ${name}:`, error);
+      showSnackbar("Error loading file details", "warning");
       setVerifiedFiles([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Run file verification when viewing files
+  // Run file verification when viewing files OR on component mount to get accurate count
   useEffect(() => {
     if (viewModalOpen) {
-      checkFilesExist();
+      getFileDetailsWithMetadata();
     }
   }, [viewModalOpen]);
+
+  // Add effect to check files on component mount to get accurate file count
+  useEffect(() => {
+    console.log(`DropzoneFileList: Component mounted for ${name}, formData:`, formData);
+    const { jobOrderId, testOrderId } = getJobAndTestOrderId();
+    if (jobOrderId) {
+      getFileDetailsWithMetadata();
+    }
+  }, []);  // Run once on mount
 
   const handleDownloadFiles = async (fileName = "") => {
     // Use the helper function to get correct job_order_id and test_order_id
@@ -401,9 +518,17 @@ const DropzoneFileList = ({
           id={id}
           setSubmitted={setSubmitted}
           openDropzoneModal={openModal}
-          handleCloseDropzoneModal={handleCloseModal}
+          handleCloseDropzoneModal={() => {
+            handleCloseModal();
+            // Refresh file count after modal closes
+            const { jobOrderId, testOrderId } = getJobAndTestOrderId();
+            if (jobOrderId) {
+              setTimeout(() => getFileDetailsWithMetadata(), 500); // Small delay to ensure server sync
+            }
+          }}
           onUpload={onUpload}
           originalJobOrderId={formData?.originalJobOrderId || originalJobOrderId}
+          userRole={formData?.userRole || "ProjectTeam"} // Pass user role for permission handling
         // ^ Pass originalJobOrderId from formData or prop
         />
       </Box>
@@ -539,8 +664,9 @@ const DropzoneFileList = ({
                         </Tooltip>
                         {/* Show user and upload time if available */}
                         <Typography variant="body2" sx={{ color: "gray" }}>
-                          {file.user ? `Uploaded by: ${file.user}` : ""}
+                          {file.user && file.user !== 'Unknown' ? `Uploaded by: ${file.user}` : ""}
                           {file.upload_time ? ` on ${new Date(file.upload_time).toLocaleString()}` : ""}
+                          {(!file.user || file.user === 'Unknown') && !file.upload_time ? "File metadata not available" : ""}
                         </Typography>
                       </Box>
                     </Box>
