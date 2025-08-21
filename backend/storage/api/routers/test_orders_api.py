@@ -198,9 +198,9 @@ def testorder_to_dict(testorder: TestOrder):
         "validated_on": testorder.validated_on,
         "validation_status": testorder.validation_status,
         "rating": testorder.rating,
-        "rating_remarks": testorder.rating_remarks if testorder.rating_remarks is not None else "",
-        "rated_by": testorder.rated_by if testorder.rated_by is not None else "",
-        "rated_on": testorder.rated_on if testorder.rated_on is not None else "",
+        "rating_remarks": testorder.rating_remarks,
+        "rated_by": testorder.rated_by,
+        "rated_on": testorder.rated_on,
     }
     # Ensure all attachment fields are lists (never empty string or None)
     for key in attachment_fields:
