@@ -313,6 +313,24 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       return;
     }
 
+    // Check for duplicate vehicle body number before creating
+    if (!isEditMode) {
+      try {
+        const checkResponse = await axios.get(
+          `${apiURL}/vehicles?vehicle_body_number=${encodeURIComponent(form.vehicleBodyNumber)}`
+        );
+        if (Array.isArray(checkResponse.data) && checkResponse.data.length > 0) {
+          showSnackbar(
+            "Vehicle Body Number already exists. Please create a different one.",
+            "warning"
+          );
+          return;
+        }
+      } catch (err) {
+        // Optionally handle error, but allow creation if check fails (network error, etc.)
+      }
+    }
+
     const payload = mapFormToApi(form);
 
     try {

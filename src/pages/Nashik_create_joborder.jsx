@@ -670,6 +670,44 @@ export default function NashikCreateJobOrder() {
     }));
   };
 
+ // Function to check if job order with same vehicle body number and engine serial number exists
+  const checkForDuplicateJobOrder = async (vehicleBodyNumber, engineSerialNumber) => {
+    try {
+      // job order read api call
+      const department = form.department || "VTC_JO Nashik";
+      const response = await axios.get(`${apiURL}/joborders`, { params: { department, user_id: userId, role: userRole } });
+      const jobOrders = response.data;
+      
+      // Find if there's already a job order with same vehicle body number and engine serial number
+      const duplicate = jobOrders.find(
+        (jobOrder) => 
+          jobOrder.vehicle_body_number === vehicleBodyNumber && 
+          jobOrder.engine_serial_number === engineSerialNumber
+      );
+      
+      return duplicate;
+    } catch (error) {
+      console.error("Error checking for duplicate job orders:", error);
+      return null;
+    }
+  };
+  
+  // Function to suggest a new vehicle body number
+  const suggestNewVehicleBodyNumber = (currentBodyNumber) => {
+    // Check if the current body number ends with 'E' followed by a number
+    const match = currentBodyNumber.match(/(.+)E(\d+)$/);
+    
+    if (match) {
+      // If it does, increment the number
+      const prefix = match[1];
+      const number = parseInt(match[2]) + 1;
+      return `${prefix}E${number}`;
+    } else {
+      // If not, append 'E1' to the current body number
+      return `${currentBodyNumber}E1`;
+    }
+  };
+
   // Handler for creating job order
   const handleCreateJobOrder = async (e) => {
     e.preventDefault();
@@ -679,6 +717,19 @@ export default function NashikCreateJobOrder() {
       showSnackbar("Please add at least one CFT member before creating a job order.", "error");
       return;
     }
+    
+    // Check for duplicate job orders with the same vehicle body number and engine serial number
+    const duplicate = await checkForDuplicateJobOrder(form.vehicleBodyNumber, form.engineSerialNumber);
+    
+    if (duplicate) {
+      const suggestedNumber = suggestNewVehicleBodyNumber(form.vehicleBodyNumber);
+      showSnackbar(
+        `A job order already exists with the same combination of body number (${form.vehicleBodyNumber}) and engine number (${form.engineSerialNumber}). Please create a new vehicle with a different body number, suggested format: "${suggestedNumber}"`, 
+        "error"
+      );
+      return;
+    }
+
 
     // Generate job_order_id and CoastDownData_id based on timestamp
     const job_order_id = "JO" + Date.now();
