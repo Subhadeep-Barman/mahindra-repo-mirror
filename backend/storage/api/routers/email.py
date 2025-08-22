@@ -433,41 +433,41 @@ def get_notify_data(db: Session) -> dict:
         }
 
 
-# def get_department_group_email(job_order, caseid=None) -> str:
-#     """
-#     Returns the department-specific group email if the job order's department/team matches,
-#     but only for caseid '1' or '2'. Returns None otherwise.
-#     """
-#     if caseid not in ("1", "2"):
-#         return None
-#     department = getattr(job_order, "department", None) or getattr(job_order, "team", None)
-#     department_email_map = {
-#         "VTC_JO Chennai": "VTCLAB@mahindra.com",
-#         "VTC_JO Nashik": "vtclab_nsk@mahindra.com",
-#         "RDE JO": "RDELAB@mahindra.com",
-#         "PDCD_JO Chennai": "PDCDOFFICERS@mahindra.com"
-#     }
-#     return department_email_map.get(department)
+def get_department_group_email(job_order, caseid=None) -> str:
+    """
+    Returns the department-specific group email if the job order's department/team matches,
+    but only for caseid '1' or '2'. Returns None otherwise.
+    """
+    if caseid not in ("1", "2"):
+        return None
+    department = getattr(job_order, "department", None) or getattr(job_order, "team", None)
+    department_email_map = {
+        "VTC_JO Chennai": "VTCLAB@mahindra.com",
+        "VTC_JO Nashik": "vtclab_nsk@mahindra.com",
+        "RDE JO": "RDELAB@mahindra.com",
+        "PDCD_JO Chennai": "TEAMPDCD1@mahindra.com"
+    }
+    return department_email_map.get(department)
 
 
-# def get_department_cc_emails(job_order) -> list:
-#     """
-#     Returns department-specific CC group emails for test order-related cases.
-#     - VTC_JO Chennai: ['EDC-VTCLAB@mahindra.com']
-#     - RDE_JO: ['EDC-RDELAB@mahindra.com']
-#     - VTC_JO Nashik: []
-#     - PDCD_JO Chennai: []
-#     """
-#     department = getattr(job_order, "department", None) or getattr(job_order, "team", None)
-#     print(f"Fetching CC emails for department: {department}")
-#     cc_map = {
-#         "VTC_JO Chennai": ["EDC-VTCLAB@mahindra.com"],
-#         "RDE JO": ["EDC-RDELAB@mahindra.com"],
-#         "VTC_JO Nashik": [],
-#         "PDCD_JO Chennai": []
-#     }
-#     print(f"Departmentttttttttttttttttttt: {department}, CC Emails: {cc_map.get(department, [])}")
-#     return cc_map.get(department, [])
+def get_department_cc_emails(job_order) -> list:
+    """
+    Returns department-specific CC group emails for test order-related cases.
+    - VTC_JO Chennai: ['EDC-VTCLAB@mahindra.com']
+    - RDE_JO: ['EDC-RDELAB@mahindra.com']
+    - VTC_JO Nashik: []
+    - PDCD_JO Chennai: []
+    """
+    department = getattr(job_order, "department", None) or getattr(job_order, "team", None)
+    print(f"Fetching CC emails for department: {department}")
+    cc_map = {
+        "VTC_JO Chennai": ["EDC-VTCLAB@mahindra.com"],
+        "RDE JO": ["EDC-RDELAB@mahindra.com"],
+        "VTC_JO Nashik": [],
+        "PDCD_JO Chennai": []
+    }
+    print(f"Departmentttttttttttttttttttt: {department}, CC Emails: {cc_map.get(department, [])}")
+    return cc_map.get(department, [])
 
 
 @router.post("/send")
@@ -513,13 +513,13 @@ async def send_email_endpoint(
         group_email = get_group_email_for_caseid(caseid)
 
         # Fetch job order for department-based override
-        # job_order = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
-        # # --- Department-based recipient override for ALL cases ---
-        # if job_order:
-        #     dept_group_email = get_department_group_email(job_order)
-        #     if dept_group_email:
-        #         group_email = dept_group_email
-        #         vtc_logger.info(f"Overriding group email for department: {dept_group_email}")
+        job_order = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
+        # --- Department-based recipient override for ALL cases ---
+        if job_order:
+            dept_group_email = get_department_group_email(job_order)
+            if dept_group_email:
+                group_email = dept_group_email
+                vtc_logger.info(f"Overriding group email for department: {dept_group_email}")
 
         if group_email:
             to_emails = [group_email]
@@ -633,14 +633,14 @@ async def send_email_endpoint(
         cc_emails = get_cft_member_emails(job_order, db) if job_order else []
 
         # Add department-specific CC group emails for test order-related cases
-        # test_order_cases = {"1.1", "3", "4", "5", "6"}
-        # if caseid in test_order_cases and job_order:
-        #     dept_cc = get_department_cc_emails(job_order)
-        #     # Only add if not already present in cc_emails
-        #     for cc in dept_cc:
-        #         if cc and cc not in cc_emails:
-        #             cc_emails.append(cc)
-        #     vtc_logger.debug(f"CC Emails after department addition: {cc_emails}")
+        test_order_cases = {"1.1", "3", "4", "5", "6"}
+        if caseid in test_order_cases and job_order:
+            dept_cc = get_department_cc_emails(job_order)
+            # Only add if not already present in cc_emails
+            for cc in dept_cc:
+                if cc and cc not in cc_emails:
+                    cc_emails.append(cc)
+            vtc_logger.debug(f"CC Emails after department addition: {cc_emails}")
 
         # Send the email
         send_email(to_emails, subject, body, cc_emails=cc_emails)

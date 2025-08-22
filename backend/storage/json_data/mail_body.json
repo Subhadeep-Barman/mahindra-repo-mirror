@@ -25,7 +25,7 @@
         {
             "id": "2",
             "receivers": "TestEngineer",
-            "group_email": "testengineers-group@company.com",
+            "group_email": "",
             "case": "Test Order Created",
             "body": {
                 "subject": "{{test_order_id}}",
@@ -55,7 +55,7 @@
         {
             "id": "5",
             "receivers": "TestEngineer",
-            "group_email": "testengineers-group@company.com",
+            "group_email": "",
             "case": "Test Order Updated",
             "body": {
                 "subject": "{{test_order_id}}",
