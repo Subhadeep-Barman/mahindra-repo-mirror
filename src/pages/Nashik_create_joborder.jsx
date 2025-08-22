@@ -82,6 +82,9 @@ export default function NashikCreateJobOrder() {
   // Test state
   const [tests, setTests] = useState([]);
 
+  // State to track job order ID after creation
+  const [jobOrderId, setJobOrderId] = useState();
+
   // State to track existing CoastDownData_id for updates
   const [existingCoastDownId, setExistingCoastDownId] = useState(null);
 
@@ -483,6 +486,11 @@ export default function NashikCreateJobOrder() {
 
   // Prefill form if jobOrder is passed via navigation state
   useEffect(() => {
+    // Initialize jobOrderId if opening an existing job order
+    if (location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id) {
+      setJobOrderId(location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id);
+    }
+
     // Only run once when component mounts and we have job order data
     if (location.state?.jobOrder && !hasPreFilledRef.current) {
       const jobOrder = location.state.jobOrder;
@@ -805,6 +813,10 @@ export default function NashikCreateJobOrder() {
       if (hasCoastDownData) {
         await axios.post(`${apiURL}/coastdown`, coastDownPayload);
       }
+      
+      // Set the job order ID in state
+      setJobOrderId(jobOrderRes.data.job_order_id);
+      
       showSnackbar("Job Order Created! ID: " + jobOrderRes.data.job_order_id, "success");
       // Optionally, reset form or navigate
       handleSendMail(1, jobOrderRes.data.job_order_id, null);
@@ -1941,13 +1953,14 @@ export default function NashikCreateJobOrder() {
             <Button
               className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
               onClick={handleCreateJobOrder}
-              disabled={isTestEngineer}
+              disabled={isTestEngineer || (location.state?.isEdit && isProjectTeam)}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
             <Button
               className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400"
               type="button"
+              disabled={location.state?.isEdit && isProjectTeam}
               onClick={() =>
                 setForm((prev) => ({
                   ...prev,
@@ -1973,7 +1986,11 @@ export default function NashikCreateJobOrder() {
             variant="ghost"
             className="text-xs text-blue-700 px-0"
             onClick={handleAddTest}
-            disabled={isTestEngineer || isAdmin}
+            disabled={
+              isTestEngineer || 
+              isAdmin || 
+              (!location.state?.originalJobOrderId && !location.state?.jobOrder?.job_order_id && !jobOrderId)
+            }
           >
             + ADD TEST
           </Button>

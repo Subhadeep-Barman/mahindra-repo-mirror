@@ -492,6 +492,11 @@ export default function CreateJobOrder() {
 
   useEffect(() => {
     // Only run once when component mounts and we have job order data
+    // Initialize jobOrderId if opening an existing job order
+    if (location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id) {
+      setJobOrderId(location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id);
+    }
+
     if (location.state?.jobOrder && !hasPreFilledRef.current) {
       const jobOrder = location.state.jobOrder;
 
@@ -2330,13 +2335,14 @@ export default function CreateJobOrder() {
             <Button
               className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
               onClick={handleCreateJobOrder}
-              disabled={isTestEngineer || isAdmin}
+              disabled={isTestEngineer || isAdmin || (location.state?.isEdit && isProjectTeam)}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
             <Button
               className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400"
               type="button"
+              disabled={location.state?.isEdit && isProjectTeam}
               onClick={() =>
                 setForm((prev) => ({
                   ...prev,
@@ -2362,7 +2368,11 @@ export default function CreateJobOrder() {
             variant="ghost"
             className="text-xs text-blue-700 px-0"
             onClick={handleAddTest}
-            disabled={isTestEngineer || isAdmin}
+            disabled={
+              isTestEngineer || 
+              isAdmin || 
+              (!location.state?.originalJobOrderId && !location.state?.jobOrder?.job_order_id && !jobOrderId)
+            }
           >
             + ADD TEST
           </Button>

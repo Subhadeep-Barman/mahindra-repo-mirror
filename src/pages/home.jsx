@@ -112,7 +112,7 @@ export default function HomePage() {
               <div className="mx-auto max-w-7xl">
                 {/* Header */}
                 <div className="text-center mb-2">
-                  <div className="inline-flex items-center rounded-full bg-red-50 dark:bg-red-950/20 px-4 py-2 text-sm font-medium text-red-700 dark:text-red-300 ring-1 ring-inset ring-red-600/20 mb-6 relative z-[60]">
+                  <div className="inline-flex items-center rounded-full bg-red-50 dark:bg-red-950/20 px-4 py-2 text-sm font-medium text-red-700 dark:text-red-300 ring-1 ring-inset ring-red-600/20 mb-6 relative">
                     <Zap className="h-4 w-4 mr-2" />
                     Enterprise Testing Platform
                   </div>
