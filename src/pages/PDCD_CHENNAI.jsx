@@ -19,6 +19,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import showSnackbar from "@/utils/showSnackbar";
 import useStore from "../store/useStore";
+import * as XLSX from "xlsx";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function PDCDChennaiPage() {
@@ -324,7 +325,7 @@ export default function PDCDChennaiPage() {
     }
   };
 
-  // CSV Download handler
+  // Excel Download handler
   const handleDownload = () => {
     if (!filteredJobOrders.length) return;
     const headers = [
@@ -406,20 +407,11 @@ export default function PDCDChennaiPage() {
         objectives || "N/A"
       ];
     });
-    
-    const csvContent =
-      [headers, ...rows]
-        .map((row) => row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(","))
-        .join("\r\n");
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "job_orders.csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Job Orders");
+    XLSX.writeFile(workbook, "job_orders.xlsx");
   };
 
   return (
