@@ -386,8 +386,8 @@ const Dropzone = ({
             const uploadedFile = [{
               path: file.name,
               size: file.size,
-              user: response.data.user || userCookies?.userName || "Unknown",
-              upload_time: response.data.upload_time || new Date().toISOString()
+              user: response.data.user,
+              upload_time: response.data.upload_time
             }];
 
             let updatedFormData = { ...formData };
@@ -410,9 +410,6 @@ const Dropzone = ({
             setFormData(updatedFormData);
             setNewfiles((prev) => prev.filter((f) => f.name !== file.name));
             setFiles((prev) => [...uploadedFile, ...prev]);
-            
-            console.log(`Dropzone: Successfully uploaded ${file.name} to ${name}`);
-            
             // Remove progress bar after file is fully uploaded
             setUploadProgress((prev) => {
               const updated = { ...prev };
@@ -457,12 +454,6 @@ const Dropzone = ({
       await uploadFileInChunks(file);
     }
     setLoading(false);
-
-    // After upload completes, refresh the file list to ensure accurate count
-    const { jobOrderId, testOrderId } = getJobAndTestOrderId();
-    if (jobOrderId) {
-      await checkFilesExist();
-    }
 
     // Call the onUpload callback after upload completes
     if (onUpload) {
@@ -518,12 +509,6 @@ const Dropzone = ({
         }
 
         setHeaderTotalSize((prevTotalSize) => prevTotalSize - file.size);
-
-        // After deletion, refresh the file list to ensure accurate count
-        const { jobOrderId, testOrderId } = getJobAndTestOrderId();
-        if (jobOrderId) {
-          await checkFilesExist();
-        }
       } catch (error) {
         showSnackbar("File deletion failed. Please try again.", "warning");
         console.error("Delete error:", error);
@@ -678,7 +663,7 @@ const Dropzone = ({
       if (response.data.status === true && response.data.files) {
         // Transform API files to match the expected format
         const apiFiles = response.data.files || [];
-        const transformedFiles = apiFiles.map((file, index) => {
+        const transformedFiles = apiFiles.map(file => {
           // If file is a string (just filename), transform it to object
           if (typeof file === 'string') {
             return {
@@ -690,10 +675,10 @@ const Dropzone = ({
           }
           // If file is already an object, use it as is
           return {
-            path: file.path || file.filename || file.name || file,
+            path: file.path || file.filename || file.name,
             size: file.size || 0,
-            user: file.user || file.uploaded_by || file.creator || 'Unknown',
-            upload_time: file.upload_time || file.created_on || file.timestamp || null
+            user: file.user || file.uploaded_by || 'Unknown',
+            upload_time: file.upload_time || file.created_on || null
           };
         });
 
