@@ -319,7 +319,13 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         const checkResponse = await axios.get(
           `${apiURL}/vehicles?vehicle_body_number=${encodeURIComponent(form.vehicleBodyNumber)}`
         );
-        if (Array.isArray(checkResponse.data) && checkResponse.data.length > 0) {
+        // Only show error if an exact match exists (case-insensitive, trimmed)
+        const exists = Array.isArray(checkResponse.data) && checkResponse.data.some(
+          v =>
+            (v.vehicle_body_number || "").trim().toLowerCase() ===
+            (form.vehicleBodyNumber || "").trim().toLowerCase()
+        );
+        if (exists) {
           showSnackbar(
             "Vehicle Body Number already exists. Please create a different one.",
             "warning"

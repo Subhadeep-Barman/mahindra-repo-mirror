@@ -715,7 +715,7 @@ export default function EditTestOrder() {
                 Rejected Reason
               </div>
               <textarea
-                value={test.rejection_remarks}
+                value={test.remark}
                 readOnly
                 className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 style={{ minWidth: "100%", fontSize: "1rem" }}
@@ -731,7 +731,7 @@ export default function EditTestOrder() {
                 Re-edit Reason from Test Engineer
               </div>
               <div className="w-full border rounded p-2 min-h-[60px] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                {test.re_edit_remarks || "No re-edit remarks provided"}
+                {test.remark || "No re-edit remarks provided"}
               </div>
             </div>
           )}
@@ -1319,14 +1319,14 @@ export default function EditTestOrder() {
               {test.status === "Completed" && isTestEngineer && !test.validation_status && (
                 <div className="md:col-start-3 md:col-span-1">
                   <Label className="dark:text-white">Test Validation</Label>
-                  {(test.complete_remarks || test.remark) && (
+                  {(test.complete_remarks) && (
                     <div className="mb-3">
                       <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
                         Completion Remarks:
                       </Label>
                       <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
                         <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
-                          {test.complete_remarks || test.remark}
+                          {test.complete_remarks}
                         </p>
                       </div>
                     </div>

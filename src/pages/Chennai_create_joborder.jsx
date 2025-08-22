@@ -2536,7 +2536,7 @@ export default function CreateJobOrder() {
                     Rejected Reason
                   </div>
                   <textarea
-                    value={test.rejection_remarks}
+                    value={test.remark}
                     onChange={(e) =>
                       handleTestChange(idx, "rejection_remarks", e.target.value)
                     }
@@ -2554,7 +2554,7 @@ export default function CreateJobOrder() {
                     Re-edit Reason from Test Engineer
                   </div>
                   <div className="w-full border rounded p-2 min-h-[60px] bg-white">
-                    {test.re_edit_remarks || "No re-edit remarks provided"}
+                    {test.remark || "No re-edit remarks provided"}
                   </div>
                 </div>
               )}
