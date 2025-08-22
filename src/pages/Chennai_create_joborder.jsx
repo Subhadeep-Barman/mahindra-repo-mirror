@@ -2516,7 +2516,7 @@ export default function CreateJobOrder() {
                     </>
                   )}
                   {/* Close button always available for ProjectTeam */}
-                  {!isTestEngineer && isAdmin && (
+                  {isProjectTeam && (
                     <button
                       type="button"
                       onClick={() => handleDeleteTest(idx)}
