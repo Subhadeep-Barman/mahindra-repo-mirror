@@ -542,13 +542,14 @@ export default function EditTestOrder() {
       await axios.post(`${apiURL}/testorders/rating`, payload);
       showSnackbar("Test order rated successfully!", "success");
       setStarRatingModal(false);
-      
       // Update local state with the new rating
       setTest(prev => ({
         ...prev,
         rating: rating,
         rating_remarks: ratingRemarks
       }));
+      // Go back one page after submitting rating
+      navigate(-1);
     } catch (err) {
       showSnackbar("Failed to submit rating: " + (err.response?.data?.detail || err.message), "error");
     }
@@ -657,8 +658,9 @@ export default function EditTestOrder() {
                   : 'bg-orange-100 dark:bg-orange-900 border border-orange-400 dark:border-orange-600 text-orange-800 dark:text-orange-200'
               } font-semibold text-xs px-2 py-1 rounded shadow ml-2`}>
                 {test.validation_status === 'valid' ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#2563eb" }}>
+                    <circle cx="12" cy="12" r="9" stroke="#2563eb" strokeWidth="2" fill="none" />
+                    <path d="M9 12l2 2 4-4" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 ) : (
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
