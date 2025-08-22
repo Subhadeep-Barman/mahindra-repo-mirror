@@ -1286,12 +1286,31 @@ export default function CreateJobOrder() {
       return null;
     }
   };
+   // Fetch single test order endpoint (testorder-single) and open the edit page with fetched data
+  const fetchAndOpenTestOrder = async (testOrderId) => {
+    try {
+      const resp = await fetch(`${apiURL}/testorders-single?test_order_id=${encodeURIComponent(testOrderId)}`);
+      if (!resp.ok) throw new Error('Failed to fetch test order');
+      const data = await resp.json();
+      navigate('/editTestOrder', {
+        state: {
+          testOrder: data,
+          jobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id,
+          returnPath: location.pathname,
+          returnState: location.state,
+        }
+      });
+    } catch (err) {
+      console.error('Error fetching testorder-single:', err);
+      showSnackbar('Failed to load test order details', 'error');
+    }
+  };
 
   // Update a test order by ID
   const updateTestOrder = async (test_order_id, updatedData) => {
     try {
       const res = await axios.put(
-        `${apiURL}/testorders/${test_order_id}`,
+        `${apiURL}/testorders-single/${test_order_id}`,
         updatedData
       );
       return res.data;
@@ -3651,14 +3670,7 @@ export default function CreateJobOrder() {
                           return (
                             <Button
                               className="bg-blue-600 text-white text-xs px-4 py-1 rounded"
-                              onClick={() => navigate('/editTestOrder', {
-                                state: {
-                                  testOrder: to,
-                                  jobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id,
-                                  returnPath: location.pathname,
-                                  returnState: location.state
-                                }
-                              })}
+                              onClick={() => fetchAndOpenTestOrder(to.test_order_id)}
                             >
                               Edit
                             </Button>
@@ -3669,14 +3681,7 @@ export default function CreateJobOrder() {
                           return (
                             <Button
                               className="bg-blue-600 text-white text-xs px-4 py-1 rounded"
-                              onClick={() => navigate('/editTestOrder', {
-                                state: {
-                                  testOrder: to,
-                                  jobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id,
-                                  returnPath: location.pathname,
-                                  returnState: location.state
-                                }
-                              })}
+                              onClick={() => fetchAndOpenTestOrder(to.test_order_id)}
                             >
                               Edit
                             </Button>
