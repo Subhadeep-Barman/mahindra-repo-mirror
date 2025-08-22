@@ -803,8 +803,8 @@ export default function PDCDCreateJobOrder() {
 
     // Check if required attachments are present
     const requiredAttachments = [
-      'datasetAttachments', 
-      'experimentAttachments'
+      'Dataset_attachment', 
+      'Experiment_attachment'
     ];
 
     for (const attachment of requiredAttachments) {
@@ -842,70 +842,8 @@ export default function PDCDCreateJobOrder() {
     const job_order_id = location.state?.jobOrder?.job_order_id || location.state?.originalJobOrderId || "";
     const test_order_id = `${job_order_id}/${test.testNumber}`;
 
-
-
-    // Create or update coast down data for this specific test
-    let CoastDownData_id =
-      location.state?.jobOrder?.CoastDownData_id || existingCoastDownId;
-
-    // If test has its own coast down data, create a new coast down entry
-    const hasTestSpecificCoastDownData =
-      test.cdReportRef ||
-      test.vehicleRefMass ||
-      test.aN ||
-      test.bNkmph ||
-      test.cNkmph2 ||
-      test.f0N ||
-      test.f1Nkmph ||
-      test.f2Nkmph2;
-
-    if (hasTestSpecificCoastDownData) {
-      // Generate new CoastDownData_id for this test
-      CoastDownData_id = "CD" + Date.now() + "_T" + testIndex;
-
-      // Create coast down data payload for this test
-      const testCoastDownPayload = {
-        CoastDownData_id,
-        job_order_id,
-        coast_down_reference:
-          test.cdReportRef || test.cdReportRef || form.cdReportRef || null,
-        vehicle_reference_mass:
-          test.vehicleRefMass || form.vehicleRefMass
-            ? parseFloat(test.vehicleRefMass || form.vehicleRefMass)
-            : null,
-        a_value: test.aN || form.aN ? parseFloat(test.aN || form.aN) : null,
-        b_value:
-          test.bNkmph || form.bNkmph
-            ? parseFloat(test.bNkmph || form.bNkmph)
-            : null,
-        c_value:
-          test.cNkmph2 || form.cNkmph2
-            ? parseFloat(test.cNkmph2 || form.cNkmph2)
-            : null,
-        f0_value:
-          test.f0N || form.f0N ? parseFloat(test.f0N || form.f0N) : null,
-        f1_value:
-          test.f1Nkmph || form.f1Nkmph
-            ? parseFloat(test.f1Nkmph || form.f1Nkmph)
-            : null,
-        f2_value:
-          test.f2Nkmph2 || form.f2Nkmph2
-            ? parseFloat(test.f2Nkmph2 || form.f2Nkmph2)
-            : null,
-        id_of_creator: "",
-        created_on: new Date().toISOString(),
-        id_of_updater: "",
-        updated_on: new Date().toISOString(),
-      };
-
-      try {
-        await axios.post(`${apiURL}/coastdown`, testCoastDownPayload);
-      } catch (err) {
-        console.error("Error creating test-specific coast down data:", err);
-        showSnackbar("Failed to create coast down data for test: " + (err.response?.data?.detail || err.message), "error");
-        return;
-      }
-    }
+    // Use existing CoastDownData_id from job order if available
+    const CoastDownData_id = location.state?.jobOrder?.CoastDownData_id || existingCoastDownId;
 
     // Create test order payload matching the API schema
     const testOrderPayload = {
@@ -959,12 +897,7 @@ export default function PDCDCreateJobOrder() {
             : t
         )
       );
-      showSnackbar(
-        "Test Order Created! ID: " + response.data.test_order_id +
-        (hasTestSpecificCoastDownData
-          ? "\nCoast Down Data ID: " + CoastDownData_id
-          : "")
-      );
+      showSnackbar("Test Order Created! ID: " + response.data.test_order_id, "success");
       handleSendMail(2, job_order_id, response.data.test_order_id);
       navigate(-1);
     } catch (err) {
@@ -2614,7 +2547,8 @@ export default function PDCDCreateJobOrder() {
                     updatedTests[idx].showCoastDownData = checked;
                     setTests(updatedTests);
                   }}
-                  disabled={formDisabled || isTestEngineer}
+                  // Allow ProjectTeam to toggle Coast Down Data even when formDisabled (edit mode)
+                  disabled={formDisabled && !isProjectTeam}
                   className="data-[state=checked]:bg-red-500"
                 />
               </div>
@@ -2734,7 +2668,7 @@ export default function PDCDCreateJobOrder() {
               <Button
                 className="bg-red-600 text-white text-xs px-6 py-2 rounded"
                 onClick={() => handleCreateTestOrder(idx)}
-                disabled={editingTestOrderIdx === idx || isTestEngineer || isAdmin || !isTestValid(test)}
+                disabled={editingTestOrderIdx === idx || isTestEngineer || !isTestValid(test)}
               >
                 CREATE TEST ORDER
               </Button>
@@ -2742,7 +2676,7 @@ export default function PDCDCreateJobOrder() {
                 <Button
                   className="bg-blue-600 text-white text-xs px-6 py-2 rounded ml-2"
                   onClick={() => handleUpdateTestOrder(idx)}
-                  disabled={isTestEngineer || isAdmin}
+                  disabled={isTestEngineer}
                 >
                   UPDATE TEST ORDER
                 </Button>
