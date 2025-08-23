@@ -80,7 +80,9 @@ def engine_to_dict(engine):
         "battery_max_current": engine.battery_max_current,
         "department": engine.department,
         "id_of_creator": engine.id_of_creator,
+        "name_of_creator": engine.name_of_creator,
         "created_on": engine.created_on,
         "id_of_updater": engine.id_of_updater,
+        "name_of_updater": engine.name_of_updater,
         "updated_on": engine.updated_on,
     }

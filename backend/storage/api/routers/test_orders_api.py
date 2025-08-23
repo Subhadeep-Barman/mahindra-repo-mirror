@@ -113,6 +113,13 @@ class TestOrderSchema(BaseModel):
     id_of_updater: Optional[str] = None
     name_of_updater: Optional[str] = None
     updated_on: Optional[datetime] = None
+    validated_by: Optional[str] = None
+    validated_on: Optional[datetime] = None
+    validation_status: Optional[str] = None
+    rating: Optional[int] = None
+    rating_remarks: Optional[str] = None
+    rated_by: Optional[str] = None
+    rated_on: Optional[datetime] = None
 
 def extract_filename(value):
     if isinstance(value, list):
@@ -187,6 +194,13 @@ def testorder_to_dict(testorder: TestOrder):
         "id_of_updater": testorder.id_of_updater,
         "name_of_updater": testorder.name_of_updater,
         "updated_on": testorder.updated_on,
+        "validated_by": testorder.validated_by,
+        "validated_on": testorder.validated_on,
+        "validation_status": testorder.validation_status,
+        "rating": testorder.rating,
+        "rating_remarks": testorder.rating_remarks,
+        "rated_by": testorder.rated_by,
+        "rated_on": testorder.rated_on,
     }
     # Ensure all attachment fields are lists (never empty string or None)
     for key in attachment_fields:
@@ -262,14 +276,15 @@ def read_testorders(db: Session = Depends(get_db)):
     testorders = db.query(TestOrder).all()
     return [testorder_to_dict(t) for t in testorders]
 
-@router.get("/testorders/{test_order_id}", response_model=TestOrderSchema)
+@router.get("/testorders-single", response_model=TestOrderSchema)
 def read_testorder(test_order_id: str, db: Session = Depends(get_db)):
+    print(test_order_id)
     testorder = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
     if not testorder:
         raise HTTPException(status_code=404, detail="TestOrder not found")
     return testorder_to_dict(testorder)
 
-@router.put("/testorders/{test_order_id}", response_model=TestOrderSchema)
+@router.put("/testorders-update", response_model=TestOrderSchema)
 def update_testorder(
     test_order_id: str,
     testorder_update: TestOrderSchema = Body(...),
@@ -741,3 +756,72 @@ async def delete_file(
         )
     else:
         return {"status": True, "message": f"File {filename} deleted successfully."}
+
+# api to check the validation status of a test order
+@router.post("/testorders/validation")
+def validate_test_order(
+    data: dict = Body(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Validate a test order by updating its validation status and details.
+
+    Args:
+        data (dict): Should contain test_order_id, validation_status, validated_by, validated_on.
+        db (Session): Database session dependency.
+
+    Returns:
+        dict: Updated test order details.
+    """
+    test_order_id = data.get("test_order_id")
+    validation_status = data.get("validation_status")
+    validated_by = data.get("validated_by")
+    validated_on = data.get("validated_on")
+
+    testorder = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
+    if not testorder:
+        raise HTTPException(status_code=404, detail="TestOrder not found")
+
+    testorder.validation_status = validation_status
+    testorder.validated_by = validated_by
+    testorder.validated_on = validated_on
+    db.commit()
+    db.refresh(testorder)
+
+    return testorder_to_dict(testorder)
+
+
+@router.post("/testorders/rating")
+def rate_test_order(
+    data: dict = Body(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Rate a test order by updating its rating and related details.
+
+    Args:
+        data (dict): Should contain test_order_id, rating, rating_remarks, rated_by, rated_on.
+        db (Session): Database session dependency.
+
+    Returns:
+        dict: Updated test order details.
+    """
+    test_order_id = data.get("test_order_id")
+    rating = data.get("rating")
+    rating_remarks = data.get("rating_remarks")
+    rated_by = data.get("rated_by")
+    rated_on = data.get("rated_on")
+
+    testorder = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
+    if not testorder:
+        raise HTTPException(status_code=404, detail="TestOrder not found")
+
+    testorder.rating = rating
+    testorder.rating_remarks = rating_remarks
+    testorder.rated_by = rated_by
+    testorder.rated_on = rated_on
+    db.commit()
+    db.refresh(testorder)
+
+    return testorder_to_dict(testorder)
+
