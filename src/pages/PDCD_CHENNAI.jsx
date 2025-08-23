@@ -269,7 +269,7 @@ export default function PDCDChennaiPage() {
     axios
       .get(`${apiURL}/joborders/${job_order_id}`)
       .then((res) => {
-        navigate("/PDCDCreateJobOrder", {
+        navigate("/createJobOrder", {
           state: {
             jobOrder: Array.isArray(res.data) ? res.data[0] : res.data,
             isEdit: true, // Flag to indicate this is for editing/creating test orders

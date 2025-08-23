@@ -708,7 +708,27 @@ export default function CreateJobOrder() {
         // Prefill vehicleEditable and engineEditable if present
         if (jobOrder.vehicleDetails)
           setVehicleEditable(jobOrder.vehicleDetails);
-        if (jobOrder.engineDetails) setEngineEditable(jobOrder.engineDetails);
+        else if (jobOrder.vehicle_body_number) {
+          // Fetch vehicle details if not present
+          try {
+            const res = await axios.get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(jobOrder.vehicle_body_number)}`);
+            setVehicleEditable(res.data);
+          } catch (e) {
+            setVehicleEditable(null);
+          }
+        }
+
+        if (jobOrder.engineDetails)
+          setEngineEditable(jobOrder.engineDetails);
+        else if (jobOrder.engine_serial_number) {
+          // Fetch engine details if not present
+          try {
+            const res = await axios.get(`${apiURL}/engines/by-engine-number/${encodeURIComponent(jobOrder.engine_serial_number)}`);
+            setEngineEditable(res.data);
+          } catch (e) {
+            setEngineEditable(null);
+          }
+        }
 
         // Prefill CFT members if present in job order
         if (Array.isArray(jobOrder.cft_members)) {
