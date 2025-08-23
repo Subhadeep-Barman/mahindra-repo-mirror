@@ -1301,7 +1301,7 @@ export default function CreateJobOrder() {
   // Fetch a single test order by ID
   const fetchTestOrderById = async (test_order_id) => {
     try {
-      const res = await axios.get(`${apiURL}/testorders`, {
+      const res = await axios.get(`${apiURL}/testorders-single`, {
         params: { test_order_id }
       });
       // If your API returns an array, return the first item; else return as is
