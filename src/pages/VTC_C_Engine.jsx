@@ -19,6 +19,8 @@ import { ArrowBack } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
 import showSnackbar from "@/utils/showSnackbar";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { useAuth } from "@/context/AuthContext";
 
 export default function EngineForm() {
   const [activeTab, setActiveTab] = useState("Engine");
@@ -73,7 +75,9 @@ export default function EngineForm() {
     evMotorPower: "",
   });
   const [engineFamilies, setEngineFamilies] = useState([]);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const apiUrl = import.meta.env.VITE_BACKEND_URL;
+  const { userId } = useAuth();
 
   const navigate = useNavigate();
 
@@ -149,7 +153,6 @@ export default function EngineForm() {
   };
 
   const handleAddEngine = async () => {
-
     // Map formData to API schema
     const now = new Date().toISOString();
     const payload = {
@@ -242,9 +245,8 @@ export default function EngineForm() {
       const response = await axios.post(`${apiUrl}/engines`, payload, {
         headers: { "Content-Type": "application/json" },
       });
-      showSnackbar("Engine added successfully!", "success");
-      navigate(-1);
-      // Optionally clear form or navigate
+      // Only show the success popup, no snackbar
+      setShowSuccessPopup(true);
     } catch (err) {
       showSnackbar("Error adding engine: " + (err.response?.data?.detail || err.message), "error");
     }
@@ -314,7 +316,7 @@ export default function EngineForm() {
 
       {/* Main Content */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Card>
+        <Card className="relative">
           <CardContent className="p-6">
             {/* Form Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1009,8 +1011,8 @@ export default function EngineForm() {
               </p>
             </div>
 
-            {/* Action Buttons */}
-            <div className="mt-6 flex justify-end gap-3">
+            {/* Action Buttons - Positioned at bottom right corner */}
+            <div className="absolute bottom-4 right-4 flex gap-3">
               <Button
                 onClick={handleAddEngine}
                 className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
@@ -1019,12 +1021,31 @@ export default function EngineForm() {
               </Button>
               <Button
                 onClick={handleClear}
-                variant="outline"
                 className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
               >
                 ✕ CLEAR
               </Button>
             </div>
+            {/* Success Popup */}
+            {showSuccessPopup && (
+              <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 flex flex-col items-center min-w-[320px] border border-gray-200 dark:border-gray-700">
+                  <CheckCircleIcon style={{ fontSize: 64, color: "#22c55e" }} />
+                  <div className="mt-4 text-lg font-semibold text-gray-800 dark:text-white">
+                    Engine saved successfully
+                  </div>
+                  <Button
+                    className="mt-6 bg-green-500 hover:bg-green-600 text-white rounded-xl px-8"
+                    onClick={() => {
+                      setShowSuccessPopup(false);
+                      navigate(-1);
+                    }}
+                  >
+                    OK
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

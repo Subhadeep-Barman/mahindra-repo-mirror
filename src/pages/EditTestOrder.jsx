@@ -76,11 +76,12 @@ export default function EditTestOrder() {
   // State to check if user is a Test Engineer
   const isTestEngineer = userRole === "TestEngineer";
   const isProjectTeam = userRole === "ProjectTeam";
+  const isAdmin = userRole === "Admin";
 
   // State for test data
   const [test, setTest] = useState({
     testOrderId: testOrder?.test_order_id || "",
-    engineNumber: testOrder?.engine_number || "",
+    // engineNumber removed
     testType: testOrder?.test_type || "",
     objective: testOrder?.test_objective || "",
     vehicleLocation: testOrder?.vehicle_location || "",
@@ -104,31 +105,59 @@ export default function EditTestOrder() {
       : testOrder?.emission_check_attachment
         ? testOrder?.emission_check_attachment
         : [],
-    dataset_attachment: testOrder?.dataset_attachment || "",
-    a2l_attachment: testOrder?.a2l_attachment || "",
-    experiment_attachment: testOrder?.experiment_attachment || "",
-    dbc_attachment: testOrder?.dbc_attachment || "",
-    wltp_attachment: testOrder?.wltp_attachment || "",
-    pdf_report: testOrder?.pdf_report || "",
-    excel_report: testOrder?.excel_report || "",
-    dat_file_attachment: testOrder?.dat_file_attachment || "",
-    others_attachment: testOrder?.others_attachment || "",
+    dataset_attachment: Array.isArray(testOrder?.dataset_attachment) ? testOrder?.dataset_attachment : [],
+    a2l_attachment: Array.isArray(testOrder?.a2l_attachment) ? testOrder?.a2l_attachment : [],
+    experiment_attachment: Array.isArray(testOrder?.experiment_attachment) ? testOrder?.experiment_attachment : [],
+    dbc_attachment: Array.isArray(testOrder?.dbc_attachment) ? testOrder?.dbc_attachment : [],
+    wltp_attachment: Array.isArray(testOrder?.wltp_attachment) ? testOrder?.wltp_attachment : [],
+    pdf_report: Array.isArray(testOrder?.pdf_report) ? testOrder?.pdf_report : [],
+    excel_report: Array.isArray(testOrder?.excel_report) ? testOrder?.excel_report : [],
+    dat_file_attachment: Array.isArray(testOrder?.dat_file_attachment) ? testOrder?.dat_file_attachment : [],
+    // Align with Dropzone name and backend spelling
+    others_attachement: Array.isArray(testOrder?.others_attachement) ? testOrder?.others_attachement : [],
     specificInstruction: testOrder?.specific_instruction || "",
     status: testOrder?.status || "Created",
-    showCoastDownData: false,
-    // Coast down data
-    cdReportRef: testOrder?.coast_down_reference || "",
-    vehicleRefMass: testOrder?.vehicle_reference_mass?.toString() || "",
-    aN: testOrder?.a_value?.toString() || "",
-    bNkmph: testOrder?.b_value?.toString() || "",
-    cNkmph2: testOrder?.c_value?.toString() || "",
-    f0N: testOrder?.f0_value?.toString() || "",
-    f1Nkmph: testOrder?.f1_value?.toString() || "",
-    f2Nkmph2: testOrder?.f2_value?.toString() || "",
+    // Creator info
+    createdBy: testOrder?.name_of_creator || "",
+    createdOn: testOrder?.created_on || "",
+    // Set showCoastDownData to true if backend has coast down data
+    showCoastDownData: Boolean(testOrder?.coast_down_data),
+    // Coast Down Data fields from nested object
+    cdReportRef: testOrder?.coast_down_data?.coast_down_reference || "",
+    vehicleRefMass: testOrder?.coast_down_data?.vehicle_reference_mass || "",
+    aN: testOrder?.coast_down_data?.a_value || "",
+    bNkmph: testOrder?.coast_down_data?.b_value || "",
+    cNkmph2: testOrder?.coast_down_data?.c_value || "",
+    f0N: testOrder?.coast_down_data?.f0_value || "",
+    f1Nkmph: testOrder?.coast_down_data?.f1_value || "",
+    f2Nkmph2: testOrder?.coast_down_data?.f2_value || "",
     // Remarks
     rejection_remarks: testOrder?.rejection_remarks || "",
     remark: testOrder?.remark || "",
+    complete_remarks: testOrder?.complete_remarks || testOrder?.remark || "", // Add complete_remarks field
     coast_down_data: testOrder?.coast_down_data || null, 
+    // Rating fields
+    rating: testOrder?.rating || 0,
+    rating_remarks: testOrder?.rating_remarks || "",
+    // Validation fields
+    validation_status: testOrder?.validation_status || null,
+    validated_by: testOrder?.validated_by || "",
+    validated_on: testOrder?.validated_on || "",
+  });
+  
+  console.log("coast_down_data from backend:", testOrder?.coast_down_data);
+  console.log("showCoastDownData state value:", test.showCoastDownData);
+  console.log("Full testOrder object:", testOrder);
+  console.log("Test state values:", {
+    testType: test.testType,
+    objective: test.objective,
+    vehicleLocation: test.vehicleLocation,
+    dpf: test.dpf,
+    ess: test.ess,
+    mode: test.mode,
+    fuelType: test.fuelType,
+    shift: test.shift,
+    inertiaClass: test.inertiaClass
   });
 
   // States for API data
@@ -136,7 +165,7 @@ export default function EditTestOrder() {
   const [inertiaClasses, setInertiaClasses] = useState([]);
   const [modes, setModes] = useState([]);
   const [fuelTypes, setFuelTypes] = useState([]);
-  const [engineNumbers, setEngineNumbers] = useState([]);
+  // engineNumbers removed
 
   // States for file modals
   const [emissionCheckModal, setEmissionCheckModal] = useState(false);
@@ -154,7 +183,15 @@ export default function EditTestOrder() {
   const [mailRemarksModal, setMailRemarksModal] = useState(false);
   const [mailRemarks, setMailRemarks] = useState("");
   const [modalActionType, setModalActionType] = useState(""); // "re-edit" or "reject" or "update"
-  const [completeRemarks, setCompleteRemarks] = useState(""); // New state for complete remarks
+  const [completeRemarks, setCompleteRemarks] = useState(testOrder?.complete_remarks || testOrder?.remark || ""); // Initialize with existing complete remarks
+
+  // State for star rating
+  const [starRatingModal, setStarRatingModal] = useState(false);
+  const [rating, setRating] = useState(testOrder?.rating || 0);
+  const [ratingRemarks, setRatingRemarks] = useState(testOrder?.rating_remarks || "");
+
+  // State for validation status
+  const [validationStatus, setValidationStatus] = useState(null); // 'valid' or 'invalid'
 
   const handleBack = () => {
     navigate(-1);
@@ -167,11 +204,28 @@ export default function EditTestOrder() {
 
   // Fetch API data on component mount
   useEffect(() => {
+    // Debug log for coast down data after component mount
+    console.log("Component mounted - Coast Down Data state:");
+    console.log("showCoastDownData:", test.showCoastDownData);
+    console.log("Coast down values:", {
+      f0N: test.f0N,
+      f1Nkmph: test.f1Nkmph,
+      f2Nkmph2: test.f2Nkmph2,
+      aN: test.aN,
+      bNkmph: test.bNkmph,
+      cNkmph2: test.cNkmph2,
+      cdReportRef: test.cdReportRef,
+      vehicleRefMass: test.vehicleRefMass
+    });
+    
     // Fetch test types
     const fetchTestTypes = async () => {
       try {
         const response = await axios.get(`${apiURL}/test-types`);
-        setTestTypes(response.data || []);
+        const list = Array.isArray(response.data) ? response.data : [];
+        const value = test.testType;
+        const finalList = value && !list.includes(value) ? [value, ...list] : list;
+        setTestTypes(finalList);
       } catch (error) {
         console.error("Error fetching test types:", error);
         setTestTypes([]);
@@ -182,7 +236,10 @@ export default function EditTestOrder() {
     const fetchInertiaClasses = async () => {
       try {
         const response = await axios.get(`${apiURL}/inertia-classes`);
-        setInertiaClasses(response.data || []);
+        const list = Array.isArray(response.data) ? response.data : [];
+        const value = test.inertiaClass;
+        const finalList = value && !list.includes(value) ? [value, ...list] : list;
+        setInertiaClasses(finalList);
       } catch (error) {
         console.error("Error fetching inertia classes:", error);
         setInertiaClasses([]);
@@ -193,7 +250,10 @@ export default function EditTestOrder() {
     const fetchModes = async () => {
       try {
         const response = await axios.get(`${apiURL}/modes`);
-        setModes(response.data || []);
+        const list = Array.isArray(response.data) ? response.data : [];
+        const value = test.mode;
+        const finalList = value && !list.includes(value) ? [value, ...list] : list;
+        setModes(finalList);
       } catch (error) {
         console.error("Error fetching modes:", error);
         setModes([]);
@@ -204,38 +264,49 @@ export default function EditTestOrder() {
     const fetchFuelTypes = async () => {
       try {
         const response = await axios.get(`${apiURL}/fuel-types`);
-        setFuelTypes(response.data || []);
+        const list = Array.isArray(response.data) ? response.data : [];
+        const value = test.fuelType;
+        const finalList = value && !list.includes(value) ? [value, ...list] : list;
+        setFuelTypes(finalList);
       } catch (error) {
         console.error("Error fetching fuel types:", error);
         setFuelTypes([]);
       }
     };
 
-    // Fetch engine numbers
-    const fetchEngineNumbers = async () => {
-      try {
-        const response = await axios.get(`${apiURL}/engine-numbers`);
-        setEngineNumbers(response.data || []);
-      } catch (error) {
-        console.error("Error fetching engine numbers:", error);
-        setEngineNumbers([]);
-      }
-    };
-
-    // Execute fetch functions
+    // Trigger all fetches so select values render correctly
     fetchTestTypes();
     fetchInertiaClasses();
     fetchModes();
     fetchFuelTypes();
-    fetchEngineNumbers();
+
+    // Fetch engine numbers
+  // Removed fetchEngineNumbers and its usage
   }, []);
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return dateString;
+    }
+  };
 
   // Helper to build the test order payload
   const getTestOrderPayload = (overrideStatus) => ({
     test_order_id: test.testOrderId,
     job_order_id: jobOrderId || null,
     CoastDownData_id: testOrder?.CoastDownData_id || null,
-    engine_number: test.engineNumber || "",
     test_type: test.testType || "",
     test_objective: test.objective || "",
     vehicle_location: test.vehicleLocation || "",
@@ -272,28 +343,38 @@ export default function EditTestOrder() {
     pdf_report: test.pdf_report || "",
     excel_report: test.excel_report || "",
     dat_file_attachment: test.dat_file_attachment || "",
-    others_attachment: test.others_attachment || "",
+    others_attachment: test.others_attachement || "",
     specific_instruction: test.specificInstruction || "",
     status: overrideStatus ?? test.status,
+    complete_remarks: test.complete_remarks || "", // Add complete_remarks to payload
     id_of_creator: testOrder?.id_of_creator || "",
     name_of_creator: testOrder?.name_of_creator || "",
     created_on: testOrder?.created_on || new Date().toISOString(),
     id_of_updater: userId || "",
     name_of_updater: userName || "",
     updated_on: new Date().toISOString(),
+    // Coast down data
+    coast_down_reference: test.cdReportRef || "",
+    vehicle_reference_mass: test.vehicleRefMass || "",
+    a_value: test.aN || "",
+    b_value: test.bNkmph || "",
+    c_value: test.cNkmph2 || "",
+    f0_value: test.f0N || "",
+    f1_value: test.f1Nkmph || "",
+    f2_value: test.f2Nkmph2 || "",
+    coast_down_data: test.coast_down_data || null,
   });
 
   // Handler to update the test order
   const handleUpdateTestOrder = async () => {
     try {
-      // If ProjectTeam is updating a test in Re-edit status, set status to 'Started'
+      // If ProjectTeam is updating a test in Re-edit or Rejected status, set status to 'Created'
       let newStatus = test.status;
-      if (isProjectTeam && newStatus === "Re-edit") {
-        newStatus = "Started";
+      if (isProjectTeam && (newStatus === "Re-edit" || newStatus === "Rejected")) {
+        newStatus = "Created";
       }
       const testOrderPayload = getTestOrderPayload(newStatus);
-      const formattedTestOrderId = encodeURIComponent(test.testOrderId).replace(/%20/g, "+"); // Encode and replace spaces with '+'
-      await axios.put(`${apiURL}/testorders/${formattedTestOrderId}`, testOrderPayload);
+      await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       showSnackbar("Test Order updated successfully!", "success");
       navigate(-1);
     } catch (err) {
@@ -306,8 +387,7 @@ export default function EditTestOrder() {
     try {
       // Always update test order with latest form data and new status
       const testOrderPayload = getTestOrderPayload(status);
-      const formattedTestOrderId = encodeURIComponent(test.testOrderId).replace(/%20/g, "+"); // Encode and replace spaces with '+'
-      await axios.put(`${apiURL}/testorders/${formattedTestOrderId}`, testOrderPayload);
+      await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
 
       const payload = {
         test_order_id: test.testOrderId,
@@ -327,13 +407,13 @@ export default function EditTestOrder() {
   // Handler for mail remarks
   const handleSubmitMailRemarks = async () => {
     try {
-      // If ProjectTeam is updating a test in Re-edit or Rejected status, set status to 'Started'
+      // If ProjectTeam is updating a test in Re-edit or Rejected status, set status back to 'Created'
       let newStatus = test.status;
       if (
         isProjectTeam &&
         (newStatus === "Re-edit" || newStatus === "Rejected")
       ) {
-        newStatus = "Started";
+        newStatus = "Created";
       }
 
       const payload = {
@@ -343,9 +423,8 @@ export default function EditTestOrder() {
         status: newStatus,
       };
 
-      // await axios.put(`${apiURL}/testorders/${test.testOrderId}`, payload);
-      const formattedTestOrderId = encodeURIComponent(test.testOrderId).replace(/%20/g, "+"); // Encode and replace spaces with '+'
-      await axios.put(`${apiURL}/testorders/${formattedTestOrderId}`, payload);
+      const testOrderPayload = getTestOrderPayload(newStatus);
+      await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       setMailRemarksModal(false);
       showSnackbar("Test order updated successfully!", "success");
       handleBack();
@@ -358,9 +437,7 @@ export default function EditTestOrder() {
   const handleStartTestOrder = async () => {
     try {
       const testOrderPayload = getTestOrderPayload("Started");
-      // await axios.put(`${apiURL}/testorders/${test.testOrderId}`, testOrderPayload);
-      const formattedTestOrderId = encodeURIComponent(test.testOrderId).replace(/%20/g, "+");
-      await axios.put(`${apiURL}/testorders/${formattedTestOrderId}`, testOrderPayload);
+      await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       await handleStatusUpdate("Started");
     } catch (err) {
       showSnackbar("Failed to start test order: " + (err.response?.data?.detail || err.message), "error");
@@ -374,25 +451,73 @@ export default function EditTestOrder() {
         ...getTestOrderPayload("Completed"),
         complete_remarks: completeRemarks,
       };
-      // await axios.put(`${apiURL}/testorders/${test.testOrderId}`, testOrderPayload);
-      const formattedTestOrderId = encodeURIComponent(test.testOrderId).replace(/%20/g, "+"); // Encode and replace spaces with '+'
-      await axios.put(`${apiURL}/testorders/${formattedTestOrderId}`, testOrderPayload);
+      
+      // Update the test order with completion status and remarks
+      await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       await axios.post(`${apiURL}/testorders/status`, {
         test_order_id: test.testOrderId,
         status: "Completed",
         remark: completeRemarks,
       });
-      showSnackbar("Test order marked as Completed", "success");
-      handleBack();
+      
+      // Update local state
+      setTest(prev => ({
+        ...prev,
+        status: "Completed",
+        remark: completeRemarks,
+        complete_remarks: completeRemarks
+      }));
+      
+      showSnackbar("Test order marked as Completed. The test can now be validated.", "success");
+      
+      // Close the modal but don't navigate back - stay on the page to show validation section
+      setMailRemarksModal(false);
+      
     } catch (err) {
       showSnackbar("Failed to complete test order: " + (err.response?.data?.detail || err.message), "error");
+    }
+  };
+
+  // Handler for validation decision
+  const handleValidationDecision = async (isValid) => {
+    const validationData = {
+      validation_status: isValid ? 'valid' : 'invalid',
+      validated_by: userName,
+      validated_on: new Date().toISOString(),
+    };
+    
+    setValidationStatus(isValid ? 'valid' : 'invalid');
+    
+    try {
+      // Update the test order with validation status
+      await axios.post(`${apiURL}/testorders/validation`, {
+        test_order_id: test.testOrderId,
+        ...validationData,
+      });
+      
+      // Update local state
+      setTest(prev => ({
+        ...prev,
+        ...validationData
+      }));
+      
+      if (isValid) {
+        // Test marked as valid - TestEngineer's job is done
+        showSnackbar("Test marked as valid. ProjectTeam can now rate this test.", "success");
+        // Stay on the page to show validation status but don't show rating modal for TestEngineer
+      } else {
+        showSnackbar("Test marked as invalid. No rating will be available for this test.", "info");
+        // Stay on the page to show validation status
+      }
+    } catch (err) {
+      showSnackbar("Failed to update validation status: " + (err.response?.data?.detail || err.message), "error");
     }
   };
 
   // Helper function to determine if fields should be editable
   const areFieldsEditable = () => {
     // TestEngineer cannot edit fields
-    if (isTestEngineer) return false;
+    if (isTestEngineer || isAdmin) return false;
 
     // ProjectTeam can edit if test is in Re-edit or Rejected status
     if (isProjectTeam) {
@@ -401,6 +526,33 @@ export default function EditTestOrder() {
 
     // For admin or other roles, allow editing
     return true;
+  };
+
+  // Handler for submitting star rating
+  const handleSubmitStarRating = async () => {
+    try {
+      const payload = {
+        test_order_id: test.testOrderId,
+        rating: rating,
+        rating_remarks: ratingRemarks,
+        rated_by: userName,
+        rated_on: new Date().toISOString(),
+      };
+
+      await axios.post(`${apiURL}/testorders/rating`, payload);
+      showSnackbar("Test order rated successfully!", "success");
+      setStarRatingModal(false);
+      // Update local state with the new rating
+      setTest(prev => ({
+        ...prev,
+        rating: rating,
+        rating_remarks: ratingRemarks
+      }));
+      // Go back one page after submitting rating
+      navigate(-1);
+    } catch (err) {
+      showSnackbar("Failed to submit rating: " + (err.response?.data?.detail || err.message), "error");
+    }
   };
 
   return (
@@ -437,9 +589,29 @@ export default function EditTestOrder() {
 
         {/* Main Form */}
         <div className="mx-8 mb-8 mt-4 border rounded-lg shadow-lg px-8 py-6 bg-white dark:bg-black dark:border-gray-300">
+          {/* Test Created Info */}
+          <div className="flex flex-col justify-between mb-4">
+            <div className="flex flex-col items-start gap-2 mb-3">
+              {test.createdBy && (
+                <div className="flex items-center gap-2">
+                  <span className="text-red-800 dark:text-red-400 text-sm font-medium">Test Created by:</span>
+                  <span className="font-medium text-red-800 dark:text-red-400 text-sm">{test.createdBy}</span>
+                </div>
+              )}
+              {test.createdOn && (
+                <div className="flex items-center gap-2">
+                  <span className="text-red-800 dark:text-red-400 text-sm font-medium">Test Created on:</span>
+                  <span className="font-medium text-red-800 dark:text-red-400 text-sm">
+                    {formatDate(test.createdOn)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Status Display */}
           <div className="flex items-center gap-3 mb-4">
-            <span className="font-bold text-base text-blue-900 dark:text-blue-300">Test Details</span>
+            <span className="font-bold text-base text-blue-900 dark:text-blue-300">Test{test.testNumber}</span>
             {test.status === "Started" && (
               <span className="flex items-center bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#FFA500" }}>
@@ -477,6 +649,65 @@ export default function EditTestOrder() {
                 Completed
               </span>
             )}
+            
+            {/* Validation Status Display for Completed Tests */}
+            {test.status === "Completed" && test.validation_status && (
+              <span className={`flex items-center ${
+                test.validation_status === 'valid' 
+                  ? 'bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-600 text-blue-800 dark:text-blue-200' 
+                  : 'bg-orange-100 dark:bg-orange-900 border border-orange-400 dark:border-orange-600 text-orange-800 dark:text-orange-200'
+              } font-semibold text-xs px-2 py-1 rounded shadow ml-2`}>
+                {test.validation_status === 'valid' ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#2563eb" }}>
+                    <circle cx="12" cy="12" r="9" stroke="#2563eb" strokeWidth="2" fill="none" />
+                    <path d="M9 12l2 2 4-4" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                )}
+                {test.validation_status === 'valid' ? 'Valid' : 'Invalid'}
+              </span>
+            )}
+            
+            {/* Star Rating Display for Completed and Valid Tests */}
+            {test.status === "Completed" && test.validation_status === 'valid' && (test.rating > 0 || testOrder?.rating > 0) && (
+              <div className="flex items-center gap-2 ml-4">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Rating:</span>
+                <div className="flex items-center">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <svg
+                      key={star}
+                      className={`h-4 w-4 ${
+                        star <= (testOrder?.rating || 0) 
+                          ? "text-yellow-400 fill-current" 
+                          : "text-gray-300 dark:text-gray-600"
+                      }`}
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                  <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
+                    ({testOrder?.rating || 0}/5)
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Rating Button - Only for ProjectTeam and only when test is valid */}
+            {test.status === "Completed" && test.validation_status === 'valid' && isProjectTeam && (
+              <div className="flex items-center gap-2 ml-4">
+                <Button
+                  className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded"
+                  onClick={() => setStarRatingModal(true)}
+                >
+                  {testOrder?.rating ? "Update Rating" : "Rate Test"}
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Show rejection remarks if status is Rejected */}
@@ -486,7 +717,7 @@ export default function EditTestOrder() {
                 Rejected Reason
               </div>
               <textarea
-                value={test.rejection_remarks}
+                value={test.remark}
                 readOnly
                 className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 style={{ minWidth: "100%", fontSize: "1rem" }}
@@ -502,35 +733,35 @@ export default function EditTestOrder() {
                 Re-edit Reason from Test Engineer
               </div>
               <div className="w-full border rounded p-2 min-h-[60px] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                {test.re_edit_remarks || "No re-edit remarks provided"}
+                {test.remark || "No re-edit remarks provided"}
               </div>
+            </div>
+          )}
+
+          {/* Show rejection status and remarks if status is Rejected */}
+          {test.status === "Rejected" && (
+            <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+              <div className="font-semibold text-sm text-red-700 dark:text-red-300 mb-2">
+                Test Order Rejected - Waiting for ProjectTeam Resubmission
+              </div>
+              <div className="text-sm text-red-600 dark:text-red-400 mb-2">
+                This test order has been rejected by the Test Engineer. The ProjectTeam needs to make necessary changes and resubmit.
+              </div>
+              {test.rejection_remarks && (
+                <div>
+                  <div className="font-medium text-sm text-red-700 dark:text-red-300 mb-1">
+                    Rejection Reason:
+                  </div>
+                  <div className="w-full border rounded p-2 min-h-[60px] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    {test.rejection_remarks}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* Main form fields */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
-            <div className="flex flex-col">
-              <Label htmlFor="engineNumber" className="mb-2 dark:text-white">
-                Engine Number <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={test.engineNumber || ""}
-                onValueChange={(value) => handleTestChange("engineNumber", value)}
-                required
-                disabled={!areFieldsEditable()}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  {engineNumbers?.map((engineNumber) => (
-                    <SelectItem key={engineNumber} value={engineNumber}>
-                      {engineNumber}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div>
               <Label className="dark:text-white">Test Type</Label>
               <Select
@@ -828,6 +1059,7 @@ export default function EditTestOrder() {
                 rows={3}
               />
             </div>
+
           </div>
 
           {/* Attachments Section */}
@@ -880,7 +1112,7 @@ export default function EditTestOrder() {
                   handleCloseModal={() => setDatasetModal(false)}
                   disabled={!areFieldsEditable()}
                   originalJobOrderId={jobOrderId || ""}
-                  viewOnly={isTestEngineer}
+                  viewOnly={isTestEngineer || isAdmin}
                 />
               </div>
               <div>
@@ -904,7 +1136,7 @@ export default function EditTestOrder() {
                   handleCloseModal={() => setA2LModal(false)}
                   disabled={!areFieldsEditable()}
                   originalJobOrderId={jobOrderId || ""}
-                  viewOnly={isTestEngineer}
+                  viewOnly={isTestEngineer || isAdmin}
                 />
               </div>
               <div>
@@ -927,7 +1159,7 @@ export default function EditTestOrder() {
                   handleOpenModal={() => setExperimentModal(true)}
                   handleCloseModal={() => setExperimentModal(false)}
                   disabled={!areFieldsEditable()}
-                  viewOnly={isTestEngineer}
+                  viewOnly={isTestEngineer || isAdmin}
                   originalJobOrderId={jobOrderId || ""}
                 />
               </div>
@@ -951,7 +1183,7 @@ export default function EditTestOrder() {
                   handleOpenModal={() => setDBCModal(true)}
                   handleCloseModal={() => setDBCModal(false)}
                   disabled={!areFieldsEditable()}
-                  viewOnly={isTestEngineer}
+                  viewOnly={isTestEngineer || isAdmin}
                   originalJobOrderId={jobOrderId || ""}
                 />
               </div>
@@ -975,7 +1207,7 @@ export default function EditTestOrder() {
                   handleOpenModal={() => setWLTPModal(true)}
                   handleCloseModal={() => setWLTPModal(false)}
                   disabled={!areFieldsEditable()}
-                  viewOnly={isTestEngineer}
+                  viewOnly={isTestEngineer || isAdmin}
                   originalJobOrderId={jobOrderId || ""}
                 />
               </div>
@@ -1084,22 +1316,123 @@ export default function EditTestOrder() {
                   viewOnly={userRole === "ProjectTeam"}
                 />
               </div>
+
+              {/* Test Validation - positioned on the right side */}
+              {test.status === "Completed" && isTestEngineer && !test.validation_status && (
+                <div className="md:col-start-3 md:col-span-1">
+                  <Label className="dark:text-white">Test Validation</Label>
+                  {(test.complete_remarks) && (
+                    <div className="mb-3">
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                        Completion Remarks:
+                      </Label>
+                      <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
+                        <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                          {test.complete_remarks}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex gap-3 justify-end">
+                    <Button
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                      type="button"
+                      onClick={() => handleValidationDecision(false)}
+                    >
+                      Mark as Invalid
+                    </Button>
+                    <Button
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                      type="button"
+                      onClick={() => handleValidationDecision(true)}
+                    >
+                      Mark as Valid
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Test Validation Status - positioned on the right side */}
+              {test.status === "Completed" && test.validation_status && (
+                <div className="md:col-start-3 md:col-span-1">
+                  <Label className="dark:text-white">Test Validation</Label>
+                  <div className={`mt-2 p-4 rounded-lg border ${
+                    test.validation_status === 'valid'
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                      : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                  }`}>
+                    <div className="mb-3">
+                      <h3 className={`text-lg font-semibold mb-1 ${
+                        test.validation_status === 'valid'
+                          ? 'text-green-900 dark:text-green-100'
+                          : 'text-red-900 dark:text-red-100'
+                      }`}>
+                        Test Validation: {test.validation_status === 'valid' ? 'VALID' : 'INVALID'}
+                      </h3>
+                      <p className={`text-sm ${
+                        test.validation_status === 'valid'
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        Validated by: {test.validated_by} on {formatDate(test.validated_on)}
+                      </p>
+                      
+                      {/* Message for ProjectTeam about rating availability */}
+                      {isProjectTeam && (
+                        <div className={`mt-2 p-2 rounded text-xs ${
+                          test.validation_status === 'valid'
+                            ? 'bg-green-100 dark:bg-green-800/50 text-green-700 dark:text-green-300'
+                            : 'bg-red-100 dark:bg-red-800/50 text-red-700 dark:text-red-300'
+                        }`}>
+                          {test.validation_status === 'valid' 
+                            ? '✓ This test can be rated. Use the "Rate Test" button below to provide your feedback.'
+                            : '✗ This test cannot be rated as it has been marked as invalid by the Test Engineer.'
+                          }
+                        </div>
+                      )}
+                    </div>
+                    {(test.complete_remarks || test.remark) && (
+                      <div>
+                        <Label className={`text-sm font-medium mb-1 block ${
+                          test.validation_status === 'valid'
+                            ? 'text-green-700 dark:text-green-300'
+                            : 'text-red-700 dark:text-red-300'
+                        }`}>
+                          Completion Remarks:
+                        </Label>
+                        <div className="p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
+                          <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                            {test.complete_remarks || test.remark}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Coast Down Data Section */}
           <div className="mt-6 border rounded shadow px-4 py-3 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600">
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center justify-between mb-3">
               <span className="font-semibold text-sm text-blue-700 dark:text-blue-300">
                 Coast Down Data
               </span>
-              <Switch
-                checked={test.showCoastDownData}
-                onCheckedChange={(checked) => {
-                  setTest(prev => ({ ...prev, showCoastDownData: checked }));
-                }}
-                className="data-[state=checked]:bg-red-500"
-              />
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">
+                  {console.log("Coast Down Section Render - showCoastDownData:", test.showCoastDownData)}
+                  Debug: {test.showCoastDownData ? "Visible" : "Hidden"}
+                </span>
+                <Switch
+                  checked={test.showCoastDownData}
+                  onCheckedChange={(checked) => {
+                    console.log("Switch toggled to:", checked);
+                    setTest(prev => ({ ...prev, showCoastDownData: checked }));
+                  }}
+                  className="data-[state=checked]:bg-red-500"
+                />
+              </div>
             </div>
             {test.showCoastDownData && (
               <div>
@@ -1116,7 +1449,7 @@ export default function EditTestOrder() {
                   />
                 </div>
                 <div className="mb-2 font-semibold text-xs dark:text-white">CD Values</div>
-                <div className="grid grid-cols-4 gap-3 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                   <div>
                     <Label className="text-xs dark:text-white">
                       Vehicle Reference mass (Kg)
@@ -1160,7 +1493,7 @@ export default function EditTestOrder() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3 text-xs mt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mt-3">
                   <div>
                     <Label className="text-xs dark:text-white">F0 (N)</Label>
                     <Input
@@ -1196,10 +1529,22 @@ export default function EditTestOrder() {
             )}
           </div>
 
+          {/* Completion Remarks and Validation Section for TestEngineer */}
+          {false && ( // removed standalone section; now rendered inside the main grid above
+            <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            </div>
+          )}
+
+          {/* Validation Status Display for Completed Tests */}
+          {false && (
+            <div className={`mt-6 p-4 rounded-lg border`}>
+            </div>
+          )}
+
           {/* Action Buttons */}
           <div className="flex justify-end mt-6 gap-2">
-            {/* Buttons for TestEngineer */}
-            {isTestEngineer && (test.status === "Created") && (
+            {/* Buttons for TestEngineer and admin role */}
+            {(isTestEngineer || isAdmin) && (test.status === "Created") && (
               <>
                 <Button
                   className="bg-green-600 text-white text-xs px-3 py-1 rounded"
@@ -1214,11 +1559,11 @@ export default function EditTestOrder() {
                 <Button
                   className="bg-red-600 text-white text-xs px-3 py-1 rounded"
                   type="button"
-                  onClick={async () => {
+                  onClick={() => {
                     setModalActionType("reject");
                     setMailRemarks("");
                     setMailRemarksModal(true);
-                    await handleSendMail("4", jobOrderId, test.testOrderId);
+                    // Mail will be sent after rejection reason is filled and submitted
                   }}
                 >
                   Reject
@@ -1226,8 +1571,8 @@ export default function EditTestOrder() {
               </>
             )}
 
-            {/* Buttons for TestEngineer */}
-            {isTestEngineer && (test.status === "Started" || test.status === "Rejected" || test.status === "under progress") && (
+            {/* Buttons for TestEngineer and Admin - Only show Re-edit/Complete for Started and under progress */}
+            {(isTestEngineer || isAdmin) && (test.status === "Started" || test.status === "under progress") && (
               <>
                 <Button
                   className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
@@ -1247,7 +1592,7 @@ export default function EditTestOrder() {
                   onClick={() => {
                     setModalActionType("complete");
                     setMailRemarks("");
-                    setCompleteRemarks("");
+                    setCompleteRemarks(test.complete_remarks || test.remark || ""); // Initialize with existing remarks if available
                     setMailRemarksModal(true);
                     // Removed mail call from here
                   }}
@@ -1336,16 +1681,17 @@ export default function EditTestOrder() {
                   onClick={async () => {
                     if (modalActionType === "complete") {
                       await handleCompleteTestOrder();
-                      await handleSendMail("6", jobOrderId, test.testOrderId); // Mail called after remarks filled and submit
-                      setMailRemarksModal(false);
+                      await handleSendMail("6", jobOrderId, test.testOrderId); // Mail called after completion
+                      // Don't navigate back here - stay on page to show validation section
                     } else if (isProjectTeam) {
                       handleSubmitMailRemarks();
-                    } else if (isTestEngineer) {
+                    } else if (isTestEngineer || isAdmin) {
                       if (modalActionType === "re-edit") {
                         await handleStatusUpdate("Re-edit", mailRemarks);
                         await handleSendMail("3", jobOrderId, test.testOrderId); // Mail called after remarks filled and submit
                       } else if (modalActionType === "reject") {
-                        handleStatusUpdate("Rejected", mailRemarks);
+                        await handleStatusUpdate("Rejected", mailRemarks);
+                        await handleSendMail("4", jobOrderId, test.testOrderId); // Mail called after rejection reason is filled and submitted
                       }
                     } else {
                       handleSubmitMailRemarks();
@@ -1358,6 +1704,97 @@ export default function EditTestOrder() {
                   }
                 >
                   Submit
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Star Rating Modal - Only accessible by ProjectTeam for valid tests */}
+        {starRatingModal && isProjectTeam && test.validation_status === 'valid' && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-96">
+              <div className="font-semibold mb-4 dark:text-white">
+                Rate Test Execution Performance
+              </div>
+              
+              <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                <p className="mb-2">
+                  The test has been validated as <span className="text-green-600 font-medium">VALID</span> by the Test Engineer.
+                </p>
+                <p className="mb-2">
+                  Please rate the quality and execution of this test order:
+                </p>
+              </div>
+              
+              {/* Star Rating Input */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Rate the quality of test execution (1-5 stars):
+                </label>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      className="focus:outline-none"
+                    >
+                      <svg
+                        className={`h-8 w-8 cursor-pointer transition-colors ${
+                          star <= rating 
+                            ? "text-yellow-400 fill-current" 
+                            : "text-gray-300 dark:text-gray-600 hover:text-yellow-200"
+                        }`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </button>
+                  ))}
+                  <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
+                    ({rating}/5)
+                  </span>
+                </div>
+              </div>
+
+              {/* Rating Comments */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Comments (optional):
+                </label>
+                <textarea
+                  className="w-full border rounded p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                  rows={3}
+                  value={ratingRemarks}
+                  onChange={(e) => setRatingRemarks(e.target.value)}
+                  placeholder="Share your feedback about the test execution quality, accuracy, timeliness, etc..."
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  className="bg-gray-300 dark:bg-gray-600 text-black dark:text-white px-4 py-1 rounded"
+                  type="button"
+                  onClick={() => {
+                    setStarRatingModal(false);
+                    setRating(testOrder?.rating || 0);
+                    setRatingRemarks(testOrder?.rating_remarks || "");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded"
+                  type="button"
+                  onClick={async () => {
+                    await handleSubmitStarRating();
+                    // Stay on the page after rating submission
+                  }}
+                  disabled={rating === 0}
+                >
+                  Submit Rating
                 </Button>
               </div>
             </div>

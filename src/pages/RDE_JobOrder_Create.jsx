@@ -19,7 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
-import { ArrowBack } from "@mui/icons-material";
+import { ArrowBack, Close as CloseIcon } from "@mui/icons-material";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
@@ -86,6 +86,9 @@ export default function RDECreateJobOrder() {
   // Test state
   const [tests, setTests] = useState([]);
 
+  // State to track job order ID after creation
+  const [jobOrderId, setJobOrderId] = useState();
+
   // State to track existing CoastDownData_id for updates
   const [existingCoastDownId, setExistingCoastDownId] = useState(null);
 
@@ -99,6 +102,7 @@ export default function RDECreateJobOrder() {
   const [modes, setModes] = useState([]);
 
   const [fuelTypes, setFuelTypes] = useState([]);
+  const [engineNumbers, setEngineNumbers] = useState([]);
 
   // Add attachment modal states (copied from Nashik)
   const [emissionCheckModals, setEmissionCheckModals] = useState({});
@@ -159,10 +163,18 @@ export default function RDECreateJobOrder() {
   const handleSubmitRejectionRemarks = async (idx) => {
     const testOrderId = tests[idx]?.testOrderId;
     try {
-      await handleStatusUpdate("Rejected", rejectionRemarks[idx], testOrderId, idx);
+      await handleStatusUpdate(
+        "Rejected",
+        rejectionRemarks[idx],
+        testOrderId,
+        idx
+      );
       setRejectionModalOpen(false);
     } catch (err) {
-      showSnackbar("Failed to submit rejection remarks: " + err.message, "error");
+      showSnackbar(
+        "Failed to submit rejection remarks: " + err.message,
+        "error"
+      );
     }
   };
 
@@ -189,7 +201,12 @@ export default function RDECreateJobOrder() {
   };
 
   // Handler to send status update to backend
-  const handleStatusUpdate = async (status, remark = "", testOrderId = null, testIdx = null) => {
+  const handleStatusUpdate = async (
+    status,
+    remark = "",
+    testOrderId = null,
+    testIdx = null
+  ) => {
     try {
       // Only send test_order_id, status, and remark
       const payload = {
@@ -204,12 +221,12 @@ export default function RDECreateJobOrder() {
           prev.map((t, i) =>
             i === testIdx
               ? {
-                ...t,
-                status,
-                // Store remarks based on status type
-                ...(status === "Re-edit" && { re_edit_remarks: remark }),
-                ...(status === "Rejected" && { rejection_remarks: remark })
-              }
+                  ...t,
+                  status,
+                  // Store remarks based on status type
+                  ...(status === "Re-edit" && { re_edit_remarks: remark }),
+                  ...(status === "Rejected" && { rejection_remarks: remark }),
+                }
               : t
           )
         );
@@ -218,12 +235,12 @@ export default function RDECreateJobOrder() {
       setRemarkModalOpen(false);
     } catch (err) {
       showSnackbar(
-        "Failed to update status: " + (err.response?.data?.detail || err.message),
+        "Failed to update status: " +
+          (err.response?.data?.detail || err.message),
         "error"
       );
     }
   };
-
 
   // Handler to add a new test (add all Nashik fields)
   const handleAddTest = () => {
@@ -370,7 +387,6 @@ export default function RDECreateJobOrder() {
     fetchFuelTypes();
   }, []);
 
-
   // New: State for fetched vehicles by project
   const [projectVehicles, setProjectVehicles] = useState([]);
   // New: State for selected vehicle's engine numbers
@@ -380,7 +396,11 @@ export default function RDECreateJobOrder() {
     // When project code changes, fetch vehicles for that project
     if (form.projectCode) {
       axios
-        .get(`${apiURL}/vehicles/by-project/${encodeURIComponent(form.projectCode)}`)
+        .get(
+          `${apiURL}/vehicles/by-project/${encodeURIComponent(
+            form.projectCode
+          )}`
+        )
         .then((res) => {
           setProjectVehicles(res.data.vehicles || []);
         })
@@ -504,6 +524,11 @@ export default function RDECreateJobOrder() {
 
   // Prefill form if jobOrder is passed via navigation state
   useEffect(() => {
+    // Initialize jobOrderId if opening an existing job order
+    if (location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id) {
+      setJobOrderId(location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id);
+    }
+
     // Only run once when component mounts and we have job order data
     if (location.state?.jobOrder && !hasPreFilledRef.current) {
       const jobOrder = location.state.jobOrder;
@@ -693,14 +718,17 @@ export default function RDECreateJobOrder() {
     }));
   };
 
-  const handleSendMail = async (caseId, directJobOrderId = null, testOrderId = null) => {
+  const handleSendMail = async (
+    caseId,
+    directJobOrderId = null,
+    testOrderId = null
+  ) => {
     setMailLoading(true);
     try {
       // First try to use the direct job order ID passed to this function
       // Then fall back to other sources if not provided
-      const resolvedJobOrderId = directJobOrderId ||
-        jobOrderId ||
-        useStore.getState().backendJobOrderID;
+      const resolvedJobOrderId =
+        directJobOrderId || jobOrderId || useStore.getState().backendJobOrderID;
 
       if (!resolvedJobOrderId) {
         showSnackbar("Job Order ID is missing. Cannot send mail.", "error");
@@ -725,13 +753,56 @@ export default function RDECreateJobOrder() {
         showSnackbar("Mail sent successfully", "success");
       } else {
         showSnackbar("Failed to send mail", "error");
-        console.error("Mail API responded with status:", response.status, response.data);
+        console.error(
+          "Mail API responded with status:",
+          response.status,
+          response.data
+        );
       }
     } catch (error) {
-      showSnackbar("Error sending mail: " + (error?.message || "Unknown error"), "warning");
+      showSnackbar(
+        "Error sending mail: " + (error?.message || "Unknown error"),
+        "warning"
+      );
       console.error("Error sending mail", error);
     } finally {
       setMailLoading(false);
+    }
+  };
+
+  // Function to check if job order with same vehicle body number and engine serial number exists
+  const checkForDuplicateJobOrder = async (vehicleBodyNumber, engineSerialNumber) => {
+    try {
+      const response = await axios.get(`${apiURL}/rde_joborders`, { params: {user_id: userId, role: userRole } });
+      const jobOrders = response.data;
+      
+      // Find if there's already a job order with same vehicle body number and engine serial number
+      const duplicate = jobOrders.find(
+        (jobOrder) => 
+          jobOrder.vehicle_body_number === vehicleBodyNumber && 
+          jobOrder.engine_serial_number === engineSerialNumber
+      );
+      
+      return duplicate;
+    } catch (error) {
+      console.error("Error checking for duplicate job orders:", error);
+      return null;
+    }
+  };
+  
+  // Function to suggest a new vehicle body number
+  const suggestNewVehicleBodyNumber = (currentBodyNumber) => {
+    // Check if the current body number ends with 'E' followed by a number
+    const match = currentBodyNumber.match(/(.+)E(\d+)$/);
+    
+    if (match) {
+      // If it does, increment the number
+      const prefix = match[1];
+      const number = parseInt(match[2]) + 1;
+      return `${prefix}E${number}`;
+    } else {
+      // If not, append 'E1' to the current body number
+      return `${currentBodyNumber}E1`;
     }
   };
 
@@ -744,11 +815,23 @@ export default function RDECreateJobOrder() {
       showSnackbar("Please add at least one CFT member before creating a job order.", "error");
       return;
     }
+    
+    // Check for duplicate job orders with the same vehicle body number and engine serial number
+    const duplicate = await checkForDuplicateJobOrder(form.vehicleBodyNumber, form.engineSerialNumber);
+    
+    if (duplicate) {
+      const suggestedNumber = suggestNewVehicleBodyNumber(form.vehicleBodyNumber);
+      showSnackbar(
+        `A job order already exists with the same combination of body number (${form.vehicleBodyNumber}) and engine number (${form.engineSerialNumber}). Please create a new vehicle with a different body number, suggested format: "${suggestedNumber}"`, 
+        "error"
+      );
+      return;
+    }
+
 
     // Generate job_order_id and CoastDownData_id based on timestamp
     const job_order_id = "JO" + Date.now();
     const CoastDownData_id = "CD" + Date.now();
-
 
     // Convert current time to IST and format as ISO 8601
     const currentISTTime = new Date().toLocaleString("en-US", {
@@ -760,9 +843,9 @@ export default function RDECreateJobOrder() {
     const rdeJobOrderPayload = {
       job_order_id,
       project_code: form.projectCode || null,
-      vehicle_serial_number: vehicleEditable?.vehicle_serial_number || null,
+      vehicle_serial_number: form.vehicleSerialNumber || vehicleEditable?.vehicle_serial_number || null,
       vehicle_body_number: form.vehicleBodyNumber || null,
-      engine_serial_number: engineEditable?.engine_serial_number || null,
+      engine_serial_number: form.engineNumber || engineEditable?.engine_serial_number || null,
       CoastDownData_id,
       type_of_engine: form.engineType || null,
       department: form.department || null,
@@ -771,7 +854,7 @@ export default function RDECreateJobOrder() {
       vehicle_gwv: form.vehicleGVW || null,
       vehicle_kerb_weight: form.vehicleKerbWeight || null,
       vehicle_test_payload_criteria:
-        form.vehicleTestPayloadCriteria === "Manual Entry"
+        form.vehicleTestPayloadCriteria === "Customized Payload"
           ? form.requestedPayloadKg
           : form.vehicleTestPayloadCriteria || null,
       requested_payload: form.requestedPayloadKg || null,
@@ -831,6 +914,9 @@ export default function RDECreateJobOrder() {
         await axios.post(`${apiURL}/coastdown`, coastDownPayload);
       }
 
+      // Set the job order ID in state
+      setJobOrderId(jobOrderRes.data.job_order_id);
+
       showSnackbar(
         "RDE Job Order Created! ID: " + jobOrderRes.data.job_order_id,
         "success"
@@ -842,7 +928,7 @@ export default function RDECreateJobOrder() {
       console.error("Error creating RDE job order:", err);
       showSnackbar(
         "Failed to create RDE job order: " +
-        (err.response?.data?.detail || err.message),
+          (err.response?.data?.detail || err.message),
         "error"
       );
     }
@@ -853,19 +939,84 @@ export default function RDECreateJobOrder() {
     const test = tests[testIndex];
 
     // Validate required fields
-    if (!test.objective) {
+    const requiredFields = [
+      { key: 'testType', label: 'Test Type' },
+      { key: 'objective', label: 'Objective of the Test' },
+      { key: 'vehicleLocation', label: 'Vehicle Location' },
+      { key: 'cycleGearShift', label: 'Cycle Gear Shift' },
+      { key: 'inertiaClass', label: 'Inertia Class' },
+      { key: 'datasetName', label: 'Dataset Name' },
+      { key: 'mode', label: 'Mode' },
+      { key: 'shift', label: 'Shift' },
+      { key: 'fuelType', label: 'Fuel Type' },
+      { key: 'hardwareChange', label: 'Hardware Change' },
+      { key: 'equipmentRequired', label: 'Equipment Required' },
+      { key: 'dpf', label: 'DPF' },
+      // datasetflashed vs datasetRefreshed: check both keys below
+      { key: 'ess', label: 'ESS' },
+      { key: 'preferredDate', label: 'Preferred Date' },
+      { key: 'emissionCheckDate', label: 'Emission Check Date' },
+      { key: 'specificInstruction', label: 'Specific Instruction' }
+    ];
+
+    const missing = requiredFields.filter(f => {
+      const val = test[f.key];
+      return val === undefined || val === null || (typeof val === 'string' && val.trim() === '');
+    }).map(f => f.label);
+
+    // Special-case: dataset flashed might be stored as datasetflashed or datasetRefreshed
+    const datasetFlashedVal = (test.datasetflashed || test.datasetRefreshed || '').toString().trim();
+    if (!datasetFlashedVal) {
+      missing.push('Dataset flashed');
+    }
+
+    if (missing.length > 0) {
       showSnackbar(
-        "Please fill in the objective of the test before creating test order.",
-        "warning"
+        `Please fill in required fields before creating test order: ${[...new Set(missing)].join(', ')}`,
+        'warning'
       );
       return;
     }
 
+    // If DPF is Yes, require DPF Regen Occurs (g)
+    if (test.dpf === 'Yes') {
+      const regen = test.dpfRegenOccurs;
+      if (regen === undefined || regen === null || (typeof regen === 'string' && regen.trim() === '')) {
+        showSnackbar('DPF Regen Occurs (g) is required when DPF is Yes.', 'warning');
+        return;
+      }
+    }
+
+    // Require Dataset and Experiment attachments
+    const hasDataset = Array.isArray(test.Dataset_attachment) && test.Dataset_attachment.length > 0;
+    const hasExperiment = Array.isArray(test.Experiment_attachment) && test.Experiment_attachment.length > 0;
+
+    if (!hasDataset || !hasExperiment) {
+      showSnackbar(
+        'Dataset and Experiment attachments are required to create a test order.',
+        'error'
+      );
+      return;
+    }
+
+    // Validate Coast Down Data if toggle is enabled
+    if (test.showCoastDownData) {
+      const missingFields = validateCoastDownData(test);
+      if (missingFields.length > 0) {
+        showSnackbar(
+          `Coast Down Data is incomplete. Please fill in the following fields: ${missingFields.join(', ')}`,
+          "error"
+        );
+        return;
+      }
+    }
+
     // Generate test_order_id based on timestamp
-    const test_order_id = "TO" + Date.now();
+    // const test_order_id = "TO" + Date.now();
 
     // Get job_order_id from location state or create a new one if not available
-    const job_order_id = location.state?.jobOrder?.job_order_id || null;
+    const job_order_id = location.state?.jobOrder?.job_order_id || location.state?.originalJobOrderId || "";
+    const test_order_id = `${job_order_id}/${test.testNumber}`;
 
     // Create or update coast down data for this specific test
     let CoastDownData_id =
@@ -926,7 +1077,7 @@ export default function RDECreateJobOrder() {
       } catch (err) {
         showSnackbar(
           "Failed to create coast down data for test: " +
-          (err.response?.data?.detail || err.message),
+            (err.response?.data?.detail || err.message),
           "error"
         );
         return;
@@ -951,8 +1102,8 @@ export default function RDECreateJobOrder() {
         test.datasetRefreshed === "Yes"
           ? true
           : test.datasetRefreshed === "No"
-            ? false
-            : null,
+          ? false
+          : null,
       ess: test.ess || "",
       mode: test.mode || "",
       hardware_change: test.hardwareChange || "",
@@ -988,10 +1139,10 @@ export default function RDECreateJobOrder() {
 
       showSnackbar(
         "Test Order Created! ID: " +
-        response.data.test_order_id +
-        (hasTestSpecificCoastDownData
-          ? " | Coast Down Data ID: " + CoastDownData_id
-          : ""),
+          response.data.test_order_id +
+          (hasTestSpecificCoastDownData
+            ? " | Coast Down Data ID: " + CoastDownData_id
+            : ""),
         "success"
       );
       handleSendMail(2, job_order_id, response.data.test_order_id); // Assuming caseId is 2 for now
@@ -1000,7 +1151,7 @@ export default function RDECreateJobOrder() {
       console.error("Error creating test order:", err);
       showSnackbar(
         "Failed to create test order: " +
-        (err.response?.data?.detail || err.message),
+          (err.response?.data?.detail || err.message),
         "error"
       );
     }
@@ -1157,8 +1308,8 @@ export default function RDECreateJobOrder() {
           testOrder.dataset_flashed === true
             ? "Yes"
             : testOrder.dataset_flashed === false
-              ? "No"
-              : "",
+            ? "No"
+            : "",
         ess: testOrder.ess || "",
         mode: testOrder.mode || "",
         hardwareChange: testOrder.hardware_change || "",
@@ -1210,8 +1361,8 @@ export default function RDECreateJobOrder() {
         test.datasetRefreshed === "Yes"
           ? true
           : test.datasetRefreshed === "No"
-            ? false
-            : null,
+          ? false
+          : null,
       ess: test.ess || "",
       mode: test.mode || "",
       hardware_change: test.hardwareChange || "",
@@ -1237,7 +1388,7 @@ export default function RDECreateJobOrder() {
     } catch (err) {
       showSnackbar(
         "Failed to update test order: " +
-        (err.response?.data?.detail || err.message),
+          (err.response?.data?.detail || err.message),
         "error"
       );
     }
@@ -1282,13 +1433,97 @@ export default function RDECreateJobOrder() {
       setForm((prev) => ({ ...prev, [field]: "" }));
       return;
     }
-    // Allow only numbers (including decimals)
+    
+    // Special handling for cdReportRef - allow any text
+    if (field === "cdReportRef") {
+      setCdFieldErrors((prev) => ({ ...prev, [field]: "" }));
+      setForm((prev) => ({ ...prev, [field]: value }));
+      return;
+    }
+    
+    // Allow only numbers (including decimals) for other fields
     if (/^-?\d*\.?\d*$/.test(value)) {
       setCdFieldErrors((prev) => ({ ...prev, [field]: "" }));
       setForm((prev) => ({ ...prev, [field]: value }));
     } else {
-      setCdFieldErrors((prev) => ({ ...prev, [field]: "Please enter valid numbers" }));
+      setCdFieldErrors((prev) => ({
+        ...prev,
+        [field]: "Please enter valid numbers",
+      }));
     }
+  };
+
+  // Validation function for Coast Down Data fields
+  const validateCoastDownData = (test) => {
+    const requiredFields = [
+      { field: 'cdReportRef', label: 'Coast Down Test Report Reference' },
+      { field: 'vehicleRefMass', label: 'Vehicle Reference Mass' },
+      { field: 'aN', label: 'A (N)' },
+      { field: 'bNkmph', label: 'B (N/kmph)' },
+      { field: 'cNkmph2', label: 'C (N/kmph^2)' },
+      { field: 'f0N', label: 'F0 (N)' },
+      { field: 'f1Nkmph', label: 'F1 (N/kmph)' },
+      { field: 'f2Nkmph2', label: 'F2 (N/kmph^2)' }
+    ];
+
+    const missingFields = [];
+
+    for (const { field, label } of requiredFields) {
+      const testValue = test[field];
+      const formValue = form[field];
+      if (!testValue && !formValue) {
+        missingFields.push(label);
+      }
+    }
+
+    return missingFields;
+  };
+
+  // Helper to check if a test object satisfies required fields and attachments
+  const isTestValid = (test) => {
+    if (!test) return false;
+
+    const requiredKeys = [
+      'testType',
+      'objective',
+      'vehicleLocation',
+      'cycleGearShift',
+      'inertiaClass',
+      'datasetName',
+      'mode',
+      'shift',
+      'fuelType',
+      'hardwareChange',
+      'equipmentRequired',
+      'dpf',
+      'ess',
+      'preferredDate',
+      'emissionCheckDate',
+      'specificInstruction'
+    ];
+
+    for (const key of requiredKeys) {
+      const val = test[key];
+      if (val === undefined || val === null) return false;
+      if (typeof val === 'string' && val.trim() === '') return false;
+    }
+
+    // dataset flashed may be stored as datasetflashed or datasetRefreshed
+    const datasetFlashed = (test.datasetflashed || test.datasetRefreshed || '').toString().trim();
+    if (!datasetFlashed) return false;
+
+    // If DPF is Yes, require regen value
+    if (test.dpf === 'Yes') {
+      const regen = test.dpfRegenOccurs;
+      if (regen === undefined || regen === null || (typeof regen === 'string' && regen.trim() === '')) return false;
+    }
+
+    // Require attachments
+    const hasDataset = Array.isArray(test.Dataset_attachment) && test.Dataset_attachment.length > 0;
+    const hasExperiment = Array.isArray(test.Experiment_attachment) && test.Experiment_attachment.length > 0;
+    if (!hasDataset || !hasExperiment) return false;
+
+    return true;
   };
 
   // Modal component
@@ -1333,6 +1568,7 @@ export default function RDECreateJobOrder() {
   const { userId, userName } = useAuth();
   const isTestEngineer = userRole === "TestEngineer";
   const isProjectTeam = userRole === "ProjectTeam";
+  const isAdmin = userRole == "Admin";
 
   // Helper function to determine if test fields should be editable
   const areTestFieldsEditable = (test, idx) => {
@@ -1375,7 +1611,7 @@ export default function RDECreateJobOrder() {
             </Button>
             <Button
               variant="outline"
-              className="bg-red-600 text-white px-3 py-1 rounded"
+              className="bg-red-600 text-white px-3 py-1 rounded-full"
             >
               RDE Job Order
             </Button>
@@ -1391,318 +1627,363 @@ export default function RDECreateJobOrder() {
           </div>
         </div>
 
-        {/* Form Row */}
-        <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6 px-8 py-6">
-          {/* Project Code */}
-          <div className="flex flex-col space-y-2">
-            <Label htmlFor="projectCode" className="text-sm font-medium leading-tight">
-              Project <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={form.projectCode}
-              onValueChange={(value) => handleChange("projectCode", value)}
-              required
-              disabled={formDisabled}
-            >
-              <SelectTrigger className="w-full h-10">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                {projectOptions.map((code) => (
-                  <SelectItem key={code} value={code}>
-                    {code}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Vehicle Body Number */}
-          <div className="flex flex-col space-y-2">
-            <Label htmlFor="vehicleBodyNumber" className="text-sm font-medium leading-tight">
-              Vehicle Body Number <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={form.vehicleBodyNumber}
-              onValueChange={handleVehicleBodyChange}
-              required
-              disabled={formDisabled || !form.projectCode}
-            >
-              <SelectTrigger className="w-full h-10">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                {projectVehicles.map((item, index) => (
-                  <SelectItem
-                    key={`${item.vehicle_body_number}-${index}`}
-                    value={item.vehicle_body_number}
-                  >
-                    {item.vehicle_body_number}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Vehicle Number (auto) */}
-          <div className="flex flex-col space-y-2">
-            <Label htmlFor="vehicleSerialNumber" className="text-sm font-medium leading-tight">
-              Vehicle Number <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="vehicleSerialNumber"
-              value={form.vehicleSerialNumber}
-              readOnly
-              className="w-full h-10"
-              placeholder="Auto-fetched"
-              required
-              disabled={formDisabled}
-            />
-          </div>
-          {/* Engine Number (dropdown) */}
-          <div className="flex flex-col space-y-2">
-            <Label htmlFor="engineNumber" className="text-sm font-medium leading-tight">
-              Engine Number <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={form.engineNumber}
-              onValueChange={handleEngineNumberChange}
-              required
-              disabled={formDisabled || !form.vehicleBodyNumber}
-            >
-              <SelectTrigger className="w-full h-10">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                {vehicleEngineNumbers.map((engineNumber) => (
-                  <SelectItem key={engineNumber} value={engineNumber}>
-                    {engineNumber}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Type of Engine */}
-          <div className="flex flex-col space-y-2">
-            <Label htmlFor="engineType" className="text-sm font-medium leading-tight">
-              Type of Engine <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={form.engineType}
-              onValueChange={(value) => handleChange("engineType", value)}
-              required
-              disabled={formDisabled}
-            >
-              <SelectTrigger className="w-full h-10">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Gasoline">Gasoline</SelectItem>
-                <SelectItem value="Diesel">Diesel</SelectItem>
-                <SelectItem value="CNG">CNG</SelectItem>
-                <SelectItem value="HYBRID">HYBRID</SelectItem>
-                <SelectItem value="ePT">ePT</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Domain */}
-          <div className="flex flex-col space-y-2">
-            <Label htmlFor="domain" className="text-sm font-medium leading-tight">
-              Domain <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={form.domain}
-              onValueChange={(value) => handleChange("domain", value)}
-              required
-              disabled={formDisabled}
-            >
-              <SelectTrigger className="w-full h-10">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                {domainOptions.map((domain) => (
-                  <SelectItem key={domain} value={domain}>
-                    {domain}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Department */}
-          <div className="flex flex-col space-y-2">
-            <Label htmlFor="department" className="text-sm font-medium leading-tight">
-              Department <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={form.department}
-              onValueChange={(value) => handleChange("department", value)}
-              required
-              disabled={true}
-            >
-              <SelectTrigger className="w-full h-10">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                {departments.map((dep) => (
-                  <SelectItem key={dep} value={dep}>
-                    {dep}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </form>
+        <div className="mb-6" />
 
-        {/* New fields below the main form row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6 px-8 pb-6">
-          {/* WBS Code */}
-          <div className="flex flex-col space-y-2">
-            <Label htmlFor="wbsCode" className="text-sm font-medium leading-tight">
-              WBS Code <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="wbsCode"
-              value={form.wbsCode}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, wbsCode: e.target.value }))
-              }
-              className="w-full h-10"
-              required
-              disabled={formDisabled}
-              placeholder="Enter WBS Code"
-            />
-          </div>
-          {/* Vehicle GVW */}
-          <div className="flex flex-col space-y-2">
-            <Label htmlFor="vehicleGVW" className="text-sm font-medium leading-tight">
-              Vehicle GVW (Kg) <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="vehicleGVW"
-              value={form.vehicleGVW}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, vehicleGVW: e.target.value }))
-              }
-              className="w-full h-10"
-              required
-              disabled={formDisabled}
-              placeholder="Enter GVW"
-              type="number"
-              min="0"
-            />
-          </div>
-          {/* Vehicle Kerb weight */}
-          <div className="flex flex-col space-y-2">
-            <Label htmlFor="vehicleKerbWeight" className="text-sm font-medium leading-tight">
-              Vehicle Kerb Weight (Kg) <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="vehicleKerbWeight"
-              value={form.vehicleKerbWeight}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  vehicleKerbWeight: e.target.value,
-                }))
-              }
-              className="w-full h-10"
-              required
-              disabled={formDisabled}
-              placeholder="Enter Kerb Weight"
-              type="number"
-              min="0"
-            />
-          </div>
-          {/* Vehicle Test Payload criteria */}
-          <div className="flex flex-col space-y-2">
-            <Label htmlFor="vehicleTestPayloadCriteria" className="text-sm font-medium leading-tight whitespace-nowrap">
-              Vehicle Test Payload Criteria (Kg) <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={form.vehicleTestPayloadCriteria}
-              onValueChange={(value) => {
-                setForm((prev) => ({
-                  ...prev,
-                  vehicleTestPayloadCriteria: value,
-                  requestedPayloadKg: value === "Manual Entry" ? prev.requestedPayloadKg : "",
-                }));
-              }}
-              required
-              disabled={formDisabled}
-            >
-              <SelectTrigger className="w-full h-10">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Legislation">Legislation</SelectItem>
-                <SelectItem value="Manual Entry">Customized Payload</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Show manual entry field only if 'Manual Entry' is selected */}
-          {form.vehicleTestPayloadCriteria === "Manual Entry" && (
-            <div className="flex flex-col space-y-2 space-x-12">
-              <Label htmlFor="requestedPayloadKg" className="text-sm font-medium leading-tight whitespace-nowrap pl-12">
-                Requested Payload (Kg) <span className="text-red-500">*</span>
+        {/* Main Job Order Form */}
+        <div className="bg-white-300 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
+          <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Project Code */}
+            <div>
+              <Label
+                htmlFor="projectCode"
+                className="text-sm text-gray-600 mb-1 block"
+              >
+                Project <span className="text-red-500">*</span>
               </Label>
-              <Input
-                id="requestedPayloadKg"
-                value={form.requestedPayloadKg}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    requestedPayloadKg: e.target.value,
-                  }))
-                }
+              <Select
+                value={form.projectCode}
+                onValueChange={(value) => handleChange("projectCode", value)}
                 required
                 disabled={formDisabled}
-                className="w-full h-10"
-                placeholder="Enter Requested Payload"
+              >
+                <SelectTrigger className="w-full h-10 border-gray-300">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projectOptions.map((code) => (
+                    <SelectItem key={code} value={code}>
+                      {code}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Vehicle Body Number */}
+            <div>
+              <Label
+                htmlFor="vehicleBodyNumber"
+                className="text-sm text-gray-600 mb-1 block"
+              >
+                Vehicle Body Number <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={form.vehicleBodyNumber}
+                onValueChange={handleVehicleBodyChange}
+                required
+                disabled={formDisabled || !form.projectCode}
+              >
+                <SelectTrigger className="w-full h-10 border-gray-300">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projectVehicles.map((item, index) => (
+                    <SelectItem
+                      key={`${item.vehicle_body_number}-${index}`}
+                      value={item.vehicle_body_number}
+                    >
+                      {item.vehicle_body_number}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Vehicle Serial Number */}
+            <div>
+              <Label
+                htmlFor="vehicleSerialNumber"
+                className="text-sm text-gray-600 mb-1 block"
+              >
+                Vehicle Serial Number <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="vehicleSerialNumber"
+                value={form.vehicleSerialNumber}
+                readOnly
+                className="w-full h-10 border-gray-300 bg-gray-50"
+                placeholder="Auto-fetched"
+                required
+                disabled={formDisabled}
+              />
+            </div>
+            {/* Engine Serial Number */}
+            <div>
+              <Label
+                htmlFor="engineNumber"
+                className="text-sm text-gray-600 mb-1 block"
+              >
+                Engine Serial Number <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={form.engineNumber}
+                onValueChange={handleEngineNumberChange}
+                required
+                disabled={formDisabled || !form.vehicleBodyNumber}
+              >
+                <SelectTrigger className="w-full h-10 border-gray-300">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vehicleEngineNumbers.map((engineNumber) => (
+                    <SelectItem key={engineNumber} value={engineNumber}>
+                      {engineNumber}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Type of Engine */}
+                      <div>
+                        <Label
+                          htmlFor="engineType"
+                          className="text-sm text-gray-600 mb-1 block"
+                        >
+                          Type of Engine <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={form.engineType}
+                          onValueChange={(value) => handleChange("engineType", value)}
+                          required
+                          disabled={formDisabled || isTestEngineer}
+                        >
+                          <SelectTrigger className="w-full h-10 border-gray-300">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Gasoline">Gasoline</SelectItem>
+                            <SelectItem value="Diesel">Diesel</SelectItem>
+                            <SelectItem value="CNG">CNG</SelectItem>
+                            <SelectItem value="HYBRID">HYBRID</SelectItem>
+                            <SelectItem value="ePT">ePT</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {/* Domain */}
+                      <div>
+                        <Label
+                          htmlFor="domain"
+                          className="text-sm text-gray-600 mb-1 block"
+                        >
+                          Domain <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={form.domain}
+                          onValueChange={(value) => handleChange("domain", value)}
+                          required
+                          disabled={formDisabled || isTestEngineer}
+                        >
+                          <SelectTrigger className="w-full h-10 border-gray-300">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {domainOptions.map((domain) => (
+                              <SelectItem key={domain} value={domain}>
+                                {domain}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {/* Department */}
+                      <div>
+                        <Label
+                          htmlFor="department"
+                          className="text-sm text-gray-600 mb-1 block"
+                        >
+                          Department <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={form.department}
+                          onValueChange={(value) => handleChange("department", value)}
+                          required
+                          disabled={true}
+                        >
+                          <SelectTrigger className="w-full h-10 border-gray-300">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {departments.map((dep) => (
+                              <SelectItem key={dep} value={dep}>
+                                {dep}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+          </form>
+
+          {/* Second row of fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+            {/* WBS Code */}
+            <div>
+              <Label
+                htmlFor="wbsCode"
+                className="text-sm text-gray-600 mb-1 block"
+              >
+                WBS Code <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="wbsCode"
+                value={form.wbsCode}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, wbsCode: e.target.value }))
+                }
+                className="w-full h-10 border-gray-300"
+                required
+                disabled={formDisabled}
+                placeholder="Enter WBS Code"
+              />
+            </div>
+
+            {/* Vehicle GVW */}
+            <div>
+              <Label
+                htmlFor="vehicleGVW"
+                className="text-sm text-gray-600 mb-1 block"
+              >
+                Vehicle GVW (Kg) <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="vehicleGVW"
+                value={form.vehicleGVW}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, vehicleGVW: e.target.value }))
+                }
+                className="w-full h-10 border-gray-300"
+                required
+                disabled={formDisabled}
+                placeholder="Enter GVW"
                 type="number"
                 min="0"
               />
             </div>
-          )}
-          {/* Idle Exhaust Mass Flow */}
-          <div className="flex flex-col space-y-2 space-x-14">
-            <Label htmlFor="idleExhaustMassFlow" className="text-sm font-medium leading-tight whitespace-nowrap pl-14">
-              Idle Exhaust Mass Flow (Kg/hr) <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="idleExhaustMassFlow"
-              value={form.idleExhaustMassFlow}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  idleExhaustMassFlow: e.target.value,
-                }))
-              }
-              className="w-full h-10"
-              required
-              disabled={formDisabled}
-              placeholder="Enter Idle Exhaust Mass Flow"
-              type="number"
-              min="0"
-            />
+
+            {/* Vehicle Kerb weight */}
+            <div>
+              <Label
+                htmlFor="vehicleKerbWeight"
+                className="text-sm text-gray-600 mb-1 block"
+              >
+                Vehicle Kerb Weight (Kg) <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="vehicleKerbWeight"
+                value={form.vehicleKerbWeight}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    vehicleKerbWeight: e.target.value,
+                  }))
+                }
+                className="w-full h-10 border-gray-300"
+                required
+                disabled={formDisabled}
+                placeholder="Enter Kerb Weight"
+                type="number"
+                min="0"
+              />
+            </div>
+
+            {/* Vehicle Test Payload criteria */}
+            <div>
+              <Label
+                htmlFor="vehicleTestPayloadCriteria"
+                className="text-sm text-gray-600 mb-1 block"
+              >
+                Vehicle Test Payload Criteria (Kg){" "}
+                <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={form.vehicleTestPayloadCriteria}
+                onValueChange={(value) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    vehicleTestPayloadCriteria: value,
+                    requestedPayloadKg:
+                      value === "Manual Entry" ? prev.requestedPayloadKg : "",
+                  }));
+                }}
+                required
+                disabled={formDisabled}
+              >
+                <SelectTrigger className="w-full h-10 border-gray-300">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Legislation">Legislation</SelectItem>
+                  <SelectItem value="Manual Entry">
+                    Customized Payload
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Show manual entry field only if 'Manual Entry' is selected */}
+            {form.vehicleTestPayloadCriteria === "Manual Entry" && (
+              <div className="flex flex-col">
+                <Label htmlFor="requestedPayloadKg" className="mb-2">
+                  Requested Payload (Kg) <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="requestedPayloadKg"
+                  value={form.requestedPayloadKg}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      requestedPayloadKg: e.target.value,
+                    }))
+                  }
+                  required
+                  disabled={formDisabled}
+                  className="w-full"
+                  placeholder="Enter Requested Payload"
+                  type="number"
+                  min="0"
+                />
+              </div>
+            )}
+
+            {/* Idle Exhaust Mass Flow */}
+            <div className="flex flex-col">
+              <Label htmlFor="idleExhaustMassFlow" className="mb-2">
+                Idle Exhaust Mass Flow (Kg/hr){" "}
+                <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="idleExhaustMassFlow"
+                value={form.idleExhaustMassFlow}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    idleExhaustMassFlow: e.target.value,
+                  }))
+                }
+                className="w-full"
+                required
+                disabled={formDisabled}
+                placeholder="Enter Idle Exhaust Mass Flow"
+                type="number"
+                min="0"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Editable Vehicle Details Accordion */}
+        {/* Vehicle Details Card (Chennai style) */}
         {form.vehicleBodyNumber && vehicleEditable && (
-          <div className="mx-8 mt-4 mb-6 border rounded shadow">
+          <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
             <div
-              className="flex items-center justify-between bg-gray-100 border-t-4 border-red-600 px-4 py-3 cursor-pointer"
+              className="flex items-center justify-between bg-gray-100 dark:bg-black border-t-4 border-red-600 px-4 py-2 cursor-pointer"
               onClick={() => setVehicleAccordionOpen((prev) => !prev)}
             >
-              <span className="font-semibold text-sm">
-                Vehicle Details
-              </span>
+              <span className="font-semibold text-sm">Vehicle Details</span>
               <span>{vehicleAccordionOpen ? "▲" : "▼"}</span>
             </div>
             {vehicleAccordionOpen && (
-              <form className="bg-white px-6 py-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
+              <form className="bg-white px-4 py-4 dark:bg-black">
+                <div className="grid grid-cols-4 gap-4 text-xs">
                   {Object.entries(vehicleEditable).map(([label, value]) => (
-                    <div key={label} className="flex flex-col space-y-2">
-                      <Label className="font-medium capitalize leading-tight">
+                    <div key={label} className="flex flex-col">
+                      <Label className="font-semibold capitalize">
                         {label.replace(/_/g, " ")}
                       </Label>
                       <Input
@@ -1710,7 +1991,7 @@ export default function RDECreateJobOrder() {
                         onChange={(e) =>
                           handleVehicleEditableChange(label, e.target.value)
                         }
-                        className="h-10"
+                        className="mt-1"
                         disabled={!vehicleEditMode || isTestEngineer}
                       />
                     </div>
@@ -1721,24 +2002,22 @@ export default function RDECreateJobOrder() {
           </div>
         )}
 
-        {/* Editable Engine Details Accordion */}
+        {/* Engine Details Card (Chennai style) */}
         {form.engineNumber && engineEditable && (
-          <div className="mx-8 mt-4 mb-6 border rounded shadow">
+          <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
             <div
-              className="flex items-center justify-between bg-gray-100 border-t-4 border-blue-600 px-4 py-3 cursor-pointer"
+              className="flex items-center justify-between bg-gray-100 dark:bg-black border-t-4 border-blue-600 px-4 py-2 cursor-pointer"
               onClick={() => setEngineAccordionOpen((prev) => !prev)}
             >
-              <span className="font-semibold text-sm">
-                Engine Details
-              </span>
+              <span className="font-semibold text-sm">Engine Details</span>
               <span>{engineAccordionOpen ? "▲" : "▼"}</span>
             </div>
             {engineAccordionOpen && (
-              <form className="bg-white px-6 py-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
+              <form className="bg-white dark:bg-black px-4 py-4">
+                <div className="grid grid-cols-4 gap-4 text-xs">
                   {Object.entries(engineEditable).map(([label, value]) => (
-                    <div key={label} className="flex flex-col space-y-2">
-                      <Label className="font-medium capitalize leading-tight">
+                    <div key={label} className="flex flex-col">
+                      <Label className="font-semibold capitalize">
                         {label.replace(/_/g, " ")}
                       </Label>
                       <Input
@@ -1746,7 +2025,7 @@ export default function RDECreateJobOrder() {
                         onChange={(e) =>
                           handleEngineEditableChange(label, e.target.value)
                         }
-                        className="h-10"
+                        className="mt-1"
                         disabled={!engineEditMode || isTestEngineer}
                       />
                     </div>
@@ -1757,169 +2036,214 @@ export default function RDECreateJobOrder() {
           </div>
         )}
 
-        {/* Coast Down Data (CD) Section */}
-        <div className="mx-8 mb-6 border rounded shadow px-6 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <Label htmlFor="cdReportRef" className="text-sm font-medium">
-                Coast Down Test Report Reference
-              </Label>
-              {location.state?.isEdit && existingCoastDownId && (
-                <span className="text-sm text-blue-600 ml-2">
-                  {/* (Editing existing data - ID: {existingCoastDownId}) */}
-                </span>
-              )}
+        {/* Coast Down Test Report Reference Card
+        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
+
+          <div className="mb-6">
+            <Label
+              htmlFor="cdReportRef"
+              className="text-sm text-gray-600 mb-1 block"
+            >
+              Coast Down Test Report Reference
+            </Label>
+            <Input
+              id="cdReportRef"
+              placeholder="Enter Coast Test Report Ref."
+              className="w-full h-10 border-gray-300"
+              value={form.cdReportRef}
+              onChange={(e) =>
+                handleCDNumberInput("cdReportRef", e.target.value)
+              }
+              disabled={formDisabled || isTestEngineer}
+            />
+            {cdFieldErrors.cdReportRef && (
+              <div className="text-red-600 text-sm mt-1">
+                {cdFieldErrors.cdReportRef}
+              </div>
+            )}
+          </div>
+
+          <div className="mb-4">
+            <div className="text-sm font-medium text-gray-700 mb-4">
+              CD Values
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <Label
+                  htmlFor="vehicleRefMass"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  Vehicle Reference mass (Kg)
+                </Label>
+                <Input
+                  id="vehicleRefMass"
+                  placeholder="Enter Reference Mass"
+                  className="w-full h-10 border-gray-300"
+                  value={form.vehicleRefMass}
+                  onChange={(e) =>
+                    handleCDNumberInput("vehicleRefMass", e.target.value)
+                  }
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.vehicleRefMass && (
+                  <div className="text-red-600 text-sm mt-1">
+                    {cdFieldErrors.vehicleRefMass}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="aN"
+                  className="text-sm text-gray-600 mb-1 block"
+                >
+                  A (N)
+                </Label>
+                <Input
+                  id="aN"
+                  placeholder="Enter A (N)"
+                  className="w-full h-10 border-gray-300"
+                  value={form.aN}
+                  onChange={(e) => handleCDNumberInput("aN", e.target.value)}
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.aN && (
+                  <div className="text-red-600 text-sm mt-1">
+                    {cdFieldErrors.aN}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col">
+                <Label htmlFor="bNkmph" className="mb-2">
+                  B (N/kmph)
+                </Label>
+                <Input
+                  id="bNkmph"
+                  placeholder="Enter B (N/kmph)"
+                  className="w-full"
+                  value={form.bNkmph}
+                  onChange={(e) =>
+                    handleCDNumberInput("bNkmph", e.target.value)
+                  }
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.bNkmph && (
+                  <div className="text-red-600 text-sm mt-1">
+                    {cdFieldErrors.bNkmph}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col">
+                <Label htmlFor="cNkmph2" className="mb-2">
+                  C (N/kmph²)
+                </Label>
+                <Input
+                  id="cNkmph2"
+                  placeholder="Enter C (N/kmph²)"
+                  className="w-full"
+                  value={form.cNkmph2}
+                  onChange={(e) =>
+                    handleCDNumberInput("cNkmph2", e.target.value)
+                  }
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.cNkmph2 && (
+                  <div className="text-red-600 text-sm mt-1">
+                    {cdFieldErrors.cNkmph2}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col">
+                <Label htmlFor="f0N" className="mb-2">
+                  F0 (N)
+                </Label>
+                <Input
+                  id="f0N"
+                  placeholder="Enter F0 (N)"
+                  className="w-full"
+                  value={form.f0N}
+                  onChange={(e) => handleCDNumberInput("f0N", e.target.value)}
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.f0N && (
+                  <div className="text-red-600 text-sm mt-1">
+                    {cdFieldErrors.f0N}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col">
+                <Label htmlFor="f1Nkmph" className="mb-2">
+                  F1 (N/kmph)
+                </Label>
+                <Input
+                  id="f1Nkmph"
+                  placeholder="Enter F1 (N/kmph)"
+                  className="w-full"
+                  value={form.f1Nkmph}
+                  onChange={(e) =>
+                    handleCDNumberInput("f1Nkmph", e.target.value)
+                  }
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.f1Nkmph && (
+                  <div className="text-red-600 text-sm mt-1">
+                    {cdFieldErrors.f1Nkmph}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col">
+                <Label htmlFor="f2Nkmph2" className="mb-2">
+                  F2 (N/kmph²)
+                </Label>
+                <Input
+                  id="f2Nkmph2"
+                  placeholder="Enter F2 (N/kmph²)"
+                  className="w-full"
+                  value={form.f2Nkmph2}
+                  onChange={(e) =>
+                    handleCDNumberInput("f2Nkmph2", e.target.value)
+                  }
+                  disabled={formDisabled || isTestEngineer}
+                />
+                {cdFieldErrors.f2Nkmph2 && (
+                  <div className="text-red-600 text-sm mt-1">
+                    {cdFieldErrors.f2Nkmph2}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          <Input
-            id="cdReportRef"
-            placeholder="Enter Coast Test Report Ref."
-            className="w-full max-w-md h-10 mb-4"
-            value={form.cdReportRef}
-            onChange={(e) => handleCDNumberInput("cdReportRef", e.target.value)}
-            disabled={formDisabled || isTestEngineer}
-          />
-          {cdFieldErrors.cdReportRef && (
-            <div className="text-red-600 text-xs mb-4">{cdFieldErrors.cdReportRef}</div>
-          )}
 
-          <div className="mb-4 font-semibold text-sm">CD Values</div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6">
-            <div className="flex flex-col space-y-2">
-              <Label htmlFor="vehicleRefMass" className="text-sm font-medium leading-tight">
-                Vehicle Reference Mass (Kg)
-              </Label>
-              <Input
-                id="vehicleRefMass"
-                placeholder="Enter Reference Mass"
-                className="h-10"
-                value={form.vehicleRefMass}
-                onChange={(e) => handleCDNumberInput("vehicleRefMass", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.vehicleRefMass && (
-                <div className="text-red-600 text-xs">{cdFieldErrors.vehicleRefMass}</div>
-              )}
-            </div>
-            <div className="flex flex-col space-y-2">
-              <Label htmlFor="aN" className="text-sm font-medium leading-tight">
-                A (N)
-              </Label>
-              <Input
-                id="aN"
-                placeholder="Enter A (N)"
-                className="h-10"
-                value={form.aN}
-                onChange={(e) => handleCDNumberInput("aN", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.aN && (
-                <div className="text-red-600 text-xs">{cdFieldErrors.aN}</div>
-              )}
-            </div>
-            <div className="flex flex-col space-y-2">
-              <Label htmlFor="bNkmph" className="text-sm font-medium leading-tight">
-                B (N/kmph)
-              </Label>
-              <Input
-                id="bNkmph"
-                placeholder="Enter B (N/kmph)"
-                className="h-10"
-                value={form.bNkmph}
-                onChange={(e) => handleCDNumberInput("bNkmph", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.bNkmph && (
-                <div className="text-red-600 text-xs">{cdFieldErrors.bNkmph}</div>
-              )}
-            </div>
-            <div className="flex flex-col space-y-2">
-              <Label htmlFor="cNkmph2" className="text-sm font-medium leading-tight">
-                C (N/kmph²)
-              </Label>
-              <Input
-                id="cNkmph2"
-                placeholder="Enter C (N/kmph²)"
-                className="h-10"
-                value={form.cNkmph2}
-                onChange={(e) => handleCDNumberInput("cNkmph2", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.cNkmph2 && (
-                <div className="text-red-600 text-xs">{cdFieldErrors.cNkmph2}</div>
-              )}
-            </div>
-            <div className="flex flex-col space-y-2">
-              <Label htmlFor="f0N" className="text-sm font-medium leading-tight">
-                F0 (N)
-              </Label>
-              <Input
-                id="f0N"
-                placeholder="Enter F0 (N)"
-                className="h-10"
-                value={form.f0N}
-                onChange={(e) => handleCDNumberInput("f0N", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.f0N && (
-                <div className="text-red-600 text-xs">{cdFieldErrors.f0N}</div>
-              )}
-            </div>
-            <div className="flex flex-col space-y-2">
-              <Label htmlFor="f1Nkmph" className="text-sm font-medium leading-tight">
-                F1 (N/kmph)
-              </Label>
-              <Input
-                id="f1Nkmph"
-                placeholder="Enter F1 (N/kmph)"
-                className="h-10"
-                value={form.f1Nkmph}
-                onChange={(e) => handleCDNumberInput("f1Nkmph", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.f1Nkmph && (
-                <div className="text-red-600 text-xs">{cdFieldErrors.f1Nkmph}</div>
-              )}
-            </div>
-            <div className="flex flex-col space-y-2">
-              <Label htmlFor="f2Nkmph2" className="text-sm font-medium leading-tight">
-                F2 (N/kmph²)
-              </Label>
-              <Input
-                id="f2Nkmph2"
-                placeholder="Enter F2 (N/kmph²)"
-                className="h-10"
-                value={form.f2Nkmph2}
-                onChange={(e) => handleCDNumberInput("f2Nkmph2", e.target.value)}
-                disabled={formDisabled || isTestEngineer}
-              />
-              {cdFieldErrors.f2Nkmph2 && (
-                <div className="text-red-600 text-xs">{cdFieldErrors.f2Nkmph2}</div>
-              )}
-            </div>
-          </div>
           {cdError && (
-            <div className="text-red-600 text-xs mt-4">{cdError}</div>
+            <div className="text-red-600 text-sm mb-4">{cdError}</div>
           )}
-          <div className="flex items-center mt-6 gap-4">
+
+          <div className="flex items-center gap-4">
             <Button
-              className="bg-white text-red-900 border border-red-900 text-sm px-6 py-2 rounded hover:bg-red-50"
+              className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
               onClick={handleRDECreateJobOrder}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
             {location.state?.isEdit && existingCoastDownId && (
               <Button
-                className="bg-blue-600 text-white text-sm px-6 py-2 rounded hover:bg-blue-700"
+                className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
                 onClick={async () => {
                   try {
                     await handleUpdateCoastDownData(existingCoastDownId);
-                    showSnackbar("Coast Down Data updated successfully!", "success");
+                    showSnackbar(
+                      "Coast Down Data updated successfully!",
+                      "success"
+                    );
                   } catch (err) {
                     showSnackbar(
                       "Failed to update coast down data: " +
-                      (err.response?.data?.detail || err.message),
+                        (err.response?.data?.detail || err.message),
                       "error"
                     );
                   }
@@ -1929,8 +2253,45 @@ export default function RDECreateJobOrder() {
               </Button>
             )}
             <Button
-              className="bg-white text-red-900 border border-red-900 text-sm px-6 py-2 rounded hover:bg-red-50"
+              className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400"
               type="button"
+              onClick={() =>
+                setForm((prev) => ({
+                  ...prev,
+                  cdReportRef: "",
+                  vehicleRefMass: "",
+                  aN: "",
+                  bNkmph: "",
+                  cNkmph2: "",
+                  f0N: "",
+                  f1Nkmph: "",
+                  f2Nkmph2: "",
+                }))
+              }
+            >
+              CLEAR
+            </Button>
+          </div>
+        </div> */}
+
+        {/* Job Order Buttons */}
+        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
+          {cdError && (
+            <div className="text-red-600 text-sm mb-4">{cdError}</div>
+          )}
+
+          <div className="flex items-center gap-4">
+            <Button
+              className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
+              onClick={handleRDECreateJobOrder}
+              disabled={isTestEngineer || (location.state?.isEdit && isProjectTeam)}
+            >
+              {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
+            </Button>
+            <Button
+              className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400"
+              type="button"
+              disabled={location.state?.isEdit && isProjectTeam}
               onClick={() =>
                 setForm((prev) => ({
                   ...prev,
@@ -1952,11 +2313,16 @@ export default function RDECreateJobOrder() {
 
         {/* Test Actions */}
         {/* Test Actions */}
-        <div className="flex items-center mt-4 gap-6 px-8">
+        <div className="flex items-center mt-4 gap-6 px-8 mb-8">
           <Button
             variant="ghost"
             className="text-xs text-blue-700 px-0"
             onClick={handleAddTest}
+            disabled={
+              isTestEngineer || 
+              isAdmin || 
+              (!location.state?.originalJobOrderId && !location.state?.jobOrder?.job_order_id && !jobOrderId)
+            }
           >
             + ADD TEST
           </Button>
@@ -1966,7 +2332,7 @@ export default function RDECreateJobOrder() {
             onClick={() => {
               setShowCFTPanel((prev) => !prev);
             }}
-            disabled={isTestEngineer}
+            disabled={isTestEngineer || isAdmin}
           >
             {showCFTPanel ? "− CFT MEMBERS" : "+ CFT MEMBERS"}
           </Button>
@@ -1985,54 +2351,27 @@ export default function RDECreateJobOrder() {
 
         {/* Test Forms */}
         {tests.map((test, idx) => (
-          <div
-            key={idx}
-            className="mx-8 mb-4 border rounded shadow px-6 py-4 bg-gray-50"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="font-semibold text-sm text-yellow-700">
+          <div key={idx} className="mx-8 mb-4 border rounded shadow-lg shadow-gray-300/40 px-6 py-4 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
+            <div className="flex items-center justify-between mb-4">
+              <div className="font-semibold text-lg text-gray-800">
                 Test {idx + 1}
               </div>
-              <Button
-                variant="ghost"
-                className="text-xs text-red-600 px-2 py-0"
+              <button
                 type="button"
                 onClick={() => handleDeleteTest(idx)}
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 hover:bg-red-200 transition-colors border border-gray-300 text-gray-600 hover:text-red-600 focus:outline-none"
+                title="Close"
+                style={{ minWidth: 0, padding: 0 }}
               >
-                Delete
-              </Button>
+                <CloseIcon fontSize="small" />
+              </button>
             </div>
+
+            {/* Inputs above attachments */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
               {/* All test fields disabled for TestEngineer except status actions */}
-              <div className="flex flex-col">
-                <Label htmlFor={`engineNumber${idx}`} className="mb-2">
-                  Engine Number <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={test.engineNumber || ""}
-                  onValueChange={(value) => {
-                    if (value !== jobOrder.engine_serial_number) {
-                      showSnackbar && showSnackbar("Warning: You are selecting a different engine number than the main form.", "warning");
-                    }
-                    handleTestChange(idx, "engineNumber", value);
-                  }}
-                  required
-                  disabled={!areTestFieldsEditable(test, idx)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {engineNumbers.map((engineNumber) => (
-                      <SelectItem key={engineNumber} value={engineNumber}>
-                        {engineNumber}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               <div>
-                <Label>Test Type</Label>
+                <Label>Test Type <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.testType}
                   onValueChange={(v) => handleTestChange(idx, "testType", v)}
@@ -2064,7 +2403,7 @@ export default function RDECreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Vehicle Location</Label>
+                <Label>Vehicle Location <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.vehicleLocation}
                   onChange={(e) =>
@@ -2075,7 +2414,7 @@ export default function RDECreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Cycle Gear Shift</Label>
+                <Label>Cycle Gear Shift <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.cycleGearShift}
                   onChange={(e) =>
@@ -2086,7 +2425,7 @@ export default function RDECreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Inertia Class</Label>
+                <Label>Inertia Class <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.inertiaClass}
                   onValueChange={(v) =>
@@ -2110,7 +2449,7 @@ export default function RDECreateJobOrder() {
                 </Select>
               </div>
               <div>
-                <Label>Dataset Name</Label>
+                <Label>Dataset Name <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.datasetName}
                   onChange={(e) =>
@@ -2121,7 +2460,7 @@ export default function RDECreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>DPF</Label>
+                <Label>DPF <span className="text-red-500">*</span></Label>
                 <div className="flex gap-2 mt-2">
                   <label>
                     <input
@@ -2160,7 +2499,7 @@ export default function RDECreateJobOrder() {
               </div>
               {test.dpf === "Yes" && (
                 <div>
-                  <Label>DPF Regen Occurs (g)*</Label>
+                  <Label>DPF Regen Occurs (g) <span className="text-red-500">*</span></Label>
                   <Input
                     value={test.dpfRegenOccurs || ""}
                     onChange={(e) => handleTestChange(idx, "dpfRegenOccurs", e.target.value)}
@@ -2170,7 +2509,7 @@ export default function RDECreateJobOrder() {
                 </div>
               )}
               <div>
-                <Label>Dataset flashed</Label>
+                <Label>Dataset flashed <span className="text-red-500">*</span></Label>
                 <div className="flex gap-2 mt-2">
                   <label>
                     <input
@@ -2201,7 +2540,7 @@ export default function RDECreateJobOrder() {
                 </div>
               </div>
               <div>
-                <Label>ESS</Label>
+                <Label>ESS <span className="text-red-500">*</span></Label>
                 <div className="flex gap-2 mt-2">
                   <label>
                     <input
@@ -2239,7 +2578,7 @@ export default function RDECreateJobOrder() {
                 </div>
               </div>
               <div>
-                <Label>Mode</Label>
+                <Label>Mode <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.mode}
                   onValueChange={(v) => handleTestChange(idx, "mode", v)}
@@ -2258,7 +2597,7 @@ export default function RDECreateJobOrder() {
                 </Select>
               </div>
               <div>
-                <Label>Hardware Change</Label>
+                <Label>Hardware Change <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.hardwareChange}
                   onChange={(e) =>
@@ -2269,7 +2608,7 @@ export default function RDECreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Shift</Label>
+                <Label>Shift <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.shift}
                   onValueChange={(v) => handleTestChange(idx, "shift", v)}
@@ -2287,7 +2626,7 @@ export default function RDECreateJobOrder() {
                 </Select>
               </div>
               <div>
-                <Label>Fuel Type</Label>
+                <Label>Fuel Type <span className="text-red-500">*</span></Label>
                 <Select
                   value={test.fuelType}
                   onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
@@ -2306,7 +2645,7 @@ export default function RDECreateJobOrder() {
                 </Select>
               </div>
               <div>
-                <Label>Equipment Required</Label>
+                <Label>Equipment Required <span className="text-red-500">*</span></Label>
                 <Input
                   value={test.equipmentRequired}
                   onChange={(e) =>
@@ -2317,9 +2656,8 @@ export default function RDECreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Preferred Date</Label>
+                <Label>Preferred Date <span className="text-red-500">*</span></Label>
                 <Input
-
                   type="date"
                   value={test.preferredDate}
                   onChange={(e) =>
@@ -2329,7 +2667,7 @@ export default function RDECreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Emission Check Date</Label>
+                <Label>Emission Check Date <span className="text-red-500">*</span></Label>
                 <Input
                   type="date"
                   value={test.emissionCheckDate}
@@ -2340,7 +2678,7 @@ export default function RDECreateJobOrder() {
                 />
               </div>
               <div className="col-span-2">
-                <Label>Specific Instruction</Label>
+                <Label>Specific Instruction <span className="text-red-500">*</span></Label>
                 <textarea
                   value={test.specificInstruction}
                   onChange={(e) =>
@@ -2348,7 +2686,7 @@ export default function RDECreateJobOrder() {
                   }
                   placeholder="Enter Specific Instructions"
                   disabled={!areTestFieldsEditable(test, idx)}
-                  className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical"
+                  className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical dark:bg-black"
                   style={{ minWidth: "100%", fontSize: "1rem" }}
                   rows={3}
                 />
@@ -2356,58 +2694,79 @@ export default function RDECreateJobOrder() {
             </div>
 
             {/* Attachments Card */}
-            <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
-              <div className="font-semibold text-sm text-gray-700 mb-2">
+            <div className="bg-gray-100 dark:bg-gray-800 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+              <div className="font-semibold text-sm text-gray-700 dark:text-white mb-2">
                 Attachments
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label>Emission Check Attachment</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="flex flex-col">
+                  <Label className="mb-2">Emission Check Attachment</Label>
                   <DropzoneFileList
                     buttonText="Emission Check Attachment"
                     name="Emission_check"
                     maxFiles={5}
                     formData={{
                       ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      originalJobOrderId:
+                        location.state?.originalJobOrderId ||
+                        location.state?.jobOrder?.job_order_id ||
+                        "",
                     }}
                     setFormData={(updatedTest) => {
                       setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        prev.map((t, i) =>
+                          i === idx ? { ...t, ...updatedTest } : t
+                        )
                       );
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => { }}
+                    setSubmitted={() => {}}
                     openModal={!!emissionCheckModals[idx]}
                     handleOpenModal={() =>
-                      setEmissionCheckModals((prev) => ({ ...prev, [idx]: true }))
+                      setEmissionCheckModals((prev) => ({
+                        ...prev,
+                        [idx]: true,
+                      }))
                     }
                     handleCloseModal={() =>
-                      setEmissionCheckModals((prev) => ({ ...prev, [idx]: false }))
+                      setEmissionCheckModals((prev) => ({
+                        ...prev,
+                        [idx]: false,
+                      }))
                     }
                     disabled={false}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    originalJobOrderId={
+                      location.state?.originalJobOrderId ||
+                      location.state?.jobOrder?.job_order_id ||
+                      ""
+                    }
                   />
                 </div>
-                <div>
-                  <Label>Dataset Attachment</Label>
+
+                <div className="flex flex-col">
+                  <Label className="mb-2">Dataset Attachment <span className="text-red-500">*</span></Label>
                   <DropzoneFileList
                     buttonText="Dataset Attachment"
                     name="Dataset_attachment"
                     maxFiles={5}
                     formData={{
                       ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      originalJobOrderId:
+                        location.state?.originalJobOrderId ||
+                        location.state?.jobOrder?.job_order_id ||
+                        "",
                     }}
                     setFormData={(updatedTest) => {
                       setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        prev.map((t, i) =>
+                          i === idx ? { ...t, ...updatedTest } : t
+                        )
                       );
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => { }}
+                    setSubmitted={() => {}}
                     openModal={!!datasetModals[idx]}
                     handleOpenModal={() =>
                       setDatasetModals((prev) => ({ ...prev, [idx]: true }))
@@ -2416,27 +2775,37 @@ export default function RDECreateJobOrder() {
                       setDatasetModals((prev) => ({ ...prev, [idx]: false }))
                     }
                     disabled={false}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    originalJobOrderId={
+                      location.state?.originalJobOrderId ||
+                      location.state?.jobOrder?.job_order_id ||
+                      ""
+                    }
                   />
                 </div>
-                <div>
-                  <Label>A2L Attachment</Label>
+
+                <div className="flex flex-col">
+                  <Label className="mb-2">A2L Attachment</Label>
                   <DropzoneFileList
                     buttonText="A2L Attachment"
                     name="A2L"
                     maxFiles={5}
                     formData={{
                       ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      originalJobOrderId:
+                        location.state?.originalJobOrderId ||
+                        location.state?.jobOrder?.job_order_id ||
+                        "",
                     }}
                     setFormData={(updatedTest) => {
                       setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        prev.map((t, i) =>
+                          i === idx ? { ...t, ...updatedTest } : t
+                        )
                       );
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => { }}
+                    setSubmitted={() => {}}
                     openModal={!!a2lModals[idx]}
                     handleOpenModal={() =>
                       setA2LModals((prev) => ({ ...prev, [idx]: true }))
@@ -2445,27 +2814,37 @@ export default function RDECreateJobOrder() {
                       setA2LModals((prev) => ({ ...prev, [idx]: false }))
                     }
                     disabled={false}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    originalJobOrderId={
+                      location.state?.originalJobOrderId ||
+                      location.state?.jobOrder?.job_order_id ||
+                      ""
+                    }
                   />
                 </div>
-                <div>
-                  <Label>Experiment Attachment</Label>
+
+                <div className="flex flex-col">
+                  <Label className="mb-2">Experiment Attachment <span className="text-red-500">*</span></Label>
                   <DropzoneFileList
                     buttonText="Experiment Attachment"
                     name="Experiment_attachment"
                     maxFiles={5}
                     formData={{
                       ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      originalJobOrderId:
+                        location.state?.originalJobOrderId ||
+                        location.state?.jobOrder?.job_order_id ||
+                        "",
                     }}
                     setFormData={(updatedTest) => {
                       setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        prev.map((t, i) =>
+                          i === idx ? { ...t, ...updatedTest } : t
+                        )
                       );
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => { }}
+                    setSubmitted={() => {}}
                     openModal={!!experimentModals[idx]}
                     handleOpenModal={() =>
                       setExperimentModals((prev) => ({ ...prev, [idx]: true }))
@@ -2474,27 +2853,37 @@ export default function RDECreateJobOrder() {
                       setExperimentModals((prev) => ({ ...prev, [idx]: false }))
                     }
                     disabled={false}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    originalJobOrderId={
+                      location.state?.originalJobOrderId ||
+                      location.state?.jobOrder?.job_order_id ||
+                      ""
+                    }
                   />
                 </div>
-                <div>
-                  <Label>DBC Attachment</Label>
+
+                <div className="flex flex-col">
+                  <Label className="mb-2">DBC Attachment</Label>
                   <DropzoneFileList
                     buttonText="DBC Attachment"
                     name="DBC_attachment"
                     maxFiles={5}
                     formData={{
                       ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      originalJobOrderId:
+                        location.state?.originalJobOrderId ||
+                        location.state?.jobOrder?.job_order_id ||
+                        "",
                     }}
                     setFormData={(updatedTest) => {
                       setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        prev.map((t, i) =>
+                          i === idx ? { ...t, ...updatedTest } : t
+                        )
                       );
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => { }}
+                    setSubmitted={() => {}}
                     openModal={!!dbcModals[idx]}
                     handleOpenModal={() =>
                       setDBCModals((prev) => ({ ...prev, [idx]: true }))
@@ -2503,27 +2892,37 @@ export default function RDECreateJobOrder() {
                       setDBCModals((prev) => ({ ...prev, [idx]: false }))
                     }
                     disabled={false}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    originalJobOrderId={
+                      location.state?.originalJobOrderId ||
+                      location.state?.jobOrder?.job_order_id ||
+                      ""
+                    }
                   />
                 </div>
-                <div>
-                  <Label>WLTP Input Sheet</Label>
+
+                <div className="flex flex-col">
+                  <Label className="mb-2">WLTP Input Sheet</Label>
                   <DropzoneFileList
                     buttonText="WLTP Input Sheet"
                     name="WLTP_input_sheet"
                     maxFiles={5}
                     formData={{
                       ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      originalJobOrderId:
+                        location.state?.originalJobOrderId ||
+                        location.state?.jobOrder?.job_order_id ||
+                        "",
                     }}
                     setFormData={(updatedTest) => {
                       setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        prev.map((t, i) =>
+                          i === idx ? { ...t, ...updatedTest } : t
+                        )
                       );
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => { }}
+                    setSubmitted={() => {}}
                     openModal={!!wltpModals[idx]}
                     handleOpenModal={() =>
                       setWLTPModals((prev) => ({ ...prev, [idx]: true }))
@@ -2532,94 +2931,129 @@ export default function RDECreateJobOrder() {
                       setWLTPModals((prev) => ({ ...prev, [idx]: false }))
                     }
                     disabled={false}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    originalJobOrderId={
+                      location.state?.originalJobOrderId ||
+                      location.state?.jobOrder?.job_order_id ||
+                      ""
+                    }
                   />
                 </div>
               </div>
             </div>
 
-            {/* Testbed Engineers Attachments Card */}
-            <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+            {/* Test Engineers Attachments Card */}
+            <div className="bg-gray-100 border border-gray-300 dark:bg-gray-800 rounded-lg p-4 mt-4 mb-2 shadow-inner">
               <div className="font-semibold text-sm text-gray-700 mb-2">
                 Test Engineers Attachments
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label>PDF Report</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="flex flex-col">
+                  <Label className="mb-2">PDF Report</Label>
                   <DropzoneFileList
                     buttonText="PDF Report"
                     name="PDF_report"
                     maxFiles={5}
                     formData={{
                       ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      originalJobOrderId:
+                        location.state?.originalJobOrderId ||
+                        location.state?.jobOrder?.job_order_id ||
+                        "",
                     }}
                     setFormData={(updatedTest) => {
                       setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        prev.map((t, i) =>
+                          i === idx ? { ...t, ...updatedTest } : t
+                        )
                       );
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => { }}
+                    setSubmitted={() => {}}
                     openModal={!!pdfReportModals[idx]}
                     handleOpenModal={() =>
                       setpdfReportModals((prev) => ({ ...prev, [idx]: true }))
                     }
                     handleCloseModal={() =>
-                      setpdfReportModals((prev) => ({ ...prev, [idx]: false }))
+                      setpdfReportModals((prev) => ({
+                        ...prev,
+                        [idx]: false,
+                      }))
                     }
                     disabled={false}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    originalJobOrderId={
+                      location.state?.originalJobOrderId ||
+                      location.state?.jobOrder?.job_order_id ||
+                      ""
+                    }
                   />
                 </div>
-                <div>
-                  <Label>Excel Report</Label>
+
+                <div className="flex flex-col">
+                  <Label className="mb-2">Excel Report</Label>
                   <DropzoneFileList
                     buttonText="Excel Report"
                     name="Excel_report"
                     maxFiles={5}
                     formData={{
                       ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      originalJobOrderId:
+                        location.state?.originalJobOrderId ||
+                        location.state?.jobOrder?.job_order_id ||
+                        "",
                     }}
                     setFormData={(updatedTest) => {
                       setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        prev.map((t, i) =>
+                          i === idx ? { ...t, ...updatedTest } : t
+                        )
                       );
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => { }}
+                    setSubmitted={() => {}}
                     openModal={!!excelReportModals[idx]}
                     handleOpenModal={() =>
                       setexcelReportModals((prev) => ({ ...prev, [idx]: true }))
                     }
                     handleCloseModal={() =>
-                      setexcelReportModals((prev) => ({ ...prev, [idx]: false }))
+                      setexcelReportModals((prev) => ({
+                        ...prev,
+                        [idx]: false,
+                      }))
                     }
                     disabled={false}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    originalJobOrderId={
+                      location.state?.originalJobOrderId ||
+                      location.state?.jobOrder?.job_order_id ||
+                      ""
+                    }
                   />
                 </div>
-                <div>
-                  <Label>DAT File Attachment</Label>
+
+                <div className="flex flex-col">
+                  <Label className="mb-2">DAT File Attachment</Label>
                   <DropzoneFileList
                     buttonText="DAT File Attachment"
                     name="DAT_file_attachment"
                     maxFiles={5}
                     formData={{
                       ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      originalJobOrderId:
+                        location.state?.originalJobOrderId ||
+                        location.state?.jobOrder?.job_order_id ||
+                        "",
                     }}
                     setFormData={(updatedTest) => {
                       setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        prev.map((t, i) =>
+                          i === idx ? { ...t, ...updatedTest } : t
+                        )
                       );
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => { }}
+                    setSubmitted={() => {}}
                     openModal={!!datFileModals[idx]}
                     handleOpenModal={() =>
                       setDATModals((prev) => ({ ...prev, [idx]: true }))
@@ -2628,27 +3062,37 @@ export default function RDECreateJobOrder() {
                       setDATModals((prev) => ({ ...prev, [idx]: false }))
                     }
                     disabled={false}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    originalJobOrderId={
+                      location.state?.originalJobOrderId ||
+                      location.state?.jobOrder?.job_order_id ||
+                      ""
+                    }
                   />
                 </div>
-                <div>
-                  <Label>Others Attachment</Label>
+
+                <div className="flex flex-col">
+                  <Label className="mb-2">Others Attachment</Label>
                   <DropzoneFileList
                     buttonText="Others Attachment"
                     name="Others_attachment"
                     maxFiles={5}
                     formData={{
                       ...test,
-                      originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                      originalJobOrderId:
+                        location.state?.originalJobOrderId ||
+                        location.state?.jobOrder?.job_order_id ||
+                        "",
                     }}
                     setFormData={(updatedTest) => {
                       setTests((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        prev.map((t, i) =>
+                          i === idx ? { ...t, ...updatedTest } : t
+                        )
                       );
                     }}
                     id={`test${idx}`}
                     submitted={false}
-                    setSubmitted={() => { }}
+                    setSubmitted={() => {}}
                     openModal={!!othersModals[idx]}
                     handleOpenModal={() =>
                       setOthersModals((prev) => ({ ...prev, [idx]: true }))
@@ -2657,17 +3101,21 @@ export default function RDECreateJobOrder() {
                       setOthersModals((prev) => ({ ...prev, [idx]: false }))
                     }
                     disabled={false}
-                    originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                    originalJobOrderId={
+                      location.state?.originalJobOrderId ||
+                      location.state?.jobOrder?.job_order_id ||
+                      ""
+                    }
                   />
                 </div>
               </div>
             </div>
 
             {/* Coast Down Data Section for Test */}
-            <div className="mt-6 border rounded shadow px-4 py-3 bg-blue-50">
+            <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
               <div className="flex items-center gap-3 mb-3">
                 <span className="font-semibold text-sm text-blue-700">
-                  Coast Down Data for Test {idx + 1}
+                  Coast Down Data (CD)
                 </span>
                 <Switch
                   checked={!!test.showCoastDownData}
@@ -2791,26 +3239,7 @@ export default function RDECreateJobOrder() {
                       />
                     </div>
                   </div>
-                  <div className="flex justify-end mt-3">
-                    <Button
-                      type="button"
-                      className="bg-blue-600 text-white text-xs px-4 py-1 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
-                      disabled={!areTestFieldsEditable(test, idx)}
-                      onClick={() => {
-                        // Copy coast down data from main form to this test
-                        handleTestChange(idx, "cdReportRef", form.cdReportRef);
-                        handleTestChange(idx, "vehicleRefMass", form.vehicleRefMass);
-                        handleTestChange(idx, "aN", form.aN);
-                        handleTestChange(idx, "bNkmph", form.bNkmph);
-                        handleTestChange(idx, "cNkmph2", form.cNkmph2);
-                        handleTestChange(idx, "f0N", form.f0N);
-                        handleTestChange(idx, "f1Nkmph", form.f1Nkmph);
-                        handleTestChange(idx, "f2Nkmph2", form.f2Nkmph2);
-                      }}
-                    >
-                      Load from Main Form
-                    </Button>
-                  </div>
+
                 </div>
               )}
             </div>
@@ -2819,9 +3248,11 @@ export default function RDECreateJobOrder() {
               <Button
                 className="bg-red-600 text-white text-xs px-6 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
                 onClick={() => handleCreateTestOrder(idx)}
-                disabled={!!test.testOrderId || test.disabled}
+                disabled={!!test.testOrderId || test.disabled || !isTestValid(test)}
               >
-                {test.testOrderId ? " TEST ORDER CREATED" : " CREATE TEST ORDER"}
+                {test.testOrderId
+                  ? " TEST ORDER CREATED"
+                  : " CREATE TEST ORDER"}
               </Button>
               {editingTestOrderIdx === idx && (
                 <Button
@@ -2848,7 +3279,12 @@ export default function RDECreateJobOrder() {
                     className="w-full border rounded p-2 mb-4"
                     rows={3}
                     value={reEditRemarks[idx] || ""}
-                    onChange={(e) => setReEditRemarks((prev) => ({ ...prev, [idx]: e.target.value }))}
+                    onChange={(e) =>
+                      setReEditRemarks((prev) => ({
+                        ...prev,
+                        [idx]: e.target.value,
+                      }))
+                    }
                     placeholder="Enter reason for re-edit..."
                   />
                   <div className="flex justify-end gap-2">
@@ -2880,7 +3316,12 @@ export default function RDECreateJobOrder() {
                     className="w-full border rounded p-2 mb-4"
                     rows={3}
                     value={rejectionRemarks[idx] || ""}
-                    onChange={(e) => setRejectionRemarks((prev) => ({ ...prev, [idx]: e.target.value }))}
+                    onChange={(e) =>
+                      setRejectionRemarks((prev) => ({
+                        ...prev,
+                        [idx]: e.target.value,
+                      }))
+                    }
                     placeholder="Enter reason for rejection..."
                   />
                   <div className="flex justify-end gap-2">
@@ -2938,64 +3379,105 @@ export default function RDECreateJobOrder() {
           </div>
         ))}
 
-        {/* Show all test orders in a table */}
-        <div className="mx-8 my-8">
-          <div className="font-semibold mb-2">All Test Orders</div>
+        {/* All Test Orders Card */}
+        <div className="mx-8 my-8 bg-white border border-gray-200 rounded-lg shadow-lg shadow-gray-300/40 px-6 py-4 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
+          <div className="font-semibold text-lg text-gray-800 mb-4">
+            All Test Orders
+          </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-xs border">
               <thead>
                 <tr className="bg-gray-200">
+                  <th className="border px-2 py-1">Job Order ID</th>
                   <th className="border px-2 py-1">Test Order ID</th>
                   <th className="border px-2 py-1">Test Type</th>
                   <th className="border px-2 py-1">Objective</th>
+                  <th className="border px-2 py-1">Fuel Type</th>
                   <th className="border px-2 py-1">Status</th>
+                  <th className="border px-2 py-1">Rating</th>
                   <th className="border px-2 py-1">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {(allTestOrders[location.state?.originalJobOrderId] || []).map(
+                {(allTestOrders[location.state?.originalJobOrderId] || []).slice().reverse().map(
                   (to) => (
                     <tr key={to.test_order_id}>
-                      <td className="border px-2 py-1">{to.job_order_id}</td> {/* New data */}
+                      <td className="border px-2 py-1">{to.job_order_id}</td>{" "}
                       <td className="border px-2 py-1">{to.test_order_id}</td>
                       <td className="border px-2 py-1">{to.test_type}</td>
                       <td className="border px-2 py-1">{to.test_objective}</td>
                       <td className="border px-2 py-1">{to.fuel_type}</td>
                       <td className="border px-2 py-1">{to.status}</td>
                       <td className="border px-2 py-1">
+                        {to.status === "Completed" ? (
+                          <div className="flex items-center justify-center">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <svg
+                                key={star}
+                                className={`h-3 w-3 ${
+                                  star <= (to.rating || 0) 
+                                    ? "text-yellow-400 fill-current" 
+                                    : "text-gray-300"
+                                }`}
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                            <span className="text-xs text-gray-600 ml-1">
+                              ({to.rating || 0}/5)
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="border px-2 py-1">
                         {/* Show Edit button based on user role and test status */}
                         {(() => {
-                          // For ProjectTeam: Show edit button when status is "Re-edit" 
+                          // For ProjectTeam: Show edit button when status is "Re-edit"
                           if (isProjectTeam && to.status === "Re-edit") {
                             return (
                               <Button
                                 className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
-                                onClick={() => navigate('/editTestOrder', {
-                                  state: {
-                                    testOrder: to,
-                                    jobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id,
-                                    returnPath: location.pathname,
-                                    returnState: location.state
-                                  }
-                                })}
+                                onClick={() =>
+                                  navigate("/editTestOrder", {
+                                    state: {
+                                      testOrder: to,
+                                      jobOrderId:
+                                        location.state?.originalJobOrderId ||
+                                        location.state?.jobOrder?.job_order_id,
+                                      returnPath: location.pathname,
+                                      returnState: location.state,
+                                    },
+                                  })
+                                }
                               >
                                 Edit
                               </Button>
                             );
                           }
                           // For other roles (but not TestEngineer when status is "Re-edit"): Show edit button
-                          else if (!isTestEngineer || (isTestEngineer && to.status !== "Re-edit")) {
+                          else if (
+                            !isTestEngineer ||
+                            (isTestEngineer && to.status !== "Re-edit")
+                          ) {
                             return (
                               <Button
                                 className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
-                                onClick={() => navigate('/editTestOrder', {
-                                  state: {
-                                    testOrder: to,
-                                    jobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id,
-                                    returnPath: location.pathname,
-                                    returnState: location.state
-                                  }
-                                })}
+                                onClick={() =>
+                                  navigate("/editTestOrder", {
+                                    state: {
+                                      testOrder: to,
+                                      jobOrderId:
+                                        location.state?.originalJobOrderId ||
+                                        location.state?.jobOrder?.job_order_id,
+                                      returnPath: location.pathname,
+                                      returnState: location.state,
+                                    },
+                                  })
+                                }
                               >
                                 Edit
                               </Button>
@@ -3004,7 +3486,9 @@ export default function RDECreateJobOrder() {
                           // Hide edit button for TestEngineer when status is "Re-edit"
                           else {
                             return (
-                              <span className="text-gray-400 text-xs">No action</span>
+                              <span className="text-gray-400 text-xs">
+                                No action
+                              </span>
                             );
                           }
                         })()}
@@ -3014,12 +3498,12 @@ export default function RDECreateJobOrder() {
                 )}
                 {(allTestOrders[location.state?.originalJobOrderId] || [])
                   .length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="text-center py-2 text-gray-500">
-                        No test orders found.
-                      </td>
-                    </tr>
-                  )}
+                  <tr>
+                    <td colSpan={5} className="text-center py-2 text-gray-500">
+                      No test orders found.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -3030,13 +3514,21 @@ export default function RDECreateJobOrder() {
       </div>
       <RemarkModal
         open={!!remarkModalOpen}
-        onClose={() => { setRemarkModalOpen(false); setRemarkInput(""); }}
+        onClose={() => {
+          setRemarkModalOpen(false);
+          setRemarkInput("");
+        }}
         onSubmit={async () => {
           if (remarkModalOpen) {
             const { idx, type } = remarkModalOpen;
             const testOrderId = tests[idx]?.testOrderId;
             if (type === "Reject") {
-              await handleStatusUpdate("Rejected", remarkInput, testOrderId, idx);
+              await handleStatusUpdate(
+                "Rejected",
+                remarkInput,
+                testOrderId,
+                idx
+              );
             } else if (type === "Edit") {
               await handleStatusUpdate("Edit", remarkInput, testOrderId, idx);
             }

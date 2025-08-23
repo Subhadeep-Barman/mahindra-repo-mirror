@@ -1,12 +1,14 @@
 import { useState, useEffect, useId } from "react";
 import axios from "axios";
 import { Button } from "@/components/UI/button";
+import { Card, CardContent } from "@/components/UI/card";
 import { ArrowBack } from "@mui/icons-material";
 import Navbar1 from "@/components/UI/navbar";
 import { useNavigate, useLocation } from "react-router-dom";
 import useStore from "@/store/useStore";
 import { useAuth } from "@/context/AuthContext";
 import showSnackbar from "@/utils/showSnackbar";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -311,6 +313,30 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       return;
     }
 
+    // Check for duplicate vehicle body number before creating
+    if (!isEditMode) {
+      try {
+        const checkResponse = await axios.get(
+          `${apiURL}/vehicles?vehicle_body_number=${encodeURIComponent(form.vehicleBodyNumber)}`
+        );
+        // Only show error if an exact match exists (case-insensitive, trimmed)
+        const exists = Array.isArray(checkResponse.data) && checkResponse.data.some(
+          v =>
+            (v.vehicle_body_number || "").trim().toLowerCase() ===
+            (form.vehicleBodyNumber || "").trim().toLowerCase()
+        );
+        if (exists) {
+          showSnackbar(
+            "Vehicle Body Number already exists. Please create a different one.",
+            "warning"
+          );
+          return;
+        }
+      } catch (err) {
+        // Optionally handle error, but allow creation if check fails (network error, etc.)
+      }
+    }
+
     const payload = mapFormToApi(form);
 
     try {
@@ -332,7 +358,9 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           headers: { "Content-Type": "application/json" },
         });
         if (onSubmit) onSubmit(response.data);
-        else showSnackbar("Vehicle added successfully!", "success");
+        // Show popup instead of snackbar
+        setShowSuccessPopup(true);
+        return; // Prevent navigation until popup is closed
       }
       navigate(-1);
     } catch (err) {
@@ -418,6 +446,9 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     setDomainOptions,
   ]);
 
+  // Popup state for vehicle added
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+
   return (
     <>
       <Navbar1 />
@@ -448,28 +479,29 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
           </div>
         </div>
       </div>
-      {/* Main Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg max-w-7xl mx-auto mt-8"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Vehicle Serial Number - Disable editing in edit mode */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Vehicle Serial Number <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="vehicleSerialNumber"
-              value={form.vehicleSerialNumber}
-              onChange={handleChange}
-              required
-              disabled={isEditMode}
-              className={`border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500 ${isEditMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
-                }`}
-              placeholder="Enter Vehicle Serial Number"
-            />
-          </div>
+      {/* Main Content */}
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <Card className="relative">
+          <CardContent className="p-6">
+            {/* Form Grid */}
+            <form onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Vehicle Serial Number - Disable editing in edit mode */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Vehicle Serial Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="vehicleSerialNumber"
+                    value={form.vehicleSerialNumber}
+                    onChange={handleChange}
+                    required
+                    disabled={isEditMode}
+                    className={`border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500 ${isEditMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                      }`}
+                    placeholder="Enter Vehicle Serial Number"
+                  />
+                </div>
 
           {/* Project */}
           <div>
@@ -1231,37 +1263,61 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               </div>
             </>
           )}
-          {/* Department */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Department <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="department"
-              value={form.department}
-              readOnly
-              className="border rounded-lg px-3 py-2 w-full bg-gray-100 text-gray-500"
-              placeholder="Department"
-            />
-          </div>
-        </div>
-        {/* Buttons */}
-        <div className="flex gap-4 mt-10 justify-end">
-          <button
-            type="submit"
-            className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg shadow-md transition-all"
-          >
-            {isEditMode ? "UPDATE VEHICLE" : "ADD VEHICLE"}
-          </button>
-          <button
-            type="button"
-            onClick={handleClear}
-            className="bg-gray-100 hover:bg-gray-200 text-red-500 border border-red-500 px-6 py-3 rounded-lg shadow-md transition-all"
-          >
-            CLEAR
-          </button>
-        </div>
-      </form>
+                {/* Department */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Department <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="department"
+                    value={form.department}
+                    readOnly
+                    className="border rounded-lg px-3 py-2 w-full bg-gray-100 text-gray-500"
+                    placeholder="Department"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons - Positioned below the form */}
+              <div className="flex justify-end gap-3 mt-8">
+                <Button
+                  type="submit"
+                  className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
+                >
+                  {isEditMode ? "✓ UPDATE VEHICLE" : "✓ ADD VEHICLE"}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleClear}
+                  className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
+                >
+                  ✕ CLEAR
+                </Button>
+              </div>
+            </form>
+            {/* Success Popup */}
+            {showSuccessPopup && (
+              <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+                <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center min-w-[320px]">
+                  <CheckCircleIcon style={{ fontSize: 64, color: "#22c55e" }} />
+                  <div className="mt-4 text-lg font-semibold text-gray-800">
+                    Vehicle saved successfully
+                  </div>
+                  <Button
+                    className="mt-6 bg-green-500 hover:bg-green-600 text-white rounded-xl px-8"
+                    onClick={() => {
+                      setShowSuccessPopup(false);
+                      navigate(-1);
+                    }}
+                  >
+                    OK
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </>
   );
 }

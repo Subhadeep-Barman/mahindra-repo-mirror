@@ -22,7 +22,7 @@ import useStore from "../store/useStore";
 import * as XLSX from "xlsx";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
-export default function VTCChennaiPage() {
+export default function PDCDChennaiPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 8;
 
@@ -61,29 +61,29 @@ export default function VTCChennaiPage() {
     updated_on: "",
     objective: "", // Added new field for searching test objectives
   });
+  
+  const [testOrders, setTestOrders] = useState([]);
 
   useEffect(() => {
     fetchJobOrders();
   }, []);
 
-  const [testOrders, setTestOrders] = useState([]);
-  
   const fetchJobOrders = () => {
     // Get userId from localStorage or cookies (assuming it's stored after login)
     if (!userEmployeeId) {
       showSnackbar("User ID not found. Please login again.", "error");
       return;
     }
-    const department = "VTC_JO Chennai";
+    const department = "PDCD_JO Chennai";
+    
+    // First fetch the job orders
     axios
       .get(`${apiURL}/joborders`, { params: { department, user_id: userEmployeeId, role: userRole } })
       .then((res) => {
-        const jobOrdersData = res.data || [];
-        setJobOrders(jobOrdersData);
-        setFilteredJobOrders(jobOrdersData);
+        setJobOrders(res.data || []);
+        setFilteredJobOrders(res.data || []); // set filtered to all on fetch
         
         // Then fetch test orders to enable objective-based filtering
-        // This assumes there's an endpoint to fetch test orders
         console.log("Fetching test orders...");
         axios
           .get(`${apiURL}/testorders`)
@@ -116,8 +116,7 @@ export default function VTCChennaiPage() {
             setTestOrders([]);
           });
       })
-      .catch((err) => {
-        console.error("Failed to fetch job orders:", err);
+      .catch(() => {
         setJobOrders([]);
         setFilteredJobOrders([]);
         setTestOrders([]);
@@ -126,10 +125,7 @@ export default function VTCChennaiPage() {
 
   // Filtering logic moved to a function
   const applySearch = () => {
-    let filtered = jobOrders;
-    
-    // First apply standard filtering criteria
-    filtered = filtered.filter((order) => {
+    let filtered = jobOrders.filter((order) => {
       return (
         (search.job_order_id === "" ||
           String(order.job_order_id || "")
@@ -243,18 +239,7 @@ export default function VTCChennaiPage() {
       } catch (error) {
         console.error("Error in objective filtering:", error);
       }
-      
-      // Check if we have any filtered job orders
-      if (filtered.length === 0) {
-        console.log("No job orders match the filtered test orders");
-        // Examine some job orders to check their structure
-        if (jobOrders.length > 0) {
-          console.log("Sample job order structure:", jobOrders[0]);
-        }
-      }
     }
-    console.log("Filtered Job Orders:", filtered);
-    console.log("Search objective:", search.objective);
     
     setFilteredJobOrders(filtered);
     setCurrentPage(1);
@@ -264,11 +249,6 @@ export default function VTCChennaiPage() {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const currentRows = filteredJobOrders.slice(startIndex, endIndex);
-  
-  // Handle pagination
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
 
   let activeTab = "Job Order";
   if (location.pathname.toLowerCase().includes("vehicle"))
@@ -277,13 +257,13 @@ export default function VTCChennaiPage() {
     activeTab = "Engine";
 
   const handleTabClick = (tab) => {
-    if (tab === "Job Order") navigate("/vtc-chennai");
-    else if (tab === "Vehicle") navigate("/vtccvehicle");
-    else if (tab === "Engine") navigate("/vtcChennaiEngine");
+    if (tab === "Job Order") navigate("/pdcd-lab");
+    else if (tab === "Vehicle") navigate("/pdcd/vehicle");
+    else if (tab === "Engine") navigate("/pdcd/engine");
   };
 
   const handleBack = () => navigate(-1);
-  const handleCreateJobOrder = () => navigate("/createJobOrder");
+  const handleCreateJobOrder = () => navigate("/PDCDCreateJobOrder");
 
   const handleJobOrderClick = (job_order_id) => {
     axios
@@ -363,17 +343,30 @@ export default function VTCChennaiPage() {
       "Updated on",
       "Test Objectives"
     ];
+    
     const rows = filteredJobOrders.map((order) => {
       // Find all test orders for this job order
       const relatedTestOrders = testOrders.filter(
-        testOrder => testOrder.job_order_id === order.job_order_id
+        testOrder => {
+          const testOrderId = testOrder.job_order_id || testOrder.jobOrderId || testOrder.job_id || 
+                          testOrder.orderId || testOrder.order_id;
+          const orderId = order.job_order_id || order.jobOrderId || order.job_id || order.id;
+          return String(testOrderId) === String(orderId);
+        }
       );
       
       // Get all unique objectives from related test orders
       const objectives = [...new Set(
         relatedTestOrders
-          .filter(to => to.objective)
-          .map(to => to.objective)
+          .filter(to => {
+            const objective = to.objective || to.test_objective || 
+                          (to.test_details ? to.test_details.objective : null);
+            return objective;
+          })
+          .map(to => {
+            return to.objective || to.test_objective || 
+                (to.test_details ? to.test_details.objective : null);
+          })
       )].join(', ');
       
       return [
@@ -415,12 +408,9 @@ export default function VTCChennaiPage() {
       ];
     });
 
-    // Create worksheet and workbook
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Job Orders");
-
-    // Write file and trigger download
     XLSX.writeFile(workbook, "job_orders.xlsx");
   };
 
@@ -441,7 +431,7 @@ export default function VTCChennaiPage() {
                   <ArrowBack className="h-5 w-5" />
                 </Button>
                 <h1 className="text-sm font-medium text-black-600 dark:text-red-500 ">
-                  VTC CHENNAI
+                  PDCD CHENNAI
                 </h1>
               </div>
               <div className="flex items-center space-x-3">
@@ -452,7 +442,7 @@ export default function VTCChennaiPage() {
                 >
                   <SearchIcon className="h-5 w-5" />
                 </Button>
-                {userRole !== "TestEngineer" && userRole !== "Admin" && 
+                {userRole !== "TestEngineer" && userRole !== "Admin" &&
                   ["Job Order", "Vehicle", "Engine"].map((tab) => (
                     <Button
                       key={tab}
@@ -506,7 +496,7 @@ export default function VTCChennaiPage() {
                     created_on: "",
                     name_of_updater: "",
                     updated_on: "",
-                    objective: "",
+                    objective: "", // Clear objective field too
                   });
                   setFilteredJobOrders(jobOrders);
                   setCurrentPage(1);
@@ -536,7 +526,7 @@ export default function VTCChennaiPage() {
           <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
             Current Job Orders
           </Badge>
-          {/* Hide CREATE JOB ORDER button for TEST ENGINEER and for Admin */}
+          {/* Hide CREATE JOB ORDER button for TEST ENGINEER */}
           {userRole !== "TestEngineer" && userRole !== "Admin" && (
             <Button
               onClick={handleCreateJobOrder}

@@ -24,9 +24,9 @@ import showSnackbar from "@/utils/showSnackbar";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
-const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
+const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik", "PDCD_JO Chennai"];
 
-export default function NashikCreateJobOrder() {
+export default function PDCDCreateJobOrder() {
   const [mailLoading, setMailLoading] = useState(false);
   const [cftMembers, setCftMembers] = useState([]);
   const [form, setForm] = useState({
@@ -40,7 +40,7 @@ export default function NashikCreateJobOrder() {
     engineSerialNumber: "",
     engineType: "",
     domain: "",
-    department: "VTC_JO Nashik", // Default to Nashik
+    department: "PDCD_JO Chennai", // Default to Chennai
     coastDownTestReportReference: "",
     tyreMake: "",
     tyreSize: "",
@@ -72,6 +72,10 @@ export default function NashikCreateJobOrder() {
   const [showCFTPanel, setShowCFTPanel] = useState(false);
   const [cdError, setCdError] = useState("");
   const [cdFieldErrors, setCdFieldErrors] = useState({});
+  const [jobOrderId, setJobOrderId] = useState();
+  const [vehicleList, setVehicleList] = useState([]);
+  const [engineList, setEngineList] = useState([]);
+  const [vehicleBodyNumbers, setVehicleBodyNumbers] = useState([]);
 
   // State to control pre-filling mode to prevent useEffect conflicts
   const [isPreFilling, setIsPreFilling] = useState(false);
@@ -81,9 +85,6 @@ export default function NashikCreateJobOrder() {
 
   // Test state
   const [tests, setTests] = useState([]);
-
-  // State to track job order ID after creation
-  const [jobOrderId, setJobOrderId] = useState();
 
   // State to track existing CoastDownData_id for updates
   const [existingCoastDownId, setExistingCoastDownId] = useState(null);
@@ -117,6 +118,7 @@ export default function NashikCreateJobOrder() {
     setTests((prev) => [
       ...prev,
       {
+        engineNumber: "", // New field for engine number
         testType: "",
         objective: "",
         vehicleLocation: "",
@@ -169,94 +171,13 @@ export default function NashikCreateJobOrder() {
       setForm((prev) => ({ ...prev, [field]: "" }));
       return;
     }
-    
-    // Special handling for cdReportRef - allow any text
-    if (field === "cdReportRef") {
-      setCdFieldErrors((prev) => ({ ...prev, [field]: "" }));
-      setForm((prev) => ({ ...prev, [field]: value }));
-      return;
-    }
-    
-    // Allow only numbers (including decimals) for other fields
+    // Allow only numbers (including decimals)
     if (/^-?\d*\.?\d*$/.test(value)) {
       setCdFieldErrors((prev) => ({ ...prev, [field]: "" }));
       setForm((prev) => ({ ...prev, [field]: value }));
     } else {
       setCdFieldErrors((prev) => ({ ...prev, [field]: "Please enter valid numbers" }));
     }
-  };
-
-  // Validation function for Coast Down Data fields
-  const validateCoastDownData = (test) => {
-    const requiredFields = [
-      { field: 'cdReportRef', label: 'Coast Down Test Report Reference' },
-      { field: 'vehicleRefMass', label: 'Vehicle Reference Mass' },
-      { field: 'aN', label: 'A (N)' },
-      { field: 'bNkmph', label: 'B (N/kmph)' },
-      { field: 'cNkmph2', label: 'C (N/kmph^2)' },
-      { field: 'f0N', label: 'F0 (N)' },
-      { field: 'f1Nkmph', label: 'F1 (N/kmph)' },
-      { field: 'f2Nkmph2', label: 'F2 (N/kmph^2)' }
-    ];
-
-    const missingFields = [];
-
-    for (const { field, label } of requiredFields) {
-      const testValue = test[field];
-      const formValue = form[field];
-      if (!testValue && !formValue) {
-        missingFields.push(label);
-      }
-    }
-
-    return missingFields;
-  };
-
-  // Helper function to validate if test is ready for submission
-  const isTestValid = (test) => {
-    if (!test) return false;
-
-    const requiredKeys = [
-      'testType',
-      'objective',
-      'vehicleLocation',
-      'cycleGearShift',
-      'inertiaClass',
-      'datasetName',
-      'mode',
-      'shift',
-      'fuelType',
-      'hardwareChange',
-      'equipmentRequired',
-      'dpf',
-      'ess',
-      'preferredDate',
-      'emissionCheckDate',
-      'specificInstruction'
-    ];
-
-    for (const key of requiredKeys) {
-      const val = test[key];
-      if (val === undefined || val === null) return false;
-      if (typeof val === 'string' && val.trim() === '') return false;
-    }
-
-    // dataset refreshed may be stored as datasetRefreshed
-    const datasetRefreshed = (test.datasetRefreshed || '').toString().trim();
-    if (!datasetRefreshed) return false;
-
-    // If DPF is Yes, require regen value
-    if (test.dpf === 'Yes') {
-      const regen = test.dpfRegenOccurs;
-      if (regen === undefined || regen === null || (typeof regen === 'string' && regen.trim() === '')) return false;
-    }
-
-    // Require attachments
-    const hasDataset = Array.isArray(test.Dataset_attachment) && test.Dataset_attachment.length > 0;
-    const hasExperiment = Array.isArray(test.Experiment_attachment) && test.Experiment_attachment.length > 0;
-    if (!hasDataset || !hasExperiment) return false;
-
-    return true;
   };
 
   // Fetch vehicle and engine form data from localStorage
@@ -502,11 +423,6 @@ export default function NashikCreateJobOrder() {
       setIsPreFilling(true);
       setIsLoading(true);
 
-      // Show success message if this is for creating test orders
-      if (location.state.isEdit) {
-        showSnackbar("Job order pre-filled successfully", "success");
-      }
-
       // Function to fetch and pre-fill coast down data
       const fetchAndFillCoastDownData = async (coastDownDataId) => {
         if (coastDownDataId) {
@@ -554,12 +470,14 @@ export default function NashikCreateJobOrder() {
             jobOrder.vehicle_build_level || jobOrder.vehicleBuildLevel || "",
           vehicleModel: jobOrder.vehicle_model || jobOrder.vehicleModel || "",
           vehicleBodyNumber: jobOrder.vehicle_body_number || "",
+          vehicleSerialNumber: jobOrder.vehicle_serial_number || "",
           transmissionType:
             jobOrder.transmission_type || jobOrder.transmissionType || "",
           finalDriveAxleRatio:
             jobOrder.final_drive_axle_ratio ||
             jobOrder.finalDriveAxleRatio ||
             "",
+          engineSerialNumber: jobOrder.engine_serial_number || "",
           engineType:
             jobOrder.type_of_engine ||
             jobOrder.engine_type ||
@@ -647,6 +565,20 @@ export default function NashikCreateJobOrder() {
           setCftMembers(jobOrder.cft_members);
         }
 
+        // Populate vehicleEngineNumbers array with the engine from job order
+        if (jobOrder.engine_serial_number) {
+          setVehicleEngineNumbers([jobOrder.engine_serial_number]);
+        }
+
+        // Populate projectVehicles array with the vehicle from job order for dropdown options
+        if (jobOrder.vehicle_body_number) {
+          setProjectVehicles([{
+            vehicle_body_number: jobOrder.vehicle_body_number,
+            vehicle_serial_number: jobOrder.vehicle_serial_number,
+            engine_numbers: jobOrder.engine_serial_number ? [jobOrder.engine_serial_number] : []
+          }]);
+        }
+
         // Use setTimeout to allow form state to settle before enabling other useEffects
         setTimeout(() => {
           setIsPreFilling(false);
@@ -656,6 +588,10 @@ export default function NashikCreateJobOrder() {
 
       // Execute the pre-filling
       preFillForm();
+      // If this is an update (read API), disable the form
+      if (location.state?.isEdit) {
+        setFormDisabled(true);
+      }
     }
   }, []); // Empty dependency array - only run once on mount
 
@@ -678,11 +614,11 @@ export default function NashikCreateJobOrder() {
     }));
   };
 
- // Function to check if job order with same vehicle body number and engine serial number exists
+  // Function to check if job order with same vehicle body number and engine serial number exists
   const checkForDuplicateJobOrder = async (vehicleBodyNumber, engineSerialNumber) => {
     try {
       // job order read api call
-      const department = form.department || "VTC_JO Nashik";
+      const department = form.department || "PDCD_JO Chennai"; // Default to Chennai if not set
       const response = await axios.get(`${apiURL}/joborders`, { params: { department, user_id: userId, role: userRole } });
       const jobOrders = response.data;
       
@@ -830,46 +766,63 @@ export default function NashikCreateJobOrder() {
     }
   };
 
+  // Helper function to validate test data
+  const isTestValid = (test) => {
+    const requiredFields = [
+      'testType',
+      'objective',
+      'vehicleLocation',
+      'cycleGearShift',
+      'datasetName',
+      'inertiaClass',
+      'dpf',
+      'datasetRefreshed',
+      'ess',
+      'mode',
+      'hardwareChange',
+      'shift',
+      'preferredDate',
+      'fuelType',
+      'equipmentRequired',
+      'emissionCheckDate',
+      'specificInstruction'
+    ];
+
+    // Check if all required fields are filled
+    for (const field of requiredFields) {
+      if (!test[field] || test[field].toString().trim() === '') {
+        return false;
+      }
+    }
+
+    // If DPF is Yes, require regen value
+    if (test.dpf === 'Yes') {
+      const regen = test.dpfRegenOccurs;
+      if (regen === undefined || regen === null || (typeof regen === 'string' && regen.trim() === '')) return false;
+    }
+
+    // Check if required attachments are present
+    const requiredAttachments = [
+      'Dataset_attachment', 
+      'Experiment_attachment'
+    ];
+
+    for (const attachment of requiredAttachments) {
+      if (!test[attachment] || !Array.isArray(test[attachment]) || test[attachment].length === 0) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   // Handler for creating test order
   const handleCreateTestOrder = async (testIndex) => {
     const test = tests[testIndex];
 
-    // Validate required fields (matching RDE implementation)
-    const requiredFields = [
-      { key: 'testType', label: 'Test Type' },
-      { key: 'objective', label: 'Objective of the Test' },
-      { key: 'vehicleLocation', label: 'Vehicle Location' },
-      { key: 'cycleGearShift', label: 'Cycle Gear Shift' },
-      { key: 'inertiaClass', label: 'Inertia Class' },
-      { key: 'datasetName', label: 'Dataset Name' },
-      { key: 'mode', label: 'Mode' },
-      { key: 'shift', label: 'Shift' },
-      { key: 'fuelType', label: 'Fuel Type' },
-      { key: 'hardwareChange', label: 'Hardware Change' },
-      { key: 'equipmentRequired', label: 'Equipment Required' },
-      { key: 'dpf', label: 'DPF' },
-      { key: 'ess', label: 'ESS' },
-      { key: 'preferredDate', label: 'Preferred Date' },
-      { key: 'emissionCheckDate', label: 'Emission Check Date' },
-      { key: 'specificInstruction', label: 'Specific Instruction' }
-    ];
-
-    const missing = requiredFields.filter(f => {
-      const val = test[f.key];
-      return val === undefined || val === null || (typeof val === 'string' && val.trim() === '');
-    }).map(f => f.label);
-
-    // Special-case: dataset refreshed
-    const datasetRefreshedVal = (test.datasetRefreshed || '').toString().trim();
-    if (!datasetRefreshedVal) {
-      missing.push('Dataset Refreshed');
-    }
-
-    if (missing.length > 0) {
-      showSnackbar(
-        `Please fill in required fields before creating test order: ${[...new Set(missing)].join(', ')}`,
-        'warning'
-      );
+    // Use comprehensive validation
+    if (!isTestValid(test)) {
+      showSnackbar("Please fill in all required fields and upload all mandatory attachments before creating test order.", "error");
       return;
     }
 
@@ -882,34 +835,6 @@ export default function NashikCreateJobOrder() {
       }
     }
 
-    // Require Dataset and Experiment attachments
-    const hasDataset = Array.isArray(test.Dataset_attachment) && test.Dataset_attachment.length > 0;
-    const hasExperiment = Array.isArray(test.Experiment_attachment) && test.Experiment_attachment.length > 0;
-
-    if (!hasDataset || !hasExperiment) {
-      const missingAttachments = [];
-      if (!hasDataset) missingAttachments.push('Dataset Attachment');
-      if (!hasExperiment) missingAttachments.push('Experiment Attachment');
-      
-      showSnackbar(
-        `Required attachments are missing: ${missingAttachments.join(', ')}`,
-        'error'
-      );
-      return;
-    }
-
-    // Validate Coast Down Data if toggle is enabled
-    if (test.showCoastDownData) {
-      const missingFields = validateCoastDownData(test);
-      if (missingFields.length > 0) {
-        showSnackbar(
-          `Coast Down Data is incomplete. Please fill in the following fields: ${missingFields.join(', ')}`,
-          "error"
-        );
-        return;
-      }
-    }
-
     // Generate test_order_id based on timestamp
     // const test_order_id = "TO" + Date.now();
 
@@ -917,70 +842,8 @@ export default function NashikCreateJobOrder() {
     const job_order_id = location.state?.jobOrder?.job_order_id || location.state?.originalJobOrderId || "";
     const test_order_id = `${job_order_id}/${test.testNumber}`;
 
-
-
-    // Create or update coast down data for this specific test
-    let CoastDownData_id =
-      location.state?.jobOrder?.CoastDownData_id || existingCoastDownId;
-
-    // If test has its own coast down data, create a new coast down entry
-    const hasTestSpecificCoastDownData =
-      test.cdReportRef ||
-      test.vehicleRefMass ||
-      test.aN ||
-      test.bNkmph ||
-      test.cNkmph2 ||
-      test.f0N ||
-      test.f1Nkmph ||
-      test.f2Nkmph2;
-
-    if (hasTestSpecificCoastDownData) {
-      // Generate new CoastDownData_id for this test
-      CoastDownData_id = "CD" + Date.now() + "_T" + testIndex;
-
-      // Create coast down data payload for this test
-      const testCoastDownPayload = {
-        CoastDownData_id,
-        job_order_id,
-        coast_down_reference:
-          test.cdReportRef || test.cdReportRef || form.cdReportRef || null,
-        vehicle_reference_mass:
-          test.vehicleRefMass || form.vehicleRefMass
-            ? parseFloat(test.vehicleRefMass || form.vehicleRefMass)
-            : null,
-        a_value: test.aN || form.aN ? parseFloat(test.aN || form.aN) : null,
-        b_value:
-          test.bNkmph || form.bNkmph
-            ? parseFloat(test.bNkmph || form.bNkmph)
-            : null,
-        c_value:
-          test.cNkmph2 || form.cNkmph2
-            ? parseFloat(test.cNkmph2 || form.cNkmph2)
-            : null,
-        f0_value:
-          test.f0N || form.f0N ? parseFloat(test.f0N || form.f0N) : null,
-        f1_value:
-          test.f1Nkmph || form.f1Nkmph
-            ? parseFloat(test.f1Nkmph || form.f1Nkmph)
-            : null,
-        f2_value:
-          test.f2Nkmph2 || form.f2Nkmph2
-            ? parseFloat(test.f2Nkmph2 || form.f2Nkmph2)
-            : null,
-        id_of_creator: "",
-        created_on: new Date().toISOString(),
-        id_of_updater: "",
-        updated_on: new Date().toISOString(),
-      };
-
-      try {
-        await axios.post(`${apiURL}/coastdown`, testCoastDownPayload);
-      } catch (err) {
-        console.error("Error creating test-specific coast down data:", err);
-        showSnackbar("Failed to create coast down data for test: " + (err.response?.data?.detail || err.message), "error");
-        return;
-      }
-    }
+    // Use existing CoastDownData_id from job order if available
+    const CoastDownData_id = location.state?.jobOrder?.CoastDownData_id || existingCoastDownId;
 
     // Create test order payload matching the API schema
     const testOrderPayload = {
@@ -1034,12 +897,7 @@ export default function NashikCreateJobOrder() {
             : t
         )
       );
-      showSnackbar(
-        "Test Order Created! ID: " + response.data.test_order_id +
-        (hasTestSpecificCoastDownData
-          ? "\nCoast Down Data ID: " + CoastDownData_id
-          : "")
-      );
+      showSnackbar("Test Order Created! ID: " + response.data.test_order_id, "success");
       handleSendMail(2, job_order_id, response.data.test_order_id);
       navigate(-1);
     } catch (err) {
@@ -1359,7 +1217,7 @@ export default function NashikCreateJobOrder() {
   const { userRole, userId, userName } = useAuth();
   const isTestEngineer = userRole === "TestEngineer";
   const isProjectTeam = userRole === "ProjectTeam";
-  const isAdmin = userRole === "Admin";
+  const isAdmin = userRole == "Admin";
 
   // Helper function to determine if test fields should be editable
   const areTestFieldsEditable = (test, idx) => {
@@ -1435,16 +1293,19 @@ export default function NashikCreateJobOrder() {
               variant="outline"
               className="bg-red-600 text-white px-3 py-1 rounded-full"
             >
-              Nashik Job Order
+              {location.state?.isEdit && (location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id)
+                ? (location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id)
+                : "PDCD Job Order"}
             </Button>
             <div className="flex flex-col">
+              {/* <span className="font-semibold text-lg">New Job Order</span>
               {location.state?.isEdit && (
-                <span className="text-sm text-blue-600 font-medium">
-                  {isLoading
-                    ? "Loading job order data..."
-                    : `Pre-filled from Job Order: ${location.state.originalJobOrderId}`}
-                </span>
-              )}
+                // <span className="text-sm text-blue-600 font-medium">
+                //   {isLoading
+                //     ? "Loading job order data..."
+                //     : `Pre-filled from Job Order: ${location.state.originalJobOrderId}`}
+                // </span>
+              )} */}
             </div>
           </div>
         </div>
@@ -1467,7 +1328,7 @@ export default function NashikCreateJobOrder() {
               value={form.projectCode}
               onValueChange={(value) => handleChange("projectCode", value)}
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || isAdmin}
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -1493,7 +1354,7 @@ export default function NashikCreateJobOrder() {
               value={form.vehicleBodyNumber}
               onValueChange={handleVehicleBodyChange}
               required
-              disabled={formDisabled || isTestEngineer || !form.projectCode}
+              disabled={formDisabled || isTestEngineer || isAdmin || !form.projectCode}
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -1522,7 +1383,7 @@ export default function NashikCreateJobOrder() {
               className="w-full"
               placeholder="Auto-fetched"
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || isAdmin}
             />
           </div>
           {/* Engine Number (dropdown) */}
@@ -1537,7 +1398,7 @@ export default function NashikCreateJobOrder() {
               value={form.engineSerialNumber}
               onValueChange={handleEngineNumberChange}
               required
-              disabled={formDisabled || isTestEngineer || !form.vehicleBodyNumber}
+              disabled={formDisabled || isTestEngineer || isAdmin || !form.vehicleBodyNumber}
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -1563,7 +1424,7 @@ export default function NashikCreateJobOrder() {
               value={form.engineType}
               onValueChange={(value) => handleChange("engineType", value)}
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || isAdmin}
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -1589,7 +1450,7 @@ export default function NashikCreateJobOrder() {
               value={form.domain}
               onValueChange={(value) => handleChange("domain", value)}
               required
-              disabled={formDisabled || isTestEngineer}
+              disabled={formDisabled || isTestEngineer || isAdmin}
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -1632,8 +1493,8 @@ export default function NashikCreateJobOrder() {
         </form>
         </div>
 
-        {/* Editable Vehicle Details Accordion */}
-        {vehicleEditable && (
+  {/* Editable Vehicle Details Accordion */}
+  {vehicleEditable && !formDisabled && (
           <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
             <div
               className="flex items-center justify-between bg-gray-100 border-t-4 border-red-600 px-4 py-2 cursor-pointer"
@@ -1706,8 +1567,45 @@ export default function NashikCreateJobOrder() {
           </div>
         )}
 
-        {/* Coast Down Data (CD) Section
+        {/* Job Order Buttons */}
         <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
+          {cdError && (
+            <div className="text-red-600 text-sm mb-4">{cdError}</div>
+          )}
+
+          <div className="flex items-center gap-4">
+            <Button
+              className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
+              onClick={handleCreateJobOrder}
+              disabled={isTestEngineer || (location.state?.isEdit && isProjectTeam)}
+            >
+              {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
+            </Button>
+            <Button
+              className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400"
+              type="button"
+              disabled={location.state?.isEdit && isProjectTeam}
+              onClick={() =>
+                setForm((prev) => ({
+                  ...prev,
+                  cdReportRef: "",
+                  vehicleRefMass: "",
+                  aN: "",
+                  bNkmph: "",
+                  cNkmph2: "",
+                  f0N: "",
+                  f1Nkmph: "",
+                  f2Nkmph2: "",
+                }))
+              }
+            >
+              CLEAR
+            </Button>
+          </div>
+        </div>
+
+        {/* Coast Down Data (CD) Section */}
+        {/* <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
 
           <div className="mb-6">
             <Label
@@ -1942,43 +1840,6 @@ export default function NashikCreateJobOrder() {
             </Button>
           </div>
         </div> */}
-
-        {/* Job Order Buttons */}
-        <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
-          {cdError && (
-            <div className="text-red-600 text-sm mb-4">{cdError}</div>
-          )}
-
-          <div className="flex items-center gap-4">
-            <Button
-              className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
-              onClick={handleCreateJobOrder}
-              disabled={isTestEngineer || (location.state?.isEdit && isProjectTeam)}
-            >
-              {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
-            </Button>
-            <Button
-              className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400"
-              type="button"
-              disabled={location.state?.isEdit && isProjectTeam}
-              onClick={() =>
-                setForm((prev) => ({
-                  ...prev,
-                  cdReportRef: "",
-                  vehicleRefMass: "",
-                  aN: "",
-                  bNkmph: "",
-                  cNkmph2: "",
-                  f0N: "",
-                  f1Nkmph: "",
-                  f2Nkmph2: "",
-                }))
-              }
-            >
-              CLEAR
-            </Button>
-          </div>
-        </div>
 
         {/* Test Actions */}
         <div className="flex items-center mt-4 gap-6 px-8 mb-8">
@@ -2366,20 +2227,13 @@ export default function NashikCreateJobOrder() {
             </div>
 
             {/* Attachments Card */}
-            <div className="bg-gray-100 dark:bg-gray-800 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
-              <div className="font-semibold text-sm text-gray-700 dark:text-white mb-2">
+            <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+              <div className="font-semibold text-sm text-gray-700 mb-2">
                 Attachments
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label>
-                    Emission Check Attachment
-                    {test.emissionCheckAttachment && test.emissionCheckAttachment.length > 0 && (
-                      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                        {Array.isArray(test.emissionCheckAttachment) ? test.emissionCheckAttachment.length : 1}
-                      </span>
-                    )}
-                  </Label>
+                  <Label>Emission Check Attachment</Label>
                   <DropzoneFileList
                     buttonText="Emission Check Attachment"
                     name="Emission_check"
@@ -2403,19 +2257,12 @@ export default function NashikCreateJobOrder() {
                     handleCloseModal={() =>
                       setEmissionCheckModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    disabled={!areTestFieldsEditable(test, idx)}
+                    disabled={false}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
                   />
                 </div>
                 <div>
-                  <Label>
-                    Dataset Attachment <span className="text-red-500">*</span>
-                    {test.dataset_attachment && test.dataset_attachment.length > 0 && (
-                      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                        {Array.isArray(test.dataset_attachment) ? test.dataset_attachment.length : 1}
-                      </span>
-                    )}
-                  </Label>
+                  <Label>Dataset Attachment <span className="text-red-500">*</span></Label>
                   <DropzoneFileList
                     buttonText="Dataset Attachment"
                     name="Dataset_attachment"
@@ -2439,14 +2286,14 @@ export default function NashikCreateJobOrder() {
                     handleCloseModal={() =>
                       setDatasetModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    disabled={!areTestFieldsEditable(test, idx)}
+                    disabled={false}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
                   />
                 </div>
                 <div>
-                  <Label>A2L</Label>
+                  <Label>A2L Attachment</Label>
                   <DropzoneFileList
-                    buttonText="A2L"
+                    buttonText="A2L Attachment"
                     name="A2L"
                     maxFiles={5}
                     formData={{
@@ -2468,19 +2315,12 @@ export default function NashikCreateJobOrder() {
                     handleCloseModal={() =>
                       setA2LModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    disabled={!areTestFieldsEditable(test, idx)}
+                    disabled={false}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
                   />
                 </div>
                 <div>
-                  <Label>
-                    Experiment Attachment <span className="text-red-500">*</span>
-                    {test.experiment_attachment && test.experiment_attachment.length > 0 && (
-                      <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                        {Array.isArray(test.experiment_attachment) ? test.experiment_attachment.length : 1}
-                      </span>
-                    )}
-                  </Label>
+                  <Label>Experiment Attachment <span className="text-red-500">*</span></Label>
                   <DropzoneFileList
                     buttonText="Experiment Attachment"
                     name="Experiment_attachment"
@@ -2504,7 +2344,7 @@ export default function NashikCreateJobOrder() {
                     handleCloseModal={() =>
                       setExperimentModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    disabled={!areTestFieldsEditable(test, idx)}
+                    disabled={false}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
                   />
                 </div>
@@ -2533,14 +2373,14 @@ export default function NashikCreateJobOrder() {
                     handleCloseModal={() =>
                       setDBCModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    disabled={!areTestFieldsEditable(test, idx)}
+                    disabled={false}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
                   />
                 </div>
                 <div>
-                  <Label>WLTP input sheet</Label>
+                  <Label>WLTP Input Sheet</Label>
                   <DropzoneFileList
-                    buttonText="WLTP input sheet"
+                    buttonText="WLTP Input Sheet"
                     name="WLTP_input_sheet"
                     maxFiles={5}
                     formData={{
@@ -2562,7 +2402,7 @@ export default function NashikCreateJobOrder() {
                     handleCloseModal={() =>
                       setWLTPModals((prev) => ({ ...prev, [idx]: false }))
                     }
-                    disabled={!areTestFieldsEditable(test, idx)}
+                    disabled={false}
                     originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
                   />
                 </div>
@@ -2698,7 +2538,7 @@ export default function NashikCreateJobOrder() {
             <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
               <div className="flex items-center gap-3 mb-3">
                 <span className="font-semibold text-sm text-blue-700">
-                  Coast Down Data (CD)
+                  Coast Down Data for Test {idx + 1}
                 </span>
                 <Switch
                   checked={!!test.showCoastDownData}
@@ -2707,7 +2547,8 @@ export default function NashikCreateJobOrder() {
                     updatedTests[idx].showCoastDownData = checked;
                     setTests(updatedTests);
                   }}
-                  disabled={formDisabled || isTestEngineer}
+                  // Allow ProjectTeam to toggle Coast Down Data even when formDisabled (edit mode)
+                  disabled={formDisabled && !isProjectTeam}
                   className="data-[state=checked]:bg-red-500"
                 />
               </div>
@@ -2825,9 +2666,9 @@ export default function NashikCreateJobOrder() {
 
             <div className="flex justify-end mt-4">
               <Button
-                className="bg-red-600 text-white text-xs px-6 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="bg-red-600 text-white text-xs px-6 py-2 rounded"
                 onClick={() => handleCreateTestOrder(idx)}
-                disabled={editingTestOrderIdx === idx || isTestEngineer || isAdmin || !isTestValid(test)}
+                disabled={editingTestOrderIdx === idx || isTestEngineer || !isTestValid(test)}
               >
                 CREATE TEST ORDER
               </Button>
@@ -2835,7 +2676,7 @@ export default function NashikCreateJobOrder() {
                 <Button
                   className="bg-blue-600 text-white text-xs px-6 py-2 rounded ml-2"
                   onClick={() => handleUpdateTestOrder(idx)}
-                  disabled={isTestEngineer || isAdmin}
+                  disabled={isTestEngineer}
                 >
                   UPDATE TEST ORDER
                 </Button>
@@ -2876,7 +2717,7 @@ export default function NashikCreateJobOrder() {
                 </tr>
               </thead>
               <tbody>
-                {(allTestOrders[location.state?.originalJobOrderId] || []).slice().reverse().map(
+                {(allTestOrders[location.state?.originalJobOrderId] || []).map(
                   (to) => (
                     <tr key={to.test_order_id}>
                       {/* Test Order ID column removed */}
@@ -2919,7 +2760,7 @@ export default function NashikCreateJobOrder() {
                 {(allTestOrders[location.state?.originalJobOrderId] || [])
                   .length === 0 && (
                     <tr>
-                      <td colSpan={6} className="text-center py-2 text-gray-500">
+                      <td colSpan={5} className="text-center py-2 text-gray-500">
                         No test orders found.
                       </td>
                     </tr>

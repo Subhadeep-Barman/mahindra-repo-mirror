@@ -20,6 +20,7 @@ import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import showSnackbar from "@/utils/showSnackbar";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 export default function VTCCEngineForm() {
   const [activeTab, setActiveTab] = useState("Engine");
@@ -215,6 +216,7 @@ export default function VTCCEngineForm() {
   const [vehicleSerialNumbers, setVehicleSerialNumbers] = useState([]);
   const [projectCodes, setProjectCodes] = useState([]); // <-- NEW
   const [vehicleBodyNumberMap, setVehicleBodyNumberMap] = useState({}); // <-- NEW
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const apiUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
 
@@ -499,14 +501,13 @@ export default function VTCCEngineForm() {
           payload
         );
         showSnackbar(`${engine_domain === "EV" ? "Motor" : "Engine"} updated successfully!`, "success");
+        navigate(-1);
       } else {
         response = await axios.post(`${apiUrl}${endpoint}`, payload);
-        showSnackbar(
-          `${engine_domain === "EV" ? "Motor" : "Engine"} added successfully! Serial Number: ${response.data[engine_domain === "EV" ? "motor_serial_number" : "engine_serial_number"] || formData.engineSerialNumber}`,
-          "success"
-        );
+        // Show popup instead of snackbar for new engine creation
+        setShowSuccessPopup(true);
+        return; // Prevent navigation until popup is closed
       }
-      navigate(-1);
     } catch (err) {
       if (err.response && err.response.data && err.response.data.detail) {
         showSnackbar(
@@ -546,7 +547,7 @@ export default function VTCCEngineForm() {
   // Fetch vehicle serial numbers and body numbers
   useEffect(() => {
     axios
-      .get(`${apiUrl}/vehicle-body-numbers${department ? `?department=${encodeURIComponent(department)}` : ""}`)
+      .get(`${apiUrl}/vehicle-body-numbers`)
       .then((res) => {
         setVehicleSerialNumbers(res.data.map(v => v.vehicle_serial_number));
         // Build a map: { vehicle_serial_number: vehicle_body_number }
@@ -627,7 +628,7 @@ export default function VTCCEngineForm() {
 
       {/* Main Content */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Card>
+        <Card className="relative">
           <CardContent className="p-6">
             {/* Form Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1426,8 +1427,8 @@ export default function VTCCEngineForm() {
                 </>
               )}
 
-              {/* Action Buttons */}
-              <div className="mt-6 flex justify-end gap-3">
+              {/* Action Buttons - Positioned at bottom right corner */}
+              <div className="absolute bottom-4 right-4 flex gap-3">
                 <Button
                   onClick={handleAddEngine}
                   className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
@@ -1436,12 +1437,32 @@ export default function VTCCEngineForm() {
                 </Button>
                 <Button
                   onClick={handleClear}
-                  variant="outline"
                   className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
                 >
                   ✕ CLEAR
                 </Button>
               </div>
+              
+              {/* Success Popup */}
+              {showSuccessPopup && (
+                <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 flex flex-col items-center min-w-[320px] border border-gray-200 dark:border-gray-700">
+                    <CheckCircleIcon style={{ fontSize: 64, color: "#22c55e" }} />
+                    <div className="mt-4 text-lg font-semibold text-gray-800 dark:text-white">
+                      {engine_domain === "EV" ? "Motor" : "Engine"} saved successfully
+                    </div>
+                    <Button
+                      className="mt-6 bg-green-500 hover:bg-green-600 text-white rounded-xl px-8"
+                      onClick={() => {
+                        setShowSuccessPopup(false);
+                        navigate(-1);
+                      }}
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

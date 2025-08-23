@@ -661,26 +661,48 @@ const Dropzone = ({
       });
 
       if (response.data.status === true && response.data.files) {
-        // Transform API files to match the expected format
+        // Merge API files with formData to get user/upload_time
         const apiFiles = response.data.files || [];
-        const transformedFiles = apiFiles.map(file => {
-          // If file is a string (just filename), transform it to object
-          if (typeof file === 'string') {
-            return {
-              path: file,
-              size: 0, // Default size since API doesn't provide it
-              user: 'Unknown',
-              upload_time: null
+        let formFiles = [];
+        if (team) {
+          formFiles = formData[team]?.[name] || [];
+        } else {
+          formFiles = formData[name] || [];
+        }
+        console.log("API files from backend:", apiFiles);
+        console.log("Form files from formData:", formFiles);
+
+        // For each API file, try to find matching file in formData for user/upload_time
+        const transformedFiles = apiFiles.map(apiFile => {
+          let fileObj = {};
+          if (typeof apiFile === 'string') {
+            // Try to find in formFiles by path/filename
+            const match = formFiles.find(f => f.path === apiFile || f.filename === apiFile || f.name === apiFile);
+            console.log("Matching form file for API file (string):", apiFile, match);
+            fileObj = {
+              path: apiFile,
+              size: match?.size || 0,
+              user: match?.user || match?.uploaded_by || 'Unknown',
+              upload_time: match?.upload_time || match?.created_on || null,
+              isValidated: match?.isValidated
+            };
+          } else {
+            // If API returns object, merge with formFiles if possible
+            const match = formFiles.find(f => f.path === (apiFile.path || apiFile.filename || apiFile.name));
+            console.log("Matching form file for API file (object):", apiFile, match);
+            fileObj = {
+              path: apiFile.path || apiFile.filename || apiFile.name,
+              size: apiFile.size || match?.size || 0,
+              user: apiFile.user || apiFile.uploaded_by || match?.user || match?.uploaded_by || 'Unknown',
+              upload_time: apiFile.upload_time || apiFile.created_on || match?.upload_time || match?.created_on || null,
+              isValidated: apiFile.isValidated ?? match?.isValidated
             };
           }
-          // If file is already an object, use it as is
-          return {
-            path: file.path || file.filename || file.name,
-            size: file.size || 0,
-            user: file.user || file.uploaded_by || 'Unknown',
-            upload_time: file.upload_time || file.created_on || null
-          };
+          console.log("Transformed file object:", fileObj);
+          return fileObj;
         });
+
+        console.log("Transformed files to display:", transformedFiles);
 
         // Set the files to display
         setFiles(transformedFiles);
@@ -709,12 +731,14 @@ const Dropzone = ({
             [name]: transformedFiles,
           };
         }
+        console.log("Updated formData after merging files:", updatedFormData);
         setFormData(updatedFormData);
 
         if (name === "resultFileAttachment") {
           setIsValidated(true);
         }
       } else {
+        console.log("No files found or status is false from backend.");
         setFiles([]);
         setHeaderTotalSize(0);
         setUploaded(false);

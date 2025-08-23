@@ -21,7 +21,7 @@ import showSnackbar from "@/utils/showSnackbar";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
-export default function VTCNashikEnginePage() {
+export default function PDCDEnginePage() {
   const [engines, setEngines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -99,11 +99,11 @@ export default function VTCNashikEnginePage() {
 
   const handleTabClick = (tab) => {
     if (tab === "Job Order") {
-      navigate("/vtc-nashik");
+      navigate("/pdcd-lab");
     } else if (tab === "Vehicle") {
-      navigate("/nashik/vehicle");
+      navigate("/pdcd/vehicle");
     } else if (tab === "Engine") {
-      navigate("/nashik/engine");
+      navigate("/pdcd/engine");
     }
   };
 
@@ -175,7 +175,7 @@ export default function VTCNashikEnginePage() {
                 </Button>
                 <div>
                   <h1 className="text-sm font-medium text-gray-600 dark:text-red-500 ">
-                    VTC NASHIK
+                    PDCD Chennai
                   </h1>
                 </div>
               </div>

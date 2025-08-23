@@ -546,7 +546,7 @@ export default function EngineForm() {
   // Fetch vehicle serial numbers and body numbers
   useEffect(() => {
     axios
-      .get(`${apiUrl}/vehicle-body-numbers${department ? `?department=${encodeURIComponent(department)}` : ""}`)
+      .get(`${apiUrl}/vehicle-body-numbers`)
       .then((res) => {
         setVehicleSerialNumbers(res.data.map(v => v.vehicle_serial_number));
         // Build a map: { vehicle_serial_number: vehicle_body_number }
@@ -627,7 +627,7 @@ export default function EngineForm() {
 
       {/* Main Content */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Card>
+        <Card className="relative">
           <CardContent className="p-6">
             {/* Form Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1426,8 +1426,8 @@ export default function EngineForm() {
                 </>
               )}
 
-              {/* Action Buttons */}
-              <div className="mt-6 flex justify-end gap-3">
+              {/* Action Buttons - Positioned at bottom right corner */}
+              <div className="absolute bottom-4 right-4 flex gap-3">
                 <Button
                   onClick={handleAddEngine}
                   className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
@@ -1436,7 +1436,6 @@ export default function EngineForm() {
                 </Button>
                 <Button
                   onClick={handleClear}
-                  variant="outline"
                   className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
                 >
                   ✕ CLEAR

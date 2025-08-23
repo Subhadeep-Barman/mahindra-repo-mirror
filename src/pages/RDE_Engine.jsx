@@ -53,9 +53,11 @@ export default function RDEEnginePage() {
           engine_build_level: e.engine_build_level || "",
           engine_capacity: e.engine_capacity || "",
           engine_type: e.engine_type || "",
+          name_of_creator: e.name_of_creator || "NA", // Use userName if not available
           id_of_creator: e.id_of_creator || "",
           created_on: e.created_on,
           id_of_updater: e.id_of_updater,
+          name_of_updater: e.name_of_updater || "NA", // Use userName if not available
           updated_on: e.updated_on,
         }));
         setEngines(minimalEngines);
@@ -291,7 +293,7 @@ export default function RDEEnginePage() {
                           {engine.engine_type}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600 px-4 py-2">
-                          {engine.id_of_creator}
+                          {engine.name_of_creator || "NA"} {/* Use userName if not available */}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600 px-4 py-2">
                           {new Date(engine.created_on).toLocaleString("en-IN", {
@@ -305,7 +307,7 @@ export default function RDEEnginePage() {
                           })}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600 px-4 py-2">
-                          {engine.id_of_updater}
+                          {engine.name_of_updater || "NA"} {/* Use userName if not available */}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600 px-4 py-2">
                         {new Date(engine.updated_on + "Z").toLocaleString("en-IN", {
