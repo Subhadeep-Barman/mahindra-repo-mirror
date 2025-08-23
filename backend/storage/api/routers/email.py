@@ -459,14 +459,12 @@ def get_department_cc_emails(job_order) -> list:
     - PDCD_JO Chennai: []
     """
     department = getattr(job_order, "department", None) or getattr(job_order, "team", None)
-    print(f"Fetching CC emails for department: {department}")
     cc_map = {
         "VTC_JO Chennai": ["EDC-VTCLAB@mahindra.com"],
         "RDE JO": ["EDC-RDELAB@mahindra.com"],
         "VTC_JO Nashik": [],
         "PDCD_JO Chennai": []
     }
-    print(f"Departmentttttttttttttttttttt: {department}, CC Emails: {cc_map.get(department, [])}")
     return cc_map.get(department, [])
 
 
@@ -516,7 +514,7 @@ async def send_email_endpoint(
         job_order = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
         # --- Department-based recipient override for ALL cases ---
         if job_order:
-            dept_group_email = get_department_group_email(job_order)
+            dept_group_email = get_department_group_email(job_order, caseid)
             if dept_group_email:
                 group_email = dept_group_email
                 vtc_logger.info(f"Overriding group email for department: {dept_group_email}")
@@ -796,6 +794,11 @@ async def delete_cft_member(
         job_order.cft_members.pop(member_index)
         db.commit()
         db.refresh(job_order)
+        vtc_logger.info(f"Deleted CFT member at index {member_index} for job_order_id: {job_order_id}")
+        return job_order
+    except Exception as e:
+        vtc_logger.error(f"Error in delete_cft_member: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
         vtc_logger.info(f"Deleted CFT member at index {member_index} for job_order_id: {job_order_id}")
         return job_order
     except Exception as e:
