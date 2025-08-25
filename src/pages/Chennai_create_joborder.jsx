@@ -704,6 +704,13 @@ export default function CreateJobOrder() {
           requestedPayloadKg: jobOrder.requestedPayloadKg || jobOrder.requested_payload || "",
           idleExhaustMassFlow: jobOrder.idleExhaustMassFlow || jobOrder.idle_exhaust_mass_flow || "",
         };
+        
+        // Debug logging for requested payload functionality
+        console.log("Job Order Data - Vehicle Test Payload Criteria:", jobOrder.vehicle_test_payload_criteria);
+        console.log("Job Order Data - Requested Payload:", jobOrder.requested_payload);
+        console.log("Form Data - Vehicle Test Payload Criteria:", newFormData.vehicleTestPayloadCriteria);
+        console.log("Form Data - Requested Payload Kg:", newFormData.requestedPayloadKg);
+        
         setForm(newFormData);
         // Prefill vehicleEditable and engineEditable if present
         if (jobOrder.vehicleDetails)
@@ -2220,7 +2227,7 @@ export default function CreateJobOrder() {
               </Select>
             </div>
             {/* Show manual entry field only if 'Manual Entry' is selected */}
-            {form.vehicleTestPayloadCriteria === "Customized Payload" && (
+            {form.vehicleTestPayloadCriteria === "Manual Entry" && (
               <div className="flex flex-col">
                 <Label htmlFor="requestedPayloadKg" className="mb-2">
                   Requested Payload in kgs <span className="text-red-500">*</span>

@@ -873,9 +873,7 @@ export default function RDECreateJobOrder() {
       vehicle_gwv: form.vehicleGVW || null,
       vehicle_kerb_weight: form.vehicleKerbWeight || null,
       vehicle_test_payload_criteria:
-        form.vehicleTestPayloadCriteria === "Customized Payload"
-          ? form.requestedPayloadKg
-          : form.vehicleTestPayloadCriteria || null,
+        form.vehicleTestPayloadCriteria || null,
       requested_payload: form.requestedPayloadKg || null,
       idle_exhaust_mass_flow: form.idleExhaustMassFlow || null,
       job_order_status: "Created",
