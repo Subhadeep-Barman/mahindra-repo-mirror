@@ -353,16 +353,26 @@ export default function EditTestOrder() {
     id_of_updater: userId || "",
     name_of_updater: userName || "",
     updated_on: new Date().toISOString(),
-    // Coast down data
-    coast_down_reference: test.cdReportRef || "",
-    vehicle_reference_mass: test.vehicleRefMass || "",
-    a_value: test.aN || "",
-    b_value: test.bNkmph || "",
-    c_value: test.cNkmph2 || "",
-    f0_value: test.f0N || "",
-    f1_value: test.f1Nkmph || "",
-    f2_value: test.f2Nkmph2 || "",
-    coast_down_data: test.coast_down_data || null,
+    // Coast down data fields (ensure always sent)
+    cdReportRef: test.cdReportRef || "",
+    vehicleRefMass: test.vehicleRefMass || "",
+    aN: test.aN || "",
+    bNkmph: test.bNkmph || "",
+    cNkmph2: test.cNkmph2 || "",
+    f0N: test.f0N || "",
+    f1Nkmph: test.f1Nkmph || "",
+    f2Nkmph2: test.f2Nkmph2 || "",
+    // Optionally, send the nested object if needed by backend
+    coast_down_data: {
+      coast_down_reference: test.cdReportRef || "",
+      vehicle_reference_mass: test.vehicleRefMass || "",
+      a_value: test.aN || "",
+      b_value: test.bNkmph || "",
+      c_value: test.cNkmph2 || "",
+      f0_value: test.f0N || "",
+      f1_value: test.f1Nkmph || "",
+      f2_value: test.f2Nkmph2 || "",
+    },
   });
 
   // Handler to update the test order
