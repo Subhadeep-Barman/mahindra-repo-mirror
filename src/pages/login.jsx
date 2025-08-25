@@ -95,7 +95,7 @@ function Login() {
         </div>
       </div>
     <div className="absolute right-4 top-9 z-50 text-xl text-white pointer-events-none select-none font-bold drop-shadow-lg font-mono">
-      Version 1.2.0
+      Version 1.3.0
     </div>
   </div>
   );

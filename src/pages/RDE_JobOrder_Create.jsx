@@ -102,7 +102,6 @@ export default function RDECreateJobOrder() {
   const [modes, setModes] = useState([]);
 
   const [fuelTypes, setFuelTypes] = useState([]);
-  const [engineNumbers, setEngineNumbers] = useState([]);
 
   // Add attachment modal states (copied from Nashik)
   const [emissionCheckModals, setEmissionCheckModals] = useState({});
@@ -129,6 +128,7 @@ export default function RDECreateJobOrder() {
   const [reEditModalOpen, setReEditModalOpen] = useState(false);
   const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
   const [mailRemarksModalOpen, setMailRemarksModalOpen] = useState(false);
+  const [engineNumbers, setEngineNumbers] = useState([]);
 
   // Add handler to open re-edit modal
   const handleOpenReEditModal = (idx) => {
@@ -772,19 +772,25 @@ export default function RDECreateJobOrder() {
   // Function to check if job order with same vehicle body number and engine serial number exists
   const checkForDuplicateJobOrder = async (vehicleBodyNumber, engineSerialNumber) => {
     try {
+      console.log("[RDE] Checking for duplicate job order with:", vehicleBodyNumber, engineSerialNumber);
       const response = await axios.get(`${apiURL}/rde_joborders`, { params: {user_id: userId, role: userRole } });
       const jobOrders = response.data;
-      
+      console.log("[RDE] Job orders fetched for duplicate check:", jobOrders);
+
       // Find if there's already a job order with same vehicle body number and engine serial number
       const duplicate = jobOrders.find(
         (jobOrder) => 
           jobOrder.vehicle_body_number === vehicleBodyNumber && 
           jobOrder.engine_serial_number === engineSerialNumber
       );
-      
+      if (duplicate) {
+        console.log("[RDE] Duplicate found:", duplicate);
+      } else {
+        console.log("[RDE] No duplicate found.");
+      }
       return duplicate;
     } catch (error) {
-      console.error("Error checking for duplicate job orders:", error);
+      console.error("[RDE] Error checking for duplicate job orders:", error);
       return null;
     }
   };
@@ -814,14 +820,28 @@ export default function RDECreateJobOrder() {
       showSnackbar("Please add at least one CFT member before creating a job order.", "error");
       return;
     }
-    
+
+    // Debug: Log form values before duplicate check
+    console.log("[RDE] Form values before duplicate check:", form);
+
     // Check for duplicate job orders with the same vehicle body number and engine serial number
-    const duplicate = await checkForDuplicateJobOrder(form.vehicleBodyNumber, form.engineSerialNumber);
-    
+    // FIX: Use form.engineNumber instead of form.engineSerialNumber
+    const duplicate = await checkForDuplicateJobOrder(form.vehicleBodyNumber, form.engineNumber);
+
+    if (!form.vehicleBodyNumber || !form.engineNumber) {
+      showSnackbar(
+        `[DEBUG] Vehicle Body Number or Engine Number missing for duplicate check. Body: "${form.vehicleBodyNumber}", Engine: "${form.engineNumber}"`,
+        "warning"
+      );
+      console.warn("[RDE] Duplicate check skipped due to missing values:", form.vehicleBodyNumber, form.engineNumber);
+    }
+
     if (duplicate) {
       const suggestedNumber = suggestNewVehicleBodyNumber(form.vehicleBodyNumber);
+      // Debug: Log the error message
+      console.error(`[RDE] Duplicate job order found for body: ${form.vehicleBodyNumber}, engine: ${form.engineNumber}`);
       showSnackbar(
-        `A job order already exists with the same combination of body number (${form.vehicleBodyNumber}) and engine number (${form.engineSerialNumber}). Please create a new vehicle with a different body number, suggested format: "${suggestedNumber}"`, 
+        `A job order already exists with the same combination of body number (${form.vehicleBodyNumber}) and engine number (${form.engineNumber}). Please create a new vehicle with a different body number, suggested format: "${suggestedNumber}"`, 
         "error"
       );
       return;
@@ -2271,7 +2291,7 @@ export default function RDECreateJobOrder() {
               CLEAR
             </Button>
           </div>
-        </div> */}
+        </div>
 
         {/* Job Order Buttons */}
         <div className="bg-white-50 border border-gray-200 rounded-lg mx-8 mb-6 p-6 shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
@@ -3188,13 +3208,13 @@ export default function RDECreateJobOrder() {
                       />
                     </div>
                     <div>
-                      <Label className="text-xs">C (N/kmph^2)</Label>
+                      <Label className="text-xs">C (N/kmph²)</Label>
                       <Input
                         value={test.cNkmph2 || form.cNkmph2}
                         onChange={(e) =>
                           handleTestChange(idx, "cNkmph2", e.target.value)
                         }
-                        placeholder="Enter C (N/kmph^2)"
+                        placeholder="Enter C (N/kmph²)"
                         className="mt-1"
                         disabled={!areTestFieldsEditable(test, idx)}
                       />
@@ -3226,13 +3246,13 @@ export default function RDECreateJobOrder() {
                       />
                     </div>
                     <div>
-                      <Label className="text-xs">F2 (N/kmph^2)</Label>
+                      <Label className="text-xs">F2 (N/kmph²)</Label>
                       <Input
                         value={test.f2Nkmph2 || form.f2Nkmph2}
                         onChange={(e) =>
                           handleTestChange(idx, "f2Nkmph2", e.target.value)
                         }
-                        placeholder="Enter F2 (N/kmph^2)"
+                        placeholder="Enter F2 (N/kmph²)"
                         className="mt-1"
                         disabled={!areTestFieldsEditable(test, idx)}
                       />
