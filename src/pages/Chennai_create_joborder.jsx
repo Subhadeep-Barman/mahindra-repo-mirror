@@ -2422,22 +2422,31 @@ export default function CreateJobOrder() {
                   </div>
                   {(allTestOrders[location.state?.originalJobOrderId] || []).length > 0 ? (
                     <div className="max-h-48 overflow-y-auto">
-                      {(allTestOrders[location.state?.originalJobOrderId] || []).map((testOrder, index) => (
-                        <button
-                          key={testOrder.test_order_id}
-                          onClick={() => {
-                            handleCloneSpecificTestOrder(testOrder.test_order_id);
-                            setCloneDropdownOpen(false);
-                          }}
-                          className="w-full text-left px-2 py-2 my-1 hover:bg-gray-400 bg-gray-200 dark:hover:bg-gray-800 rounded transition-colors"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-black text-sm">Test {index + 1}</span>
-                            {/* <span className="text-xs text-gray-500">{testOrder.test_order_id}</span> */}
-                          </div>
-
-                        </button>
-                      ))}
+                      {(() => {
+                        const raw = (allTestOrders[location.state?.originalJobOrderId] || []);
+                        // attach numeric serial if possible, fallback to index+1
+                        const withSerial = raw.map((t, idx) => {
+                          const serialStr = t?.test_order_id ? t.test_order_id.split("/").pop() : null;
+                          const serialNum = serialStr && !isNaN(Number(serialStr)) ? Number(serialStr) : idx + 1;
+                          return { t, serialNum };
+                        });
+                        // sort ascending by numeric serial
+                        const sorted = withSerial.slice().sort((a, b) => a.serialNum - b.serialNum);
+                        return sorted.map(({ t, serialNum }, idx) => (
+                          <button
+                            key={t.test_order_id || idx}
+                            onClick={() => {
+                              handleCloneSpecificTestOrder(t.test_order_id);
+                              setCloneDropdownOpen(false);
+                            }}
+                            className="w-full text-left px-2 py-2 my-1 hover:bg-gray-400 bg-gray-200 dark:hover:bg-gray-800 rounded transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-black text-sm">Test {serialNum}</span>
+                            </div>
+                          </button>
+                        ));
+                      })()}
                     </div>
                   ) : (
                     <div className="text-sm text-gray-500 py-4 text-center">
@@ -2473,7 +2482,7 @@ export default function CreateJobOrder() {
               }
               members={cftMembers}
               setMembers={setCftMembers}
-              disabled={formDisabled}
+              disabled={false}
             />
           </div>
         )}
@@ -3671,15 +3680,7 @@ export default function CreateJobOrder() {
               <tbody>
                 {(allTestOrders[location.state?.originalJobOrderId] || []).slice().reverse().map((to, index) => (
                   <tr key={to.test_order_id}>
-                    <td className="border px-2 py-1">
-                      <button
-                        onClick={() => handleCloneSpecificTestOrder(to.test_order_id)}
-                        className="text-blue-600 hover:text-blue-800 underline hover:no-underline cursor-pointer font-medium"
-                        title="Click to clone this test"
-                      >
-                        {to.test_order_id.split('/').pop() || (index + 1)}
-                      </button>
-                    </td>
+                    <td className="border px-2 py-1">{to.test_order_id.split('/').pop() || (index + 1)}</td>
                     <td className="border px-2 py-1">{to.test_order_id}</td>
                     <td className="border px-2 py-1">{to.test_type}</td>
                     <td className="border px-2 py-1" style={{minWidth:'200px'}}>{to.test_objective}</td>
