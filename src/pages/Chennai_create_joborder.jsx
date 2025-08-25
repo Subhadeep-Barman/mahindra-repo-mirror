@@ -205,17 +205,17 @@ export default function CreateJobOrder() {
         emissionCheckDate: testOrderData.emission_check_date || "",
         specificInstruction: testOrderData.specific_instruction || "",
 
-        // Parse attachment fields
-        emissionCheckAttachment: parseAttachment(testOrderData.emission_check_attachment),
-        dataset_attachment: parseAttachment(testOrderData.dataset_attachment),
-        a2l_attachment: parseAttachment(testOrderData.a2l_attachment),
-        experiment_attachment: parseAttachment(testOrderData.experiment_attachment),
-        dbc_attachment: parseAttachment(testOrderData.dbc_attachment),
-        wltp_attachment: parseAttachment(testOrderData.wltp_attachment),
-        pdf_report: parseAttachment(testOrderData.pdf_report),
-        excel_report: parseAttachment(testOrderData.excel_report),
-        dat_file_attachment: parseAttachment(testOrderData.dat_file_attachment),
-        others_attachment: parseAttachment(testOrderData.others_attachement),
+        // Reset all attachment fields to empty (don't copy files)
+        emissionCheckAttachment: [],
+        dataset_attachment: [],
+        a2l_attachment: [],
+        experiment_attachment: [],
+        dbc_attachment: [],
+        wltp_attachment: [],
+        pdf_report: [],
+        excel_report: [],
+        dat_file_attachment: [],
+        others_attachment: [],
 
         // Reset fields for new test order
         testOrderId: null,
@@ -704,6 +704,13 @@ export default function CreateJobOrder() {
           requestedPayloadKg: jobOrder.requestedPayloadKg || jobOrder.requested_payload || "",
           idleExhaustMassFlow: jobOrder.idleExhaustMassFlow || jobOrder.idle_exhaust_mass_flow || "",
         };
+        
+        // Debug logging for requested payload functionality
+        console.log("Job Order Data - Vehicle Test Payload Criteria:", jobOrder.vehicle_test_payload_criteria);
+        console.log("Job Order Data - Requested Payload:", jobOrder.requested_payload);
+        console.log("Form Data - Vehicle Test Payload Criteria:", newFormData.vehicleTestPayloadCriteria);
+        console.log("Form Data - Requested Payload Kg:", newFormData.requestedPayloadKg);
+        
         setForm(newFormData);
         // Prefill vehicleEditable and engineEditable if present
         if (jobOrder.vehicleDetails)
@@ -2220,7 +2227,7 @@ export default function CreateJobOrder() {
               </Select>
             </div>
             {/* Show manual entry field only if 'Manual Entry' is selected */}
-            {form.vehicleTestPayloadCriteria === "Customized Payload" && (
+            {form.vehicleTestPayloadCriteria === "Manual Entry" && (
               <div className="flex flex-col">
                 <Label htmlFor="requestedPayloadKg" className="mb-2">
                   Requested Payload in kgs <span className="text-red-500">*</span>
@@ -2415,22 +2422,31 @@ export default function CreateJobOrder() {
                   </div>
                   {(allTestOrders[location.state?.originalJobOrderId] || []).length > 0 ? (
                     <div className="max-h-48 overflow-y-auto">
-                      {(allTestOrders[location.state?.originalJobOrderId] || []).map((testOrder, index) => (
-                        <button
-                          key={testOrder.test_order_id}
-                          onClick={() => {
-                            handleCloneSpecificTestOrder(testOrder.test_order_id);
-                            setCloneDropdownOpen(false);
-                          }}
-                          className="w-full text-left px-2 py-2 my-1 hover:bg-gray-400 bg-gray-200 dark:hover:bg-gray-800 rounded transition-colors"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-black text-sm">Test {index + 1}</span>
-                            {/* <span className="text-xs text-gray-500">{testOrder.test_order_id}</span> */}
-                          </div>
-
-                        </button>
-                      ))}
+                      {(() => {
+                        const raw = (allTestOrders[location.state?.originalJobOrderId] || []);
+                        // attach numeric serial if possible, fallback to index+1
+                        const withSerial = raw.map((t, idx) => {
+                          const serialStr = t?.test_order_id ? t.test_order_id.split("/").pop() : null;
+                          const serialNum = serialStr && !isNaN(Number(serialStr)) ? Number(serialStr) : idx + 1;
+                          return { t, serialNum };
+                        });
+                        // sort ascending by numeric serial
+                        const sorted = withSerial.slice().sort((a, b) => a.serialNum - b.serialNum);
+                        return sorted.map(({ t, serialNum }, idx) => (
+                          <button
+                            key={t.test_order_id || idx}
+                            onClick={() => {
+                              handleCloneSpecificTestOrder(t.test_order_id);
+                              setCloneDropdownOpen(false);
+                            }}
+                            className="w-full text-left px-2 py-2 my-1 hover:bg-gray-400 bg-gray-200 dark:hover:bg-gray-800 rounded transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-black text-sm">Test {serialNum}</span>
+                            </div>
+                          </button>
+                        ));
+                      })()}
                     </div>
                   ) : (
                     <div className="text-sm text-gray-500 py-4 text-center">
@@ -2466,7 +2482,7 @@ export default function CreateJobOrder() {
               }
               members={cftMembers}
               setMembers={setCftMembers}
-              disabled={formDisabled}
+              disabled={false}
             />
           </div>
         )}
@@ -3664,7 +3680,7 @@ export default function CreateJobOrder() {
               <tbody>
                 {(allTestOrders[location.state?.originalJobOrderId] || []).slice().reverse().map((to, index) => (
                   <tr key={to.test_order_id}>
-                    <td className="border px-2 py-1">{index + 1}</td>
+                    <td className="border px-2 py-1">{to.test_order_id.split('/').pop() || (index + 1)}</td>
                     <td className="border px-2 py-1">{to.test_order_id}</td>
                     <td className="border px-2 py-1">{to.test_type}</td>
                     <td className="border px-2 py-1" style={{minWidth:'200px'}}>{to.test_objective}</td>
@@ -3698,23 +3714,23 @@ export default function CreateJobOrder() {
                         // For ProjectTeam: Show edit button when status is "Re-edit" 
                         if (isProjectTeam && to.status === "Re-edit") {
                           return (
-                            <Button
-                              className="bg-blue-600 text-white text-xs px-4 py-1 rounded"
+                            <button
+                              className="bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full border-0 flex items-center justify-center cursor-pointer transition-colors duration-200"
                               onClick={() => fetchAndOpenTestOrder(to.test_order_id)}
                             >
-                              Edit
-                            </Button>
+                              <Edit className="h-4 w-4" />
+                            </button>
                           );
                         }
                         // For other roles (but not TestEngineer & Admin when status is "Re-edit"): Show edit button
                         else if (!isTestEngineer || !isAdmin || ((isTestEngineer || isAdmin) && to.status !== "Re-edit")) {
                           return (
-                            <Button
-                              className="bg-blue-600 text-white text-xs px-4 py-1 rounded"
+                            <button
+                              className="bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full border-0 flex items-center justify-center cursor-pointer transition-colors duration-200"
                               onClick={() => fetchAndOpenTestOrder(to.test_order_id)}
                             >
-                              Edit
-                            </Button>
+                              <Edit className="h-4 w-4" />
+                            </button>
                           );
                         }
                         // Hide edit button for TestEngineer when status is "Re-edit"

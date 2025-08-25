@@ -476,6 +476,24 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
                 )}
               </div>
             </div>
+            {/* Domain Dropdown */}
+            <div className="flex items-center space-x-3">
+              <label htmlFor="domain" className="text-sm font-medium">Vehicle domain:</label>
+              <select
+                name="domain"
+                value={form.domain}
+                onChange={handleChange}
+                required
+                className="w-40 border rounded-lg px-3 py-2 focus:ring-red-500 focus:border-red-500"
+              >
+                <option value="">Select Domain</option>
+                {domainOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -746,26 +764,6 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
                 placeholder="Enter denominator"
               />
             </div>
-          </div>
-          {/* Domain */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Domain <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="domain"
-              value={form.domain}
-              onChange={handleChange}
-              required
-              className="border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500"
-            >
-              <option value="">Select Domain</option>
-              {domainOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
           </div>
           {/* Tyre Make */}
           <div>
