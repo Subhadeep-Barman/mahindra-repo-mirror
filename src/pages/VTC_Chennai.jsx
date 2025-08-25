@@ -78,7 +78,17 @@ export default function VTCChennaiPage() {
     axios
       .get(`${apiURL}/joborders`, { params: { department, user_id: userEmployeeId, role: userRole } })
       .then((res) => {
-        const jobOrdersData = res.data || [];
+        let jobOrdersData = res.data || [];
+        jobOrdersData = jobOrdersData.slice().sort((a, b) => {
+          const aTime = a.created_on ? new Date(a.created_on).getTime() : null;
+          const bTime = b.created_on ? new Date(b.created_on).getTime() : null;
+          if (aTime && bTime) return bTime - aTime;
+          if (aTime) return -1;
+          if (bTime) return 1;
+          const aId = Number(String(a.job_order_id || "").replace(/\D/g, "")) || 0;
+          const bId = Number(String(b.job_order_id || "").replace(/\D/g, "")) || 0;
+          return bId - aId;
+        });
         setJobOrders(jobOrdersData);
         setFilteredJobOrders(jobOrdersData);
         
