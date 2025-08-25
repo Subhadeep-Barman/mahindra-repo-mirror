@@ -3671,7 +3671,7 @@ export default function CreateJobOrder() {
               <tbody>
                 {(allTestOrders[location.state?.originalJobOrderId] || []).slice().reverse().map((to, index) => (
                   <tr key={to.test_order_id}>
-                    <td className="border px-2 py-1">{index + 1}</td>
+                    <td className="border px-2 py-1">{to.test_order_id.split('/').pop() || (index + 1)}</td>
                     <td className="border px-2 py-1">{to.test_order_id}</td>
                     <td className="border px-2 py-1">{to.test_type}</td>
                     <td className="border px-2 py-1" style={{minWidth:'200px'}}>{to.test_objective}</td>
