@@ -205,17 +205,17 @@ export default function CreateJobOrder() {
         emissionCheckDate: testOrderData.emission_check_date || "",
         specificInstruction: testOrderData.specific_instruction || "",
 
-        // Parse attachment fields
-        emissionCheckAttachment: parseAttachment(testOrderData.emission_check_attachment),
-        dataset_attachment: parseAttachment(testOrderData.dataset_attachment),
-        a2l_attachment: parseAttachment(testOrderData.a2l_attachment),
-        experiment_attachment: parseAttachment(testOrderData.experiment_attachment),
-        dbc_attachment: parseAttachment(testOrderData.dbc_attachment),
-        wltp_attachment: parseAttachment(testOrderData.wltp_attachment),
-        pdf_report: parseAttachment(testOrderData.pdf_report),
-        excel_report: parseAttachment(testOrderData.excel_report),
-        dat_file_attachment: parseAttachment(testOrderData.dat_file_attachment),
-        others_attachment: parseAttachment(testOrderData.others_attachement),
+        // Reset all attachment fields to empty (don't copy files)
+        emissionCheckAttachment: [],
+        dataset_attachment: [],
+        a2l_attachment: [],
+        experiment_attachment: [],
+        dbc_attachment: [],
+        wltp_attachment: [],
+        pdf_report: [],
+        excel_report: [],
+        dat_file_attachment: [],
+        others_attachment: [],
 
         // Reset fields for new test order
         testOrderId: null,
@@ -3671,7 +3671,15 @@ export default function CreateJobOrder() {
               <tbody>
                 {(allTestOrders[location.state?.originalJobOrderId] || []).slice().reverse().map((to, index) => (
                   <tr key={to.test_order_id}>
-                    <td className="border px-2 py-1">{to.test_order_id.split('/').pop() || (index + 1)}</td>
+                    <td className="border px-2 py-1">
+                      <button
+                        onClick={() => handleCloneSpecificTestOrder(to.test_order_id)}
+                        className="text-blue-600 hover:text-blue-800 underline hover:no-underline cursor-pointer font-medium"
+                        title="Click to clone this test"
+                      >
+                        {to.test_order_id.split('/').pop() || (index + 1)}
+                      </button>
+                    </td>
                     <td className="border px-2 py-1">{to.test_order_id}</td>
                     <td className="border px-2 py-1">{to.test_type}</td>
                     <td className="border px-2 py-1" style={{minWidth:'200px'}}>{to.test_objective}</td>
