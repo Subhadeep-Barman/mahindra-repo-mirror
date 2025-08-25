@@ -3705,23 +3705,23 @@ export default function CreateJobOrder() {
                         // For ProjectTeam: Show edit button when status is "Re-edit" 
                         if (isProjectTeam && to.status === "Re-edit") {
                           return (
-                            <Button
-                              className="bg-blue-600 text-white text-xs px-4 py-1 rounded"
+                            <button
+                              className="bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full border-0 flex items-center justify-center cursor-pointer transition-colors duration-200"
                               onClick={() => fetchAndOpenTestOrder(to.test_order_id)}
                             >
-                              Edit
-                            </Button>
+                              <Edit className="h-4 w-4" />
+                            </button>
                           );
                         }
                         // For other roles (but not TestEngineer & Admin when status is "Re-edit"): Show edit button
                         else if (!isTestEngineer || !isAdmin || ((isTestEngineer || isAdmin) && to.status !== "Re-edit")) {
                           return (
-                            <Button
-                              className="bg-blue-600 text-white text-xs px-4 py-1 rounded"
+                            <button
+                              className="bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full border-0 flex items-center justify-center cursor-pointer transition-colors duration-200"
                               onClick={() => fetchAndOpenTestOrder(to.test_order_id)}
                             >
-                              Edit
-                            </Button>
+                              <Edit className="h-4 w-4" />
+                            </button>
                           );
                         }
                         // Hide edit button for TestEngineer when status is "Re-edit"
