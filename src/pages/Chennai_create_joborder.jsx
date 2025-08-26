@@ -25,7 +25,7 @@ import { is } from "date-fns/locale";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL
 
-const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik"];
+const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik", "PDCD_JO Chennai"];
 
 export default function CreateJobOrder() {
   const [cftMembers, setCftMembers] = useState([]);
