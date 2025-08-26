@@ -7,6 +7,9 @@ import { Autocomplete, TextField, Chip } from "@mui/material";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
+    // State to track original/saved CFT members (what's actually in the database)
+    const [originalMembers, setOriginalMembers] = useState([]);
+    
     // Fetch CFT members on mount or when jobOrderId changes
     useEffect(() => {
         if (!jobOrderId) return;
@@ -17,16 +20,20 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                 try {
                     const encodedJobOrderId = encodeURIComponent(jobOrderId);
                     const res = await axios.get(`${apiURL}/cft_members/read?job_order_id=${encodedJobOrderId}`);
-                    setMembers(res.data || []);
+                    const fetchedMembers = res.data || [];
+                    setMembers(fetchedMembers);
+                    setOriginalMembers(fetchedMembers); // Store original members
                     setHasUnsavedChanges(false);
                 } catch (err) {
                     console.error("Failed to fetch CFT members:", err);
                     setMembers([]);
+                    setOriginalMembers([]);
                 }
             };
             fetchMembers();
         } else {
-            // If members are already provided, just reset unsaved changes
+            // If members are provided from parent, store them as original
+            setOriginalMembers(members);
             setHasUnsavedChanges(false);
         }
     }, [jobOrderId, setMembers]);
@@ -183,8 +190,6 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
         const apiEndpoint = isRDEJobOrder 
             ? `${apiURL}/rde_joborders/${encodeURIComponent(jobOrderId)}`
             : `${apiURL}/joborders/${encodeURIComponent(jobOrderId)}`;
-            
-        console.log("CFTMembers - Using endpoint:", apiEndpoint);
         
         try {
             await axios.put(
@@ -196,6 +201,7 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
             );
             setApplyLoading(false);
             setHasUnsavedChanges(false);
+            setOriginalMembers(cftMembersToSend); // Update original members after successful save
             showSnackbar("CFT members updated successfully", "success", 3000);
         } catch (err) {
             setApplyError("Failed to update CFT members.");
@@ -213,11 +219,11 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
             {/* Content */}
             <div className="p-4 flex-1">
                 {/* Current CFT Members Display */}
-                {members && members.length > 0 && (
+                {originalMembers && originalMembers.length > 0 && (
                     <div className="mb-4">
                         <label className="block text-sm font-medium mb-2">Current CFT Members:</label>
                         <div className="flex flex-wrap gap-2">
-                            {members.filter(m => !m.group).map((member, index) => (
+                            {originalMembers.filter(m => !m.group).map((member, index) => (
                                 <div key={index} className="bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm">
                                     {member.code} - {member.name}
                                 </div>
