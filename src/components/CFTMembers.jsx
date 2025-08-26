@@ -10,28 +10,42 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
     // Fetch CFT members on mount or when jobOrderId changes
     useEffect(() => {
         if (!jobOrderId) return;
-        const fetchMembers = async () => {
-            try {
-                const res = await axios.get(`${apiURL}/cft_members/read`, { params: { job_order_id: jobOrderId } });
-                setMembers(res.data || []);
-            } catch (err) {
-                setMembers([]);
-            }
-        };
-        fetchMembers();
+        
+        // Only fetch if no members are provided or members array is empty
+        if (!members || members.length === 0) {
+            const fetchMembers = async () => {
+                try {
+                    const encodedJobOrderId = encodeURIComponent(jobOrderId);
+                    const res = await axios.get(`${apiURL}/cft_members/read?job_order_id=${encodedJobOrderId}`);
+                    setMembers(res.data || []);
+                    setHasUnsavedChanges(false);
+                } catch (err) {
+                    console.error("Failed to fetch CFT members:", err);
+                    setMembers([]);
+                }
+            };
+            fetchMembers();
+        } else {
+            // If members are already provided, just reset unsaved changes
+            setHasUnsavedChanges(false);
+        }
     }, [jobOrderId, setMembers]);
+
+    // Reset unsaved changes when members are updated from parent
+    useEffect(() => {
+        if (members && members.length > 0) {
+            setHasUnsavedChanges(false);
+        }
+    }, [jobOrderId]); // Only reset when jobOrderId changes, not when members change
 
     // Update member
     const updateMember = async (idx, updatedMember) => {
         if (!jobOrderId) return;
         try {
-            await axios.put(`${apiURL}/cft_members/update`, null, {
-                params: {
-                    job_order_id: jobOrderId,
-                    member_index: idx,
-                },
-                data: updatedMember,
-            });
+            const encodedJobOrderId = encodeURIComponent(jobOrderId);
+            await axios.put(`${apiURL}/cft_members/update?job_order_id=${encodedJobOrderId}&member_index=${idx}`, 
+                updatedMember
+            );
             setMembers((prev) =>
                 prev.map((m, i) => (i === idx ? updatedMember : m))
             );
@@ -92,10 +106,19 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
     // Prepare value for Autocomplete (selectedUsers)
     // If a user is removed from members, also remove from selectedUsers
     useEffect(() => {
-        setSelectedUsers(prev =>
-            prev.filter(u => members.some(m => m.code === u.id && m.name === u.username))
-        );
-    }, [members]);
+        console.log("CFTMembers: syncing selectedUsers. members:", members, "projectTeamUsers:", projectTeamUsers);
+        if (members && members.length > 0) {
+            // Sync selectedUsers with current members
+            const currentUserSelections = members
+                .filter(m => !m.group)
+                .map(m => projectTeamUsers.find(u => u.id === m.code && u.username === m.name))
+                .filter(Boolean);
+            console.log("CFTMembers: setting selectedUsers to:", currentUserSelections);
+            setSelectedUsers(currentUserSelections);
+        } else {
+            setSelectedUsers([]);
+        }
+    }, [members, projectTeamUsers]);
 
     // Add selected users as members or remove when chip is deleted
     const handleAddMembers = async (event, newValue) => {
@@ -109,49 +132,17 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
             m => !m.group && !newValue.some(user => user.id === m.code && user.username === m.name)
         );
 
-        // Remove members
-        if (toRemove.length && jobOrderId) {
-            await Promise.all(
-                toRemove.map(member => {
-                    const idx = members.findIndex(
-                        m => !m.group && m.code === member.code && m.name === member.name
-                    );
-                    if (idx !== -1) {
-                        return axios.delete(`${apiURL}/cft_members/delete`, {
-                            params: {
-                                job_order_id: jobOrderId,
-                                member_index: idx
-                            }
-                        });
-                    }
-                    return Promise.resolve();
-                })
-            );
-        }
+        // Remove members - just update local state for existing job orders
+        // The actual API update will happen when user clicks Apply
         // Update local state for removals
         let updatedMembers = members.filter(
             m => m.group || newValue.some(user => user.id === m.code && user.username === m.name)
         );
 
         // Add new members
-        if (toAdd.length && jobOrderId) {
-            try {
-                await Promise.all(
-                    toAdd.map(user =>
-                        axios.post(`${apiURL}/cft_members/add`, {
-                            job_order_id: jobOrderId,
-                            member: { code: user.id, name: user.username }
-                        })
-                    )
-                );
-                updatedMembers = [
-                    ...updatedMembers,
-                    ...toAdd.map(user => ({ code: user.id, name: user.username }))
-                ];
-            } catch (err) {
-                setAddError("Failed to add member(s)");
-            }
-        } else if (toAdd.length) {
+        if (toAdd.length) {
+            // For existing job orders, just update local state
+            // The actual API update will happen when user clicks Apply
             updatedMembers = [
                 ...updatedMembers,
                 ...toAdd.map(user => ({ code: user.id, name: user.username }))
@@ -160,11 +151,17 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
 
         setMembers(updatedMembers);
         setSelectedUsers(newValue);
+        
+        // Mark as having unsaved changes if there were additions or removals
+        if (toAdd.length > 0 || toRemove.length > 0) {
+            setHasUnsavedChanges(true);
+        }
     };
 
     // State for apply button
     const [applyLoading, setApplyLoading] = useState(false);
     const [applyError, setApplyError] = useState("");
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     const handleApply = async () => {
         setApplyError("");
@@ -173,15 +170,33 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
             return;
         }
         setApplyLoading(true);
+        
+        // Filter only non-group members for the API call
+        const cftMembersToSend = members.filter(m => !m.group);
+        console.log("CFTMembers - Sending payload:", {
+            job_order_id: jobOrderId,
+            cft_members: cftMembersToSend,
+        });
+        
+        // Determine the correct API endpoint based on job order ID
+        const isRDEJobOrder = jobOrderId && jobOrderId.startsWith("JO RDE");
+        const apiEndpoint = isRDEJobOrder 
+            ? `${apiURL}/rde_joborders/${encodeURIComponent(jobOrderId)}`
+            : `${apiURL}/joborders/${encodeURIComponent(jobOrderId)}`;
+            
+        console.log("CFTMembers - Using endpoint:", apiEndpoint);
+        
         try {
             await axios.put(
-                `${apiURL}/joborders/${jobOrderId}`,
+                apiEndpoint,
                 {
                     job_order_id: jobOrderId,
-                    cft_members: members,
+                    cft_members: cftMembersToSend,
                 }
             );
             setApplyLoading(false);
+            setHasUnsavedChanges(false);
+            showSnackbar("CFT members updated successfully", "success", 3000);
         } catch (err) {
             setApplyError("Failed to update CFT members.");
             setApplyLoading(false);
@@ -197,6 +212,20 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
 
             {/* Content */}
             <div className="p-4 flex-1">
+                {/* Current CFT Members Display */}
+                {members && members.length > 0 && (
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium mb-2">Current CFT Members:</label>
+                        <div className="flex flex-wrap gap-2">
+                            {members.filter(m => !m.group).map((member, index) => (
+                                <div key={index} className="bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm">
+                                    {member.code} - {member.name}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* Multi-select Autocomplete for adding CFT members */}
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-1">Select ProjectTeam User(s)</label>
@@ -206,9 +235,7 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                         getOptionLabel={option =>
                             `${option.id}${option.username ? ` - ${option.username}` : ""}`
                         }
-                        value={singleMembers.map(m =>
-                            projectTeamUsers.find(u => u.id === m.code && u.username === m.name)
-                        ).filter(Boolean)}
+                        value={selectedUsers}
                         loading={usersLoading}
                         disabled={disabled}
                         onChange={handleAddMembers}
@@ -254,6 +281,35 @@ const CFTMembers = ({ jobOrderId, members, setMembers, disabled }) => {
                         )}
                     />
                 </div>
+
+                {/* Apply Button */}
+                {jobOrderId && (
+                    <div className="mt-4 flex justify-between items-center">
+                        {hasUnsavedChanges && (
+                            <span className="text-orange-600 text-sm font-medium">
+                                ⚠ You have unsaved changes
+                            </span>
+                        )}
+                        <button
+                            onClick={handleApply}
+                            disabled={applyLoading || disabled}
+                            className={`px-4 py-2 ${
+                                hasUnsavedChanges 
+                                    ? "bg-orange-600 hover:bg-orange-700" 
+                                    : "bg-blue-600 hover:bg-blue-700"
+                            } disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors duration-200 ml-auto`}
+                        >
+                            {applyLoading ? "Updating..." : hasUnsavedChanges ? "Update" : "Up to Date"}
+                        </button>
+                    </div>
+                )}
+
+                {/* Apply Error */}
+                {applyError && (
+                    <div className="mt-2 text-red-600 text-sm">
+                        {applyError}
+                    </div>
+                )}
             </div>
         </div>
     );
