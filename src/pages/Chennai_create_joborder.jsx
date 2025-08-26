@@ -12,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/UI/select";
-import { Switch } from "@/components/UI/switch";
 import useStore from "@/store/useStore";
 import axios from "axios";
 import { useEffect, useRef, useState } from "react";
@@ -149,7 +148,6 @@ export default function CreateJobOrder() {
         uploadDocuments: null,
         testOrderId: null,
         job_order_id: null,
-        showCoastDownData: false,
         // Coast down data fields for individual test
         cdReportRef: "",
         vehicleRefMass: "",
@@ -221,7 +219,6 @@ export default function CreateJobOrder() {
         testOrderId: null,
         job_order_id: null,
         status: null,
-        showCoastDownData: false,
 
         // Coast down data fields (empty for new test)
         cdReportRef: "",
@@ -1045,12 +1042,12 @@ export default function CreateJobOrder() {
       return;
     }
 
-    // Validate Coast Down Data if toggle is enabled
-    if (test.showCoastDownData) {
+    // Validate Coast Down Data if inertia class is Coastdown Loading
+    if (test.inertiaClass === "Coastdown Loading") {
       const missingFields = validateCoastDownData(test);
       if (missingFields.length > 0) {
         showSnackbar(
-          `Coast Down Data is incomplete. Please fill in the following fields: ${missingFields.join(', ')}`,
+          `Coast Down Data is required for Coastdown Loading. Please fill in the following fields: ${missingFields.join(', ')}`,
           "error"
         );
         return;
@@ -1759,6 +1756,29 @@ export default function CreateJobOrder() {
     const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
     const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
     if (!hasDataset || !hasExperiment) return false;
+
+    // Validate Coast Down Data if inertia class is "Coastdown Loading"
+    if (test.inertiaClass === "Coastdown Loading") {
+      const coastDownFields = [
+        'cdReportRef',
+        'vehicleRefMass',
+        'aN',
+        'bNkmph',
+        'cNkmph2',
+        'f0N',
+        'f1Nkmph',
+        'f2Nkmph2'
+      ];
+
+      for (const field of coastDownFields) {
+        const testValue = test[field];
+        const formValue = form[field];
+        const value = testValue || formValue;
+        if (!value || (typeof value === 'string' && value.trim() === '')) {
+          return false;
+        }
+      }
+    }
 
     return true;
   };
@@ -2684,9 +2704,30 @@ export default function CreateJobOrder() {
                   <Label>Inertia Class <span className="text-red-500">*</span></Label>
                   <Select
                     value={test.inertiaClass}
-                    onValueChange={(v) =>
-                      handleTestChange(idx, "inertiaClass", v)
-                    }
+                    onValueChange={(v) => {
+                      // Update inertia class and handle coast down data in a single state update
+                      setTests((prevTests) => {
+                        const updatedTests = prevTests.map((test, i) => {
+                          if (i === idx) {
+                            const updatedTest = { ...test, inertiaClass: v };
+                            // Pre-fill coast down data if "Coastdown Loading" is selected
+                            if (v === "Coastdown Loading") {
+                              updatedTest.cdReportRef = updatedTest.cdReportRef || form.cdReportRef;
+                              updatedTest.vehicleRefMass = updatedTest.vehicleRefMass || form.vehicleRefMass;
+                              updatedTest.aN = updatedTest.aN || form.aN;
+                              updatedTest.bNkmph = updatedTest.bNkmph || form.bNkmph;
+                              updatedTest.cNkmph2 = updatedTest.cNkmph2 || form.cNkmph2;
+                              updatedTest.f0N = updatedTest.f0N || form.f0N;
+                              updatedTest.f1Nkmph = updatedTest.f1Nkmph || form.f1Nkmph;
+                              updatedTest.f2Nkmph2 = updatedTest.f2Nkmph2 || form.f2Nkmph2;
+                            }
+                            return updatedTest;
+                          }
+                          return test;
+                        });
+                        return updatedTests;
+                      });
+                    }}
                     disabled={!areTestFieldsEditable(test, idx)}
                   >
                     <SelectTrigger>
@@ -3405,27 +3446,17 @@ export default function CreateJobOrder() {
                 </div>
               </div>
               {/* Coast Down Data Section for Test */}
-              <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 dark:bg-inherit transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="font-semibold text-sm text-blue-700">
-                    Coast Down Data (CD)
-                  </span>
-                  <Switch
-                    checked={!!test.showCoastDownData}
-                    onCheckedChange={(checked) => {
-                      const updatedTests = [...tests];
-                      updatedTests[idx].showCoastDownData = checked;
-                      setTests(updatedTests);
-                    }}
-                    disabled={!areTestFieldsEditable(test, idx)}
-                    className="data-[state=checked]:bg-red-500 dark:data-[state=unchecked]:bg-gray-400"
-                  />
-                </div>
-                {test.showCoastDownData && (
+              {test.inertiaClass === "Coastdown Loading" && (
+                <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 dark:bg-inherit transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="font-semibold text-sm text-blue-700">
+                      Coast Down Data (CD) - Required for Coastdown Loading
+                    </span>
+                  </div>
                   <div>
                     <div className="mb-3">
                       <Label className="text-xs">
-                        Coast Down Test Report Reference
+                        Coast Down Test Report Reference <span className="text-red-500">*</span>
                       </Label>
                       <Input
                         value={test.cdReportRef || form.cdReportRef}
@@ -3441,7 +3472,7 @@ export default function CreateJobOrder() {
                     <div className="grid grid-cols-4 gap-3 text-xs">
                       <div>
                         <Label className="text-xs">
-                          Vehicle Reference mass (Kg)
+                          Vehicle Reference mass (Kg) <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           value={test.vehicleRefMass || form.vehicleRefMass}
@@ -3458,7 +3489,7 @@ export default function CreateJobOrder() {
                         />
                       </div>
                       <div>
-                        <Label className="text-xs">A (N)</Label>
+                        <Label className="text-xs">A (N) <span className="text-red-500">*</span></Label>
                         <Input
                           value={test.aN || form.aN}
                           onChange={(e) =>
@@ -3470,7 +3501,7 @@ export default function CreateJobOrder() {
                         />
                       </div>
                       <div>
-                        <Label className="text-xs">B (N/kmph)</Label>
+                        <Label className="text-xs">B (N/kmph) <span className="text-red-500">*</span></Label>
                         <Input
                           value={test.bNkmph || form.bNkmph}
                           onChange={(e) =>
@@ -3482,7 +3513,7 @@ export default function CreateJobOrder() {
                         />
                       </div>
                       <div>
-                        <Label className="text-xs">C (N/kmph^2)</Label>
+                        <Label className="text-xs">C (N/kmph^2) <span className="text-red-500">*</span></Label>
                         <Input
                           value={test.cNkmph2 || form.cNkmph2}
                           onChange={(e) =>
@@ -3496,7 +3527,7 @@ export default function CreateJobOrder() {
                     </div>
                     <div className="grid grid-cols-3 gap-3 text-xs mt-3">
                       <div>
-                        <Label className="text-xs">F0 (N)</Label>
+                        <Label className="text-xs">F0 (N) <span className="text-red-500">*</span></Label>
                         <Input
                           value={test.f0N || form.f0N}
                           onChange={(e) =>
@@ -3508,7 +3539,7 @@ export default function CreateJobOrder() {
                         />
                       </div>
                       <div>
-                        <Label className="text-xs">F1 (N/kmph)</Label>
+                        <Label className="text-xs">F1 (N/kmph) <span className="text-red-500">*</span></Label>
                         <Input
                           value={test.f1Nkmph || form.f1Nkmph}
                           onChange={(e) =>
@@ -3520,7 +3551,7 @@ export default function CreateJobOrder() {
                         />
                       </div>
                       <div>
-                        <Label className="text-xs">F2 (N/kmph^2)</Label>
+                        <Label className="text-xs">F2 (N/kmph^2) <span className="text-red-500">*</span></Label>
                         <Input
                           value={test.f2Nkmph2 || form.f2Nkmph2}
                           onChange={(e) =>
@@ -3532,10 +3563,9 @@ export default function CreateJobOrder() {
                         />
                       </div>
                     </div>
-
                   </div>
-                )}
-              </div>
+                </div>
+              )}
               <div className="flex justify-end mt-6">
                 <Button
                   className="bg-red-600 text-white text-xs px-6 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
