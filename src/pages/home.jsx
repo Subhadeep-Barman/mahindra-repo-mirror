@@ -73,19 +73,38 @@ const servicesBase = [
 
 // Change the export to default and rename the component
 export default function HomePage() {
-  const { userRole, userId, userName } = useAuth();
-  const filteredBaseServices = servicesBase.filter(service => 
-    service.title !== "PDCD LAB" || 
-    userRole === "ProjectTeam" || 
-    userRole === "Admin" ||
-    userRole === "TestEngineer"
-  );
+  const { userRole, userId, userName, userTeam } = useAuth();
 
-  // Use only the filtered base services (no admin portal card)
+  // Filter services based on userTeam
+  let filteredBaseServices = [];
+  if (userTeam === "vtc" || userTeam === "vtc_n") {
+    filteredBaseServices = servicesBase.filter(service =>
+      service.title === "VTC LAB" || service.title === "VTC Nashik LAB"
+    );
+  } else if (userTeam === "rde") {
+    filteredBaseServices = servicesBase.filter(service =>
+      service.title === "RDE LAB"
+    );
+  } else if (userTeam === "pdcd") {
+    filteredBaseServices = servicesBase.filter(service =>
+      service.title === "PDCD LAB"
+    );
+  } else {
+    filteredBaseServices = [];
+  }
+
   const services = filteredBaseServices;
 
-  // Determine grid columns based on number of services
-  const gridCols = "grid-cols-1 md:grid-cols-2 lg:grid-cols-4";
+  // Center cards if 1 or 2 labs, else use default grid
+  let gridCols = "grid-cols-1 md:grid-cols-2 lg:grid-cols-4";
+  let gridJustify = "";
+  if (services.length === 1) {
+    gridCols = "grid-cols-1";
+    gridJustify = "justify-center";
+  } else if (services.length === 2) {
+    gridCols = "grid-cols-1 md:grid-cols-2";
+    gridJustify = "justify-center";
+  }
 
   // Fetch dropdown options globally on home page mount
   const fetchProjects = useStore((state) => state.fetchProjects);
@@ -100,7 +119,7 @@ export default function HomePage() {
   return (
     <>
       <Navbar />
-     <div className="min-h-screen flex flex-col bg-white dark:bg-black overflow-hidden relative">
+      <div className="min-h-screen flex flex-col bg-white dark:bg-black overflow-hidden relative">
         {/* Main Content Area - takes remaining space */}
         <div className="flex-1 flex flex-col overflow-y-auto">
           {/* Hero Section */}
@@ -139,7 +158,7 @@ export default function HomePage() {
                 </p>
               </div> */}
 
-              <div className={`grid ${gridCols} gap-6 mb-0`}>
+              <div className={`grid ${gridCols} gap-6 mb-0 ${gridJustify}`}>
                 {services.map((service) => {
                   const Icon = service.icon;
                   return (

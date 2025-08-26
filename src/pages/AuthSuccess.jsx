@@ -35,6 +35,11 @@ function isValidUserRole(role) {
   return typeof role === "string" && /^[A-Za-z0-9 _-]{1,50}$/.test(role);
 }
 
+// Add team validation
+function isValidUserTeam(team) {
+  return typeof team === "string" && /^[A-Za-z0-9 _-]{0,50}$/.test(team);
+}
+
 // Validate that the userloyee data from the API conforms to expected types and values
 const validateUserData = (data) => {
   if (!Array.isArray(data)) return false;
@@ -42,7 +47,8 @@ const validateUserData = (data) => {
     (user) =>
       typeof user === "object" &&
       typeof user.id === "string" &&
-      isValidUserRole(user.role)
+      isValidUserRole(user.role) &&
+      (user.team === undefined || isValidUserTeam(user.team))
   );
 };
 
@@ -137,6 +143,13 @@ export default function AuthSuccess() {
           expires: expirationDate,
           secure: true,
         });
+        // Add team to cookies if present
+        if (user.team) {
+          Cookies.set("userTeam", user.team, {
+            expires: expirationDate,
+            secure: true,
+          });
+        }
 
         useStore.getState().setUserCookieData({
           token: jwtToken,
@@ -145,6 +158,7 @@ export default function AuthSuccess() {
           userEmail: userDetails.emailaddress,
           userId: userDetails.user,
           userName: userDetails.displayname,
+          userTeam: user.team || "",
         });
 
         console.log("User authenticated successfully:", userDetails);
