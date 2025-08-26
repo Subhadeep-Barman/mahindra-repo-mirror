@@ -30,18 +30,6 @@ import {
 const servicesBase = [
   {
     id: 1,
-    title: "RDE LAB",
-    description: "Real Driving Emissions Laboratory",
-  icon: Code,
-  img: rdeIcon,
-    href: "/rde-chennai",
-  color: "from-blue-400 to-cyan-400",
-  bgColor: "bg-blue-100 dark:bg-blue-900/20",
-  borderColor: "border-blue-300 dark:border-blue-700",
-  iconBg: "bg-blue-600",
-  },
-  {
-    id: 2,
     title: "VTC LAB",
     description: "Vehicle Test Cell Laboratory",
   icon: MessageSquare,
@@ -53,7 +41,7 @@ const servicesBase = [
   iconBg: "bg-emerald-600",
   },
   {
-    id: 3,
+    id: 2,
     title: "VTC Nashik LAB",
     description: "Vehicle Test Cell Laboratory",
   icon: Flag,
@@ -63,6 +51,18 @@ const servicesBase = [
   bgColor: "bg-purple-100 dark:bg-purple-900/20",
   borderColor: "border-purple-300 dark:border-purple-700",
   iconBg: "bg-purple-600",
+  },
+    {
+    id: 3,
+    title: "RDE LAB",
+    description: "Real Driving Emissions Laboratory",
+  icon: Code,
+  img: rdeIcon,
+    href: "/rde-chennai",
+  color: "from-blue-400 to-cyan-400",
+  bgColor: "bg-blue-100 dark:bg-blue-900/20",
+  borderColor: "border-blue-300 dark:border-blue-700",
+  iconBg: "bg-blue-600",
   },
   {
     id: 4,
