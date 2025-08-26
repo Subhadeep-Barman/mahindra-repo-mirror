@@ -875,11 +875,11 @@ export default function CreateJobOrder() {
     const job_order_id = "JO" + Date.now();
     const CoastDownData_id = "CD" + Date.now();
 
-    // Convert current time to IST and format as ISO 8601
-    const currentISTTime = new Date().toLocaleString("en-US", {
+    // Get current time in IST timezone
+    const now = new Date();
+    const formattedISTTime = now.toLocaleString("sv-SE", {
       timeZone: "Asia/Kolkata",
-    });
-    const formattedISTTime = new Date(currentISTTime).toISOString();
+    }).replace(" ", "T") + ".000Z";
 
     const jobOrderPayload = {
       job_order_id,
@@ -1057,10 +1057,10 @@ export default function CreateJobOrder() {
     const job_order_id = location.state?.jobOrder?.job_order_id || location.state?.originalJobOrderId || "";
     const test_order_id = `${job_order_id}/${test.testNumber}`;
 
-    const currentISTTime = new Date().toLocaleString("en-US", {
+    const currentISTTime = new Date().toLocaleString("sv-SE", {
       timeZone: "Asia/Kolkata",
-    });
-    const formattedISTTime = new Date(currentISTTime).toISOString();
+    }).replace(" ", "T") + ".000Z";
+    const formattedISTTime = currentISTTime;
 
     let CoastDownData_id =
       location.state?.jobOrder?.CoastDownData_id || existingCoastDownId || "";
@@ -1433,10 +1433,10 @@ export default function CreateJobOrder() {
       showSnackbar("No test order selected for update.", "warning");
       return;
     }
-    const currentISTTime = new Date().toLocaleString("en-US", {
+    const currentISTTime = new Date().toLocaleString("sv-SE", {
       timeZone: "Asia/Kolkata",
-    });
-    const formattedISTTime = new Date(currentISTTime).toISOString();
+    }).replace(" ", "T") + ".000Z";
+    const formattedISTTime = currentISTTime;
     // If ProjectTeam is updating a test in Re-edit status, set status to 'Started' (under progress)
     let newStatus = test.status;
     if (isProjectTeam && test.status === "Re-edit") {
@@ -1606,10 +1606,10 @@ export default function CreateJobOrder() {
   const handleStatusUpdate = async (status, remark = "", testOrderId = null, testIdx = null) => {
     try {
       // Get current IST time
-      const currentISTTime = new Date().toLocaleString("en-US", {
+      const currentISTTime = new Date().toLocaleString("sv-SE", {
         timeZone: "Asia/Kolkata",
-      });
-      const formattedISTTime = new Date(currentISTTime).toISOString();
+      }).replace(" ", "T") + ".000Z";
+      const formattedISTTime = currentISTTime;
 
       // Only send test_order_id, status, and remark
       const payload = {

@@ -284,12 +284,13 @@ export default function EditTestOrder() {
   // Removed fetchEngineNumbers and its usage
   }, []);
 
-  // Format date for display
+  // Format date for display in IST
   const formatDate = (dateString) => {
     if (!dateString) return "";
     try {
       const date = new Date(dateString);
       return date.toLocaleString('en-US', {
+        timeZone: 'Asia/Kolkata',
         year: 'numeric',
         month: 'short',
         day: 'numeric',
