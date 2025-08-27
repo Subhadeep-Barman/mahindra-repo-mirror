@@ -32,7 +32,7 @@ CREDENTIALS = {
 ALGORITHM = "HS256"
 
 
-def authenticate_user(role: str, password: str):
+def authenticate_user(role: str,password: str):
     """
     Authenticate a user based on role and password.
     """
@@ -88,10 +88,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         if username is None:
             raise credentials_exception
         role: str = payload.get("role")
+        team: str = payload.get("team")
     except JWTError:
         raise credentials_exception
 
-    return {"username": username, "role": role}
+    return {"username": username, "role": role, "team": team}
 
 
 class OAuth2PasswordRequestFormSimple:

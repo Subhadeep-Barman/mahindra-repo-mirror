@@ -29,7 +29,7 @@
             "case": "Test Order Created",
             "body": {
                 "subject": "{{test_order_id}}",
-                "message": "A new test order {{test_order_id}} for job order {{job_order_id}} has been created. Please start the Testing Process."
+                "message": "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 8px #f0f0f0; padding: 24px; background: #fafbfc;'><h2 style='color: #4CAF50; margin-bottom: 16px;'>New Test Order Created</h2><p>Dear Team,</p><p>A new test order <b>{{test_order_id}}</b> for job order <b>{{job_order_id}}</b> has been created. Please start the Testing Process.</p><p><a href='https://dbmrs-vtc.m-devsecops.com/login' style='background-color: #E51636; color: white; padding: 10px 20px; text-align: center; text-decoration: none; border-radius: 5px; font-family: Aptos, sans-serif; display: inline-block;'>Click Here</a></p><p style='margin-top: 32px;'>Regards,<br>EDC-VTC Lab Team</p></div>"
             }
         },
         {
