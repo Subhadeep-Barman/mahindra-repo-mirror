@@ -284,12 +284,13 @@ export default function EditTestOrder() {
   // Removed fetchEngineNumbers and its usage
   }, []);
 
-  // Format date for display
+  // Format date for display in IST
   const formatDate = (dateString) => {
     if (!dateString) return "";
     try {
       const date = new Date(dateString);
       return date.toLocaleString('en-US', {
+        timeZone: 'Asia/Kolkata',
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -353,16 +354,26 @@ export default function EditTestOrder() {
     id_of_updater: userId || "",
     name_of_updater: userName || "",
     updated_on: new Date().toISOString(),
-    // Coast down data
-    coast_down_reference: test.cdReportRef || "",
-    vehicle_reference_mass: test.vehicleRefMass || "",
-    a_value: test.aN || "",
-    b_value: test.bNkmph || "",
-    c_value: test.cNkmph2 || "",
-    f0_value: test.f0N || "",
-    f1_value: test.f1Nkmph || "",
-    f2_value: test.f2Nkmph2 || "",
-    coast_down_data: test.coast_down_data || null,
+    // Coast down data fields (ensure always sent)
+    cdReportRef: test.cdReportRef || "",
+    vehicleRefMass: test.vehicleRefMass || "",
+    aN: test.aN || "",
+    bNkmph: test.bNkmph || "",
+    cNkmph2: test.cNkmph2 || "",
+    f0N: test.f0N || "",
+    f1Nkmph: test.f1Nkmph || "",
+    f2Nkmph2: test.f2Nkmph2 || "",
+    // Optionally, send the nested object if needed by backend
+    coast_down_data: {
+      coast_down_reference: test.cdReportRef || "",
+      vehicle_reference_mass: test.vehicleRefMass || "",
+      a_value: test.aN || "",
+      b_value: test.bNkmph || "",
+      c_value: test.cNkmph2 || "",
+      f0_value: test.f0N || "",
+      f1_value: test.f1Nkmph || "",
+      f2_value: test.f2Nkmph2 || "",
+    },
   });
 
   // Handler to update the test order
@@ -693,6 +704,11 @@ export default function EditTestOrder() {
                   <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
                     ({testOrder?.rating || 0}/5)
                   </span>
+                  {((testOrder && testOrder.rating_remarks) || test.rating_remarks || ratingRemarks) && (
+                    <span className="text-sm text-gray-500 dark:text-gray-400 ml-3">-
+                      {" "}{testOrder?.rating_remarks || test.rating_remarks || ratingRemarks}
+                    </span>
+                  )}
                 </div>
               </div>
             )}
@@ -1062,6 +1078,122 @@ export default function EditTestOrder() {
 
           </div>
 
+          {/* Coast Down Data Section */}
+          <div className="mt-6 border rounded shadow px-4 py-3 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-semibold text-sm text-blue-700 dark:text-blue-300">
+                Coast Down Data
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">
+                  {console.log("Coast Down Section Render - showCoastDownData:", test.showCoastDownData)}
+                  Debug: {test.showCoastDownData ? "Visible" : "Hidden"}
+                </span>
+                <Switch
+                  checked={test.showCoastDownData}
+                  onCheckedChange={(checked) => {
+                    console.log("Switch toggled to:", checked);
+                    setTest(prev => ({ ...prev, showCoastDownData: checked }));
+                  }}
+                  className="data-[state=checked]:bg-red-500"
+                />
+              </div>
+            </div>
+            {test.showCoastDownData && (
+              <div>
+                <div className="mb-3">
+                  <Label className="text-xs dark:text-white">
+                    Coast Down Test Report Reference
+                  </Label>
+                  <Input
+                    value={test.cdReportRef}
+                    onChange={(e) => handleTestChange("cdReportRef", e.target.value)}
+                    placeholder="Enter Coast Test Report Ref."
+                    className="mt-1"
+                    disabled={!areFieldsEditable()}
+                  />
+                </div>
+                <div className="mb-2 font-semibold text-xs dark:text-white">CD Values</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <Label className="text-xs dark:text-white">
+                      Vehicle Reference mass (Kg)
+                    </Label>
+                    <Input
+                      value={test.vehicleRefMass}
+                      onChange={(e) => handleTestChange("vehicleRefMass", e.target.value)}
+                      placeholder="Enter Vehicle Reference mass"
+                      className="mt-1"
+                      disabled={!areFieldsEditable()}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs dark:text-white">A (N)</Label>
+                    <Input
+                      value={test.aN}
+                      onChange={(e) => handleTestChange("aN", e.target.value)}
+                      placeholder="Enter A (N)"
+                      className="mt-1"
+                      disabled={!areFieldsEditable()}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs dark:text-white">B (N/kmph)</Label>
+                    <Input
+                      value={test.bNkmph}
+                      onChange={(e) => handleTestChange("bNkmph", e.target.value)}
+                      placeholder="Enter B (N/kmph)"
+                      className="mt-1"
+                      disabled={!areFieldsEditable()}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs dark:text-white">C (N/kmph^2)</Label>
+                    <Input
+                      value={test.cNkmph2}
+                      onChange={(e) => handleTestChange("cNkmph2", e.target.value)}
+                      placeholder="Enter C (N/kmph^2)"
+                      className="mt-1"
+                      disabled={!areFieldsEditable()}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mt-3">
+                  <div>
+                    <Label className="text-xs dark:text-white">F0 (N)</Label>
+                    <Input
+                      value={test.f0N}
+                      onChange={(e) => handleTestChange("f0N", e.target.value)}
+                      placeholder="Enter F0 (N)"
+                      className="mt-1"
+                      disabled={!areFieldsEditable()}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs dark:text-white">F1 (N/kmph)</Label>
+                    <Input
+                      value={test.f1Nkmph}
+                      onChange={(e) => handleTestChange("f1Nkmph", e.target.value)}
+                      placeholder="Enter F1 (N/kmph)"
+                      className="mt-1"
+                      disabled={!areFieldsEditable()}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs dark:text-white">F2 (N/kmph^2)</Label>
+                    <Input
+                      value={test.f2Nkmph2}
+                      onChange={(e) => handleTestChange("f2Nkmph2", e.target.value)}
+                      placeholder="Enter F2 (N/kmph^2)"
+                      className="mt-1"
+                      disabled={!areFieldsEditable()}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Attachments Section */}
           <div className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-4 mt-4 mb-2 shadow-inner">
             <div className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">
@@ -1411,122 +1543,6 @@ export default function EditTestOrder() {
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Coast Down Data Section */}
-          <div className="mt-6 border rounded shadow px-4 py-3 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600">
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-semibold text-sm text-blue-700 dark:text-blue-300">
-                Coast Down Data
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">
-                  {console.log("Coast Down Section Render - showCoastDownData:", test.showCoastDownData)}
-                  Debug: {test.showCoastDownData ? "Visible" : "Hidden"}
-                </span>
-                <Switch
-                  checked={test.showCoastDownData}
-                  onCheckedChange={(checked) => {
-                    console.log("Switch toggled to:", checked);
-                    setTest(prev => ({ ...prev, showCoastDownData: checked }));
-                  }}
-                  className="data-[state=checked]:bg-red-500"
-                />
-              </div>
-            </div>
-            {test.showCoastDownData && (
-              <div>
-                <div className="mb-3">
-                  <Label className="text-xs dark:text-white">
-                    Coast Down Test Report Reference
-                  </Label>
-                  <Input
-                    value={test.cdReportRef}
-                    onChange={(e) => handleTestChange("cdReportRef", e.target.value)}
-                    placeholder="Enter Coast Test Report Ref."
-                    className="mt-1"
-                    disabled={!areFieldsEditable()}
-                  />
-                </div>
-                <div className="mb-2 font-semibold text-xs dark:text-white">CD Values</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                  <div>
-                    <Label className="text-xs dark:text-white">
-                      Vehicle Reference mass (Kg)
-                    </Label>
-                    <Input
-                      value={test.vehicleRefMass}
-                      onChange={(e) => handleTestChange("vehicleRefMass", e.target.value)}
-                      placeholder="Enter Vehicle Reference mass"
-                      className="mt-1"
-                      disabled={!areFieldsEditable()}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs dark:text-white">A (N)</Label>
-                    <Input
-                      value={test.aN}
-                      onChange={(e) => handleTestChange("aN", e.target.value)}
-                      placeholder="Enter A (N)"
-                      className="mt-1"
-                      disabled={!areFieldsEditable()}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs dark:text-white">B (N/kmph)</Label>
-                    <Input
-                      value={test.bNkmph}
-                      onChange={(e) => handleTestChange("bNkmph", e.target.value)}
-                      placeholder="Enter B (N/kmph)"
-                      className="mt-1"
-                      disabled={!areFieldsEditable()}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs dark:text-white">C (N/kmph^2)</Label>
-                    <Input
-                      value={test.cNkmph2}
-                      onChange={(e) => handleTestChange("cNkmph2", e.target.value)}
-                      placeholder="Enter C (N/kmph^2)"
-                      className="mt-1"
-                      disabled={!areFieldsEditable()}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mt-3">
-                  <div>
-                    <Label className="text-xs dark:text-white">F0 (N)</Label>
-                    <Input
-                      value={test.f0N}
-                      onChange={(e) => handleTestChange("f0N", e.target.value)}
-                      placeholder="Enter F0 (N)"
-                      className="mt-1"
-                      disabled={!areFieldsEditable()}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs dark:text-white">F1 (N/kmph)</Label>
-                    <Input
-                      value={test.f1Nkmph}
-                      onChange={(e) => handleTestChange("f1Nkmph", e.target.value)}
-                      placeholder="Enter F1 (N/kmph)"
-                      className="mt-1"
-                      disabled={!areFieldsEditable()}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs dark:text-white">F2 (N/kmph^2)</Label>
-                    <Input
-                      value={test.f2Nkmph2}
-                      onChange={(e) => handleTestChange("f2Nkmph2", e.target.value)}
-                      placeholder="Enter F2 (N/kmph^2)"
-                      className="mt-1"
-                      disabled={!areFieldsEditable()}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Completion Remarks and Validation Section for TestEngineer */}

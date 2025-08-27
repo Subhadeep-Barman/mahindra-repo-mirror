@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [userName, setUserName] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [userTeam, setUserTeam] = useState(null); // Add team state
   const [accessToken, setAccessToken] = useState(null);
   const [decodedToken, setDecodedToken] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
@@ -30,6 +31,7 @@ export const AuthProvider = ({ children }) => {
       setUserName(userCookies.userName);
       setUserEmail(userCookies.userEmail);
       setUserId(userCookies.userId || null);
+      setUserTeam(userCookies.userTeam || null); // Set team from cookies/store
       setAccessToken(userCookies.token);
       
       try {
@@ -50,8 +52,11 @@ export const AuthProvider = ({ children }) => {
         setAllUsers(res.data);
         // Find the current user by email or id
         const currentUser = res.data.find(
-          user => user.email === userCookies.userEmail || user.id === userCookies.userId
+          user => (user.email === userCookies.userEmail || user.id === userCookies.userId)
         );
+        if (currentUser) {
+          setUserTeam(currentUser.team || null); // Set team from API user
+        }
         if (currentUser && currentUser.role === "TestEngineer") {
           setApiUserRole("TestEngineer");
         } else {
@@ -65,11 +70,12 @@ export const AuthProvider = ({ children }) => {
     if (userCookies.userEmail || userCookies.userId) fetchUsers();
   }, []);
 
-  const login = (role, name, email, employeeId, token) => {
+  const login = (role, name, email, employeeId, token, team) => {
     setUserRole(role);
     setUserName(name);
     setUserEmail(email);
     setUserId(employeeId);
+    setUserTeam(team || null);
     setAccessToken(token);
     try {
       const decoded = JSON.parse(atob(token.split('.')[1]));
@@ -86,6 +92,7 @@ export const AuthProvider = ({ children }) => {
       LoggedIn: "true",
       userEmail: email,
       userId: employeeId,
+      userTeam: team || "",
     });
 
     // Set browser cookies for persistence
@@ -95,6 +102,9 @@ export const AuthProvider = ({ children }) => {
     Cookies.set('LoggedIn', "true");
     Cookies.set('userEmail', email);
     Cookies.set('userId', employeeId);
+    if (team) {
+      Cookies.set('userTeam', team);
+    }
   };
 
   const logout = () => {
@@ -102,6 +112,7 @@ export const AuthProvider = ({ children }) => {
     setUserName(null);
     setUserEmail(null);
     setUserId(null);
+    setUserTeam(null);
     setAccessToken(null);
     setDecodedToken(null);
 
@@ -115,6 +126,7 @@ export const AuthProvider = ({ children }) => {
     Cookies.remove('LoggedIn');
     Cookies.remove('userEmail');
     Cookies.remove('userId');
+    Cookies.remove('userTeam');
   };
 
   return (
@@ -123,6 +135,7 @@ export const AuthProvider = ({ children }) => {
       userName,
       userEmail,
       userId,
+      userTeam, // Expose team in context
       accessToken,
       decodedToken,
       login,

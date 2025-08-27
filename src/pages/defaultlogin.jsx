@@ -13,6 +13,7 @@ const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function DefaultLogin() {
   const [role, setRole] = useState("");
+  const [team, setTeam] = useState(""); // Add team state
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [shakeForm, setShakeForm] = useState(false);
@@ -45,6 +46,8 @@ export default function DefaultLogin() {
         const params = new URLSearchParams();
         params.append("username", role); // Use role as username for backend
         params.append("password", password);
+        // Optionally, send team to backend if needed:
+        params.append("team", team);
 
         const response = await axios.post(`${apiURL}/api/token`, params);
         let { access_token } = response.data;
@@ -70,7 +73,8 @@ export default function DefaultLogin() {
           username,
           email,
           employeecode,
-          access_token
+          access_token,
+          team // Pass team to login
         );
         showSnackbar("Login successful", "success");
 
@@ -91,7 +95,8 @@ export default function DefaultLogin() {
   function validateForm() {
     return (
       role.trim().length > 0 &&
-      password.trim().length > 0 
+      password.trim().length > 0 &&
+      team.trim().length > 0 // Require team
     );
   }
 
@@ -126,6 +131,23 @@ export default function DefaultLogin() {
                   className="w-full px-3 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   required
                 />
+              </label>
+              <label className="block">
+                <p className="text-white mb-2">Team</p>
+                <select
+                  value={team}
+                  onChange={(e) => setTeam(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="" disabled>
+                    Select team
+                  </option>
+                  <option value="vtc">VTC_CHENNAI</option>
+                  <option value="vtc_n">VTC_NASHIK</option>
+                  <option value="rde">RDE</option>
+                  <option value="pdcd">PDCD</option>
+                </select>
               </label>
               <div className="flex justify-center">
                 <button

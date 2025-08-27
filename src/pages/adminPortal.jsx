@@ -59,6 +59,7 @@ export default function SystemUsersPage() {
     email: "",
     username: "",
     role: "",
+    team: "", // Added team attribute
   });
 
   // Fetch users from backend API on component mount
@@ -153,13 +154,14 @@ export default function SystemUsersPage() {
     }
   };
 
-  // Filter users by search term
+  // Filter users by search term (include team)
   const filteredUsers = users.filter(
     (user) =>
       user.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchTerm.toLowerCase())
+      user.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.team || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
   // Calculate pagination
   const safeItemsPerPage = Math.max(1, itemsPerPage);
@@ -179,6 +181,7 @@ export default function SystemUsersPage() {
       email: "",
       username: "",
       role: "",
+      team: "", // Reset team
     });
     setIsAddUserModalOpen(true);
   };
@@ -190,6 +193,7 @@ export default function SystemUsersPage() {
       email: user.email,
       username: user.username,
       role: user.role,
+      team: user.team || "", // Set team if exists
     });
     setIsAddUserModalOpen(true);
   };
@@ -220,6 +224,7 @@ export default function SystemUsersPage() {
       email: "",
       username: "",
       role: "",
+      team: "", // Reset team
     });
   };
 
@@ -368,6 +373,9 @@ export default function SystemUsersPage() {
                     Role
                   </TableHead>
                   <TableHead className="font-semibold text-gray-700">
+                    Team
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700">
                     Action
                   </TableHead>
                 </TableRow>
@@ -403,6 +411,14 @@ export default function SystemUsersPage() {
                           className="text-purple-600 border-purple-200 bg-purple-50"
                         >
                           {user.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className="text-blue-600 border-blue-200 bg-blue-50"
+                        >
+                          {user.team || "-"}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -564,6 +580,29 @@ export default function SystemUsersPage() {
                   <SelectItem value="ProjectTeam">Project Team</SelectItem>
                   <SelectItem value="TestEngineer">Test Engineer</SelectItem>
                   <SelectItem value="Admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Team */}
+            <div className="space-y-2">
+              <Label
+                htmlFor="team"
+                className="text-sm font-medium text-gray-700 dark:text-red-500"
+              >
+                Team
+              </Label>
+              <Select
+                value={newUser.team}
+                onValueChange={(value) => handleInputChange("team", value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Team" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="vtc">VTC_CHENNAI</SelectItem>
+                  <SelectItem value="vtc_n">VTC_NASHIK</SelectItem>
+                  <SelectItem value="rde">RDE</SelectItem>
+                  <SelectItem value="pdcd">PDCD</SelectItem>
                 </SelectContent>
               </Select>
             </div>

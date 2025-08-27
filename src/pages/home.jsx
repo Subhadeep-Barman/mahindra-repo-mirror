@@ -12,6 +12,9 @@ import {
   Settings,
   BarChart3,
 } from "lucide-react";
+// Image icons (place files at src/assets/rde_icon.png and src/assets/other_icon.png)
+import rdeIcon from "@/assets/img1.png";
+import otherIcon from "@/assets/img2.png";
 import useStore from "@/store/useStore";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/UI/button";
@@ -27,65 +30,88 @@ import {
 const servicesBase = [
   {
     id: 1,
-    title: "RDE LAB",
-    description: "Real Driving Emissions testing and analysis",
-    icon: Code,
-    href: "/rde-chennai",
-    color: "from-blue-500 to-cyan-500",
-    bgColor: "bg-blue-50 dark:bg-blue-950/20",
-    borderColor: "border-blue-200 dark:border-blue-800",
-    iconBg: "bg-blue-500",
+    title: "VTC LAB",
+    description: "Vehicle Test Cell Laboratory",
+  icon: MessageSquare,
+  img: otherIcon,
+    href: "/vtc-chennai",
+  color: "from-emerald-400 to-teal-400",
+  bgColor: "bg-emerald-100 dark:bg-emerald-900/20",
+  borderColor: "border-emerald-300 dark:border-emerald-700",
+  iconBg: "bg-emerald-600",
   },
   {
     id: 2,
-    title: "VTC LAB",
-    description: "Vehicle Testing Center operations and management",
-    icon: MessageSquare,
-    href: "/vtc-chennai",
-    color: "from-emerald-500 to-teal-500",
-    bgColor: "bg-emerald-50 dark:bg-emerald-950/20",
-    borderColor: "border-emerald-200 dark:border-emerald-800",
-    iconBg: "bg-emerald-500",
-  },
-  {
-    id: 3,
     title: "VTC Nashik LAB",
-    description: "Vehicle Testing Center operations and management",
-    icon: Flag,
+    description: "Vehicle Test Cell Laboratory",
+  icon: Flag,
+  img: otherIcon,
     href: "/vtc-nashik",
-    color: "from-purple-500 to-pink-500",
-    bgColor: "bg-purple-50 dark:bg-purple-950/20",
-    borderColor: "border-purple-200 dark:border-purple-800",
-    iconBg: "bg-purple-500",
+  color: "from-purple-400 to-pink-400",
+  bgColor: "bg-purple-100 dark:bg-purple-900/20",
+  borderColor: "border-purple-300 dark:border-purple-700",
+  iconBg: "bg-purple-600",
+  },
+    {
+    id: 3,
+    title: "RDE LAB",
+    description: "Real Driving Emissions Laboratory",
+  icon: Code,
+  img: rdeIcon,
+    href: "/rde-chennai",
+  color: "from-blue-400 to-cyan-400",
+  bgColor: "bg-blue-100 dark:bg-blue-900/20",
+  borderColor: "border-blue-300 dark:border-blue-700",
+  iconBg: "bg-blue-600",
   },
   {
     id: 4,
     title: "PDCD LAB",
-    description: "Powertrain Development and Calibration Department",
-    icon: Zap,
+    description: "Powertrain Durability Chassis Dyno Laboratory",
+  icon: Zap,
+  img: otherIcon,
     href: "/pdcd-lab",
-    color: "from-amber-500 to-yellow-500",
-    bgColor: "bg-amber-50 dark:bg-amber-950/20",
-    borderColor: "border-amber-200 dark:border-amber-800",
-    iconBg: "bg-amber-500",
+  color: "from-amber-400 to-yellow-400",
+  bgColor: "bg-amber-100 dark:bg-amber-900/20",
+  borderColor: "border-amber-300 dark:border-amber-700",
+  iconBg: "bg-amber-600",
   },
 ];
 
 // Change the export to default and rename the component
 export default function HomePage() {
-  const { userRole, userId, userName } = useAuth();
-  const filteredBaseServices = servicesBase.filter(service => 
-    service.title !== "PDCD LAB" || 
-    userRole === "ProjectTeam" || 
-    userRole === "Admin" ||
-    userRole === "TestEngineer"
-  );
+  const { userRole, userId, userName, userTeam } = useAuth();
 
-  // Use only the filtered base services (no admin portal card)
+  // Filter services based on userTeam
+  let filteredBaseServices = [];
+  if (userTeam === "vtc" || userTeam === "vtc_n") {
+    filteredBaseServices = servicesBase.filter(service =>
+      service.title === "VTC LAB" || service.title === "VTC Nashik LAB"
+    );
+  } else if (userTeam === "rde") {
+    filteredBaseServices = servicesBase.filter(service =>
+      service.title === "RDE LAB"
+    );
+  } else if (userTeam === "pdcd") {
+    filteredBaseServices = servicesBase.filter(service =>
+      service.title === "PDCD LAB"
+    );
+  } else {
+    filteredBaseServices = [];
+  }
+
   const services = filteredBaseServices;
 
-  // Determine grid columns based on number of services
-  const gridCols = "grid-cols-1 md:grid-cols-2 lg:grid-cols-4";
+  // Center cards if 1 or 2 labs, else use default grid
+  let gridCols = "grid-cols-1 md:grid-cols-2 lg:grid-cols-4";
+  let gridJustify = "";
+  if (services.length === 1) {
+    gridCols = "grid-cols-1";
+    gridJustify = "justify-center";
+  } else if (services.length === 2) {
+    gridCols = "grid-cols-1 md:grid-cols-2";
+    gridJustify = "justify-center";
+  }
 
   // Fetch dropdown options globally on home page mount
   const fetchProjects = useStore((state) => state.fetchProjects);
@@ -100,7 +126,7 @@ export default function HomePage() {
   return (
     <>
       <Navbar />
-     <div className="min-h-screen flex flex-col bg-white dark:bg-black overflow-hidden relative">
+      <div className="min-h-screen flex flex-col bg-white dark:bg-black overflow-hidden relative">
         {/* Main Content Area - takes remaining space */}
         <div className="flex-1 flex flex-col overflow-y-auto">
           {/* Hero Section */}
@@ -139,20 +165,26 @@ export default function HomePage() {
                 </p>
               </div> */}
 
-              <div className={`grid ${gridCols} gap-6 mb-0`}>
+              <div className={`grid ${gridCols} gap-6 mb-0 ${gridJustify}`}>
                 {services.map((service) => {
                   const Icon = service.icon;
                   return (
-                                          <Card
-                        key={service.id}
-                        className={`group relative overflow-hidden border dark:border-gray-700 border-gray-200 bg-white dark:bg-gray-800/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${service.bgColor} ${service.borderColor}`}
-                      >
+                    <Card
+                      key={service.id}
+                      className={`group relative overflow-hidden border dark:border-gray-700 border-gray-200 bg-white dark:bg-gray-800/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${service.bgColor} ${service.borderColor} flex flex-col h-full`}
+                    >
                       {/* Gradient Overlay */}
                       <div className={`absolute inset-0 bg-gradient-to-br ${service.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-                      
+
                       <CardHeader className="relative pb-4">
-                        <div className={`w-16 h-16 rounded-2xl ${service.iconBg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                          <Icon className="w-8 h-8 text-white" />
+                        <div className={`w-16 h-16 rounded-2xl ${service.iconBg} mb-4 overflow-hidden group-hover:scale-110 transition-transform duration-300`}>
+                          {service.img ? (
+                            <img src={service.img} alt={`${service.title} icon`} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Icon className="w-8 h-8 text-white" />
+                            </div>
+                          )}
                         </div>
                         <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors">
                           {service.title}
@@ -162,7 +194,7 @@ export default function HomePage() {
                         </CardDescription>
                       </CardHeader>
 
-                      <CardFooter className="relative pt-4">
+                      <CardFooter className="relative pt-4 mt-auto">
                         <Button
                           asChild
                           className="w-full bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 text-white dark:text-gray-900 hover:from-gray-800 hover:to-gray-600 dark:hover:from-gray-100 dark:hover:to-gray-300 transition-all duration-300 group-hover:shadow-lg"

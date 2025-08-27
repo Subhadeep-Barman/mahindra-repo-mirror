@@ -33,6 +33,7 @@ export default function AccountMenu() {
   const userName = userCookies.userName;
   const userEmail = userCookies.userEmail;
   const userEmployeeId = userCookies.userEmployeeId;
+  const userTeam = userCookies.userTeam; // Add team
   const { logInteraction } = useUserInteractionLogger(userEmployeeId);
   const navigate = useNavigate();
 
@@ -119,11 +120,15 @@ export default function AccountMenu() {
         <MenuItem onClick={() => logInteraction("Email clicked")}>
           {userEmail}
         </MenuItem>
-        <MenuItem onClick={() => logInteraction("User name clicked")}>
+        <MenuItem onClick={() => logInteraction("User role clicked")}>
           {userRole}
         </MenuItem>
         <MenuItem onClick={() => logInteraction("User name clicked")}>
           <Avatar /> {userName}
+        </MenuItem>
+        {/* Add team display */}
+        <MenuItem onClick={() => logInteraction("User team clicked")}>
+          {userTeam ? `Team: ${userTeam}` : "No Team"}
         </MenuItem>
         <Divider />
         <MenuItem onClick={handleLogout}>
