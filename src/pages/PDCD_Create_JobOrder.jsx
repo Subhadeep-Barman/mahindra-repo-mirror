@@ -2233,9 +2233,9 @@ export default function PDCDCreateJobOrder() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label>Emission Check Attachment</Label>
+                  <Label>Emission Checklist Attachment</Label>
                   <DropzoneFileList
-                    buttonText="Emission Check Attachment"
+                    buttonText="Emission Checklist Attachment"
                     name="Emission_check"
                     maxFiles={5}
                     formData={{

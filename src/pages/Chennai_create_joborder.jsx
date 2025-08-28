@@ -203,17 +203,17 @@ export default function CreateJobOrder() {
         emissionCheckDate: testOrderData.emission_check_date || "",
         specificInstruction: testOrderData.specific_instruction || "",
 
-        // Reset all attachment fields to empty (don't copy files)
-        emissionCheckAttachment: [],
-        dataset_attachment: [],
-        a2l_attachment: [],
-        experiment_attachment: [],
-        dbc_attachment: [],
-        wltp_attachment: [],
-        pdf_report: [],
-        excel_report: [],
-        dat_file_attachment: [],
-        others_attachment: [],
+        // copy all attachments as well
+        emissionCheckAttachment: testOrderData.emission_check_attachment || [],
+        dataset_attachment: testOrderData.dataset_attachment || [],
+        a2l_attachment: testOrderData.a2l_attachment || [],
+        experiment_attachment: testOrderData.experiment_attachment || [],
+        dbc_attachment: testOrderData.dbc_attachment || [],
+        wltp_attachment: testOrderData.wltp_attachment || [],
+        pdf_report: testOrderData.pdf_report || [],
+        excel_report: testOrderData.excel_report || [],
+        dat_file_attachment: testOrderData.dat_file_attachment || [],
+        others_attachment: testOrderData.others_attachment || [],
 
         // Reset fields for new test order
         testOrderId: null,
@@ -998,6 +998,21 @@ export default function CreateJobOrder() {
   const handleCreateTestOrder = async (testIndex) => {
     const test = tests[testIndex];
 
+    // Check if there are any existing test orders for the same job order that are not completed and ratings are not given
+    const jobOrderId = location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || "";
+    const existingTestOrders = allTestOrders[jobOrderId] || [];
+    const incompleteTestOrder = existingTestOrders.find(
+      (order) => order.status !== "Completed" || !order.rating
+    );
+
+    if (incompleteTestOrder) {
+      showSnackbar(
+        `Cannot create a new test order. Please complete and rate the existing test order (ID: ${incompleteTestOrder.test_order_id}) first.`,
+        "error"
+      );
+      return;
+    }
+
     // Validate required fields (matching RDE implementation)
     const requiredFields = [
       { key: 'testType', label: 'Test Type' },
@@ -1056,7 +1071,7 @@ export default function CreateJobOrder() {
       const missingAttachments = [];
       if (!hasDataset) missingAttachments.push('Dataset Attachment');
       if (!hasExperiment) missingAttachments.push('Experiment Attachment');
-      if (!hasEmissionCheck) missingAttachments.push('Emission Check Attachment');
+      if (!hasEmissionCheck) missingAttachments.push('Emission Checklist Attachment');
       if (!hasA2L) missingAttachments.push('A2L Attachment');
       
       showSnackbar(
@@ -3154,8 +3169,8 @@ export default function CreateJobOrder() {
                   <div>
                     <Label>
                       {form.department === "RDE JO" 
-                        ? "Emission Check Attachment / Type-1 Report" 
-                        : "Emission Check Attachment"
+                        ? "Emission Checklist Attachment / Type-1 Report" 
+                        : "Emission Checklist Attachment"
                       } <span className="text-red-500">*</span>
                       {test.emission_check_attachment && test.emission_check_attachment.length > 0 && (
                         <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
@@ -3165,8 +3180,8 @@ export default function CreateJobOrder() {
                     </Label>
                     <DropzoneFileList
                       buttonText={form.department === "RDE JO" 
-                        ? "Emission Check Attachment / Type-1 Report" 
-                        : "Emission Check Attachment"
+                        ? "Emission Checklist Attachment / Type-1 Report" 
+                        : "Emission Checklist Attachment"
                       }
                       name="emission_check_attachment"
                       maxFiles={5}

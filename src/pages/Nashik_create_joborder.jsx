@@ -2373,7 +2373,7 @@ export default function NashikCreateJobOrder() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label>
-                    Emission Check Attachment
+                    Emission Checklist Attachment
                     {test.emissionCheckAttachment && test.emissionCheckAttachment.length > 0 && (
                       <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
                         {Array.isArray(test.emissionCheckAttachment) ? test.emissionCheckAttachment.length : 1}
@@ -2381,7 +2381,7 @@ export default function NashikCreateJobOrder() {
                     )}
                   </Label>
                   <DropzoneFileList
-                    buttonText="Emission Check Attachment"
+                    buttonText="Emission Checklist Attachment"
                     name="Emission_check"
                     maxFiles={5}
                     formData={{

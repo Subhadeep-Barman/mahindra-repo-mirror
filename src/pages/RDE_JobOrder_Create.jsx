@@ -2717,9 +2717,9 @@ export default function RDECreateJobOrder() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="flex flex-col">
-                  <Label className="mb-2">Emission Check Attachment</Label>
+                  <Label className="mb-2">Emission Checklist Attachment</Label>
                   <DropzoneFileList
-                    buttonText="Emission Check Attachment"
+                    buttonText="Emission Checklist Attachment"
                     name="Emission_check"
                     maxFiles={5}
                     formData={{
