@@ -972,7 +972,7 @@ export default function RDECreateJobOrder() {
       // datasetflashed vs datasetRefreshed: check both keys below
       { key: 'ess', label: 'ESS' },
       { key: 'preferredDate', label: 'Preferred Date' },
-      { key: 'emissionCheckDate', label: 'Emission Check Date' },
+      { key: 'emissionCheckDate', label: 'Emission Checklist Date' },
       { key: 'specificInstruction', label: 'Specific Instruction' }
     ];
 
@@ -2684,7 +2684,7 @@ export default function RDECreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Emission Check Date <span className="text-red-500">*</span></Label>
+                <Label>Emission Checklist Date <span className="text-red-500">*</span></Label>
                 <Input
                   type="date"
                   value={test.emissionCheckDate}

@@ -24,7 +24,7 @@ export default function VTCVehiclePage() {
   const [vehicles, setVehicles] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
-  const { apiUserRole, userId, userName } = useAuth();
+  const { apiUserRole, userId } = useAuth();
 
   // Fetch vehicles from API on mount
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function VTCVehiclePage() {
           vehicle_serial_number: v.vehicle_serial_number,
           vehicle_body_number: v.vehicle_body_number,
           vehicle_model: v.vehicle_model,
-          name_of_creator: v.name_of_creator || userName || "NA",
+          name_of_creator: v.name_of_creator || "NA",
           id_of_creator: v.id_of_creator || "",
           created_on: v.created_on,
           id_of_updater: v.id_of_updater,

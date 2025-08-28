@@ -1055,7 +1055,7 @@ export default function EditTestOrder() {
               />
             </div>
             <div>
-              <Label className="dark:text-white">Emission Check Date</Label>
+              <Label className="dark:text-white">Emission Checklist Date</Label>
               <Input
                 type="date"
                 value={test.emissionCheckDate}

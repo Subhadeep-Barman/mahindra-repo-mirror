@@ -408,7 +408,13 @@ export default function CreateJobOrder() {
       axios
         .get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(value)}`)
         .then((res) => {
-          setVehicleEditable(res.data);
+          // Filter out empty fields before setting to state
+          const filteredData = Object.fromEntries(
+            Object.entries(res.data || {}).filter(([_, value]) => 
+              value !== null && value !== undefined && value !== ""
+            )
+          );
+          setVehicleEditable(filteredData);
         })
         .catch((error) => {
           setVehicleEditable(null);
@@ -425,7 +431,15 @@ export default function CreateJobOrder() {
             form.vehicleBodyNumber
           )}`
         )
-        .then((res) => setVehicleEditable(res.data))
+        .then((res) => {
+          // Filter out empty fields before setting to state
+          const filteredData = Object.fromEntries(
+            Object.entries(res.data || {}).filter(([_, value]) => 
+              value !== null && value !== undefined && value !== ""
+            )
+          );
+          setVehicleEditable(filteredData);
+        })
         .catch(() => setVehicleEditable(null));
 
     } else if (!form.vehicleBodyNumber && !isPreFilling && !location.state?.jobOrder) {
@@ -461,10 +475,16 @@ export default function CreateJobOrder() {
       axios
         .get(`${apiURL}/engines/by-engine-number/${encodeURIComponent(value)}`)
         .then((res) => {
-          setEngineEditable(res.data);
+          // Filter out empty fields before setting to state
+          const filteredData = Object.fromEntries(
+            Object.entries(res.data || {}).filter(([_, value]) => 
+              value !== null && value !== undefined && value !== ""
+            )
+          );
+          setEngineEditable(filteredData);
           setForm((prev) => ({
             ...prev,
-            engineType: res.data?.engineType || prev.engineType,
+            engineType: filteredData?.engineType || prev.engineType,
           }));
         })
         .catch((error) => {
@@ -994,7 +1014,7 @@ export default function CreateJobOrder() {
       { key: 'dpf', label: 'DPF' },
       { key: 'ess', label: 'ESS' },
       { key: 'preferredDate', label: 'Preferred Date' },
-      { key: 'emissionCheckDate', label: 'Emission Check Date' },
+      { key: 'emissionCheckDate', label: 'Emission Checklist Date' },
       { key: 'specificInstruction', label: 'Specific Instruction' }
     ];
 
@@ -2318,21 +2338,24 @@ export default function CreateJobOrder() {
             {vehicleAccordionOpen && (
               <form className="bg-white px-4 py-4 dark:bg-black">
                 <div className="grid grid-cols-4 gap-4 text-xs">
-                  {Object.entries(vehicleEditable).map(([label, value]) => (
-                    <div key={label} className="flex flex-col">
-                      <Label className="font-semibold capitalize">
-                        {label.replace(/_/g, " ")}
-                      </Label>
-                      <Input
-                        value={value ?? ""}
-                        onChange={(e) =>
-                          handleVehicleEditableChange(label, e.target.value)
-                        }
-                        className="mt-1"
-                        disabled={!vehicleEditMode || isTestEngineer || isAdmin}
-                      />
-                    </div>
-                  ))}
+                  {Object.entries(vehicleEditable).map(([label, value]) => 
+                    // Only render fields with non-empty values
+                    value !== null && value !== undefined && value !== "" ? (
+                      <div key={label} className="flex flex-col">
+                        <Label className="font-semibold capitalize">
+                          {label.replace(/_/g, " ")}
+                        </Label>
+                        <Input
+                          value={value ?? ""}
+                          onChange={(e) =>
+                            handleVehicleEditableChange(label, e.target.value)
+                          }
+                          className="mt-1"
+                          disabled={!vehicleEditMode || isTestEngineer || isAdmin}
+                        />
+                      </div>
+                    ) : null
+                  )}
                 </div>
               </form>
             )}
@@ -2354,21 +2377,24 @@ export default function CreateJobOrder() {
             {engineAccordionOpen && (
               <form className="bg-white dark:bg-black px-4 py-4">
                 <div className="grid grid-cols-4 gap-4 text-xs">
-                  {Object.entries(engineEditable).map(([label, value]) => (
-                    <div key={label} className="flex flex-col">
-                      <Label className="font-semibold capitalize">
-                        {label.replace(/_/g, " ")}
-                      </Label>
-                      <Input
-                        value={value ?? ""}
-                        onChange={(e) =>
-                          handleEngineEditableChange(label, e.target.value)
-                        }
-                        className="mt-1"
-                        disabled={!engineEditMode || isTestEngineer || isAdmin}
-                      />
-                    </div>
-                  ))}
+                  {Object.entries(engineEditable).map(([label, value]) => 
+                    // Only render fields with non-empty values
+                    value !== null && value !== undefined && value !== "" ? (
+                      <div key={label} className="flex flex-col">
+                        <Label className="font-semibold capitalize">
+                          {label.replace(/_/g, " ")}
+                        </Label>
+                        <Input
+                          value={value ?? ""}
+                          onChange={(e) =>
+                            handleEngineEditableChange(label, e.target.value)
+                          }
+                          className="mt-1"
+                          disabled={!engineEditMode || isTestEngineer || isAdmin}
+                        />
+                      </div>
+                    ) : null
+                  )}
                 </div>
               </form>
             )}
@@ -2971,7 +2997,7 @@ export default function CreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>Emission Check Date <span className="text-red-500">*</span></Label>
+                  <Label>Emission Checklist Date <span className="text-red-500">*</span></Label>
                   <Input
                     type="date"
                     value={test.emissionCheckDate}

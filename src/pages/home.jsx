@@ -82,49 +82,21 @@ const servicesBase = [
 export default function HomePage() {
   const { userRole, userId, userName, userTeam } = useAuth();
 
-  // Filter services based on userRole and userTeam
-  let filteredBaseServices = [];
-  if (userRole === "ProjectTeam") {
-    // Show all labs for ProjectTeam role
-    filteredBaseServices = servicesBase;
-  } else if (userRole === "TestEngineer" || userRole === "Admin") {
-    // Filter by team for TestEngineer and Admin
-    if (userTeam === "vtc") {
-      filteredBaseServices = servicesBase.filter(service =>
-        service.title === "VTC LAB"
-      );
-    }
-    else if (userTeam === "vtc_n") {
-      filteredBaseServices = servicesBase.filter(service =>
-        service.title === "VTC Nashik LAB"
-      );
-    } else if (userTeam === "rde") {
-      filteredBaseServices = servicesBase.filter(service =>
-        service.title === "RDE LAB"
-      );
-    } else if (userTeam === "pdcd") {
-      filteredBaseServices = servicesBase.filter(service =>
-        service.title === "PDCD LAB"
-      );
-    } else {
-      filteredBaseServices = [];
-    }
-  } else {
-    filteredBaseServices = [];
+  // Always show all labs
+  const services = servicesBase;
+
+  // Determine which lab titles are accessible for TestEngineer/Admin
+  let allowedLabTitles = [];
+  if (userRole === "TestEngineer" || userRole === "Admin") {
+    if (userTeam === "vtc") allowedLabTitles = ["VTC LAB"];
+    else if (userTeam === "vtc_n") allowedLabTitles = ["VTC Nashik LAB"];
+    else if (userTeam === "rde") allowedLabTitles = ["RDE LAB"];
+    else if (userTeam === "pdcd") allowedLabTitles = ["PDCD LAB"];
   }
 
-  const services = filteredBaseServices;
-
-  // Center cards if 1 or 2 labs, else use default grid
-  let gridCols = "grid-cols-1 md:grid-cols-2 lg:grid-cols-4";
-  let gridJustify = "";
-  if (services.length === 1) {
-    gridCols = "grid-cols-1";
-    gridJustify = "justify-center";
-  } else if (services.length === 2) {
-    gridCols = "grid-cols-1 md:grid-cols-2";
-    gridJustify = "justify-center";
-  }
+  // Always use 4 columns for grid
+  const gridCols = "grid-cols-1 md:grid-cols-2 lg:grid-cols-4";
+  const gridJustify = "";
 
   // Fetch dropdown options globally on home page mount
   const fetchProjects = useStore((state) => state.fetchProjects);
@@ -181,6 +153,13 @@ export default function HomePage() {
               <div className={`grid ${gridCols} gap-6 mb-0 ${gridJustify}`}>
                 {services.map((service) => {
                   const Icon = service.icon;
+                  // For TestEngineer/Admin, only allow access to their lab
+                  let isDisabled = false;
+                  if (userRole === "TestEngineer" || userRole === "Admin") {
+                    if (!allowedLabTitles.includes(service.title)) {
+                      isDisabled = true;
+                    }
+                  }
                   return (
                     <Card
                       key={service.id}
@@ -208,15 +187,24 @@ export default function HomePage() {
                       </CardHeader>
 
                       <CardFooter className="relative pt-4 mt-auto">
-                        <Button
-                          asChild
-                          className="w-full bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 text-white dark:text-gray-900 hover:from-gray-800 hover:to-gray-600 dark:hover:from-gray-100 dark:hover:to-gray-300 transition-all duration-300 group-hover:shadow-lg"
-                        >
-                          <Link to={service.href} className="flex items-center justify-center">
-                            Access Module
-                            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-                          </Link>
-                        </Button>
+                        {isDisabled ? (
+                          <Button
+                            disabled
+                            className="w-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                          >
+                            Not authorized
+                          </Button>
+                        ) : (
+                          <Button
+                            asChild
+                            className="w-full bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 text-white dark:text-gray-900 hover:from-gray-800 hover:to-gray-600 dark:hover:from-gray-100 dark:hover:to-gray-300 transition-all duration-300 group-hover:shadow-lg"
+                          >
+                            <Link to={service.href} className="flex items-center justify-center">
+                              Access Module
+                              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                            </Link>
+                          </Button>
+                        )}
                       </CardFooter>
                     </Card>
                   );

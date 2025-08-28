@@ -2200,7 +2200,7 @@ export default function PDCDCreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Emission Check Date <span className="text-red-500">*</span></Label>
+                <Label>Emission Checklist Date <span className="text-red-500">*</span></Label>
                 <Input
                   type="date"
                   value={test.emissionCheckDate}
