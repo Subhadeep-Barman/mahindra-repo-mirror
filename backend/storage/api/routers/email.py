@@ -566,10 +566,15 @@ async def send_email_endpoint(
         job_test_status = get_job_order_test_status(db, job_order_id) if job_order_id else ""
         job_completed_test_count = get_job_order_completed_test_count(db, job_order_id) if job_order_id else 0
 
-        vtc_logger.debug(f"Test order remarks: {test_order_remarks}")
-        vtc_logger.debug(f"Test type and objective: {test_order_type_obj}")
-        vtc_logger.debug(f"Job test status: {job_test_status}")
-        vtc_logger.debug(f"Job completed test count: {job_completed_test_count}")
+        # Fetch rating and rating_remarks for caseid 8
+        rating = ""
+        rating_remarks = ""
+        if caseid == "8" and test_order_id:
+            test_order = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
+            if test_order:
+                rating = str(test_order.rating) if hasattr(test_order, "rating") and test_order.rating is not None else ""
+                rating_remarks = test_order.rating_remarks if hasattr(test_order, "rating_remarks") else ""
+            vtc_logger.debug(f"Case 8 - Rating: {rating}, Rating Remarks: {rating_remarks}")
 
         # Replace placeholders with actual IDs and info
         subject = subject.replace("{{job_order_id}}", str(job_order_id))
@@ -640,6 +645,10 @@ async def send_email_endpoint(
             body = body.replace("{{notify_fields}}", fields_str)
             body = body.replace("{{notify_values}}", values_str)
             vtc_logger.debug(f"Case 7 - Added notify fields: {fields_str} and values: {values_str}")
+        elif caseid == "8":
+            body = body.replace("{{rating}}", rating)
+            body = body.replace("{{rating_remarks}}", rating_remarks)
+            vtc_logger.debug(f"Case 8 - Added rating and rating remarks")
 
         # Fetch CFT member emails for CC
         cc_emails = get_cft_member_emails(job_order, db) if job_order else []
