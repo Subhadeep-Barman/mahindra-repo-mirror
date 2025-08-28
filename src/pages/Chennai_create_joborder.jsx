@@ -1029,7 +1029,7 @@ export default function CreateJobOrder() {
     // Require Dataset, Experiment, Emission Check, and A2L attachments
     const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
     const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
-    const hasEmissionCheck = Array.isArray(test.Emission_check || test.emissionCheckAttachment) && (test.Emission_check || test.emissionCheckAttachment).length > 0;
+    const hasEmissionCheck = Array.isArray(test.emission_check_attachment || test.emissionCheckAttachment) && (test.emission_check_attachment || test.emissionCheckAttachment).length > 0;
     const hasA2L = Array.isArray(test.A2L || test.a2l_attachment) && (test.A2L || test.a2l_attachment).length > 0;
 
     if (!hasDataset || !hasExperiment || !hasEmissionCheck || !hasA2L) {
@@ -1759,7 +1759,7 @@ export default function CreateJobOrder() {
     // Require attachments
     const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
     const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
-    const hasEmissionCheck = Array.isArray(test.Emission_check || test.emissionCheckAttachment) && (test.Emission_check || test.emissionCheckAttachment).length > 0;
+    const hasEmissionCheck = Array.isArray(test.emission_check_attachment || test.emissionCheckAttachment) && (test.emission_check_attachment || test.emissionCheckAttachment).length > 0;
     const hasA2L = Array.isArray(test.A2L || test.a2l_attachment) && (test.A2L || test.a2l_attachment).length > 0;
     if (!hasDataset || !hasExperiment || !hasEmissionCheck || !hasA2L) return false;
 
@@ -3131,9 +3131,9 @@ export default function CreateJobOrder() {
                         ? "Emission Check Attachment / Type-1 Report" 
                         : "Emission Check Attachment"
                       } <span className="text-red-500">*</span>
-                      {test.emissionCheckAttachment && test.emissionCheckAttachment.length > 0 && (
+                      {test.emission_check_attachment && test.emission_check_attachment.length > 0 && (
                         <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                          {Array.isArray(test.emissionCheckAttachment) ? test.emissionCheckAttachment.length : 1}
+                          {Array.isArray(test.emission_check_attachment) ? test.emission_check_attachment.length : 1}
                         </span>
                       )}
                     </Label>
@@ -3170,12 +3170,12 @@ export default function CreateJobOrder() {
                       viewOnly={userRole === "TestEngineer"}
                       // Add custom styling based on file count
                       customButtonStyle={{
-                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'emissionCheckAttachment')),
-                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'emissionCheckAttachment')),
+                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'emission_check_attachment')),
+                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'emission_check_attachment')),
                         color: 'white'
                       }}
                       customContainerStyle={{
-                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'emissionCheckAttachment'))
+                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'emission_check_attachment'))
                       }}
                     />
                   </div>
