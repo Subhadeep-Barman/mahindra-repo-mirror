@@ -388,6 +388,7 @@ export default function EditTestOrder() {
       await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       showSnackbar("Test Order updated successfully!", "success");
       navigate(-1);
+      await handleSendMail("5", jobOrderId, test.testOrderId); 
     } catch (err) {
       showSnackbar("Failed to update test order: " + (err.response?.data?.detail || err.message), "error");
     }
