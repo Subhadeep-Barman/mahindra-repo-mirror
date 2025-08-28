@@ -89,9 +89,14 @@ export default function HomePage() {
     filteredBaseServices = servicesBase;
   } else if (userRole === "TestEngineer" || userRole === "Admin") {
     // Filter by team for TestEngineer and Admin
-    if (userTeam === "vtc" || userTeam === "vtc_n") {
+    if (userTeam === "vtc") {
       filteredBaseServices = servicesBase.filter(service =>
-        service.title === "VTC LAB" || service.title === "VTC Nashik LAB"
+        service.title === "VTC LAB"
+      );
+    }
+    else if (userTeam === "vtc_n") {
+      filteredBaseServices = servicesBase.filter(service =>
+        service.title === "VTC Nashik LAB"
       );
     } else if (userTeam === "rde") {
       filteredBaseServices = servicesBase.filter(service =>
