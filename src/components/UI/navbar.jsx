@@ -206,12 +206,12 @@ export default function Navbar() {
           {/* Bell Icon for ProjectTeam and Admin */}
           {(userRole === "ProjectTeam") && (
             <button
-              className="p-2.5 text-yellow-600 dark:text-yellow-400 rounded-xl hover:bg-gradient-to-r hover:from-yellow-50 hover:to-yellow-100 dark:hover:from-yellow-900/30 dark:hover:to-yellow-800/30 hover:text-yellow-700 dark:hover:text-yellow-300 transition-all duration-300 hover:scale-105"
+              className="p-2.5 text-yellow-400 dark:text-yellow-300 rounded-xl hover:bg-gradient-to-r hover:from-yellow-50 hover:to-yellow-100 dark:hover:from-yellow-900/20 dark:hover:to-yellow-800/20 hover:text-yellow-300 dark:hover:text-yellow-200 transition-all duration-300 hover:scale-105"
               onClick={() => setShowBellPopup(true)}
               title="Notifications"
               style={{ display: "flex", alignItems: "center" }}
             >
-              <Notifications className="h-6 w-6" />
+              <Notifications className="h-6 w-6 text-yellow-400" />
             </button>
           )}
 
