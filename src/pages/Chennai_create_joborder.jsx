@@ -27,6 +27,12 @@ const apiURL = import.meta.env.VITE_BACKEND_URL
 
 const departments = ["VTC_JO Chennai", "RDE JO", "VTC_JO Nashik", "PDCD_JO Chennai"];
 
+// Helper function to get today's date in YYYY-MM-DD format
+const getTodayDate = () => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+};
+
 export default function CreateJobOrder() {
   const [cftMembers, setCftMembers] = useState([]);
   const [form, setForm] = useState({
@@ -2961,9 +2967,9 @@ export default function CreateJobOrder() {
                 <div>
                   <Label>Preferred Date <span className="text-red-500">*</span></Label>
                   <Input
-
                     type="date"
                     value={test.preferredDate}
+                    min={getTodayDate()}
                     onChange={(e) =>
                       handleTestChange(idx, "preferredDate", e.target.value)
                     }
@@ -2975,6 +2981,7 @@ export default function CreateJobOrder() {
                   <Input
                     type="date"
                     value={test.emissionCheckDate}
+                    min={getTodayDate()}
                     onChange={(e) =>
                       handleTestChange(idx, "emissionCheckDate", e.target.value)
                     }
