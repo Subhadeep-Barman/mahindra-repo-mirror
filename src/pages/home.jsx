@@ -184,19 +184,19 @@ export default function HomePage() {
                   return (
                     <Card
                       key={service.id}
-                      className={`group relative overflow-hidden border dark:border-gray-700 border-gray-200 bg-white dark:bg-gray-800/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${service.bgColor} ${service.borderColor} flex flex-col h-full`}
+                      className={`group relative overflow-visible border dark:border-gray-700 border-gray-200 bg-white/40 dark:bg-gray-800/40 backdrop-blur-lg shadow-2xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 hover:scale-[1.01] rounded-3xl p-4 ${service.bgColor} ${service.borderColor} flex flex-col h-full`}
                     >
-                      {/* Gradient Overlay */}
-                      <div className={`absolute inset-0 bg-gradient-to-br ${service.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                      {/* Gradient Overlay (stronger so color shows through glass) */}
+                      <div className={`absolute inset-0 bg-gradient-to-br ${service.color} opacity-20 group-hover:opacity-30 transition-opacity duration-300 rounded-3xl`} />
+                      {/* Decorative blurred bubble for 3D/bubbly feel */}
+                      <div className="absolute -top-6 -right-4 w-20 h-20 rounded-full bg-white/10 dark:bg-white/5 filter blur-2xl opacity-60 pointer-events-none transform rotate-12" />
 
-                      <CardHeader className="relative pb-4">
-                        <div className={`w-16 h-16 rounded-2xl ${service.iconBg} mb-4 overflow-hidden group-hover:scale-110 transition-transform duration-300`}>
+                      <CardHeader className="relative pb-2">
+                        <div className={`w-16 h-16 rounded-2xl ${service.iconBg} mb-2 overflow-hidden group-hover:scale-110 transition-transform duration-300 border ${service.borderColor} ring-2 ring-white/25 backdrop-blur-md shadow-inner flex items-center justify-center`}>
                           {service.img ? (
                             <img src={service.img} alt={`${service.title} icon`} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Icon className="w-8 h-8 text-white" />
-                            </div>
+                            <Icon className="w-8 h-8 text-white" />
                           )}
                         </div>
                         <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors">
@@ -207,7 +207,7 @@ export default function HomePage() {
                         </CardDescription>
                       </CardHeader>
 
-                      <CardFooter className="relative pt-4 mt-auto">
+                      <CardFooter className="relative pt-2 mt-auto">
                         <Button
                           asChild
                           className="w-full bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 text-white dark:text-gray-900 hover:from-gray-800 hover:to-gray-600 dark:hover:from-gray-100 dark:hover:to-gray-300 transition-all duration-300 group-hover:shadow-lg"
