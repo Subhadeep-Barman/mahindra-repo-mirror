@@ -82,20 +82,28 @@ const servicesBase = [
 export default function HomePage() {
   const { userRole, userId, userName, userTeam } = useAuth();
 
-  // Filter services based on userTeam
+  // Filter services based on userRole and userTeam
   let filteredBaseServices = [];
-  if (userTeam === "vtc" || userTeam === "vtc_n") {
-    filteredBaseServices = servicesBase.filter(service =>
-      service.title === "VTC LAB" || service.title === "VTC Nashik LAB"
-    );
-  } else if (userTeam === "rde") {
-    filteredBaseServices = servicesBase.filter(service =>
-      service.title === "RDE LAB"
-    );
-  } else if (userTeam === "pdcd") {
-    filteredBaseServices = servicesBase.filter(service =>
-      service.title === "PDCD LAB"
-    );
+  if (userRole === "ProjectTeam") {
+    // Show all labs for ProjectTeam role
+    filteredBaseServices = servicesBase;
+  } else if (userRole === "TestEngineer" || userRole === "Admin") {
+    // Filter by team for TestEngineer and Admin
+    if (userTeam === "vtc" || userTeam === "vtc_n") {
+      filteredBaseServices = servicesBase.filter(service =>
+        service.title === "VTC LAB" || service.title === "VTC Nashik LAB"
+      );
+    } else if (userTeam === "rde") {
+      filteredBaseServices = servicesBase.filter(service =>
+        service.title === "RDE LAB"
+      );
+    } else if (userTeam === "pdcd") {
+      filteredBaseServices = servicesBase.filter(service =>
+        service.title === "PDCD LAB"
+      );
+    } else {
+      filteredBaseServices = [];
+    }
   } else {
     filteredBaseServices = [];
   }
