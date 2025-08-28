@@ -1026,14 +1026,18 @@ export default function CreateJobOrder() {
       }
     }
 
-    // Require Dataset and Experiment attachments
+    // Require Dataset, Experiment, Emission Check, and A2L attachments
     const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
     const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
+    const hasEmissionCheck = Array.isArray(test.Emission_check || test.emissionCheckAttachment) && (test.Emission_check || test.emissionCheckAttachment).length > 0;
+    const hasA2L = Array.isArray(test.A2L || test.a2l_attachment) && (test.A2L || test.a2l_attachment).length > 0;
 
-    if (!hasDataset || !hasExperiment) {
+    if (!hasDataset || !hasExperiment || !hasEmissionCheck || !hasA2L) {
       const missingAttachments = [];
       if (!hasDataset) missingAttachments.push('Dataset Attachment');
       if (!hasExperiment) missingAttachments.push('Experiment Attachment');
+      if (!hasEmissionCheck) missingAttachments.push('Emission Check Attachment');
+      if (!hasA2L) missingAttachments.push('A2L Attachment');
       
       showSnackbar(
         `Required attachments are missing: ${missingAttachments.join(', ')}`,
@@ -1755,7 +1759,9 @@ export default function CreateJobOrder() {
     // Require attachments
     const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
     const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
-    if (!hasDataset || !hasExperiment) return false;
+    const hasEmissionCheck = Array.isArray(test.Emission_check || test.emissionCheckAttachment) && (test.Emission_check || test.emissionCheckAttachment).length > 0;
+    const hasA2L = Array.isArray(test.A2L || test.a2l_attachment) && (test.A2L || test.a2l_attachment).length > 0;
+    if (!hasDataset || !hasExperiment || !hasEmissionCheck || !hasA2L) return false;
 
     // Validate Coast Down Data if inertia class is "Coastdown Loading"
     if (test.inertiaClass === "Coastdown Loading") {
@@ -2990,6 +2996,129 @@ export default function CreateJobOrder() {
                   />
                 </div>
               </div>
+
+              {/* Coast Down Data Section for Test */}
+              {test.inertiaClass === "Coastdown Loading" && (
+                <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 dark:bg-inherit transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="font-semibold text-sm text-blue-700">
+                      Coast Down Data (CD) - Required for Coastdown Loading
+                    </span>
+                  </div>
+                  <div>
+                    <div className="mb-3">
+                      <Label className="text-xs">
+                        Coast Down Test Report Reference <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        value={test.cdReportRef || form.cdReportRef}
+                        onChange={(e) =>
+                          handleTestChange(idx, "cdReportRef", e.target.value)
+                        }
+                        placeholder="Enter Coast Test Report Ref."
+                        className="mt-1"
+                        disabled={!areTestFieldsEditable(test, idx)}
+                      />
+                    </div>
+                    <div className="mb-2 font-semibold text-xs">CD Values</div>
+                    <div className="grid grid-cols-4 gap-3 text-xs">
+                      <div>
+                        <Label className="text-xs">
+                          Vehicle Reference mass (Kg) <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          value={test.vehicleRefMass || form.vehicleRefMass}
+                          onChange={(e) =>
+                            handleTestChange(
+                              idx,
+                              "vehicleRefMass",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Enter Vehicle Reference mass"
+                          className="mt-1"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">A (N) <span className="text-red-500">*</span></Label>
+                        <Input
+                          value={test.aN || form.aN}
+                          onChange={(e) =>
+                            handleTestChange(idx, "aN", e.target.value)
+                          }
+                          placeholder="Enter A (N)"
+                          className="mt-1"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">B (N/kmph) <span className="text-red-500">*</span></Label>
+                        <Input
+                          value={test.bNkmph || form.bNkmph}
+                          onChange={(e) =>
+                            handleTestChange(idx, "bNkmph", e.target.value)
+                          }
+                          placeholder="Enter B (N/kmph)"
+                          className="mt-1"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">C (N/kmph^2) <span className="text-red-500">*</span></Label>
+                        <Input
+                          value={test.cNkmph2 || form.cNkmph2}
+                          onChange={(e) =>
+                            handleTestChange(idx, "cNkmph2", e.target.value)
+                          }
+                          placeholder="Enter C (N/kmph^2)"
+                          className="mt-1"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 text-xs mt-3">
+                      <div>
+                        <Label className="text-xs">F0 (N) <span className="text-red-500">*</span></Label>
+                        <Input
+                          value={test.f0N || form.f0N}
+                          onChange={(e) =>
+                            handleTestChange(idx, "f0N", e.target.value)
+                          }
+                          placeholder="Enter F0 (N)"
+                          className="mt-1"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">F1 (N/kmph) <span className="text-red-500">*</span></Label>
+                        <Input
+                          value={test.f1Nkmph || form.f1Nkmph}
+                          onChange={(e) =>
+                            handleTestChange(idx, "f1Nkmph", e.target.value)
+                          }
+                          placeholder="Enter F1 (N/kmph)"
+                          className="mt-1"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">F2 (N/kmph^2) <span className="text-red-500">*</span></Label>
+                        <Input
+                          value={test.f2Nkmph2 || form.f2Nkmph2}
+                          onChange={(e) =>
+                            handleTestChange(idx, "f2Nkmph2", e.target.value)
+                          }
+                          placeholder="Enter F2 (N/kmph^2)"
+                          className="mt-1"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Attachments Card */}
               <div className="bg-gray-100 dark:bg-gray-800 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
                 <div className="font-semibold text-sm text-gray-700 dark:text-white mb-2">
@@ -2998,7 +3127,10 @@ export default function CreateJobOrder() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label>
-                      Emission Check Attachment
+                      {form.department === "RDE JO" 
+                        ? "Emission Check Attachment / Type-1 Report" 
+                        : "Emission Check Attachment"
+                      } <span className="text-red-500">*</span>
                       {test.emissionCheckAttachment && test.emissionCheckAttachment.length > 0 && (
                         <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
                           {Array.isArray(test.emissionCheckAttachment) ? test.emissionCheckAttachment.length : 1}
@@ -3006,7 +3138,10 @@ export default function CreateJobOrder() {
                       )}
                     </Label>
                     <DropzoneFileList
-                      buttonText="Emission Check Attachment"
+                      buttonText={form.department === "RDE JO" 
+                        ? "Emission Check Attachment / Type-1 Report" 
+                        : "Emission Check Attachment"
+                      }
                       name="emission_check_attachment"
                       maxFiles={5}
                       formData={{
@@ -3095,7 +3230,7 @@ export default function CreateJobOrder() {
                   {/* Continue this pattern for all other attachment fields */}
                   <div>
                     <Label>
-                      A2L Attachment
+                      A2L Attachment <span className="text-red-500">*</span>
                       {test.a2l_attachment && test.a2l_attachment.length > 0 && (
                         <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
                           {Array.isArray(test.a2l_attachment) ? test.a2l_attachment.length : 1}
@@ -3445,127 +3580,6 @@ export default function CreateJobOrder() {
                   </div>
                 </div>
               </div>
-              {/* Coast Down Data Section for Test */}
-              {test.inertiaClass === "Coastdown Loading" && (
-                <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 dark:bg-inherit transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="font-semibold text-sm text-blue-700">
-                      Coast Down Data (CD) - Required for Coastdown Loading
-                    </span>
-                  </div>
-                  <div>
-                    <div className="mb-3">
-                      <Label className="text-xs">
-                        Coast Down Test Report Reference <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        value={test.cdReportRef || form.cdReportRef}
-                        onChange={(e) =>
-                          handleTestChange(idx, "cdReportRef", e.target.value)
-                        }
-                        placeholder="Enter Coast Test Report Ref."
-                        className="mt-1"
-                        disabled={!areTestFieldsEditable(test, idx)}
-                      />
-                    </div>
-                    <div className="mb-2 font-semibold text-xs">CD Values</div>
-                    <div className="grid grid-cols-4 gap-3 text-xs">
-                      <div>
-                        <Label className="text-xs">
-                          Vehicle Reference mass (Kg) <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          value={test.vehicleRefMass || form.vehicleRefMass}
-                          onChange={(e) =>
-                            handleTestChange(
-                              idx,
-                              "vehicleRefMass",
-                              e.target.value
-                            )
-                          }
-                          placeholder="Enter Vehicle Reference mass"
-                          className="mt-1"
-                          disabled={!areTestFieldsEditable(test, idx)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">A (N) <span className="text-red-500">*</span></Label>
-                        <Input
-                          value={test.aN || form.aN}
-                          onChange={(e) =>
-                            handleTestChange(idx, "aN", e.target.value)
-                          }
-                          placeholder="Enter A (N)"
-                          className="mt-1"
-                          disabled={!areTestFieldsEditable(test, idx)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">B (N/kmph) <span className="text-red-500">*</span></Label>
-                        <Input
-                          value={test.bNkmph || form.bNkmph}
-                          onChange={(e) =>
-                            handleTestChange(idx, "bNkmph", e.target.value)
-                          }
-                          placeholder="Enter B (N/kmph)"
-                          className="mt-1"
-                          disabled={!areTestFieldsEditable(test, idx)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">C (N/kmph^2) <span className="text-red-500">*</span></Label>
-                        <Input
-                          value={test.cNkmph2 || form.cNkmph2}
-                          onChange={(e) =>
-                            handleTestChange(idx, "cNkmph2", e.target.value)
-                          }
-                          placeholder="Enter C (N/kmph^2)"
-                          className="mt-1"
-                          disabled={!areTestFieldsEditable(test, idx)}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-3 text-xs mt-3">
-                      <div>
-                        <Label className="text-xs">F0 (N) <span className="text-red-500">*</span></Label>
-                        <Input
-                          value={test.f0N || form.f0N}
-                          onChange={(e) =>
-                            handleTestChange(idx, "f0N", e.target.value)
-                          }
-                          placeholder="Enter F0 (N)"
-                          className="mt-1"
-                          disabled={!areTestFieldsEditable(test, idx)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">F1 (N/kmph) <span className="text-red-500">*</span></Label>
-                        <Input
-                          value={test.f1Nkmph || form.f1Nkmph}
-                          onChange={(e) =>
-                            handleTestChange(idx, "f1Nkmph", e.target.value)
-                          }
-                          placeholder="Enter F1 (N/kmph)"
-                          className="mt-1"
-                          disabled={!areTestFieldsEditable(test, idx)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">F2 (N/kmph^2) <span className="text-red-500">*</span></Label>
-                        <Input
-                          value={test.f2Nkmph2 || form.f2Nkmph2}
-                          onChange={(e) =>
-                            handleTestChange(idx, "f2Nkmph2", e.target.value)
-                          }
-                          placeholder="Enter F2 (N/kmph^2)"
-                          className="mt-1"
-                          disabled={!areTestFieldsEditable(test, idx)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
               <div className="flex justify-end mt-6">
                 <Button
                   className="bg-red-600 text-white text-xs px-6 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
