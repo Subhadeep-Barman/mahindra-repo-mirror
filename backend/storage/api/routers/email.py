@@ -2,6 +2,7 @@ from http.client import HTTPException
 from typing import List, Dict
 from fastapi import APIRouter, Depends, HTTPException, Body
 from backend.storage.models.models import JobOrder, TestOrder, User, AddFields # adjust import as per your models
+from backend.storage.models.models import RDEJobOrder
 from sqlalchemy.orm import Session
 from backend.storage.api.api_utils import get_db
 import os
@@ -441,6 +442,7 @@ def get_department_group_email(job_order, caseid=None) -> str:
     if caseid not in ("1", "2"):
         return None
     department = getattr(job_order, "department", None) or getattr(job_order, "team", None)
+    print("departments:", department)
     department_email_map = {
         "VTC_JO Chennai": "VTCLAB@mahindra.com",
         "VTC_JO Nashik": "vtclab_nsk@mahindra.com",
@@ -459,6 +461,7 @@ def get_department_cc_emails(job_order) -> list:
     - PDCD_JO Chennai: []
     """
     department = getattr(job_order, "department", None) or getattr(job_order, "team", None)
+    print("departments:", department)
     cc_map = {
         "VTC_JO Chennai": ["EDC-VTCLAB@mahindra.com"],
         "RDE JO": ["EDC-RDELAB@mahindra.com"],
@@ -512,15 +515,26 @@ async def send_email_endpoint(
 
         # Fetch job order for department-based override
         job_order = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
+        # If not found, try RDEJobOrder for RDE JO
+        if not job_order:
+            # Try to fetch from RDEJobOrder if job_order_id likely belongs to RDE
+            rde_job_order = db.query(RDEJobOrder).filter(RDEJobOrder.job_order_id == job_order_id).first()
+            if rde_job_order:
+                job_order = rde_job_order
+                vtc_logger.debug(f"Fetched RDEJobOrder for job_order_id '{job_order_id}': {job_order}")
+        vtc_logger.debug(f"Fetched job_order for job_order_id '{job_order_id}': {job_order}")
+        print("informations for test other 3 teams:", job_order.__dict__ if job_order else "No JobOrder found")
         # --- Department-based recipient override for ALL cases ---
         if job_order:
             dept_group_email = get_department_group_email(job_order, caseid)
+            print("department email:", dept_group_email)
             if dept_group_email:
                 group_email = dept_group_email
                 vtc_logger.info(f"Overriding group email for department: {dept_group_email}")
 
         if group_email:
             to_emails = [group_email]
+            print("group email:", to_emails)
             vtc_logger.info(f"Using group email for caseid {caseid}: {group_email}")
         else:
             to_emails = get_all_emails_by_role(db, role)
@@ -629,11 +643,13 @@ async def send_email_endpoint(
 
         # Fetch CFT member emails for CC
         cc_emails = get_cft_member_emails(job_order, db) if job_order else []
+        print("CFT member emails:", cc_emails)
 
         # Add department-specific CC group emails for test order-related cases
         test_order_cases = {"1.1", "3", "4", "5", "6"}
         if caseid in test_order_cases and job_order:
             dept_cc = get_department_cc_emails(job_order)
+            print("department cc emails:", dept_cc)
             # Only add if not already present in cc_emails
             for cc in dept_cc:
                 if cc and cc not in cc_emails:
