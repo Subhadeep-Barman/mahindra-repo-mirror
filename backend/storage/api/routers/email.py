@@ -674,7 +674,7 @@ async def send_email_endpoint(
         print("CFT member emails:", cc_emails)
 
         # Add department-specific CC group emails for test order-related cases
-        test_order_cases = {"1.1", "3", "4", "5", "6"}
+        test_order_cases = {"1.1", "3", "4", "5", "6","9"}
         if caseid in test_order_cases and job_order:
             dept_cc = get_department_cc_emails(job_order, db)
             print("department cc emails:", dept_cc)

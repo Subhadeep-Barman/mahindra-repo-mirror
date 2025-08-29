@@ -91,6 +91,16 @@
                 "subject": "{{job_order_id}}",
                 "message": "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 8px #f0f0f0; padding: 24px; background: #fafbfc;'><h2 style='color: #4CAF50; margin-bottom: 16px;'>Test Order Completed</h2><p>Dear Team,</p><p>The test order <b>{{job_order_id}}</b> is completed, and a rating has been provided. The details and documents for the same can be accessed using the button below:</p><table style='width:100%; border-collapse:collapse; margin: 16px 0;'><tr><td style='padding: 8px; font-weight:bold;'>Rating Provided:</td><td style='padding: 8px;'>{{rating}}</td></tr><tr><td style='padding: 8px; font-weight:bold;'>Rating Remarks:</td><td style='padding: 8px;'>{{rating_remarks}}</td></tr></table><p><a href='https://dbmrs-vtc.m-devsecops.com/login' style='background-color: #E51636; color: white; padding: 10px 20px; text-align: center; text-decoration: none; border-radius: 5px; font-family: Aptos, sans-serif; display: inline-block;'>Click Here</a></p><p style='margin-top: 32px;'>Regards,<br>EDC-VTC Lab Team</p></div>"
             }
+        },
+        {
+            "id": "9",
+            "receivers": "ProjectTeam",
+            "group_email": "",
+            "case": "Document Uploaded After Test Order Completion",
+            "body": {
+                "subject": "{{test_order_id}}",
+                "message": "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 8px #f0f0f0; padding: 24px; background: #fafbfc;'><h2 style='color: #4CAF50; margin-bottom: 16px;'>New Documents Uploaded</h2><p>Dear Team,</p><p>This is to inform you that new documents have been uploaded by the test engineer for test order <b>{{test_order_id}}</b>. The details and documents for the same can be accessed using the button below:</p><p><a href='https://dbmrs-vtc.m-devsecops.com/login' style='background-color: #E51636; color: white; padding: 10px 20px; text-align: center; text-decoration: none; border-radius: 5px; font-family: Aptos, sans-serif; display: inline-block;'>Click Here</a></p><p style='margin-top: 32px;'>Regards,<br>EDC-VTC Lab Team</p></div>"
+            }
         }
     ]
 }
