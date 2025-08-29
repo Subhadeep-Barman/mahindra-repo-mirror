@@ -11,6 +11,7 @@ class User(Base):
     username = Column(String, nullable=True)
     email = Column(String, unique=True, nullable=True)
     role = Column(String, nullable=True)
+    team = Column(String, nullable=True)
 
 
 class Vehicle(Base):
