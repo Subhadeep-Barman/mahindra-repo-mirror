@@ -972,7 +972,7 @@ export default function RDECreateJobOrder() {
       // datasetflashed vs datasetRefreshed: check both keys below
       { key: 'ess', label: 'ESS' },
       { key: 'preferredDate', label: 'Preferred Date' },
-      { key: 'emissionCheckDate', label: 'Emission Check Date' },
+      { key: 'emissionCheckDate', label: 'Emission Checklist Date' },
       { key: 'specificInstruction', label: 'Specific Instruction' }
     ];
 
@@ -2684,7 +2684,7 @@ export default function RDECreateJobOrder() {
                 />
               </div>
               <div>
-                <Label>Emission Check Date <span className="text-red-500">*</span></Label>
+                <Label>Emission Checklist Date <span className="text-red-500">*</span></Label>
                 <Input
                   type="date"
                   value={test.emissionCheckDate}
@@ -2717,9 +2717,9 @@ export default function RDECreateJobOrder() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="flex flex-col">
-                  <Label className="mb-2">Emission Check Attachment</Label>
+                  <Label className="mb-2">Emission Checklist Attachment</Label>
                   <DropzoneFileList
-                    buttonText="Emission Check Attachment"
+                    buttonText="Emission Checklist Attachment"
                     name="Emission_check"
                     maxFiles={5}
                     formData={{

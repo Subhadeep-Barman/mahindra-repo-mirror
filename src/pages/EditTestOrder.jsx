@@ -393,6 +393,7 @@ export default function EditTestOrder() {
       await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       showSnackbar("Test Order updated successfully!", "success");
       navigate(-1);
+      await handleSendMail("5", jobOrderId, test.testOrderId); 
     } catch (err) {
       showSnackbar("Failed to update test order: " + (err.response?.data?.detail || err.message), "error");
     }
@@ -575,27 +576,29 @@ export default function EditTestOrder() {
   // Handler for submitting star rating
   const handleSubmitStarRating = async () => {
     try {
-      const payload = {
-        test_order_id: test.testOrderId,
-        rating: rating,
-        rating_remarks: ratingRemarks,
-        rated_by: userName,
-        rated_on: new Date().toISOString(),
-      };
+        const payload = {
+            test_order_id: test.testOrderId,
+            rating: rating,
+            rating_remarks: ratingRemarks,
+            rated_by: userName,
+            rated_on: new Date().toISOString(),
+        };
 
-      await axios.post(`${apiURL}/testorders/rating`, payload);
-      showSnackbar("Test order rated successfully!", "success");
-      setStarRatingModal(false);
-      // Update local state with the new rating
-      setTest(prev => ({
-        ...prev,
-        rating: rating,
-        rating_remarks: ratingRemarks
-      }));
-      // Go back one page after submitting rating
-      navigate(-1);
+        await axios.post(`${apiURL}/testorders/rating`, payload);
+        showSnackbar("Test order rated successfully!", "success");
+        setStarRatingModal(false);
+        // Update local state with the new rating
+        setTest(prev => ({
+            ...prev,
+            rating: rating,
+            rating_remarks: ratingRemarks
+        }));
+        // Send mail with caseId 8
+        await handleSendMail("8", jobOrderId, test.testOrderId);
+        // Go back one page after submitting rating
+        navigate(-1);
     } catch (err) {
-      showSnackbar("Failed to submit rating: " + (err.response?.data?.detail || err.message), "error");
+        showSnackbar("Failed to submit rating: " + (err.response?.data?.detail || err.message), "error");
     }
   };
 
@@ -654,112 +657,117 @@ export default function EditTestOrder() {
           </div>
 
           {/* Status Display */}
-          <div className="flex items-center gap-3 mb-4">
-            <span className="font-bold text-base text-blue-900 dark:text-blue-300">Test{test.testNumber}</span>
-            {test.status === "Started" && (
-              <span className="flex items-center bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#FFA500" }}>
-                  <circle cx="12" cy="12" r="9" stroke="#FFA500" strokeWidth="2" fill="none" />
-                  <path d="M12 7v5l3 3" stroke="#FFA500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                Started
-              </span>
-            )}
-            {test.status === "Rejected" && (
-              <span className="flex items-center bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-800 dark:text-red-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#e53935" }}>
-                  <circle cx="12" cy="12" r="9" stroke="#e53935" strokeWidth="2" fill="none" />
-                  <line x1="9" y1="9" x2="15" y2="15" stroke="#e53935" strokeWidth="2" />
-                  <line x1="15" y1="9" x2="9" y2="15" stroke="#e53935" strokeWidth="2" />
-                </svg>
-                Rejected
-              </span>
-            )}
-            {test.status === "Re-edit" && (
-              <span className="flex items-center bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-600 text-blue-800 dark:text-blue-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#1976d2" }}>
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="#1976d2" strokeWidth="2" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="#1976d2" strokeWidth="2" />
-                </svg>
-                Re-edit
-              </span>
-            )}
-            {test.status === "Completed" && (
-              <span className="flex items-center bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-600 text-green-800 dark:text-green-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#43a047" }}>
-                  <circle cx="12" cy="12" r="9" stroke="#43a047" strokeWidth="2" fill="none" />
-                  <path d="M9 12l2 2 4-4" stroke="#43a047" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                Completed
-              </span>
-            )}
-            
-            {/* Validation Status Display for Completed Tests */}
-            {test.status === "Completed" && test.validation_status && (
-              <span className={`flex items-center ${
-                test.validation_status === 'valid' 
-                  ? 'bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-600 text-blue-800 dark:text-blue-200' 
-                  : 'bg-orange-100 dark:bg-orange-900 border border-orange-400 dark:border-orange-600 text-orange-800 dark:text-orange-200'
-              } font-semibold text-xs px-2 py-1 rounded shadow ml-2`}>
-                {test.validation_status === 'valid' ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#2563eb" }}>
+                <div className="flex items-center gap-3 mb-4">
+                <span className="font-bold text-base text-blue-900 dark:text-blue-300">Test{test.testNumber}</span>
+                {test.status === "Started" && (
+                  <span className="flex items-center bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#FFA500" }}>
+                    <circle cx="12" cy="12" r="9" stroke="#FFA500" strokeWidth="2" fill="none" />
+                    <path d="M12 7v5l3 3" stroke="#FFA500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Started
+                  </span>
+                )}
+                {test.status === "Rejected" && (
+                  <span className="flex items-center bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-800 dark:text-red-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#e53935" }}>
+                    <circle cx="12" cy="12" r="9" stroke="#e53935" strokeWidth="2" fill="none" />
+                    <line x1="9" y1="9" x2="15" y2="15" stroke="#e53935" strokeWidth="2" />
+                    <line x1="15" y1="9" x2="9" y2="15" stroke="#e53935" strokeWidth="2" />
+                  </svg>
+                  Rejected
+                  </span>
+                )}
+                {test.status === "Re-edit" && (
+                  <span className="flex items-center bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-600 text-blue-800 dark:text-blue-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#1976d2" }}>
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="#1976d2" strokeWidth="2" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="#1976d2" strokeWidth="2" />
+                  </svg>
+                  Re-edit
+                  </span>
+                )}
+                {test.status === "Completed" && (
+                  <span className="flex items-center bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-600 text-green-800 dark:text-green-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#43a047" }}>
+                    <circle cx="12" cy="12" r="9" stroke="#43a047" strokeWidth="2" fill="none" />
+                    <path d="M9 12l2 2 4-4" stroke="#43a047" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Completed
+                  </span>
+                )}
+                
+                {/* Validation Status Display for Completed Tests */}
+                {test.status === "Completed" && test.validation_status && (
+                  <span className={`flex items-center ${
+                  test.validation_status === 'valid' 
+                    ? 'bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-600 text-blue-800 dark:text-blue-200' 
+                    : 'bg-orange-100 dark:bg-orange-900 border border-orange-400 dark:border-orange-600 text-orange-800 dark:text-orange-200'
+                  } font-semibold text-xs px-2 py-1 rounded shadow ml-2`}>
+                  {test.validation_status === 'valid' ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#2563eb" }}>
                     <circle cx="12" cy="12" r="9" stroke="#2563eb" strokeWidth="2" fill="none" />
                     <path d="M9 12l2 2 4-4" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
+                    </svg>
+                  )}
+                  {test.validation_status === 'valid' ? 'Valid' : 'Invalid'}
+                  </span>
                 )}
-                {test.validation_status === 'valid' ? 'Valid' : 'Invalid'}
-              </span>
-            )}
-            
-            {/* Star Rating Display for Completed and Valid Tests */}
-            {test.status === "Completed" && test.validation_status === 'valid' && (test.rating > 0 || testOrder?.rating > 0) && (
-              <div className="flex items-center gap-2 ml-4">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Rating:</span>
-                <div className="flex items-center">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <svg
+
+                {/* Star Rating Display for Completed and Valid Tests - Right side box */}
+                {test.status === "Completed" && test.validation_status === 'valid' && (test.rating > 0 || testOrder?.rating > 0) && (
+                  <div className="ml-auto flex-1 flex justify-end">
+                  <div className="min-w-[320px] max-w-xs bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg shadow px-6 py-3 flex flex-col items-start">
+                    <div className="font-semibold text-blue-900 dark:text-blue-200 text-sm mb-2">
+                    Initiator Rating Remarks
+                    </div>
+                    <div className="flex items-center mb-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <svg
                       key={star}
-                      className={`h-4 w-4 ${
-                        star <= (testOrder?.rating || 0) 
-                          ? "text-yellow-400 fill-current" 
-                          : "text-gray-300 dark:text-gray-600"
+                      className={`h-6 w-10 ${
+                        star <= (testOrder?.rating || test.rating || 0)
+                        ? "text-yellow-400 fill-current"
+                        : "text-gray-300 dark:text-gray-600"
                       }`}
                       fill="currentColor"
                       viewBox="0 0 20 20"
-                    >
+                      >
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
+                      </svg>
+                    ))}
                   <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
                     ({testOrder?.rating || 0}/5)
                   </span>
                   {((testOrder && testOrder.rating_remarks) || test.rating_remarks || ratingRemarks) && (
-                    <span className="text-sm text-gray-500 dark:text-gray-400 ml-3">-
+                    <span className="text-sm text-black-500 dark:text-black-400 ml-3">-
                       {" "}{testOrder?.rating_remarks || test.rating_remarks || ratingRemarks}
                     </span>
                   )}
+                    </div>
+                    </div>
                 </div>
-              </div>
-            )}
+                )}
 
-            {/* Rating Button - Only for ProjectTeam and only when test is valid */}
-            {test.status === "Completed" && test.validation_status === 'valid' && isProjectTeam && (
+            
+            {test.status === "Completed" && isProjectTeam && (
               <div className="flex items-center gap-2 ml-4">
+                {/* button should not be visible once rating has been given for once */}
                 <Button
-                  className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded"
+                        className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded"
                   onClick={() => setStarRatingModal(true)}
                 >
-                  {testOrder?.rating ? "Update Rating" : "Rate Test"}
+                  Rate Test
                 </Button>
               </div>
             )}
-          </div>
+            </div>
 
-          {/* Show rejection remarks if status is Rejected */}
+            {/* Show rejection remarks if status is Rejected */}
           {test.status === "Rejected" && (
             <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 rounded-lg p-4 mt-4 mb-2 shadow-inner">
               <div className="font-semibold text-sm text-red-700 dark:text-red-300 mb-2">
@@ -1088,7 +1096,7 @@ export default function EditTestOrder() {
               />
             </div>
             <div>
-              <Label className="dark:text-white">Emission Check Date</Label>
+              <Label className="dark:text-white">Emission Checklist Date</Label>
               <Input
                 type="date"
                 value={test.emissionCheckDate}
@@ -1234,9 +1242,9 @@ export default function EditTestOrder() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label className="dark:text-white">Emission Check Attachment</Label>
+                <Label className="dark:text-white">Emission Checklist Attachment</Label>
                 <DropzoneFileList
-                  buttonText="Emission Check Attachment"
+                  buttonText="Emission Checklist Attachment"
                   name="emmission_check_attachment"
                   maxFiles={5}
                   formData={{
@@ -1481,8 +1489,6 @@ export default function EditTestOrder() {
                   viewOnly={userRole === "ProjectTeam"}
                 />
               </div>
-
-              {/* Test Validation - positioned on the right side */}
               {test.status === "Completed" && isTestEngineer && !test.validation_status && (
                 <div className="md:col-start-3 md:col-span-1">
                   <Label className="dark:text-white">Test Validation</Label>
