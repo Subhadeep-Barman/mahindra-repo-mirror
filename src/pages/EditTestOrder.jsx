@@ -134,7 +134,7 @@ export default function EditTestOrder() {
     // Remarks
     rejection_remarks: testOrder?.rejection_remarks || "",
     remark: testOrder?.remark || "",
-    complete_remarks: testOrder?.complete_remarks || testOrder?.remark || "", // Add complete_remarks field
+    complete_remarks: (testOrder?.status === "Completed") ? (testOrder?.complete_remarks || "") : "", // Only preserve complete_remarks if status is actually Completed
     coast_down_data: testOrder?.coast_down_data || null, 
     // Rating fields
     rating: testOrder?.rating || 0,
@@ -183,7 +183,7 @@ export default function EditTestOrder() {
   const [mailRemarksModal, setMailRemarksModal] = useState(false);
   const [mailRemarks, setMailRemarks] = useState("");
   const [modalActionType, setModalActionType] = useState(""); // "re-edit" or "reject" or "update"
-  const [completeRemarks, setCompleteRemarks] = useState(testOrder?.complete_remarks || testOrder?.remark || ""); // Initialize with existing complete remarks
+  const [completeRemarks, setCompleteRemarks] = useState((testOrder?.status === "Completed") ? (testOrder?.complete_remarks || "") : ""); // Only initialize with complete_remarks if status is Completed
 
   // State for star rating
   const [starRatingModal, setStarRatingModal] = useState(false);
@@ -192,6 +192,11 @@ export default function EditTestOrder() {
 
   // State for validation status
   const [validationStatus, setValidationStatus] = useState(null); // 'valid' or 'invalid'
+  
+  // State for validation choice modal (new)
+  const [validationChoiceModal, setValidationChoiceModal] = useState(false);
+  const [selectedValidation, setSelectedValidation] = useState(null); // 'valid' or 'invalid'
+  const [validationConfirmModal, setValidationConfirmModal] = useState(false);
 
   const handleBack = () => {
     navigate(-1);
@@ -471,18 +476,46 @@ export default function EditTestOrder() {
         remark: completeRemarks,
       });
       
-      // Update local state
-      setTest(prev => ({
-        ...prev,
-        status: "Completed",
-        remark: completeRemarks,
-        complete_remarks: completeRemarks
-      }));
+      // If Test Engineer provided validation status, update it
+      if (isTestEngineer && selectedValidation) {
+        const validationData = {
+          validation_status: selectedValidation,
+          validated_by: userName,
+          validated_on: new Date().toISOString(),
+        };
+        
+        // Update validation status in the test order
+        await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, validationData);
+        
+        // Update local state with validation
+        setTest(prev => ({
+          ...prev,
+          status: "Completed",
+          remark: completeRemarks,
+          complete_remarks: completeRemarks,
+          validation_status: selectedValidation,
+          validated_by: userName,
+          validated_on: new Date().toISOString(),
+        }));
+        
+        setValidationStatus(selectedValidation);
+        
+        showSnackbar(`Test order marked as Completed and validated as ${selectedValidation.toUpperCase()}.`, "success");
+      } else {
+        // Update local state without validation
+        setTest(prev => ({
+          ...prev,
+          status: "Completed",
+          remark: completeRemarks,
+          complete_remarks: completeRemarks
+        }));
+        
+        showSnackbar("Test order marked as Completed. The test can now be validated.", "success");
+      }
       
-      showSnackbar("Test order marked as Completed. The test can now be validated.", "success");
-      
-      // Close the modal but don't navigate back - stay on the page to show validation section
+      // Close the modal and reset validation states
       setMailRemarksModal(false);
+      setSelectedValidation(null);
       
     } catch (err) {
       showSnackbar("Failed to complete test order: " + (err.response?.data?.detail || err.message), "error");
@@ -1606,11 +1639,16 @@ export default function EditTestOrder() {
                   className="bg-green-600 text-white text-xs px-3 py-1 rounded"
                   type="button"
                   onClick={() => {
-                    setModalActionType("complete");
-                    setMailRemarks("");
-                    setCompleteRemarks(test.complete_remarks || test.remark || ""); // Initialize with existing remarks if available
-                    setMailRemarksModal(true);
-                    // Removed mail call from here
+                    // For Test Engineers, show validation choice modal first
+                    if (isTestEngineer) {
+                      setValidationChoiceModal(true);
+                    } else {
+                      // For other roles, go directly to completion remarks
+                      setModalActionType("complete");
+                      setMailRemarks("");
+                      setCompleteRemarks((testOrder?.status === "Completed") ? (test.complete_remarks || "") : "");
+                      setMailRemarksModal(true);
+                    }
                   }}
                 >
                   Complete
@@ -1638,6 +1676,95 @@ export default function EditTestOrder() {
           </div>
         </div>
 
+        {/* Validation Choice Modal - For Test Engineers */}
+        {validationChoiceModal && isTestEngineer && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-96">
+              <div className="font-semibold mb-4 dark:text-white text-lg">
+                Test Validation
+              </div>
+              <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                Please choose the validation status for this test:
+              </div>
+              <div className="flex flex-col gap-3 mb-6">
+                <Button
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded"
+                  type="button"
+                  onClick={() => {
+                    setSelectedValidation('invalid');
+                    setValidationChoiceModal(false);
+                    setValidationConfirmModal(true);
+                  }}
+                >
+                  Mark as Invalid
+                </Button>
+                <Button
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded"
+                  type="button"
+                  onClick={() => {
+                    setSelectedValidation('valid');
+                    setValidationChoiceModal(false);
+                    setValidationConfirmModal(true);
+                  }}
+                >
+                  Mark as Valid
+                </Button>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  className="bg-gray-300 dark:bg-gray-600 text-black dark:text-white px-4 py-2 rounded"
+                  type="button"
+                  onClick={() => setValidationChoiceModal(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Validation Confirmation Modal */}
+        {validationConfirmModal && selectedValidation && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-96">
+              <div className="font-semibold mb-4 dark:text-white text-lg">
+                Confirm Validation
+              </div>
+              <div className="mb-6 text-sm text-gray-600 dark:text-gray-400">
+                Are you sure you want to mark this test as <span className={`font-semibold ${selectedValidation === 'valid' ? 'text-green-600' : 'text-red-600'}`}>
+                  {selectedValidation === 'valid' ? 'VALID' : 'INVALID'}
+                </span>?
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button
+                  className="bg-gray-300 dark:bg-gray-600 text-black dark:text-white px-4 py-2 rounded"
+                  type="button"
+                  onClick={() => {
+                    setValidationConfirmModal(false);
+                    setSelectedValidation(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className={`${selectedValidation === 'valid' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white px-4 py-2 rounded`}
+                  type="button"
+                  onClick={() => {
+                    // Close confirmation modal and show completion remarks modal
+                    setValidationConfirmModal(false);
+                    setModalActionType("complete");
+                    setMailRemarks("");
+                    setCompleteRemarks((testOrder?.status === "Completed") ? (test.complete_remarks || "") : "");
+                    setMailRemarksModal(true);
+                  }}
+                >
+                  Yes, Continue
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Mail Remarks Modal */}
         {mailRemarksModal && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
@@ -1651,6 +1778,17 @@ export default function EditTestOrder() {
                       ? "Completion Remarks"
                       : "Update Comments"}
               </div>
+              
+              {/* Show validation status for completion remarks */}
+              {modalActionType === "complete" && selectedValidation && (
+                <div className="mb-3 p-2 rounded border">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Test Validation: </span>
+                  <span className={`font-semibold ${selectedValidation === 'valid' ? 'text-green-600' : 'text-red-600'}`}>
+                    {selectedValidation === 'valid' ? 'VALID' : 'INVALID'}
+                  </span>
+                </div>
+              )}
+              
               <textarea
                 className="w-full border rounded p-2 mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                 rows={3}
@@ -1680,7 +1818,13 @@ export default function EditTestOrder() {
                 <Button
                   className="bg-gray-300 dark:bg-gray-600 text-black dark:text-white px-4 py-1 rounded"
                   type="button"
-                  onClick={() => setMailRemarksModal(false)}
+                  onClick={() => {
+                    setMailRemarksModal(false);
+                    // Reset validation states if canceling completion
+                    if (modalActionType === "complete") {
+                      setSelectedValidation(null);
+                    }
+                  }}
                 >
                   Cancel
                 </Button>
