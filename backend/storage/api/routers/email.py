@@ -39,6 +39,7 @@ def get_employee_email_by_role(db: Session, job_order_id: str, role: str) -> lis
     try:
         job_order = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
         if not job_order:
+            job_order = db.query(RDEJobOrder).filter(RDEJobOrder.job_order_id == job_order_id).first()
             vtc_logger.warning(f"JobOrder not found for job_order_id: {job_order_id}")
             return []
         user = db.query(User).filter(User.id == job_order.id_of_creator, User.role == role).first()
@@ -363,22 +364,30 @@ def get_test_order_type_and_objective(db: Session, test_order_id: str) -> dict:
             vtc_logger.warning(f"TestOrder not found for test_order_id: {test_order_id}")
             return {
                 "test_type": "",
-                "test_objective": ""
+                "test_objective": "",
+                "test_creator": "",
+                "test_created_at": ""
             }
             
         test_type = test_order.test_type if hasattr(test_order, "test_type") else ""
         test_objective = test_order.test_objective if hasattr(test_order, "test_objective") else ""
-        
-        vtc_logger.debug(f"Test type: {test_type}, Test objective: {test_objective}")
+        test_creator = test_order.name_of_creator if hasattr(test_order, "name_of_creator") else ""
+        test_created_at = test_order.created_on.strftime("%Y-%m-%d %H:%M:%S") if hasattr(test_order, "created_on") and test_order.created_on else ""
+
+        vtc_logger.debug(f"Test type: {test_type}, Test objective: {test_objective}, Test creator: {test_creator}, Test created at: {test_created_at}")
         return {
             "test_type": test_type,
-            "test_objective": test_objective
+            "test_objective": test_objective,
+            "test_creator": test_creator,
+            "test_created_at": test_created_at
         }
     except Exception as e:
         vtc_logger.error(f"Error in get_test_order_type_and_objective: {e}")
         return {
             "test_type": "",
-            "test_objective": ""
+            "test_objective": "",
+            "test_creator": "",
+            "test_created_at": ""
         }
 
 
@@ -439,7 +448,7 @@ def get_department_group_email(job_order, caseid=None) -> str:
     Returns the department-specific group email if the job order's department/team matches,
     but only for caseid '1' or '2'. Returns None otherwise.
     """
-    if caseid not in ("1", "2"):
+    if caseid not in ("1", "2","8"):
         return None
     department = getattr(job_order, "department", None) or getattr(job_order, "team", None)
     print("departments:", department)
@@ -452,7 +461,7 @@ def get_department_group_email(job_order, caseid=None) -> str:
     return department_email_map.get(department)
 
 
-def get_department_cc_emails(job_order) -> list:
+def get_department_cc_emails(job_order, db: Session) -> list:
     """
     Returns department-specific CC group emails for test order-related cases.
     - VTC_JO Chennai: ['EDC-VTCLAB@mahindra.com']
@@ -460,8 +469,12 @@ def get_department_cc_emails(job_order) -> list:
     - VTC_JO Nashik: []
     - PDCD_JO Chennai: []
     """
+
     department = getattr(job_order, "department", None) or getattr(job_order, "team", None)
-    print("departments:", department)
+    if not department:
+        rde_job_order = db.query(RDEJobOrder).filter(RDEJobOrder.job_order_id == job_order.job_order_id).first()
+        department = getattr(rde_job_order, "department", None) or getattr(rde_job_order, "team", None)
+    vtc_logger.debug(f"Department for CC emails: {department}")
     cc_map = {
         "VTC_JO Chennai": ["EDC-VTCLAB@mahindra.com"],
         "RDE JO": ["EDC-RDELAB@mahindra.com"],
@@ -551,7 +564,11 @@ async def send_email_endpoint(
         # Fetch job order and related info if needed
         job_order = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
         if not job_order:
-            vtc_logger.warning(f"JobOrder not found for job_order_id: {job_order_id}")
+            rde_job_order = db.query(RDEJobOrder).filter(RDEJobOrder.job_order_id == job_order_id).first()
+            if rde_job_order:
+                job_order = rde_job_order
+                vtc_logger.debug(f"Fetched RDEJobOrder for job_order_id '{job_order_id}': {job_order}")
+        vtc_logger.warning(f"JobOrder not found for job_order_id: {job_order_id}")
 
         # Gather data for replacements
         total_tests = get_total_tests_for_job(db, job_order_id) if job_order else 0
@@ -614,6 +631,8 @@ async def send_email_endpoint(
             body = body.replace("{{test_objective}}", test_order_type_obj.get("test_objective", ""))
             vtc_logger.debug(f"Case 1.1 - Added test objective: {test_order_type_obj.get('test_objective', '')}")
         elif caseid == "2":
+            body = body.replace("{{test_creator}}", test_order_type_obj.get("test_creator", ""))
+            body = body.replace("{{test_created_at}}", test_order_type_obj.get("test_created_at", ""))
             vtc_logger.debug(f"Case 2 - Using job_order_id: {job_order_id}")
         elif caseid == "3":
             body = body.replace("{{test_objective}}", test_order_type_obj.get("test_objective", ""))
@@ -657,7 +676,7 @@ async def send_email_endpoint(
         # Add department-specific CC group emails for test order-related cases
         test_order_cases = {"1.1", "3", "4", "5", "6"}
         if caseid in test_order_cases and job_order:
-            dept_cc = get_department_cc_emails(job_order)
+            dept_cc = get_department_cc_emails(job_order, db)
             print("department cc emails:", dept_cc)
             # Only add if not already present in cc_emails
             for cc in dept_cc:
