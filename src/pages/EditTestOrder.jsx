@@ -602,6 +602,19 @@ export default function EditTestOrder() {
     }
   };
 
+  // Add a handler for saving updates
+  const handleSaveUpdates = async () => {
+    try {
+      const testOrderPayload = getTestOrderPayload(test.status);
+      await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
+      showSnackbar("Test order updated successfully!", "success");
+      await handleSendMail("9", jobOrderId, test.testOrderId); // Send mail with case ID 9
+      navigate(-1);
+    } catch (err) {
+      showSnackbar("Failed to save updates: " + (err.response?.data?.detail || err.message), "error");
+    }
+  };
+
   return (
     <>
       <Navbar1 />
@@ -1681,15 +1694,24 @@ export default function EditTestOrder() {
                 className="bg-red-600 text-white text-xs px-6 py-2 rounded"
                 onClick={() => {
                   if (isProjectTeam) {
-                    setModalActionType("update");
                     setMailRemarks("");
                     setMailRemarksModal(true);
                   } else {
                     handleUpdateTestOrder();
-                  }
+                                   }
                 }}
               >
                 UPDATE TEST ORDER
+              </Button>
+            )}
+
+            {/* Save button for Test Engineer after test order is completed */}
+            {isTestEngineer && test.status === "Completed" && (
+              <Button
+                className="bg-blue-600 text-white text-xs px-6 py-2 rounded"
+                onClick={handleSaveUpdates}
+              >
+                Save
               </Button>
             )}
           </div>
