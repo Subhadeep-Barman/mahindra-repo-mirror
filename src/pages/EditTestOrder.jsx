@@ -663,6 +663,15 @@ export default function EditTestOrder() {
                   Completed
                   </span>
                 )}
+                {test.status === "under progress" && (
+                  <span className="flex items-center bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#FFA500" }}>
+                    <circle cx="12" cy="12" r="9" stroke="#FFA500" strokeWidth="2" fill="none" />
+                    <path d="M12 7v5l3 3" stroke="#FFA500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Under Progress
+                  </span>
+                )}
                 
                 {/* Validation Status Display for Completed Tests */}
                 {test.status === "Completed" && test.validation_status && (
@@ -1733,7 +1742,7 @@ export default function EditTestOrder() {
         )}
 
         {/* Star Rating Modal - Only accessible by ProjectTeam for valid tests */}
-        {starRatingModal && isProjectTeam && test.validation_status === 'valid' && (
+               {starRatingModal && isProjectTeam && test.validation_status === 'valid' && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-96">
               <div className="font-semibold mb-4 dark:text-white">
