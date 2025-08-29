@@ -938,7 +938,7 @@ export default function RDECreateJobOrder() {
         "RDE Job Order Created! ID: " + jobOrderRes.data.job_order_id,
         "success"
       );
-      handleSendMail(1, jobOrderRes.data.job_order_id, null); // Assuming caseId is 1 for now
+      // handleSendMail(1, jobOrderRes.data.job_order_id, null); // Assuming caseId is 1 for now
       navigate(-1);
       // Optionally, reset form or navigate
     } catch (err) {

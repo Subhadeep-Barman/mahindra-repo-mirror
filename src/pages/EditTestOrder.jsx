@@ -439,9 +439,9 @@ export default function EditTestOrder() {
         test_order_id: test.testOrderId,
         status: newStatus,
       };
-
       const testOrderPayload = getTestOrderPayload(newStatus);
       await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
+      await handleSendMail("5", jobOrderId, test.testOrderId); 
       setMailRemarksModal(false);
       showSnackbar("Test order updated successfully!", "success");
       handleBack();
@@ -602,6 +602,19 @@ export default function EditTestOrder() {
     }
   };
 
+  // Add a handler for saving updates
+  const handleSaveUpdates = async () => {
+    try {
+      const testOrderPayload = getTestOrderPayload(test.status);
+      await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
+      showSnackbar("Test order updated successfully!", "success");
+      await handleSendMail("9", jobOrderId, test.testOrderId); // Send mail with case ID 9
+      navigate(-1);
+    } catch (err) {
+      showSnackbar("Failed to save updates: " + (err.response?.data?.detail || err.message), "error");
+    }
+  };
+
   return (
     <>
       <Navbar1 />
@@ -694,6 +707,15 @@ export default function EditTestOrder() {
                     <path d="M9 12l2 2 4-4" stroke="#43a047" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   Completed
+                  </span>
+                )}
+                {test.status === "under progress" && (
+                  <span className="flex items-center bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-200 font-semibold text-xs px-2 py-1 rounded shadow ml-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#FFA500" }}>
+                    <circle cx="12" cy="12" r="9" stroke="#FFA500" strokeWidth="2" fill="none" />
+                    <path d="M12 7v5l3 3" stroke="#FFA500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Under Progress
                   </span>
                 )}
                 
@@ -1672,15 +1694,24 @@ export default function EditTestOrder() {
                 className="bg-red-600 text-white text-xs px-6 py-2 rounded"
                 onClick={() => {
                   if (isProjectTeam) {
-                    setModalActionType("update");
                     setMailRemarks("");
                     setMailRemarksModal(true);
                   } else {
                     handleUpdateTestOrder();
-                  }
+                                   }
                 }}
               >
                 UPDATE TEST ORDER
+              </Button>
+            )}
+
+            {/* Save button for Test Engineer after test order is completed */}
+            {isTestEngineer && test.status === "Completed" && (
+              <Button
+                className="bg-blue-600 text-white text-xs px-6 py-2 rounded"
+                onClick={handleSaveUpdates}
+              >
+                Save
               </Button>
             )}
           </div>
@@ -1881,7 +1912,7 @@ export default function EditTestOrder() {
         )}
 
         {/* Star Rating Modal - Only accessible by ProjectTeam for valid tests */}
-        {starRatingModal && isProjectTeam && test.validation_status === 'valid' && (
+               {starRatingModal && isProjectTeam && test.validation_status === 'valid' && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-96">
               <div className="font-semibold mb-4 dark:text-white">

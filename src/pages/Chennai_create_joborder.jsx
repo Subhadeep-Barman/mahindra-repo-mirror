@@ -980,7 +980,7 @@ export default function CreateJobOrder() {
 
       // Send mail with the job order ID directly from the API response
       // BEFORE navigation
-      await handleSendMail(1, createdJobOrderId, null);
+      // await handleSendMail(1, createdJobOrderId, null);
 
       // Navigate only after mail is sent
       navigate(-1);
