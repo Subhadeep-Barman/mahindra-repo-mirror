@@ -755,7 +755,7 @@ export default function PDCDCreateJobOrder() {
       
       showSnackbar("Job Order Created! ID: " + jobOrderRes.data.job_order_id, "success");
       // Optionally, reset form or navigate
-      handleSendMail(1, jobOrderRes.data.job_order_id, null);
+      // handleSendMail(1, jobOrderRes.data.job_order_id, null);
       navigate(-1);
     } catch (err) {
       console.error("Error creating job order:", err);
