@@ -720,16 +720,16 @@ export default function EditTestOrder() {
 
                 {/* Star Rating Display for Completed and Valid Tests - Right side box */}
                 {test.status === "Completed" && test.validation_status === 'valid' && (test.rating > 0 || testOrder?.rating > 0) && (
-                  <div className="ml-auto flex-1 flex justify-end">
-                  <div className="min-w-[320px] max-w-xs bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg shadow px-6 py-3 flex flex-col items-start">
+                  <div className="ml-auto flex-1 flex justify-end min-w-0">
+                  <div className="w-full md:w-auto min-w-0 max-w-3xl bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg shadow px-6 py-3 flex flex-col items-start">
                     <div className="font-semibold text-blue-900 dark:text-blue-200 text-sm mb-2">
                     Initiator Rating Remarks
                     </div>
-                    <div className="flex items-center mb-2">
+                    <div className="flex items-center mb-2 w-full">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <svg
                       key={star}
-                      className={`h-6 w-10 ${
+                      className={`h-6 w-6 ${
                         star <= (testOrder?.rating || test.rating || 0)
                         ? "text-yellow-400 fill-current"
                         : "text-gray-300 dark:text-gray-600"
@@ -740,21 +740,21 @@ export default function EditTestOrder() {
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
                     ))}
-                  <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
-                    ({testOrder?.rating || 0}/5)
-                  </span>
-                  {((testOrder && testOrder.rating_remarks) || test.rating_remarks || ratingRemarks) && (
-                    <span className="text-sm text-black-500 dark:text-black-400 ml-3">-
-                      {" "}{testOrder?.rating_remarks || test.rating_remarks || ratingRemarks}
+                    <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
+                      ({testOrder?.rating || 0}/5)
                     </span>
-                  )}
                     </div>
-                    </div>
-                </div>
+                    {((testOrder && testOrder.rating_remarks) || test.rating_remarks || ratingRemarks) && (
+                      <div className="w-full text-sm text-gray-700 dark:text-gray-300 break-words overflow-wrap-anywhere max-h-[60vh] overflow-auto">
+                        {testOrder?.rating_remarks || test.rating_remarks || ratingRemarks}
+                      </div>
+                    )}
+                  </div>
+                  </div>
                 )}
 
             
-            {test.status === "Completed" && isProjectTeam && (
+            {test.status === "Completed" && isProjectTeam && !(test.rating > 0 || testOrder?.rating > 0) && (
               <div className="flex items-center gap-2 ml-4">
                 {/* button should not be visible once rating has been given for once */}
                 <Button
@@ -1093,6 +1093,7 @@ export default function EditTestOrder() {
                 value={test.preferredDate}
                 onChange={(e) => handleTestChange("preferredDate", e.target.value)}
                 disabled={!areFieldsEditable()}
+                min={new Date().toISOString().split('T')[0]} // Block previous dates
               />
             </div>
             <div>
@@ -1102,6 +1103,7 @@ export default function EditTestOrder() {
                 value={test.emissionCheckDate}
                 onChange={(e) => handleTestChange("emissionCheckDate", e.target.value)}
                 disabled={!areFieldsEditable()}
+                min={new Date().toISOString().split('T')[0]} // Block previous dates
               />
             </div>
             <div className="col-span-2">
@@ -1556,7 +1558,9 @@ export default function EditTestOrder() {
                             : 'bg-red-100 dark:bg-red-800/50 text-red-700 dark:text-red-300'
                         }`}>
                           {test.validation_status === 'valid' 
-                            ? '✓ This test can be rated. Use the "Rate Test" button below to provide your feedback.'
+                            ? (test.rating > 0 || testOrder?.rating > 0)
+                              ? '✓ You have already rated this test. Thank you for your feedback!'
+                              : '✓ This test can be rated. Use the "Rate Test" button above to provide your feedback.'
                             : '✗ This test cannot be rated as it has been marked as invalid by the Test Engineer.'
                           }
                         </div>

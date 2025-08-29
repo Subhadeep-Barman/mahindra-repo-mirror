@@ -2681,6 +2681,7 @@ export default function RDECreateJobOrder() {
                     handleTestChange(idx, "preferredDate", e.target.value)
                   }
                   disabled={!areTestFieldsEditable(test, idx)}
+                  min={new Date().toISOString().split('T')[0]} // Block previous dates
                 />
               </div>
               <div>
@@ -2692,6 +2693,7 @@ export default function RDECreateJobOrder() {
                     handleTestChange(idx, "emissionCheckDate", e.target.value)
                   }
                   disabled={!areTestFieldsEditable(test, idx)}
+                  min={new Date().toISOString().split('T')[0]} // Block previous dates
                 />
               </div>
               <div className="col-span-2">
