@@ -434,9 +434,9 @@ export default function EditTestOrder() {
         test_order_id: test.testOrderId,
         status: newStatus,
       };
-
       const testOrderPayload = getTestOrderPayload(newStatus);
       await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
+      await handleSendMail("5", jobOrderId, test.testOrderId); 
       setMailRemarksModal(false);
       showSnackbar("Test order updated successfully!", "success");
       handleBack();
