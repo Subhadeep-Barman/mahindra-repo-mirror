@@ -1548,69 +1548,67 @@ export default function EditTestOrder() {
               )}
 
               {/* Test Validation Status - positioned on the right side */}
-              {test.status === "Completed" && test.validation_status && (
-                <div className="md:col-start-3 md:col-span-1">
-                  <Label className="dark:text-white">Test Validation</Label>
-                  <div className={`mt-2 p-4 rounded-lg border ${
-                    test.validation_status === 'valid'
-                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                      : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                  }`}>
-                    <div className="mb-3">
-                      <h3 className={`text-lg font-semibold mb-1 ${
+                      {test.status === "Completed" && test.validation_status && (
+                      <div className="md:col-start-3 md:col-span-1">
+                        <Label className="dark:text-white">Test Validation</Label>
+                        <div className={`mt-2 p-4 rounded-lg border ${
                         test.validation_status === 'valid'
-                          ? 'text-green-900 dark:text-green-100'
-                          : 'text-red-900 dark:text-red-100'
-                      }`}>
-                        Test Validation: {test.validation_status === 'valid' ? 'VALID' : 'INVALID'}
-                      </h3>
-                      <p className={`text-sm ${
-                        test.validation_status === 'valid'
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-600 dark:text-red-400'
-                      }`}>
-                        Validated by: {test.validated_by} on {formatDate(test.validated_on)}
-                      </p>
-                      
-                      {/* Message for ProjectTeam about rating availability */}
-                      {isProjectTeam && (
-                        <div className={`mt-2 p-2 rounded text-xs ${
+                          ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                          : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                        }`}>
+                        <div className="mb-3">
+                          <h3 className={`text-lg font-semibold mb-1 ${
                           test.validation_status === 'valid'
+                            ? 'text-green-900 dark:text-green-100'
+                            : 'text-red-900 dark:text-red-100'
+                          }`}>
+                          Test Validation: {test.validation_status === 'valid' ? 'VALID' : 'INVALID'}
+                          </h3>
+                          <p className={`text-sm ${
+                          test.validation_status === 'valid'
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-red-600 dark:text-red-400'
+                          }`}>
+                          Validated by: {test.validated_by} on {formatDate(test.validated_on)}
+                          </p>
+                          
+                          {/* Message for ProjectTeam about rating availability */}
+                          {isProjectTeam && (
+                          <div className={`mt-2 p-2 rounded text-xs ${
+                            test.validation_status === 'valid'
                             ? 'bg-green-100 dark:bg-green-800/50 text-green-700 dark:text-green-300'
                             : 'bg-red-100 dark:bg-red-800/50 text-red-700 dark:text-red-300'
-                        }`}>
-                          {test.validation_status === 'valid' 
-                            ? (test.rating > 0 || testOrder?.rating > 0)
-                              ? '✓ You have already rated this test. Thank you for your feedback!'
-                              : '✓ This test can be rated. Use the "Rate Test" button above to provide your feedback.'
-                            : '✗ This test cannot be rated as it has been marked as invalid by the Test Engineer.'
-                          }
+                          }`}>
+                            {(test.rating > 0 || testOrder?.rating > 0)
+                            ? '✓ You have already rated this test. Thank you for your feedback!'
+                            : '✓ This test can be rated. Use the "Rate Test" button above to provide your feedback.'
+                            }
+                          </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    {(test.complete_remarks || test.remark) && (
-                      <div>
-                        <Label className={`text-sm font-medium mb-1 block ${
-                          test.validation_status === 'valid'
+                        {(test.complete_remarks || test.remark) && (
+                          <div>
+                          <Label className={`text-sm font-medium mb-1 block ${
+                            test.validation_status === 'valid'
                             ? 'text-green-700 dark:text-green-300'
                             : 'text-red-700 dark:text-red-300'
-                        }`}>
-                          Completion Remarks:
-                        </Label>
-                        <div className="p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
-                          <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                          }`}>
+                            Completion Remarks:
+                          </Label>
+                          <div className="p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
+                            <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
                             {test.complete_remarks || test.remark}
-                          </p>
+                            </p>
+                          </div>
+                          </div>
+                        )}
                         </div>
                       </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+                      )}
+                    </div>
+                    </div>
 
-          {/* Completion Remarks and Validation Section for TestEngineer */}
+                    {/* Completion Remarks and Validation Section for TestEngineer */}
           {false && ( // removed standalone section; now rendered inside the main grid above
             <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
             </div>
@@ -1912,16 +1910,25 @@ export default function EditTestOrder() {
         )}
 
         {/* Star Rating Modal - Only accessible by ProjectTeam for valid tests */}
-               {starRatingModal && isProjectTeam && test.validation_status === 'valid' && (
+               {starRatingModal && isProjectTeam && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-96">
               <div className="font-semibold mb-4 dark:text-white">
                 Rate Test Execution Performance
               </div>
-              
               <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
                 <p className="mb-2">
-                  The test has been validated as <span className="text-green-600 font-medium">VALID</span> by the Test Engineer.
+                  The test has been validated as{" "}
+                  <span
+                    className={`font-medium ${
+                      test.validation_status === "valid"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {test.validation_status?.toUpperCase() || "INVALID"}
+                  </span>{" "}
+                  by the Test Engineer.
                 </p>
                 <p className="mb-2">
                   Please rate the quality and execution of this test order:

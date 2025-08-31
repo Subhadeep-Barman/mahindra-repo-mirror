@@ -2,30 +2,98 @@ import { ArrowBack, Add } from "@mui/icons-material";
 import { Button } from "@/components/UI/button";
 import { Badge } from "@/components/UI/badge";
 import { useNavigate, useLocation } from "react-router-dom";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/UI/table";
 import { Card } from "@/components/UI/card";
 import { useState, useEffect } from "react";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import showSnackbar from "@/utils/showSnackbar";
+import { DataGrid } from "@mui/x-data-grid"; // Import DataGrid
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function PDCDVehicle() {
+  const [vehicles, setVehicles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { apiUserRole, userId, userName } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [vehicles, setVehicles] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(8);
-  const { apiUserRole, userId, userName } = useAuth();
+
+  // Fetch vehicles from API on mount
+  useEffect(() => {
+    async function fetchVehicles() {
+      setLoading(true);
+      try {
+        const response = await axios.get(`${apiURL}/vehicles`);
+        const minimalVehicles = (response.data || []).map((v) => ({
+          id: v.vehicle_serial_number, // DataGrid requires a unique 'id' field
+          vehicle_serial_number: v.vehicle_serial_number,
+          vehicle_body_number: v.vehicle_body_number,
+          vehicle_model: v.vehicle_model,
+          name_of_creator: v.name_of_creator || "NA",
+          created_on: new Date(v.created_on).toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            hour12: true,
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          name_of_updater: v.name_of_updater || "NA",
+          updated_on: new Date(v.updated_on).toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            hour12: true,
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        }));
+        setVehicles(minimalVehicles);
+      } catch (err) {
+        console.error("Error fetching vehicles:", err);
+        setVehicles([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchVehicles();
+  }, []);
+
+  const handleAddNewVehicle = () => {
+    navigate("/vtcvehicle/new?department=VTC_JO%20Nashik");
+  };
+
+  const handleEditClick = (vehicle) => {
+    navigate(`/vtcvehicle/new?department=VTC_JO%20Nashik&edit=true`, {
+      state: { vehicleData: vehicle, isEdit: true },
+    });
+  };
+
+  // Define columns for DataGrid
+  const columns = [
+    {
+      field: "vehicle_serial_number",
+      headerName: "Vehicle Serial Number",
+      flex: 1,
+      renderCell: (params) => (
+        <span
+          className="text-blue-600 hover:text-blue-800 cursor-pointer underline"
+          onClick={() => handleEditClick(params.row)}
+        >
+          {params.value}
+        </span>
+      ),
+    },
+    { field: "vehicle_body_number", headerName: "Vehicle Body Number", flex: 1 },
+    { field: "vehicle_model", headerName: "Vehicle Model", flex: 1 },
+    { field: "name_of_creator", headerName: "Created By", flex: 1 },
+    { field: "created_on", headerName: "Created On", flex: 1 },
+    { field: "name_of_updater", headerName: "Last Updated By", flex: 1 },
+    { field: "updated_on", headerName: "Last Updated On", flex: 1 },
+  ];
 
   // Determine active tab from the current route
   let activeTab = "Job Order";
@@ -34,108 +102,10 @@ export default function PDCDVehicle() {
   else if (location.pathname.toLowerCase().includes("engine"))
     activeTab = "Engine";
 
-  // Fetch vehicles from API on mount
-  useEffect(() => {
-    async function fetchVehicles() {
-      try {
-        // REMOVED: Department filter to get vehicles from all teams
-        const response = await axios.get(`${apiURL}/vehicles`);
-
-        console.log("Fetched all vehicles:", response.data); // Debug log
-
-        // Only keep necessary fields for each vehicle
-        const minimalVehicles = (response.data || []).map((v) => ({
-          vehicle_serial_number: v.vehicle_serial_number,
-          vehicle_body_number: v.vehicle_body_number,
-          vehicle_model: v.vehicle_model,
-          name_of_creator: v.name_of_creator || "NA", // Use userName if not available
-          id_of_creator: v.id_of_creator || "",
-          created_on: v.created_on,
-          id_of_updater: v.id_of_updater,
-          name_of_updater: v.name_of_updater || "NA",
-          updated_on: v.updated_on,
-        }));
-        setVehicles(minimalVehicles);
-      } catch (err) {
-        console.error("Error fetching vehicles:", err);
-        setVehicles([]);
-      }
-    }
-    fetchVehicles();
-  }, []);
-
-  // Pagination calculations
-  const totalItems = vehicles.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = vehicles.slice(indexOfFirstItem, indexOfLastItem);
-
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
-
-  const handleBack = () => {
-    navigate(-1);
-  };
-
   const handleTabClick = (tab) => {
     if (tab === "Job Order") navigate("/pdcd-lab");
     else if (tab === "Vehicle") navigate("/pdcd/vehicle");
     else if (tab === "Engine") navigate("/pdcd/engine");
-  };
-
-  const handleAddNewVehicle = () => {
-    navigate("/vtcvehicle/new?department=VTC_JO%20Nashik");
-  };
-
-  // FIXED: Update the handleEditClick function to fetch the SPECIFIC vehicle data
-  const handleEditClick = async (vehicle) => {
-    try {
-      console.log("Clicking on Nashik vehicle:", vehicle.vehicle_serial_number); // Debug log
-
-      // Fetch full vehicle details using the specific vehicle serial number
-      const response = await axios.get(
-        `${apiURL}/vehicles?vehicle_serial_number=${encodeURIComponent(vehicle.vehicle_serial_number)}`
-      );
-
-      console.log("Nashik API Response:", response.data); // Debug log
-
-      if (response.data && response.data.length > 0) {
-        // Find the exact vehicle that matches the clicked serial number
-        const vehicleData = response.data.find(v =>
-          v.vehicle_serial_number === vehicle.vehicle_serial_number
-        );
-
-        if (!vehicleData) {
-          console.error("Vehicle not found in response:", vehicle.vehicle_serial_number);
-          showSnackbar("Selected vehicle not found in response.", "error");
-          return;
-        }
-
-        console.log("Found matching Nashik vehicle:", vehicleData); // Debug log
-
-        // Navigate to the vehicle form page with complete vehicle data
-        navigate(`/vtcvehicle/new?department=VTC_JO%20Nashik&edit=true`, {
-          state: {
-            vehicleData: vehicleData,
-            isEdit: true,
-            vehicleSerialNumber: vehicle.vehicle_serial_number,
-            // Pass additional context for the form
-            editMode: true,
-            originalVehicleData: vehicleData
-          }
-        });
-      } else {
-        showSnackbar("No vehicle data found for the selected vehicle.", "warning");
-      }
-    } catch (err) {
-      console.error("Error fetching vehicle details:", err);
-      showSnackbar(
-        "Error fetching vehicle details: " + (err.response?.data?.detail || err.message),
-        "error"
-      );
-    }
   };
 
   return (
@@ -149,7 +119,7 @@ export default function PDCDVehicle() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleBack}
+                onClick={() => navigate(-1)}
                 className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:border-red-500 dark:hover:bg-red-950 rounded-full border border-red-500"
               >
                 <ArrowBack className="h-5 w-5" />
@@ -198,147 +168,18 @@ export default function PDCDVehicle() {
       {/* Main Content */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Card>
-          <div className="overflow-x-auto">
-            <Table className="min-w-full border-collapse border border-gray-200">
-              <TableHeader>
-                <TableRow className="bg-gray-100">
-                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                    Vehicle Serial Number
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                    Vehicle Body Number
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                    Vehicle Model
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                    Created By
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                    Created on
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                    Last Updated By
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                    Last Updated on
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentItems.map((vehicle, index) => (
-                  <TableRow
-                    key={vehicle.vehicle_serial_number || index}
-                    className={`${index %
-                      2 === 0 ? "bg-white" : "bg-gray-50"
-                      } hover:bg-gray-100`}
-                  >
-                    <TableCell
-                      className="text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400 text-xs px-4 py-2"
-                      onClick={() => handleEditClick(vehicle)}
-                    >
-                      {vehicle.vehicle_serial_number}
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-900 px-4 py-2">
-                      {vehicle.vehicle_body_number}
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-900 px-4 py-2">
-                      {vehicle.vehicle_model}
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-600 px-4 py-2">
-                      {vehicle.name_of_creator}
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-600 px-4 py-2">
-                      {new Date(vehicle.created_on).toLocaleString("en-IN", {
-                        timeZone: "Asia/Kolkata",
-                        hour12: true,
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-600 px-4 py-2">
-                      {vehicle.name_of_updater || "NA"}
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-600 px-4 py-2">
-                      {new Date(vehicle.updated_on).toLocaleString("en-IN", {
-                        timeZone: "Asia/Kolkata",
-                        hour12: true,
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div style={{ height: 600, width: "100%" }}>
+            <DataGrid
+              rows={vehicles}
+              columns={columns}
+              pageSize={8}
+              rowsPerPageOptions={[8]}
+              loading={loading}
+              autoHeight
+              disableSelectionOnClick
+            />
           </div>
         </Card>
-
-        {/* Pagination Footer */}
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-gray-600">
-            Showing {indexOfFirstItem + 1} to{" "}
-            {Math.min(indexOfLastItem, totalItems)} of {totalItems} Records
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => handlePageChange(1)}
-              className="text-gray-400"
-            >
-              {"<<"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => handlePageChange(currentPage - 1)}
-              className="text-gray-400"
-            >
-              {"<"}
-            </Button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={currentPage === page ? "default" : "outline"}
-                size="sm"
-                onClick={() => handlePageChange(page)}
-                className={`${currentPage === page
-                  ? "bg-black text-white hover:bg-gray-800"
-                  : "text-gray-600"
-                  } px-3 py-1`}
-              >
-                {page}
-              </Button>
-            ))}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => handlePageChange(currentPage + 1)}
-              className="text-gray-400"
-            >
-              {">"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => handlePageChange(totalPages)}
-              className="text-gray-400"
-            >
-              {">>"}
-            </Button>
-          </div>
-        </div>
       </div>
     </>
   );

@@ -1,68 +1,66 @@
-import { ArrowBack, Add, Edit as EditIcon } from "@mui/icons-material";
+import { ArrowBack, Add } from "@mui/icons-material";
 import { Button } from "@/components/UI/button";
 import { Badge } from "@/components/UI/badge";
 import { useNavigate, useLocation } from "react-router-dom";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/UI/table";
 import { Card } from "@/components/UI/card";
 import { useState, useEffect } from "react";
 import Navbar1 from "@/components/UI/navbar";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import showSnackbar from "@/utils/showSnackbar";
+import { DataGrid } from "@mui/x-data-grid"; // Import DataGrid
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function RDEVehiclePage() {
   const [vehicles, setVehicles] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(8);
+  const [loading, setLoading] = useState(true);
   const { apiUserRole, userId, userName } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Fetch vehicles from API on mount
   useEffect(() => {
     async function fetchVehicles() {
+      setLoading(true);
       try {
-        // Fetch all vehicles
         const response = await axios.get(`${apiURL}/vehicles`);
-
-        console.log("Fetched all vehicles:", response.data); // Debug log
-
-        // Only keep necessary fields for each vehicle
         const minimalVehicles = (response.data || []).map((v) => ({
+          id: v.vehicle_serial_number, // DataGrid requires a unique 'id' field
           vehicle_serial_number: v.vehicle_serial_number,
           vehicle_body_number: v.vehicle_body_number,
           vehicle_model: v.vehicle_model,
-          name_of_creator: v.name_of_creator || "NA", // Use userName if not available
-          id_of_creator: v.id_of_creator || "",
-          created_on: v.created_on,
-          id_of_updater: v.id_of_updater,
-          name_of_updater: v.name_of_updater || "NA", // Use userName if not available
-          updated_on: v.updated_on,
+          name_of_creator: v.name_of_creator || "NA",
+          created_on: new Date(v.created_on).toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            hour12: true,
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          name_of_updater: v.name_of_updater || "NA",
+          updated_on: new Date(v.updated_on).toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            hour12: true,
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
         }));
         setVehicles(minimalVehicles);
       } catch (err) {
         console.error("Error fetching vehicles:", err);
         setVehicles([]);
+      } finally {
+        setLoading(false);
       }
     }
     fetchVehicles();
   }, []);
-
-  const totalItems = vehicles.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = vehicles.slice(indexOfFirstItem, indexOfLastItem);
-
-  const navigate = useNavigate();
-  const location = useLocation();
 
   // Determine active tab from the current route
   let activeTab = "Job Order";
@@ -85,64 +83,40 @@ export default function RDEVehiclePage() {
     navigate("/vtcvehicle/new?department=RDE%20JO");
   };
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
+  const handleEditClick = (vehicle) => {
+    navigate(`/vtcvehicle/new?department=RDE%20JO&edit=true`, {
+      state: { vehicleData: vehicle, isEdit: true },
+    });
   };
 
-  // FIXED: Update the handleEditClick function to fetch the SPECIFIC vehicle data
-  const handleEditClick = async (vehicle) => {
-    try {
-      console.log("Clicking on RDE vehicle:", vehicle.vehicle_serial_number); // Debug log
-
-      // FIXED: Use the correct API endpoint format without the slash before query parameter
-      const response = await axios.get(
-        `${apiURL}/vehicles?vehicle_serial_number=${encodeURIComponent(vehicle.vehicle_serial_number)}`
-      );
-
-      console.log("RDE API Response:", response.data); // Debug log
-
-      if (response.data && response.data.length > 0) {
-        // FIXED: Find the exact vehicle that matches the clicked serial number
-        const vehicleData = response.data.find(v =>
-          v.vehicle_serial_number === vehicle.vehicle_serial_number
-        );
-
-        if (!vehicleData) {
-          console.error("Vehicle not found in response:", vehicle.vehicle_serial_number);
-          showSnackbar("Selected vehicle not found in response.", "error");
-          return;
-        }
-
-        console.log("Found matching RDE vehicle:", vehicleData); // Debug log
-
-        // Navigate to the vehicle form page with complete vehicle data
-        navigate(`/vtcvehicle/new?department=RDE%20JO&edit=true`, {
-          state: {
-            vehicleData: vehicleData,
-            isEdit: true,
-            vehicleSerialNumber: vehicle.vehicle_serial_number,
-            // Pass additional context for the form
-            editMode: true,
-            originalVehicleData: vehicleData
-          }
-        });
-      } else {
-        showSnackbar("No vehicle data found for the selected vehicle.", "warning");
-      }
-    } catch (err) {
-      console.error("Error fetching vehicle details:", err);
-      showSnackbar(
-        "Error fetching vehicle details: " + (err.response?.data?.detail || err.message),
-        "error"
-      );
-    }
-  };
+  // Define columns for DataGrid
+  const columns = [
+    {
+      field: "vehicle_serial_number",
+      headerName: "Vehicle Serial Number",
+      flex: 1,
+      renderCell: (params) => (
+        <span
+          className="text-blue-600 hover:text-blue-800 cursor-pointer underline"
+          onClick={() => handleEditClick(params.row)}
+        >
+          {params.value}
+        </span>
+      ),
+    },
+    { field: "vehicle_body_number", headerName: "Vehicle Body Number", flex: 1 },
+    { field: "vehicle_model", headerName: "Vehicle Model", flex: 1 },
+    { field: "name_of_creator", headerName: "Created By", flex: 1 },
+    { field: "created_on", headerName: "Created On", flex: 1 },
+    { field: "name_of_updater", headerName: "Last Updated By", flex: 1 },
+    { field: "updated_on", headerName: "Last Updated On", flex: 1 },
+  ];
 
   return (
     <>
       <Navbar1 />
       {/* Header */}
-      <div className="bg-white dark:bg-black ">
+      <div className="bg-white dark:bg-black">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
@@ -182,7 +156,7 @@ export default function RDEVehiclePage() {
       </div>
 
       {/* Vehicle List Badge */}
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center bg-white dark:bg-black">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
         <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 px-3 py-1">
           Vehicles List
         </Badge>
@@ -198,148 +172,18 @@ export default function RDEVehiclePage() {
       {/* Main Content */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Card>
-          <div className="overflow-x-auto">
-            <Table className="min-w-full border-collapse border border-gray-200">
-              <TableHeader>
-                <TableRow className="bg-gray-100">
-                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                    Vehicle Serial Number
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                    Vehicle Body Number
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                    Vehicle Model
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                    Created By
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                    Created on
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                    Last Updated By
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                    Last Updated on
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentItems.map((vehicle, index) => (
-                  <TableRow
-                    key={vehicle.vehicle_serial_number || index}
-                    className={`${index %
-                      2 === 0 ? "bg-white" : "bg-gray-50"
-                      } hover:bg-gray-100`}
-                  >
-                    <TableCell
-                      className="text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400 text-xs px-4 py-2"
-                      onClick={() => handleEditClick(vehicle)}
-                    >
-                      {vehicle.vehicle_serial_number}
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-900 px-4 py-2">
-                      {vehicle.vehicle_body_number}
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-900 px-4 py-2">
-                      {vehicle.vehicle_model}
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-600 px-4 py-2">
-                      {vehicle.name_of_creator || "NA"} {/* Use userName if not available */}
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-600 px-4 py-2">
-                      {new Date(vehicle.created_on).toLocaleString("en-IN", {
-                        timeZone: "Asia/Kolkata",
-                        hour12: true,
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-600 px-4 py-2">
-                      {vehicle.name_of_updater}
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-600 px-4 py-2">
-  {new Date(vehicle.updated_on + "Z").toLocaleString("en-IN", {
-    timeZone: "Asia/Kolkata",
-    hour12: true,
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })}
-</TableCell>
-
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div style={{ height: 600, width: "100%" }}>
+            <DataGrid
+              rows={vehicles}
+              columns={columns}
+              pageSize={8}
+              rowsPerPageOptions={[8]}
+              loading={loading}
+              autoHeight
+              disableSelectionOnClick
+            />
           </div>
         </Card>
-
-        {/* Pagination Footer */}
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-gray-600">
-            Showing {indexOfFirstItem + 1} to{" "}
-            {Math.min(indexOfLastItem, totalItems)} of {totalItems} Records
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => handlePageChange(1)}
-              className="text-gray-400"
-            >
-              {"<<"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => handlePageChange(currentPage - 1)}
-              className="text-gray-400"
-            >
-              {"<"}
-            </Button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={currentPage === page ? "default" : "outline"}
-                size="sm"
-                onClick={() => handlePageChange(page)}
-                className={`${currentPage === page
-                  ? "bg-black text-white hover:bg-gray-800"
-                  : "text-gray-600"
-                  } px-3 py-1`}
-              >
-                {page}
-              </Button>
-            ))}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => handlePageChange(currentPage + 1)}
-              className="text-gray-400"
-            >
-              {">"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => handlePageChange(totalPages)}
-              className="text-gray-400"
-            >
-              {">>"}
-            </Button>
-          </div>
-        </div>
       </div>
     </>
   );
