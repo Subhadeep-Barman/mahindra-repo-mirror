@@ -40,6 +40,7 @@ class VehicleSchema(BaseModel):
     gear_ratio_3: Optional[str] = None
     gear_ratio_4: Optional[str] = None
     gear_ratio_5: Optional[str] = None
+    gear_ratio_6: Optional[str] = None
     reverse_gear_ratio: Optional[str] = None
     department: Optional[str] = None
     id_of_creator: Optional[str] = None
