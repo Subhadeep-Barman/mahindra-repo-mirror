@@ -43,6 +43,7 @@ class Vehicle(Base):
     gear_ratio_3 = Column(String, nullable=True)
     gear_ratio_4 = Column(String, nullable=True)
     gear_ratio_5 = Column(String, nullable=True)
+    gear_ratio_6 = Column(String, nullable=True)
     reverse_gear_ratio = Column(String, nullable=True)
     department = Column(String, nullable=True)
     id_of_creator = Column(String, nullable=True)

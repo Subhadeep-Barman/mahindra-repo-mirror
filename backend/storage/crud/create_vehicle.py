@@ -40,6 +40,7 @@ def vehicle_to_dict(vehicle):
         "gear_ratio_3": vehicle.gear_ratio_3,
         "gear_ratio_4": vehicle.gear_ratio_4,
         "gear_ratio_5": vehicle.gear_ratio_5,
+        "gear_ratio_6": vehicle.gear_ratio_6,
         "reverse_gear_ratio": vehicle.reverse_gear_ratio,
         "department": vehicle.department,
         "id_of_creator": vehicle.id_of_creator,
