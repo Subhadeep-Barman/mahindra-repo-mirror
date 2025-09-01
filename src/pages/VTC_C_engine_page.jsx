@@ -36,8 +36,8 @@ export default function VTCEnginePage() {
       setError(null);
       try {
         const response = await axios.get(`${apiURL}/engines`);
-        const minimalEngines = (response.data || []).map((e) => ({
-          id: e.engine_serial_number, // DataGrid requires a unique 'id' field
+        const minimalEngines = (response.data || []).map((e, index) => ({
+          id: e.engine_serial_number || `temp-id-${index}`, // Ensure unique id
           engine_serial_number: e.engine_serial_number || "",
           engine_build_level: e.engine_build_level || "",
           engine_capacity: e.engine_capacity || "",
