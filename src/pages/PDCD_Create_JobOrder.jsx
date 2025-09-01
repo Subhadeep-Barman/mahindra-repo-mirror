@@ -2225,7 +2225,14 @@ export default function PDCDCreateJobOrder() {
                     handleTestChange(idx, "emissionCheckDate", e.target.value)
                   }
                   disabled={!areTestFieldsEditable(test, idx)}
-                  min={new Date().toISOString().split('T')[0]} // Block previous dates
+                  // min={new Date().toISOString().split('T')[0]} // Block previous dates
+                  min={(() => {
+                            // Allow only last 15 days including today and any future date
+                            const today = new Date();
+                            const minDate = new Date(today);
+                            minDate.setDate(today.getDate() - 15);
+                            return minDate.toISOString().split('T')[0];
+                          })()}
                 />
               </div>
               <div className="col-span-2">

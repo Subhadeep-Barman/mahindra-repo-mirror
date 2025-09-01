@@ -1482,8 +1482,34 @@ export default function CreateJobOrder() {
     if (isProjectTeam && test.status === "Re-edit") {
       newStatus = "Started";
     }
-    // In handleCreateTestOrder function, around line 790-850
-    // Update the test order payload creation in handleCreateTestOrder function (around line 790-850)
+
+    // Check if only attachments are updated
+    const attachmentFields = [
+      "emissionCheckAttachment",
+      "dataset_attachment",
+      "a2l_attachment",
+      "experiment_attachment",
+      "dbc_attachment",
+      "wltp_attachment",
+      "pdf_report",
+      "excel_report",
+      "dat_file_attachment",
+      "others_attachement",
+    ];
+    const hasAttachmentChanges = attachmentFields.some((field) => {
+      const original = test[field];
+      const updated = parseAttachment(test[field]);
+      return JSON.stringify(original) !== JSON.stringify(updated);
+    });
+
+    // If only attachments are updated, set status to "Created"
+    if (hasAttachmentChanges && !remarkInput.trim()) {
+      setRemarkModalOpen(true);
+      setRemarkType("Update");
+      setRemarkInput("");
+      return;
+    }
+
     const testOrderPayload = {
       test_order_id: test.testOrderId,
       job_order_id: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || "",
@@ -1512,7 +1538,7 @@ export default function CreateJobOrder() {
       preferred_date: test.preferredDate || null,
       emission_check_date: test.emissionCheckDate || null,
       specific_instruction: test.specificInstruction || "",
-      status: newStatus,
+      status: hasAttachmentChanges ? "Created" : newStatus,
       id_of_updater: userId || "",
       name_of_updater: userName || "",
       updated_on: formattedISTTime,
@@ -3011,37 +3037,43 @@ export default function CreateJobOrder() {
                     }
                     disabled={!areTestFieldsEditable(test, idx)}
                     min={new Date().toISOString().split('T')[0]} // Block previous dates
-                  />
-                </div>
-                <div>
-                  <Label>Emission Checklist Date <span className="text-red-500">*</span></Label>
-                  <Input
-                    type="date"
-                    value={test.emissionCheckDate}
-                    onChange={(e) =>
-                      handleTestChange(idx, "emissionCheckDate", e.target.value)
-                    }
-                    disabled={!areTestFieldsEditable(test, idx)}
-                    min={new Date().toISOString().split('T')[0]} // Block previous dates
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label>Specific Instruction <span className="text-red-500">*</span></Label>
-                  <textarea
-                    value={test.specificInstruction}
-                    onChange={(e) =>
-                      handleTestChange(idx, "specificInstruction", e.target.value)
-                    }
-                    placeholder="Enter Specific Instructions"
-                    disabled={!areTestFieldsEditable(test, idx)}
-                    className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical dark:bg-black"
-                    style={{ minWidth: "100%", fontSize: "1rem" }}
-                    rows={3}
-                  />
-                </div>
-              </div>
+                          />
+                        </div>
+                        <div>
+                          <Label>Emission Checklist Date <span className="text-red-500">*</span></Label>
+                          <Input
+                          type="date"
+                          value={test.emissionCheckDate}
+                          onChange={(e) =>
+                            handleTestChange(idx, "emissionCheckDate", e.target.value)
+                          }
+                          disabled={!areTestFieldsEditable(test, idx)}
+                          min={(() => {
+                            // Allow only last 15 days including today and any future date
+                            const today = new Date();
+                            const minDate = new Date(today);
+                            minDate.setDate(today.getDate() - 15);
+                            return minDate.toISOString().split('T')[0];
+                          })()}
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Label>Specific Instruction <span className="text-red-500">*</span></Label>
+                          <textarea
+                          value={test.specificInstruction}
+                          onChange={(e) =>
+                            handleTestChange(idx, "specificInstruction", e.target.value)
+                          }
+                          placeholder="Enter Specific Instructions"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                          className="w-full border rounded p-2 min-h-[60px] max-h-[120px] resize-vertical dark:bg-black"
+                          style={{ minWidth: "100%", fontSize: "1rem" }}
+                          rows={3}
+                          />
+                        </div>
+                        </div>
 
-              {/* Coast Down Data Section for Test */}
+                        {/* Coast Down Data Section for Test */}
                       {test.inertiaClass === "Coastdown Loading" && (
                       <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 dark:bg-inherit transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
                         <div className="flex items-center gap-3 mb-3">
