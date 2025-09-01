@@ -91,6 +91,8 @@ export default function AuthSuccess() {
 
         const userDetails = jwtDecode(jwtToken);
         console.log("Decoded JWT Token:", userDetails);
+        console.log("User ID from JWT:", userDetails.user); // Log the user ID from the JWT
+
         const response = await axios.get(`${apiURL}/api/users/read_all_users`);
         console.log("API response data:", response.data);
 
@@ -99,14 +101,23 @@ export default function AuthSuccess() {
           response.data.forEach((user, idx) => {
             console.log(`User[${idx}]:`, user);
           });
+        } else {
+          console.error("API did not return an array of users");
+          throw new Error("Invalid API response format");
         }
 
         if (!validateUserData(response.data)) {
-          throw new Error("Invalid userloyee data from API");
+          console.error("Validation failed for API user data");
+          throw new Error("Invalid user data from API");
         }
+
         const users = response.data;
         const user = users.find((user) => user.id === userDetails.user);
+
         if (!user) {
+          console.error(
+            `User with ID ${userDetails.user} not found in the users array`
+          );
           showSnackbar(
             "You are not registered, send mail to the Admin",
             "error"

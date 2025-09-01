@@ -14,7 +14,9 @@ import {
 } from "lucide-react";
 // Image icons (place files at src/assets/rde_icon.png and src/assets/other_icon.png)
 import rdeIcon from "@/assets/img1.png";
-import otherIcon from "@/assets/img2.png";
+import otherIcon from "@/assets/img2.jpg";
+import nashik from "@/assets/nashik.jpg";
+import pdcdlogo from "@/assets/pdcdlogo.png";
 import useStore from "@/store/useStore";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/UI/button";
@@ -26,11 +28,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/UI/card";
+import brandLogo from "@/assets/brandlogo.png";
 
 const servicesBase = [
   {
     id: 1,
-    title: "VTC LAB",
+    title: "VTC MRV LAB",
     description: "Vehicle Test Cell Laboratory",
   icon: MessageSquare,
   img: otherIcon,
@@ -45,7 +48,7 @@ const servicesBase = [
     title: "VTC Nashik LAB",
     description: "Vehicle Test Cell Laboratory",
   icon: Flag,
-  img: otherIcon,
+  img: nashik,
     href: "/vtc-nashik",
   color: "from-purple-400 to-pink-400",
   bgColor: "bg-purple-100 dark:bg-purple-900/20",
@@ -54,7 +57,7 @@ const servicesBase = [
   },
     {
     id: 3,
-    title: "RDE LAB",
+    title: "RDE MRV LAB",
     description: "Real Driving Emissions Laboratory",
   icon: Code,
   img: rdeIcon,
@@ -66,10 +69,10 @@ const servicesBase = [
   },
   {
     id: 4,
-    title: "PDCD LAB",
+    title: "PDCD MRV LAB",
     description: "Powertrain Durability Chassis Dyno Laboratory",
   icon: Zap,
-  img: otherIcon,
+  img: pdcdlogo,
     href: "/pdcd-lab",
   color: "from-amber-400 to-yellow-400",
   bgColor: "bg-amber-100 dark:bg-amber-900/20",
@@ -88,10 +91,10 @@ export default function HomePage() {
   // Determine which lab titles are accessible for TestEngineer/Admin
   let allowedLabTitles = [];
   if (userRole === "TestEngineer" || userRole === "Admin") {
-    if (userTeam === "vtc") allowedLabTitles = ["VTC LAB"];
+    if (userTeam === "vtc") allowedLabTitles = ["VTC MRV LAB"];
     else if (userTeam === "vtc_n") allowedLabTitles = ["VTC Nashik LAB"];
-    else if (userTeam === "rde") allowedLabTitles = ["RDE LAB"];
-    else if (userTeam === "pdcd") allowedLabTitles = ["PDCD LAB"];
+    else if (userTeam === "rde") allowedLabTitles = ["RDE MRV LAB"];
+    else if (userTeam === "pdcd") allowedLabTitles = ["PDCD MRV LAB"];
   }
 
   // Always use 4 columns for grid
@@ -112,6 +115,16 @@ export default function HomePage() {
     <>
       <Navbar />
       <div className="min-h-screen flex flex-col bg-white dark:bg-black overflow-hidden relative">
+        {/* Slant Line with Logo */}
+        <div className="absolute left-0 top-[calc(50%-200px)]">
+          <img
+            src={brandLogo}
+            alt="Mahindra Rise Logo"
+            className="absolute right-[-120px] top-[-70px] w-48"
+          />
+          <div className="w-64 h-1 bg-red-600 transform -rotate-12" />
+        </div>
+
         {/* Main Content Area - takes remaining space */}
         <div className="flex-1 flex flex-col overflow-y-auto">
           {/* Hero Section */}
@@ -123,14 +136,10 @@ export default function HomePage() {
               <div className="mx-auto max-w-7xl">
                 {/* Header */}
                 <div className="text-center mb-2">
-                  <div className="inline-flex items-center rounded-full bg-red-50 dark:bg-red-950/20 px-4 py-2 text-sm font-medium text-red-700 dark:text-red-300 ring-1 ring-inset ring-red-600/20 mb-6 relative">
-                    <Zap className="h-4 w-4 mr-2" />
-                    Enterprise Testing Platform
-                  </div>
                   <h1 className="text-3xl pb-2 font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl lg:text-5xl">
                     DBMRS 
-                    <span className="block pt-2 bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
-                      VTC & RDE Portal
+                    <span className="block pt-3 bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+                      PDC - VTC & RDE JO Portal
                     </span>
                   </h1>
                 </div>

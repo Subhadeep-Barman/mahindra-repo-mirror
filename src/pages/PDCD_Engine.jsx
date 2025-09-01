@@ -66,11 +66,11 @@ export default function PDCDEnginePage() {
   }, []);
 
   const handleAddNewEngine = () => {
-    navigate("/pdcd/engine/new?department=PDCD");
+    navigate("/pdcd/engine/new?department=PDCD_JO%20Chennai");
   };
 
   const handleEditClick = (engine) => {
-    navigate(`/pdcd/engine/new?department=PDCD&edit=true`, {
+    navigate(`/pdcd/engine/new?department=PDCD_JO%20Chennai&edit=true`, {
       state: { engineData: engine, isEdit: true },
     });
   };
