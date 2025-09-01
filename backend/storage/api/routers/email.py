@@ -443,22 +443,228 @@ def get_notify_data(db: Session) -> dict:
         }
 
 
+def get_job_department(job_order) -> str:
+    """
+    Helper function to extract department/team from job order.
+    Works with both JobOrder and RDEJobOrder objects.
+    
+    Args:
+        job_order: JobOrder or RDEJobOrder instance
+        
+    Returns:
+        str: Department/team name or None if not found
+    """
+    if not job_order:
+        print("DEBUG - get_job_department: job_order is None")
+        return None
+    
+    print(f"DEBUG - get_job_department: processing job_order of type {type(job_order).__name__}")
+    
+    # Try direct access to specific department attributes
+    for attr in ["department", "team", "dept", "team_id", "department_id", "deptId", "teamId"]:
+        if hasattr(job_order, attr):
+            value = getattr(job_order, attr)
+            print(f"DEBUG - get_job_department: checking attribute '{attr}' = {value}")
+            if value:
+                normalized = normalize_department_name(value)
+                print(f"DEBUG - get_job_department: found department '{value}', normalized to '{normalized}'")
+                return normalized
+    
+    # Try to find attributes that contain department/team in their name
+    if hasattr(job_order, "__dict__"):
+        job_dict = job_order.__dict__
+        for key in job_dict:
+            if any(term in key.lower() for term in ["department", "team", "dept"]):
+                value = job_dict[key]
+                print(f"DEBUG - get_job_department: found attribute '{key}' = {value}")
+                if value:
+                    normalized = normalize_department_name(value)
+                    print(f"DEBUG - get_job_department: found department in key '{key}' = '{value}', normalized to '{normalized}'")
+                    return normalized
+    
+    # Try to extract from "name" or "description" if they exist
+    for attr in ["name", "description", "title"]:
+        if hasattr(job_order, attr):
+            value = getattr(job_order, attr)
+            print(f"DEBUG - get_job_department: checking for department in '{attr}' = {value}")
+            if value and isinstance(value, str):
+                # Look for department names in these fields
+                value_lower = value.lower()
+                if "vtc" in value_lower and "nashik" in value_lower:
+                    print(f"DEBUG - get_job_department: found 'VTC Nashik' in {attr}")
+                    return "VTC_JO Nashik"
+                elif "vtc" in value_lower and ("chennai" in value_lower or "chenn" in value_lower):
+                    print(f"DEBUG - get_job_department: found 'VTC Chennai' in {attr}")
+                    return "VTC_JO Chennai"
+                elif "rde" in value_lower:
+                    print(f"DEBUG - get_job_department: found 'RDE' in {attr}")
+                    return "RDE JO"
+                elif "pdcd" in value_lower and "chennai" in value_lower:
+                    print(f"DEBUG - get_job_department: found 'PDCD Chennai' in {attr}")
+                    return "PDCD_JO Chennai"
+    
+    # If it's a JobOrder, check if the job_order_id has clues about the department
+    if hasattr(job_order, "job_order_id"):
+        job_id = job_order.job_order_id
+        print(f"DEBUG - get_job_department: checking job_order_id {job_id} for department clues")
+        job_id_lower = job_id.lower()
+        
+        # Extract department from job_order_id
+        if "vtc" in job_id_lower and "nsk" in job_id_lower:
+            print(f"DEBUG - get_job_department: found 'VTC Nashik' in job_order_id")
+            return "VTC_JO Nashik"
+        elif "vtc" in job_id_lower and "chn" in job_id_lower:
+            print(f"DEBUG - get_job_department: found 'VTC Chennai' in job_order_id")
+            return "VTC_JO Chennai"
+        elif "rde" in job_id_lower:
+            print(f"DEBUG - get_job_department: found 'RDE' in job_order_id")
+            return "RDE JO"
+        elif "pdcd" in job_id_lower:
+            print(f"DEBUG - get_job_department: found 'PDCD' in job_order_id")
+            return "PDCD_JO Chennai"
+    
+    # Last resort: check type name of the object
+    obj_type = type(job_order).__name__
+    print(f"DEBUG - get_job_department: checking object type {obj_type}")
+    if "RDE" in obj_type:
+        print(f"DEBUG - get_job_department: found 'RDE' in object type")
+        return "RDE JO"
+    
+    # No department found
+    print(f"DEBUG - get_job_department: no department found")
+    return None
+
+
+def normalize_department_name(department_name):
+    """
+    Normalize department name to ensure consistent lookup in email maps.
+    This handles case-insensitive matching and common variations.
+    """
+    if not department_name:
+        return None
+        
+    # Convert to string if not already
+    department_name = str(department_name).strip()
+    
+    # Common department name mappings - be extremely comprehensive
+    department_map = {
+        # VTC Chennai variations
+        "vtc_jo chennai": "VTC_JO Chennai",
+        "vtc jo chennai": "VTC_JO Chennai",
+        "vtc chennai": "VTC_JO Chennai",
+        "vtc_chennai": "VTC_JO Chennai",
+        "vtc-chennai": "VTC_JO Chennai",
+        "vtc-jo chennai": "VTC_JO Chennai",
+        "vtcjo chennai": "VTC_JO Chennai",
+        "vtc jochennai": "VTC_JO Chennai",
+        "vtc_jochennai": "VTC_JO Chennai",
+        "vtc jo_chennai": "VTC_JO Chennai",
+        "vtcjo_chennai": "VTC_JO Chennai",
+        "vtc": "VTC_JO Chennai",  # Default if just "vtc"
+        
+        # VTC Nashik variations
+        "vtc_jo nashik": "VTC_JO Nashik",
+        "vtc jo nashik": "VTC_JO Nashik",
+        "vtc nashik": "VTC_JO Nashik",
+        "vtc_nashik": "VTC_JO Nashik",
+        "vtc-nashik": "VTC_JO Nashik",
+        "vtc-jo nashik": "VTC_JO Nashik",
+        "vtcjo nashik": "VTC_JO Nashik",
+        "vtc jonashik": "VTC_JO Nashik",
+        "vtc_jonashik": "VTC_JO Nashik",
+        "vtc jo_nashik": "VTC_JO Nashik",
+        "vtcjo_nashik": "VTC_JO Nashik",
+        "nashik": "VTC_JO Nashik",  # If just "nashik" assume VTC_JO Nashik
+        
+        # RDE variations
+        "rde_jo": "RDE JO",
+        "rde jo": "RDE JO",
+        "rde": "RDE JO",
+        "rde-jo": "RDE JO",
+        "rdejo": "RDE JO",
+        
+        # PDCD Chennai variations
+        "pdcd_jo chennai": "PDCD_JO Chennai",
+        "pdcd jo chennai": "PDCD_JO Chennai",
+        "pdcd chennai": "PDCD_JO Chennai",
+        "pdcd_chennai": "PDCD_JO Chennai",
+        "pdcd-chennai": "PDCD_JO Chennai",
+        "pdcd-jo chennai": "PDCD_JO Chennai",
+        "pdcdjo chennai": "PDCD_JO Chennai",
+        "pdcd jochennai": "PDCD_JO Chennai",
+        "pdcd_jochennai": "PDCD_JO Chennai",
+        "pdcd jo_chennai": "PDCD_JO Chennai",
+        "pdcdjo_chennai": "PDCD_JO Chennai",
+        "pdcd": "PDCD_JO Chennai",  # Default if just "pdcd"
+    }
+    
+    # Try to find a match in our map (case-insensitive)
+    lowercase_name = department_name.lower()
+    if lowercase_name in department_map:
+        normalized = department_map[lowercase_name]
+        print(f"DEBUG - Normalized '{department_name}' to '{normalized}'")
+        return normalized
+    
+    # Special handling for words in the department name
+    if "vtc" in lowercase_name and "nashik" in lowercase_name:
+        print(f"DEBUG - Special handling: '{department_name}' contains 'vtc' and 'nashik', normalizing to 'VTC_JO Nashik'")
+        return "VTC_JO Nashik"
+    
+    if "vtc" in lowercase_name and "chennai" in lowercase_name:
+        print(f"DEBUG - Special handling: '{department_name}' contains 'vtc' and 'chennai', normalizing to 'VTC_JO Chennai'")
+        return "VTC_JO Chennai"
+    
+    if "rde" in lowercase_name:
+        print(f"DEBUG - Special handling: '{department_name}' contains 'rde', normalizing to 'RDE JO'")
+        return "RDE JO"
+    
+    if "pdcd" in lowercase_name and "chennai" in lowercase_name:
+        print(f"DEBUG - Special handling: '{department_name}' contains 'pdcd' and 'chennai', normalizing to 'PDCD_JO Chennai'")
+        return "PDCD_JO Chennai"
+        
+    # If no match, return original name
+    print(f"DEBUG - No normalization found for '{department_name}', returning as-is")
+    return department_name
+
+
 def get_department_group_email(job_order, caseid=None) -> str:
     """
-    Returns the department-specific group email if the job order's department/team matches,
-    but only for caseid '1' or '2'. Returns None otherwise.
+    Returns the department-specific group email if the job order's department/team matches.
+    
+    For case IDs 2 and 5 (Test Order Created and Test Order Updated):
+        - Return department-specific group email
+    
+    For other case IDs, return None
     """
-    if caseid not in ("1", "2","8"):
-        return None
-    department = getattr(job_order, "department", None) or getattr(job_order, "team", None)
-    print("departments:", department)
-    department_email_map = {
-        "VTC_JO Chennai": "VTCLAB@mahindra.com",
-        "VTC_JO Nashik": "vtclab_nsk@mahindra.com",
-        "RDE JO": "RDELAB@mahindra.com",
-        "PDCD_JO Chennai": "TEAMPDCD1@mahindra.com"
-    }
-    return department_email_map.get(department)
+    # Case IDs 2 and 5 should use department-specific group email
+    if caseid in ("2", "5", "8"):
+        # Get department using helper function
+        department = get_job_department(job_order)
+            
+        # Debug log to trace the department value
+        vtc_logger.debug(f"Department for group email: {department}")
+        print(f"DEBUG - Department detected for job order: {department}")
+        print(f"DEBUG - Original job_order value: {job_order}")
+        
+        # Ensure department exists and map it to the correct email
+        if department:
+            department_email_map = {
+                "VTC_JO Chennai": "VTCLAB@mahindra.com",
+                "VTC_JO Nashik": "vtclab_nsk@mahindra.com",
+                "RDE JO": "RDELAB@mahindra.com",
+                "PDCD_JO Chennai": "TEAMPDCD1@mahindra.com"
+            }
+            
+            # Add more debugging
+            print(f"DEBUG - Looking up department '{department}' in email map")
+            print(f"DEBUG - Department email map keys: {list(department_email_map.keys())}")
+            
+            email = department_email_map.get(department)
+            print(f"DEBUG - Found email for department '{department}': {email}")
+            return email
+    
+    # For all other cases, don't use department-specific group email
+    return None
 
 
 def get_department_cc_emails(job_order, db: Session) -> list:
@@ -468,20 +674,42 @@ def get_department_cc_emails(job_order, db: Session) -> list:
     - RDE_JO: ['EDC-RDELAB@mahindra.com']
     - VTC_JO Nashik: []
     - PDCD_JO Chennai: []
+    
+    Used for case IDs 3, 4, 6, 9 (actions by test engineers) to include department in CC.
     """
-
-    department = getattr(job_order, "department", None) or getattr(job_order, "team", None)
-    if not department:
-        rde_job_order = db.query(RDEJobOrder).filter(RDEJobOrder.job_order_id == job_order.job_order_id).first()
-        department = getattr(rde_job_order, "department", None) or getattr(rde_job_order, "team", None)
+    # Get department using helper function
+    department = get_job_department(job_order)
+    
+    # If department is still None, try to find RDE job order
+    if not department and hasattr(job_order, "job_order_id"):
+        try:
+            rde_job_order = db.query(RDEJobOrder).filter(RDEJobOrder.job_order_id == job_order.job_order_id).first()
+            if rde_job_order:
+                department = get_job_department(rde_job_order)
+                print(f"DEBUG - Found RDE job order, department: {department}")
+        except Exception as e:
+            vtc_logger.error(f"Error getting RDE job order: {e}")
+    
     vtc_logger.debug(f"Department for CC emails: {department}")
+    print(f"DEBUG - Department detected for CC emails: {department}")
+    print(f"DEBUG - Original job_order value: {job_order}")
+    
+    # Map department to CC email addresses
     cc_map = {
-        "VTC_JO Chennai": ["EDC-VTCLAB@mahindra.com"],
-        "RDE JO": ["EDC-RDELAB@mahindra.com"],
+        "VTC_JO Chennai": ["VTCLAB@mahindra.com"],
+        "RDE JO": ["RDELAB@mahindra.com"],
         "VTC_JO Nashik": [],
         "PDCD_JO Chennai": []
     }
-    return cc_map.get(department, [])
+    
+    # Add more debugging
+    print(f"DEBUG - Looking up department '{department}' in CC email map")
+    print(f"DEBUG - CC email map keys: {list(cc_map.keys())}")
+    
+    cc_emails = cc_map.get(department, [])
+    print(f"DEBUG - Found CC emails for department '{department}': {cc_emails}")
+    
+    return cc_emails
 
 
 @router.post("/send")
@@ -495,8 +723,15 @@ async def send_email_endpoint(
 ):
     print("notify fieldsssssssssssssssss",notify_fields, notify_values)
     """
-    Send an email to a group email (if defined) or all users of the role specified in mail_body.json for the given caseid.
-    Also CC all CFT members added to the job order.
+    Send an email to recipients based on the case ID:
+    
+    - Case ID 2, 5 (Test Order Created, Test Order Updated):
+      TO: Department-specific group email
+      CC: CFT members
+      
+    - Case ID 3, 4, 6, 9 (Test Re-edit, Rejection, Completion, Document Upload):
+      TO: Test order creator (Project Team who created the test)
+      CC: CFT members, Department-specific group email
     """
     try:
         vtc_logger.info(f"Processing email send request for job_order_id: {job_order_id}, caseid: {caseid}, test_order_id: {test_order_id}")
@@ -523,58 +758,131 @@ async def send_email_endpoint(
             vtc_logger.warning(f"Role not found for caseid: {caseid}")
             raise HTTPException(status_code=400, detail="Role not found for caseid")
 
-        # Check if group email is defined for this caseid
-        group_email = get_group_email_for_caseid(caseid)
-
-        # Fetch job order for department-based override
+        # Fetch job order
         job_order = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
-        # If not found, try RDEJobOrder for RDE JO
         if not job_order:
-            # Try to fetch from RDEJobOrder if job_order_id likely belongs to RDE
+            # Try to fetch from RDEJobOrder if job_order_id belongs to RDE
             rde_job_order = db.query(RDEJobOrder).filter(RDEJobOrder.job_order_id == job_order_id).first()
             if rde_job_order:
                 job_order = rde_job_order
                 vtc_logger.debug(f"Fetched RDEJobOrder for job_order_id '{job_order_id}': {job_order}")
-        vtc_logger.debug(f"Fetched job_order for job_order_id '{job_order_id}': {job_order}")
-        print("informations for test other 3 teams:", job_order.__dict__ if job_order else "No JobOrder found")
-        # --- Department-based recipient override for ALL cases ---
+            else:
+                vtc_logger.warning(f"JobOrder not found for job_order_id: {job_order_id}")
+        
+        # Print department info for debugging
         if job_order:
-            dept_group_email = get_department_group_email(job_order, caseid)
-            print("department email:", dept_group_email)
-            if dept_group_email:
-                group_email = dept_group_email
-                vtc_logger.info(f"Overriding group email for department: {dept_group_email}")
+            dept = None
+            if hasattr(job_order, "department") and job_order.department:
+                dept = job_order.department
+            elif hasattr(job_order, "team") and job_order.team:
+                dept = job_order.team
+            print(f"DEBUG - Job Order Department/Team: {dept}")
+            print(f"DEBUG - Job Order Type: {type(job_order).__name__}")
+            print(f"DEBUG - Job Order Attributes: {dir(job_order)}")
+            
+            # Print all job_order attributes for debugging
+            try:
+                print(f"DEBUG - Job Order Dict: {job_order.__dict__}")
+            except:
+                print("DEBUG - Could not print job_order.__dict__")
 
-        if group_email:
-            to_emails = [group_email]
-            print("group email:", to_emails)
-            vtc_logger.info(f"Using group email for caseid {caseid}: {group_email}")
-        else:
-            to_emails = get_all_emails_by_role(db, role)
-            vtc_logger.debug(f"To Emails: {to_emails}")
+        # Initialize to_emails and cc_emails
+        to_emails = []
+        cc_emails = []
+
+        # LOGIC FOR DETERMINING TO AND CC RECIPIENTS BASED ON CASE ID
+        # ----------------------------------------------------------
+        
+        # Get CFT member emails for CC in all cases
+        if job_order:
+            cft_emails = get_cft_member_emails(job_order, db)
+            cc_emails.extend(cft_emails)
+            vtc_logger.debug(f"Added CFT members to CC: {cft_emails}")
+        
+        # Case-specific recipient logic
+        if caseid in ["2", "5"]:  # Test Order Created, Test Order Updated
+            # TO: Department-specific group email
+            if job_order:
+                # Get department email with improved detection
+                dept_email = get_department_group_email(job_order, caseid)
+                print(f"DEBUG - Department email for case {caseid}: {dept_email}")
+                
+                if dept_email:
+                    to_emails = [dept_email]
+                    vtc_logger.debug(f"Using department group email for TO: {dept_email}")
+                else:
+                    # Fallback to role-based emails if no department email
+                    to_emails = get_all_emails_by_role(db, role)
+                    vtc_logger.debug(f"Using role-based emails for TO: {to_emails}")
+            else:
+                # Fallback to role-based emails if no job order
+                to_emails = get_all_emails_by_role(db, role)
+                vtc_logger.debug(f"Using role-based emails for TO: {to_emails}")
+                
+        elif caseid in ["3", "4", "6", "9"]:  # Test Re-edit, Rejection, Completion, Document Upload
+            # TO: Test order creator (person who created that test)
+            if test_order_id:
+                test_order = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
+                if test_order and hasattr(test_order, "id_of_creator") and test_order.id_of_creator:
+                    creator = db.query(User).filter(User.id == test_order.id_of_creator).first()
+                    if creator and creator.email:
+                        to_emails = [creator.email]
+                        vtc_logger.debug(f"Using test creator email for TO: {creator.email}")
+                    else:
+                        # Fallback to job order creator if test creator not found
+                        if job_order and hasattr(job_order, "id_of_creator"):
+                            job_creator = db.query(User).filter(User.id == job_order.id_of_creator).first()
+                            if job_creator and job_creator.email:
+                                to_emails = [job_creator.email]
+                                vtc_logger.debug(f"Using job creator email for TO: {job_creator.email}")
+                
+            # If still no TO emails, use role-based emails as fallback
             if not to_emails:
-                vtc_logger.warning(f"No recipient found for the given role: {role}")
-                raise HTTPException(status_code=404, detail="No recipient found for the given role")
+                to_emails = get_all_emails_by_role(db, role)
+                vtc_logger.debug(f"Using role-based emails for TO: {to_emails}")
+            
+            # CC: Department-specific group email + CFT members
+            if job_order:
+                # Add department group email to CC
+                dept_email = get_department_group_email(job_order, "2")  # Use case 2's logic to get dept email
+                print(f"DEBUG - Department group email for CC: {dept_email}")
+                if dept_email and dept_email not in cc_emails:
+                    cc_emails.append(dept_email)
+                    vtc_logger.debug(f"Added department group email to CC: {dept_email}")
+                
+                # Also add department-specific CC emails
+                dept_cc_emails = get_department_cc_emails(job_order, db)
+                print(f"DEBUG - Department CC emails: {dept_cc_emails}")
+                for cc_email in dept_cc_emails:
+                    if cc_email and cc_email not in cc_emails:
+                        cc_emails.append(cc_email)
+                vtc_logger.debug(f"Added department CC emails: {dept_cc_emails}")
+                
+        else:  # For other case IDs, use default logic from role
+            to_emails = get_all_emails_by_role(db, role)
+            vtc_logger.debug(f"Using role-based emails for TO: {to_emails}")
+            
+            # Check if there's a specific group email defined in the template
+            group_email = get_group_email_for_caseid(caseid)
+            if group_email:
+                to_emails = [group_email]
+                vtc_logger.debug(f"Using group email from template: {group_email}")
+
+        # Ensure we have recipients
+        if not to_emails:
+            vtc_logger.warning(f"No recipient found for caseid: {caseid}")
+            raise HTTPException(status_code=404, detail="No recipient found for the email")
 
         # Load email template
         subject, body = load_email_template(caseid)
         vtc_logger.debug(f"Original subject template: {subject}")
         vtc_logger.debug(f"Original body template length: {len(body)} characters")
 
-        # Fetch job order and related info if needed
-        job_order = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
-        if not job_order:
-            rde_job_order = db.query(RDEJobOrder).filter(RDEJobOrder.job_order_id == job_order_id).first()
-            if rde_job_order:
-                job_order = rde_job_order
-                vtc_logger.debug(f"Fetched RDEJobOrder for job_order_id '{job_order_id}': {job_order}")
-        vtc_logger.warning(f"JobOrder not found for job_order_id: {job_order_id}")
-
         # Gather data for replacements
-        total_tests = get_total_tests_for_job(db, job_order_id) if job_order else 0
+        total_tests = get_total_tests_for_job(db, job_order_id) if job_order_id else 0
         vtc_logger.debug(f"Total tests for job order {job_order_id}: {total_tests}")
 
-        creator_info = get_job_creator_info(db, job_order) if job_order else {"creator_name": "", "creator_email": "", "created_at": ""}
+        creator_info = get_job_creator_info(db, job_order) if job_order else {"creator_name": "", "creator_id": "", "created_at": ""}
         vtc_logger.debug(f"Creator info: {creator_info}")
 
         # Fetch additional details for mail body based on caseid
@@ -601,9 +909,8 @@ async def send_email_endpoint(
         body = body.replace("{{test_order_id}}", str(test_order_id) if test_order_id else "")
         body = body.replace("{{total_tests}}", str(total_tests))
         body = body.replace("{{creator_name}}", creator_info.get("creator_name", ""))
-        body = body.replace("{{creator_email}}", creator_info.get("creator_email", ""))
+        body = body.replace("{{creator_id}}", creator_info.get("creator_id", ""))
         body = body.replace("{{created_at}}", creator_info.get("created_at", ""))
-        body = body.replace("{{redirect_link}}", os.environ.get("REDIRECT_LINK", ""))
         
         # Replace notify_fields placeholder with actual field names
         if "{{notify_fields}}" in body:
@@ -669,25 +976,11 @@ async def send_email_endpoint(
             body = body.replace("{{rating_remarks}}", rating_remarks)
             vtc_logger.debug(f"Case 8 - Added rating and rating remarks")
 
-        # Fetch CFT member emails for CC
-        cc_emails = get_cft_member_emails(job_order, db) if job_order else []
-        print("CFT member emails:", cc_emails)
-
-        # Add department-specific CC group emails for test order-related cases
-        test_order_cases = {"1.1", "3", "4", "5", "6","9"}
-        if caseid in test_order_cases and job_order:
-            dept_cc = get_department_cc_emails(job_order, db)
-            print("department cc emails:", dept_cc)
-            # Only add if not already present in cc_emails
-            for cc in dept_cc:
-                if cc and cc not in cc_emails:
-                    cc_emails.append(cc)
-            vtc_logger.debug(f"CC Emails after department addition: {cc_emails}")
-
         # Send the email
+        vtc_logger.info(f"Sending email for case {caseid} - TO: {to_emails}, CC: {cc_emails}")
         send_email(to_emails, subject, body, cc_emails=cc_emails)
         vtc_logger.info(f"Email sent successfully for caseid {caseid}")
-        return {"detail": f"Email sent to group or all users with role {role} and CFT members successfully"}
+        return {"detail": f"Email sent successfully for case {caseid}"}
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -803,6 +1096,153 @@ async def update_cft_member(
     except Exception as e:
         vtc_logger.error(f"Error in update_cft_member: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/debug_email_routing")
+async def debug_email_routing(
+    job_order_id: str,
+    caseid: str,
+    test_order_id: str = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Debug endpoint to check email routing logic for different case IDs.
+    Returns the calculated TO and CC recipients without actually sending an email.
+    """
+    try:
+        job_order = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
+        if not job_order:
+            rde_job_order = db.query(RDEJobOrder).filter(RDEJobOrder.job_order_id == job_order_id).first()
+            if rde_job_order:
+                job_order = rde_job_order
+            else:
+                return {"error": "Job order not found"}
+
+        # Debug job order details
+        department = get_job_department(job_order)
+        job_type = type(job_order).__name__
+        
+        # Print job order details for debugging
+        print(f"DEBUG - Job Order Type: {job_type}")
+        print(f"DEBUG - Department from helper: {department}")
+        
+        # Try to get department directly
+        direct_dept = None
+        if hasattr(job_order, "department"):
+            direct_dept = job_order.department
+        elif hasattr(job_order, "team"):
+            direct_dept = job_order.team
+        print(f"DEBUG - Direct department: {direct_dept}")
+        
+        # If direct_dept has a value, normalize it
+        normalized_direct_dept = None
+        if direct_dept:
+            normalized_direct_dept = normalize_department_name(direct_dept)
+            print(f"DEBUG - Normalized direct department: {normalized_direct_dept}")
+        
+        # Try to print job_order attributes
+        job_order_attrs = {}
+        try:
+            job_order_dict = job_order.__dict__
+            for key, value in job_order_dict.items():
+                if not key.startswith('_'):
+                    job_order_attrs[key] = value
+            print(f"DEBUG - Job Order Attributes: {job_order_attrs}")
+        except:
+            print("DEBUG - Could not extract job_order attributes")
+
+        # Get role for the caseid
+        role = get_role_for_caseid(caseid)
+        
+        # Initialize recipients
+        to_emails = []
+        cc_emails = []
+        
+        # Get CFT member emails for CC in all cases
+        if job_order:
+            cft_emails = get_cft_member_emails(job_order, db)
+            cc_emails.extend(cft_emails)
+        
+        # Case-specific recipient logic
+        if caseid in ["2", "5"]:  # Test Order Created, Test Order Updated
+            # TO: Department-specific group email
+            if job_order:
+                dept_email = get_department_group_email(job_order, caseid)
+                if dept_email:
+                    to_emails = [dept_email]
+                else:
+                    # Fallback to role-based emails if no department email
+                    to_emails = get_all_emails_by_role(db, role)
+            else:
+                # Fallback to role-based emails if no job order
+                to_emails = get_all_emails_by_role(db, role)
+
+        elif caseid in ["3", "4", "6", "9"]:  # Test Re-edit, Rejection, Completion, Document Upload
+            # TO: Test order creator (person who created that test)
+            if test_order_id:
+                test_order = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
+                if test_order and hasattr(test_order, "id_of_creator") and test_order.id_of_creator:
+                    creator = db.query(User).filter(User.id == test_order.id_of_creator).first()
+                    if creator and creator.email:
+                        to_emails = [creator.email]
+                    else:
+                        # Fallback to job order creator if test creator not found
+                        if job_order and hasattr(job_order, "id_of_creator"):
+                            job_creator = db.query(User).filter(User.id == job_order.id_of_creator).first()
+                            if job_creator and job_creator.email:
+                                to_emails = [job_creator.email]
+                
+            # If still no TO emails, use role-based emails as fallback
+            if not to_emails:
+                to_emails = get_all_emails_by_role(db, role)
+            
+            # CC: Department-specific group email + CFT members
+            if job_order:
+                dept_email = get_department_group_email(job_order, "2")  # Use case 2's logic to get dept email
+                if dept_email and dept_email not in cc_emails:
+                    cc_emails.append(dept_email)
+                
+                # Also add department-specific CC emails
+                dept_cc_emails = get_department_cc_emails(job_order, db)
+                for cc_email in dept_cc_emails:
+                    if cc_email and cc_email not in cc_emails:
+                        cc_emails.append(cc_email)
+                
+        else:  # For other case IDs, use default logic from role
+            to_emails = get_all_emails_by_role(db, role)
+            
+            # Check if there's a specific group email defined in the template
+            group_email = get_group_email_for_caseid(caseid)
+            if group_email:
+                to_emails = [group_email]
+        
+        # Collect all department-related information for debugging
+        department_info = {
+            "normalized_department": department,
+            "direct_department": direct_dept,
+            "normalized_direct_dept": normalized_direct_dept,
+            "department_detection_methods": {
+                "from_helper_function": department,
+                "from_direct_attribute": direct_dept,
+                "normalized_direct": normalized_direct_dept
+            },
+            "department_email_lookup_result": get_department_group_email(job_order, caseid),
+            "department_cc_emails_lookup_result": get_department_cc_emails(job_order, db)
+        }
+        
+        return {
+            "case_id": caseid,
+            "role": role,
+            "to_emails": to_emails,
+            "cc_emails": cc_emails,
+            "department_info": department_info,
+            "job_order_type": job_type,
+            "job_order_attributes": job_order_attrs,
+            "cft_members_count": len(get_cft_member_emails(job_order, db)) if job_order else 0
+        }
+    except Exception as e:
+        vtc_logger.error(f"Error in debug_email_routing: {e}")
+        return {"error": str(e)}
 
 
 @router.delete("/cft_members/delete")
