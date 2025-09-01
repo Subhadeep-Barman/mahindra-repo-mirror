@@ -78,6 +78,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     gearRatio3: { numerator: "", denominator: "" },
     gearRatio4: { numerator: "", denominator: "" },
     gearRatio5: { numerator: "", denominator: "" },
+    gearRatio6: { numerator: "", denominator: "" },
     reverseGearRatio: { numerator: "", denominator: "" },
     department: department,
     vehicleKerbWeight: "",
@@ -119,6 +120,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         gearRatio3: parseRatio(vehicleData.gear_ratio_3),
         gearRatio4: parseRatio(vehicleData.gear_ratio_4),
         gearRatio5: parseRatio(vehicleData.gear_ratio_5),
+        gearRatio6: parseRatio(vehicleData.gear_ratio_6),
         reverseGearRatio: parseRatio(vehicleData.reverse_gear_ratio),
         department: vehicleData.department || department,
         vehicleKerbWeight: vehicleData.vehicle_kerb_weight || "",
@@ -204,6 +206,8 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         ? `${form.gearRatio4.numerator}:${form.gearRatio4.denominator}` : ""),
       gear_ratio_5: isEV ? "" : (form.gearRatio5.numerator && form.gearRatio5.denominator
         ? `${form.gearRatio5.numerator}:${form.gearRatio5.denominator}` : ""),
+      gear_ratio_6: isEV ? "" : (form.gearRatio6.numerator && form.gearRatio6.denominator
+        ? `${form.gearRatio6.numerator}:${form.gearRatio6.denominator}` : ""),
       reverse_gear_ratio: isEV ? "" : (form.reverseGearRatio.numerator && form.reverseGearRatio.denominator
         ? `${form.reverseGearRatio.numerator}:${form.reverseGearRatio.denominator}` : ""),
       department: form.department,
@@ -261,6 +265,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       gearRatio3: "3rd Gear Ratio",
       gearRatio4: "4th Gear Ratio",
       gearRatio5: "5th Gear Ratio",
+      gearRatio6: "6th Gear Ratio",
       reverseGearRatio: "Reverse Gear Ratio",
       department: "Department",
       vehicleKerbWeight: "Vehicle Kerb Weight",
@@ -286,6 +291,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
             "gearRatio3",
             "gearRatio4",
             "gearRatio5",
+            "gearRatio6",
             "reverseGearRatio",
           ].includes(key)
         ) {
@@ -402,6 +408,7 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       gearRatio3: { numerator: "", denominator: "" },
       gearRatio4: { numerator: "", denominator: "" },
       gearRatio5: { numerator: "", denominator: "" },
+      gearRatio6: { numerator: "", denominator: "" },
       reverseGearRatio: { numerator: "", denominator: "" },
       department: department,
       vehicleKerbWeight: "",
@@ -1228,6 +1235,31 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
                     type="number"
                     value={form.gearRatio5.denominator}
                     onChange={(e) => handleRatioChange(e, "gearRatio5", "denominator")}
+                    required
+                    className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="Enter denominator"
+                  />
+                </div>
+              </div>
+              {/* 6th Gear Ratio */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  6th Gear Ratio <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={form.gearRatio6.numerator}
+                    onChange={(e) => handleRatioChange(e, "gearRatio6", "numerator")}
+                    required
+                    className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="Enter numerator"
+                  />
+                  <span className="text-gray-500">:</span>
+                  <input
+                    type="number"
+                    value={form.gearRatio6.denominator}
+                    onChange={(e) => handleRatioChange(e, "gearRatio6", "denominator")}
                     required
                     className="border rounded-lg px-3 py-2 w-1/2 focus:ring-red-500 focus:border-red-500"
                     placeholder="Enter denominator"

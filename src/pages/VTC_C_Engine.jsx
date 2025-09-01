@@ -504,27 +504,27 @@ export default function EngineForm() {
 
               {/* Injector Type */}
               <div className="space-y-2">
-                <Label htmlFor="injectorType">Injector Type</Label>
+                <Label htmlFor="injectorType">Injector Make</Label>
                 <Input
                   id="injectorType"
                   value={formData.injectorType}
                   onChange={(e) =>
                     handleInputChange("injectorType", e.target.value)
                   }
-                  placeholder="Enter Injector Type"
+                  placeholder="Enter Injector Make"
                 />
               </div>
 
               {/* Turbocharger Type */}
               <div className="space-y-2">
-                <Label htmlFor="turbochargerType">Turbocharger Type</Label>
+                <Label htmlFor="turbochargerType">Turbocharger Make</Label>
                 <Input
                   id="turbochargerType"
                   value={formData.turbochargerType}
                   onChange={(e) =>
                     handleInputChange("turbochargerType", e.target.value)
                   }
-                  placeholder="Enter Turbocharger Type"
+                  placeholder="Enter Turbocharger Make"
                 />
               </div>
 

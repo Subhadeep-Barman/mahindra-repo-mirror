@@ -952,8 +952,24 @@ export default function RDECreateJobOrder() {
   };
 
   // Handler for creating test order
-  const handleCreateTestOrder = async (testIndex) => {
+    const handleCreateTestOrder = async (testIndex) => {
     const test = tests[testIndex];
+    const jobOrderId = location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || "";
+
+    // Check if there are any existing test orders for the same job order
+    const existingTestOrders = allTestOrders[jobOrderId] || [];
+    const incompleteTestOrder = existingTestOrders.find(
+      (order) => order.status !== "Completed" || !order.rating
+    );
+
+    // Enforce the 5 Test Order condition
+    if (existingTestOrders.length >= 5 && incompleteTestOrder) {
+      showSnackbar(
+        `Cannot create a new test order. Please complete and rate the existing test order (ID: ${incompleteTestOrder.test_order_id}) first.`,
+        "error"
+      );
+      return;
+    }
 
     // Validate required fields
     const requiredFields = [
@@ -2349,7 +2365,7 @@ export default function RDECreateJobOrder() {
             onClick={() => {
               setShowCFTPanel((prev) => !prev);
             }}
-            disabled={isTestEngineer || isAdmin}
+            disabled={isTestEngineer}
           >
             {showCFTPanel ? "− CFT MEMBERS" : "+ CFT MEMBERS"}
           </Button>

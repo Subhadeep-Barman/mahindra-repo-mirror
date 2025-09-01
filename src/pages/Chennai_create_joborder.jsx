@@ -997,15 +997,16 @@ export default function CreateJobOrder() {
   // Validation helper function
   const handleCreateTestOrder = async (testIndex) => {
     const test = tests[testIndex];
-
-    // Check if there are any existing test orders for the same job order that are not completed and ratings are not given
     const jobOrderId = location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || "";
+
+    // Check if there are any existing test orders for the same job order
     const existingTestOrders = allTestOrders[jobOrderId] || [];
     const incompleteTestOrder = existingTestOrders.find(
       (order) => order.status !== "Completed" || !order.rating
     );
 
-    if (incompleteTestOrder) {
+    // Enforce the 5 Test Order condition
+    if (existingTestOrders.length >= 5 && incompleteTestOrder) {
       showSnackbar(
         `Cannot create a new test order. Please complete and rate the existing test order (ID: ${incompleteTestOrder.test_order_id}) first.`,
         "error"
@@ -2531,7 +2532,7 @@ export default function CreateJobOrder() {
             onClick={() => {
               setShowCFTPanel((prev) => !prev);
             }}
-            disabled={isTestEngineer || isAdmin}
+            disabled={isTestEngineer}
           >
             <MdPeopleAlt className="text-sm" />
             {showCFTPanel ? "CFT MEMBERS" : "CFT MEMBERS"}
@@ -3041,258 +3042,258 @@ export default function CreateJobOrder() {
               </div>
 
               {/* Coast Down Data Section for Test */}
-              {test.inertiaClass === "Coastdown Loading" && (
-                <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 dark:bg-inherit transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="font-semibold text-sm text-blue-700">
-                      Coast Down Data (CD) - Required for Coastdown Loading
-                    </span>
-                  </div>
-                  <div>
-                    <div className="mb-3">
-                      <Label className="text-xs">
-                        Coast Down Test Report Reference <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        value={test.cdReportRef || form.cdReportRef}
-                        onChange={(e) =>
-                          handleTestChange(idx, "cdReportRef", e.target.value)
-                        }
-                        placeholder="Enter Coast Test Report Ref."
-                        className="mt-1"
-                        disabled={!areTestFieldsEditable(test, idx)}
-                      />
-                    </div>
-                    <div className="mb-2 font-semibold text-xs">CD Values</div>
-                    <div className="grid grid-cols-4 gap-3 text-xs">
-                      <div>
-                        <Label className="text-xs">
-                          Vehicle Reference mass (Kg) <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          value={test.vehicleRefMass || form.vehicleRefMass}
+                      {test.inertiaClass === "Coastdown Loading" && (
+                      <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 dark:bg-inherit transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
+                        <div className="flex items-center gap-3 mb-3">
+                        <span className="font-semibold text-sm text-blue-700">
+                          Coast Down Data (CD) - Required for Coastdown Loading
+                        </span>
+                        </div>
+                        <div>
+                        <div className="mb-3">
+                          <Label className="text-xs">
+                          Coast Down Test Report Reference <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                          value={test.cdReportRef || form.cdReportRef}
                           onChange={(e) =>
+                            handleTestChange(idx, "cdReportRef", e.target.value)
+                          }
+                          placeholder="Enter Coast Test Report Ref."
+                          className="mt-1"
+                          disabled={!areTestFieldsEditable(test, idx)}
+                          />
+                        </div>
+                        <div className="mb-2 font-semibold text-xs">CD Values</div>
+                        <div className="grid grid-cols-4 gap-3 text-xs">
+                          <div>
+                          <Label className="text-xs">
+                            Vehicle Reference mass (Kg) <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            value={test.vehicleRefMass || form.vehicleRefMass}
+                            onChange={(e) =>
                             handleTestChange(
                               idx,
                               "vehicleRefMass",
                               e.target.value
                             )
-                          }
-                          placeholder="Enter Vehicle Reference mass"
-                          className="mt-1"
-                          disabled={!areTestFieldsEditable(test, idx)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">A (N) <span className="text-red-500">*</span></Label>
-                        <Input
-                          value={test.aN || form.aN}
-                          onChange={(e) =>
+                            }
+                            placeholder="Enter Vehicle Reference mass"
+                            className="mt-1"
+                            disabled={!areTestFieldsEditable(test, idx)}
+                          />
+                          </div>
+                          <div>
+                          <Label className="text-xs">A (N) <span className="text-red-500">*</span></Label>
+                          <Input
+                            value={test.aN || form.aN}
+                            onChange={(e) =>
                             handleTestChange(idx, "aN", e.target.value)
-                          }
-                          placeholder="Enter A (N)"
-                          className="mt-1"
-                          disabled={!areTestFieldsEditable(test, idx)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">B (N/kmph) <span className="text-red-500">*</span></Label>
-                        <Input
-                          value={test.bNkmph || form.bNkmph}
-                          onChange={(e) =>
+                            }
+                            placeholder="Enter A (N)"
+                            className="mt-1"
+                            disabled={!areTestFieldsEditable(test, idx)}
+                          />
+                          </div>
+                          <div>
+                          <Label className="text-xs">B (N/kmph) <span className="text-red-500">*</span></Label>
+                          <Input
+                            value={test.bNkmph || form.bNkmph}
+                            onChange={(e) =>
                             handleTestChange(idx, "bNkmph", e.target.value)
-                          }
-                          placeholder="Enter B (N/kmph)"
-                          className="mt-1"
-                          disabled={!areTestFieldsEditable(test, idx)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">C (N/kmph^2) <span className="text-red-500">*</span></Label>
-                        <Input
-                          value={test.cNkmph2 || form.cNkmph2}
-                          onChange={(e) =>
+                            }
+                            placeholder="Enter B (N/kmph)"
+                            className="mt-1"
+                            disabled={!areTestFieldsEditable(test, idx)}
+                          />
+                          </div>
+                          <div>
+                          <Label className="text-xs">C (N/kmph^2) <span className="text-red-500">*</span></Label>
+                          <Input
+                            value={test.cNkmph2 || form.cNkmph2}
+                            onChange={(e) =>
                             handleTestChange(idx, "cNkmph2", e.target.value)
-                          }
-                          placeholder="Enter C (N/kmph^2)"
-                          className="mt-1"
-                          disabled={!areTestFieldsEditable(test, idx)}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-3 text-xs mt-3">
-                      <div>
-                        <Label className="text-xs">F0 (N) <span className="text-red-500">*</span></Label>
-                        <Input
-                          value={test.f0N || form.f0N}
-                          onChange={(e) =>
+                            }
+                            placeholder="Enter C (N/kmph^2)"
+                            className="mt-1"
+                            disabled={!areTestFieldsEditable(test, idx)}
+                          />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 text-xs mt-3">
+                          <div>
+                          <Label className="text-xs">F0 (N) <span className="text-red-500">*</span></Label>
+                          <Input
+                            value={test.f0N || form.f0N}
+                            onChange={(e) =>
                             handleTestChange(idx, "f0N", e.target.value)
-                          }
-                          placeholder="Enter F0 (N)"
-                          className="mt-1"
-                          disabled={!areTestFieldsEditable(test, idx)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">F1 (N/kmph) <span className="text-red-500">*</span></Label>
-                        <Input
-                          value={test.f1Nkmph || form.f1Nkmph}
-                          onChange={(e) =>
+                            }
+                            placeholder="Enter F0 (N)"
+                            className="mt-1"
+                            disabled={!areTestFieldsEditable(test, idx)}
+                          />
+                          </div>
+                          <div>
+                          <Label className="text-xs">F1 (N/kmph) <span className="text-red-500">*</span></Label>
+                          <Input
+                            value={test.f1Nkmph || form.f1Nkmph}
+                            onChange={(e) =>
                             handleTestChange(idx, "f1Nkmph", e.target.value)
-                          }
-                          placeholder="Enter F1 (N/kmph)"
-                          className="mt-1"
-                          disabled={!areTestFieldsEditable(test, idx)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">F2 (N/kmph^2) <span className="text-red-500">*</span></Label>
-                        <Input
-                          value={test.f2Nkmph2 || form.f2Nkmph2}
-                          onChange={(e) =>
+                            }
+                            placeholder="Enter F1 (N/kmph)"
+                            className="mt-1"
+                            disabled={!areTestFieldsEditable(test, idx)}
+                          />
+                          </div>
+                          <div>
+                          <Label className="text-xs">F2 (N/kmph^2) <span className="text-red-500">*</span></Label>
+                          <Input
+                            value={test.f2Nkmph2 || form.f2Nkmph2}
+                            onChange={(e) =>
                             handleTestChange(idx, "f2Nkmph2", e.target.value)
-                          }
-                          placeholder="Enter F2 (N/kmph^2)"
-                          className="mt-1"
-                          disabled={!areTestFieldsEditable(test, idx)}
-                        />
+                            }
+                            placeholder="Enter F2 (N/kmph^2)"
+                            className="mt-1"
+                            disabled={!areTestFieldsEditable(test, idx)}
+                          />
+                          </div>
+                        </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Attachments Card */}
-              <div className="bg-gray-100 dark:bg-gray-800 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
-                <div className="font-semibold text-sm text-gray-700 dark:text-white mb-2">
-                  Attachments
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label>
-                      {form.department === "RDE JO" 
-                        ? "Emission Checklist Attachment / Type-1 Report" 
-                        : "Emission Checklist Attachment"
-                      } <span className="text-red-500">*</span>
-                      {test.emission_check_attachment && test.emission_check_attachment.length > 0 && (
-                        <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                          {Array.isArray(test.emission_check_attachment) ? test.emission_check_attachment.length : 1}
-                        </span>
                       )}
-                    </Label>
-                    <DropzoneFileList
-                      buttonText={form.department === "RDE JO" 
-                        ? "Emission Checklist Attachment / Type-1 Report" 
-                        : "Emission Checklist Attachment"
-                      }
-                      name="emission_check_attachment"
-                      maxFiles={5}
-                      formData={{
-                        ...test,
-                        job_order_id: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || "",
-                        test_order_id: test.testOrderId || "",
-                        originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
-                      }}
-                      setFormData={(updatedTest) => {
-                        setTests((prev) =>
-                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                        );
-                      }}
-                      id={`test${idx}`}
-                      submitted={false}
-                      setSubmitted={() => { }}
-                      openModal={!!emissionCheckModals[idx]}
-                      handleOpenModal={() =>
-                        setEmissionCheckModals((prev) => ({ ...prev, [idx]: true }))
-                      }
-                      handleCloseModal={() =>
-                        setEmissionCheckModals((prev) => ({ ...prev, [idx]: false }))
-                      }
-                      disabled={!areTestFieldsEditable(test, idx)}
-                      originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                      viewOnly={userRole === "TestEngineer"}
-                      // Add custom styling based on file count
-                      customButtonStyle={{
-                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'emission_check_attachment')),
-                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'emission_check_attachment')),
-                        color: 'white'
-                      }}
-                      customContainerStyle={{
-                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'emission_check_attachment'))
-                      }}
-                    />
-                  </div>
 
-                  <div>
-                    <Label>
-                      Dataset Attachment <span className="text-red-500">*</span>
-                      {test.dataset_attachment && test.dataset_attachment.length > 0 && (
-                        <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                          {Array.isArray(test.dataset_attachment) ? test.dataset_attachment.length : 1}
-                        </span>
-                      )}
-                    </Label>
-                    <DropzoneFileList
-                      buttonText="Dataset Attachment"
-                      name="dataset_attachment"
-                      maxFiles={5}
-                      formData={{
-                        ...test,
-                        originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
-                      }}
-                      setFormData={(updatedTest) => {
-                        setTests((prev) =>
-                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                        );
-                      }}
-                      id={`test${idx}`}
-                      submitted={false}
-                      setSubmitted={() => { }}
-                      openModal={!!datasetModals[idx]}
-                      handleOpenModal={() =>
-                        setDatasetModals((prev) => ({ ...prev, [idx]: true }))
-                      }
-                      handleCloseModal={() =>
-                        setDatasetModals((prev) => ({ ...prev, [idx]: false }))
-                      }
-                      disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
-                      originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
-                      viewOnly={userRole === "TestEngineer"}
-                      // Add custom styling
-                      customButtonStyle={{
-                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'dataset_attachment')),
-                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'dataset_attachment')),
-                        color: 'white'
-                      }}
-                      customContainerStyle={{
-                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'dataset_attachment'))
-                      }}
-                    />
-                  </div>
+                      {/* Attachments Card */}
+                      <div className="bg-gray-100 dark:bg-gray-800 border border-gray-300 rounded-lg p-4 mt-4 mb-2 shadow-inner">
+                      <div className="font-semibold text-sm text-gray-700 dark:text-white mb-2">
+                        Attachments
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                        <Label>
+                          {form.department === "RDE JO" 
+                          ? "Emission Checklist Attachment / Type-1 Report" 
+                          : "Emission Checklist Attachment"
+                          }{form.department !== "PDCD_JO Chennai" && <span className="text-red-500">*</span>}
+                          {test.emission_check_attachment && test.emission_check_attachment.length > 0 && (
+                          <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                            {Array.isArray(test.emission_check_attachment) ? test.emission_check_attachment.length : 1}
+                          </span>
+                          )}
+                        </Label>
+                        <DropzoneFileList
+                          buttonText={form.department === "RDE JO" 
+                          ? "Emission Checklist Attachment / Type-1 Report" 
+                          : "Emission Checklist Attachment"
+                          }
+                          name="emission_check_attachment"
+                          maxFiles={5}
+                          formData={{
+                          ...test,
+                          job_order_id: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || "",
+                          test_order_id: test.testOrderId || "",
+                          originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                          }}
+                          setFormData={(updatedTest) => {
+                          setTests((prev) =>
+                            prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                          );
+                          }}
+                          id={`test${idx}`}
+                          submitted={false}
+                          setSubmitted={() => { }}
+                          openModal={!!emissionCheckModals[idx]}
+                          handleOpenModal={() =>
+                          setEmissionCheckModals((prev) => ({ ...prev, [idx]: true }))
+                          }
+                          handleCloseModal={() =>
+                          setEmissionCheckModals((prev) => ({ ...prev, [idx]: false }))
+                          }
+                          disabled={!areTestFieldsEditable(test, idx)}
+                          originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                          viewOnly={userRole === "TestEngineer"}
+                          // Add custom styling based on file count
+                          customButtonStyle={{
+                          backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'emission_check_attachment')),
+                          borderColor: getAttachmentColor(getAttachmentFileCount(test, 'emission_check_attachment')),
+                          color: 'white'
+                          }}
+                          customContainerStyle={{
+                          backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'emission_check_attachment'))
+                          }}
+                        />
+                        </div>
 
-                  {/* Continue this pattern for all other attachment fields */}
-                  <div>
-                    <Label>
-                      A2L Attachment <span className="text-red-500">*</span>
-                      {test.a2l_attachment && test.a2l_attachment.length > 0 && (
-                        <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                          {Array.isArray(test.a2l_attachment) ? test.a2l_attachment.length : 1}
-                        </span>
-                      )}
-                    </Label>
-                    <DropzoneFileList
-                      buttonText="A2L Attachment"
-                      name="a2l_attachment"
-                      maxFiles={5}
-                      formData={{
-                        ...test,
-                        originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
-                      }}
-                      setFormData={(updatedTest) => {
-                        setTests((prev) =>
-                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                        );
-                      }}
+                        <div>
+                        <Label>
+                          Dataset Attachment{form.department !== "PDCD_JO Chennai" && <span className="text-red-500">*</span>}
+                          {test.dataset_attachment && test.dataset_attachment.length > 0 && (
+                          <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                            {Array.isArray(test.dataset_attachment) ? test.dataset_attachment.length : 1}
+                          </span>
+                          )}
+                        </Label>
+                        <DropzoneFileList
+                          buttonText="Dataset Attachment"
+                          name="dataset_attachment"
+                          maxFiles={5}
+                          formData={{
+                          ...test,
+                          originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                          }}
+                          setFormData={(updatedTest) => {
+                          setTests((prev) =>
+                            prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                          );
+                          }}
+                          id={`test${idx}`}
+                          submitted={false}
+                          setSubmitted={() => { }}
+                          openModal={!!datasetModals[idx]}
+                          handleOpenModal={() =>
+                          setDatasetModals((prev) => ({ ...prev, [idx]: true }))
+                          }
+                          handleCloseModal={() =>
+                          setDatasetModals((prev) => ({ ...prev, [idx]: false }))
+                          }
+                          disabled={userRole === "TestEngineer" || test.disabled || !!test.testOrderId}
+                          originalJobOrderId={location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""}
+                          viewOnly={userRole === "TestEngineer"}
+                          // Add custom styling
+                          customButtonStyle={{
+                          backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'dataset_attachment')),
+                          borderColor: getAttachmentColor(getAttachmentFileCount(test, 'dataset_attachment')),
+                          color: 'white'
+                          }}
+                          customContainerStyle={{
+                          backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'dataset_attachment'))
+                          }}
+                        />
+                        </div>
+
+                        {/* Continue this pattern for all other attachment fields */}
+                        <div>
+                        <Label>
+                          A2L Attachment{form.department !== "PDCD_JO Chennai" && <span className="text-red-500">*</span>}
+                          {test.a2l_attachment && test.a2l_attachment.length > 0 && (
+                          <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                            {Array.isArray(test.a2l_attachment) ? test.a2l_attachment.length : 1}
+                          </span>
+                          )}
+                        </Label>
+                        <DropzoneFileList
+                          buttonText="A2L Attachment"
+                          name="a2l_attachment"
+                          maxFiles={5}
+                          formData={{
+                          ...test,
+                          originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
+                          }}
+                          setFormData={(updatedTest) => {
+                          setTests((prev) =>
+                            prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                          );
+                          }}
                       id={`test${idx}`}
                       submitted={false}
                       setSubmitted={() => { }}
@@ -3318,7 +3319,7 @@ export default function CreateJobOrder() {
                   </div>
                   <div>
                     <Label>
-                      Experiment Attachment <span className="text-red-500">*</span>
+                      Experiment Attachment {form.department !== "PDCD_JO Chennai" && <span className="text-red-500">*</span>}
                       {test.experiment_attachment && test.experiment_attachment.length > 0 && (
                         <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
                           {Array.isArray(test.experiment_attachment) ? test.experiment_attachment.length : 1}
