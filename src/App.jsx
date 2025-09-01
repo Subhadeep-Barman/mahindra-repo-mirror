@@ -85,6 +85,7 @@ function App() {
           <Route path="/PDCDCreateJobOrder" element={<PDCDCreateJobOrder />} />
           <Route path="/pdcd/vehicle" element={<PDCDVehicle />} />
           <Route path="/pdcd/engine" element={<PDCDEnginePage />} />
+          <Route path="/pdcd/engine/new" element={<VTCCEngineForm />} />
 
           {/* VTC Nashik */}
           <Route path="/vtc-nashik" element={<VTCNashikPage />} />

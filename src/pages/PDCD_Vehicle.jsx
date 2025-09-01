@@ -63,11 +63,11 @@ export default function PDCDVehicle() {
   }, []);
 
   const handleAddNewVehicle = () => {
-    navigate("/vtcvehicle/new?department=VTC_JO%20Nashik");
+    navigate("/vtcvehicle/new?department=PDCD_JO%20Chennai");
   };
 
   const handleEditClick = (vehicle) => {
-    navigate(`/vtcvehicle/new?department=VTC_JO%20Nashik&edit=true`, {
+    navigate(`/vtcvehicle/new?department=PDCD_JO%20Chennai&edit=true`, {
       state: { vehicleData: vehicle, isEdit: true },
     });
   };

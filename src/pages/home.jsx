@@ -16,6 +16,7 @@ import {
 import rdeIcon from "@/assets/img1.png";
 import otherIcon from "@/assets/img2.jpg";
 import nashik from "@/assets/nashik.jpg";
+import pdcdlogo from "@/assets/pdcdlogo.png";
 import useStore from "@/store/useStore";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/UI/button";
@@ -71,7 +72,7 @@ const servicesBase = [
     title: "PDCD MRV LAB",
     description: "Powertrain Durability Chassis Dyno Laboratory",
   icon: Zap,
-  img: otherIcon,
+  img: pdcdlogo,
     href: "/pdcd-lab",
   color: "from-amber-400 to-yellow-400",
   bgColor: "bg-amber-100 dark:bg-amber-900/20",
