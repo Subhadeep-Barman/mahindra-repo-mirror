@@ -69,10 +69,32 @@ export default function VTCNashikEnginePage() {
     navigate("/nashik/engine/new?department=VTC_JO%20Nashik");
   };
 
-  const handleEditClick = (engine) => {
-    navigate(`/nashik/engine/new?department=VTC_JO%20Nashik&edit=true`, {
-      state: { engineData: engine, isEdit: true },
-    });
+  const handleEditClick = async (engine) => {
+    try {
+      const response = await axios.get(
+        `${apiURL}/engines?engine_serial_number=${encodeURIComponent(engine.engine_serial_number)}`
+      );
+      if (response.data && response.data.length > 0) {
+        const engineData = response.data.find(
+          (e) => e.engine_serial_number === engine.engine_serial_number
+        );
+        if (!engineData) {
+          showSnackbar("Selected engine not found in response.", "error");
+          return;
+        }
+        navigate(`/nashik/engine/new?department=VTC_JO%20Nashik&edit=true`, {
+          state: { engineData, isEdit: true },
+        });
+      } else {
+        showSnackbar("No engine data found for the selected engine.", "warning");
+      }
+    } catch (err) {
+      console.error("Error fetching engine details:", err);
+      showSnackbar(
+        "Error fetching engine details: " + (err.response?.data?.detail || err.message),
+        "error"
+      );
+    }
   };
 
   // Define columns for DataGrid

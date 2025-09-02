@@ -79,10 +79,32 @@ export default function VTCVehiclePage() {
     navigate("/vtcvehicle/new?department=VTC_JO%20Chennai");
   };
 
-  const handleEditClick = (vehicle) => {
-    navigate(`/vtcvehicle/new?department=VTC_JO%20Chennai&edit=true`, {
-      state: { vehicleData: vehicle, isEdit: true },
-    });
+  const handleEditClick = async (vehicle) => {
+    try {
+      const response = await axios.get(
+        `${apiURL}/vehicles?vehicle_serial_number=${encodeURIComponent(vehicle.vehicle_serial_number)}`
+      );
+      if (response.data && response.data.length > 0) {
+        const vehicleData = response.data.find(
+          (v) => v.vehicle_serial_number === vehicle.vehicle_serial_number
+        );
+        if (!vehicleData) {
+          showSnackbar("Selected vehicle not found in response.", "error");
+          return;
+        }
+        navigate(`/vtcvehicle/new?department=VTC_JO%20Chennai&edit=true`, {
+          state: { vehicleData, isEdit: true },
+        });
+      } else {
+        showSnackbar("No vehicle data found for the selected vehicle.", "warning");
+      }
+    } catch (err) {
+      console.error("Error fetching vehicle details:", err);
+      showSnackbar(
+        "Error fetching vehicle details: " + (err.response?.data?.detail || err.message),
+        "error"
+      );
+    }
   };
 
   // Define columns for DataGrid
