@@ -9,6 +9,12 @@ import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import showSnackbar from "@/utils/showSnackbar";
 import { DataGrid } from "@mui/x-data-grid"; // Import DataGrid
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -31,25 +37,9 @@ export default function RDEVehiclePage() {
           vehicle_body_number: v.vehicle_body_number,
           vehicle_model: v.vehicle_model,
           name_of_creator: v.name_of_creator || "NA",
-          created_on: new Date(v.created_on).toLocaleString("en-IN", {
-            timeZone: "Asia/Kolkata",
-            hour12: true,
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          created_on: dayjs.utc(v.created_on).tz("Asia/Kolkata").format("DD-MMM-YYYY hh:mm A"),
           name_of_updater: v.name_of_updater || "NA",
-          updated_on: new Date(v.updated_on).toLocaleString("en-IN", {
-            timeZone: "Asia/Kolkata",
-            hour12: true,
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          updated_on: dayjs.utc(v.updated_on).tz("Asia/Kolkata").format("DD-MMM-YYYY hh:mm A"),
         }));
         setVehicles(minimalVehicles);
       } catch (err) {
