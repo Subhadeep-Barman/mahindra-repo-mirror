@@ -64,11 +64,11 @@ export default function RDEEnginePage() {
   }, []);
 
   const handleAddNewEngine = () => {
-    navigate("/rde/engine/new?department=RDE");
+    navigate("/rde/engine/new?department=RDE%20JO");
   };
 
   const handleEditClick = (engine) => {
-    navigate(`/rde/engine/new?department=RDE&edit=true`, {
+    navigate(`/rde/engine/new?department=RDE%20JO&edit=true`, {
       state: { engineData: engine, isEdit: true },
     });
   };

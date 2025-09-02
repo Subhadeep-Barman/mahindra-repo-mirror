@@ -98,6 +98,7 @@ function App() {
           <Route path="/rde-chennai" element={<RDEChennaiPage />} />
           <Route path="/rde/vehicle" element={<RDEVehicle />} />
           <Route path="/rde/engine" element={<RDEEngine />} />
+          <Route path="/rde/engine/new" element={<NEngine />} />
 
           {/* Misc */}
           <Route path="/RDECreateJobOrder" element={<RDE_JobOrder_Create />} />
