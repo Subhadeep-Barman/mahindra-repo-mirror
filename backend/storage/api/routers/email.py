@@ -800,7 +800,7 @@ async def send_email_endpoint(
             vtc_logger.debug(f"Added CFT members to CC: {cft_emails}")
         
         # Case-specific recipient logic
-        if caseid in ["2", "5"]:  # Test Order Created, Test Order Updated
+        if caseid in ["2", "5","8"]:  # Test Order Created, Test Order Updated
             # TO: Department-specific group email
             if job_order:
                 # Get department email with improved detection
@@ -1164,7 +1164,7 @@ async def debug_email_routing(
             cc_emails.extend(cft_emails)
         
         # Case-specific recipient logic
-        if caseid in ["2", "5"]:  # Test Order Created, Test Order Updated
+        if caseid in ["2", "5","8"]:  # Test Order Created, Test Order Updated
             # TO: Department-specific group email
             if job_order:
                 dept_email = get_department_group_email(job_order, caseid)
