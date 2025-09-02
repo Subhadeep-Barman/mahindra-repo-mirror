@@ -74,10 +74,10 @@ const servicesBase = [
   icon: Zap,
   img: pdcdlogo,
     href: "/pdcd-lab",
-  color: "from-amber-400 to-yellow-400",
-  bgColor: "bg-amber-100 dark:bg-amber-900/20",
-  borderColor: "border-amber-300 dark:border-amber-700",
-  iconBg: "bg-amber-600",
+  color: "from-red-400 to-red-400",
+  bgColor: "bg-red-100 dark:bg-red-900/20",
+  borderColor: "border-red-300 dark:border-red-700",
+  iconBg: "bg-red-600",
   },
 ];
 
