@@ -1510,43 +1510,45 @@ export default function PDCDCreateJobOrder() {
         </div>
 
   {/* Editable Vehicle Details Accordion */}
-  {vehicleEditable && !formDisabled && (
-          <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
-            <div
+          {vehicleEditable && (
+            <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
+              <div
               className="flex items-center justify-between bg-gray-100 border-t-4 border-red-600 px-4 py-2 cursor-pointer"
-              onClick={() => setVehicleAccordionOpen((prev) => !prev)}
-            >
-              <span className="font-semibold text-sm">
-                Vehicle Details
-              </span>
-              <span>{vehicleAccordionOpen ? "▲" : "▼"}</span>
-            </div>
-            {vehicleAccordionOpen && (
+                onClick={() => setVehicleAccordionOpen((prev) => !prev)}
+              >
+                <span className="font-semibold text-sm">
+                  Vehicle Details
+                </span>
+                <span>{vehicleAccordionOpen ? "▲" : "▼"}</span>
+              </div>
+              {vehicleAccordionOpen && (
               <form className="bg-white px-4 py-4">
-                <div className="grid grid-cols-4 gap-4 text-xs">
-                  {Object.entries(vehicleEditable).map(([label, value]) => (
-                    <div key={label} className="flex flex-col">
-                      <Label className="font-semibold capitalize">
-                        {label.replace(/_/g, " ")}
-                      </Label>
-                      <Input
-                        value={value ?? ""}
-                        onChange={(e) =>
-                          handleVehicleEditableChange(label, e.target.value)
-                        }
-                        className="mt-1"
-                        disabled={!vehicleEditMode || isTestEngineer}
-                      />
-                    </div>
-                  ))}
-                </div>
-                {/* Optionally, add a Save button here */}
-              </form>
-            )}
-          </div>
-        )}
+                  <div className="grid grid-cols-4 gap-4 text-xs">
+                    {Object.entries(vehicleEditable).map(([label, value]) => 
+                      // Only render fields with non-empty values
+                      value !== null && value !== undefined && value !== "" ? (
+                        <div key={label} className="flex flex-col">
+                          <Label className="font-semibold capitalize">
+                            {label.replace(/_/g, " ")}
+                          </Label>
+                          <Input
+                            value={value ?? ""}
+                            onChange={(e) =>
+                              handleVehicleEditableChange(label, e.target.value)
+                            }
+                            className="mt-1"
+                            disabled={!vehicleEditMode || isTestEngineer || isAdmin}
+                          />
+                        </div>
+                      ) : null
+                    )}
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
 
-        {/* Editable Engine Details Accordion */}
+         {/* Editable Engine Details Accordion */}
         {engineEditable && (
           <div className="mx-8 mt-2 mb-4 border rounded shadow-lg shadow-gray-300/40 transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
             <div
@@ -1561,23 +1563,25 @@ export default function PDCDCreateJobOrder() {
             {engineAccordionOpen && (
               <form className="bg-white px-4 py-4">
                 <div className="grid grid-cols-4 gap-4 text-xs">
-                  {Object.entries(engineEditable).map(([label, value]) => (
-                    <div key={label} className="flex flex-col">
-                      <Label className="font-semibold capitalize">
-                        {label.replace(/_/g, " ")}
-                      </Label>
-                      <Input
-                        value={value ?? ""}
-                        onChange={(e) =>
-                          handleEngineEditableChange(label, e.target.value)
-                        }
-                        className="mt-1"
-                        disabled={!engineEditMode || isTestEngineer}
-                      />
-                    </div>
-                  ))}
+                  {Object.entries(engineEditable).map(([label, value]) => 
+                    // Only render fields with non-empty values
+                    value !== null && value !== undefined && value !== "" ? (
+                      <div key={label} className="flex flex-col">
+                        <Label className="font-semibold capitalize">
+                          {label.replace(/_/g, " ")}
+                        </Label>
+                        <Input
+                          value={value ?? ""}
+                          onChange={(e) =>
+                            handleEngineEditableChange(label, e.target.value)
+                          }
+                          className="mt-1"
+                          disabled={!engineEditMode || isTestEngineer || isAdmin}
+                        />
+                      </div>
+                    ) : null
+                  )}
                 </div>
-                {/* Optionally, add a Save button here */}
               </form>
             )}
           </div>
