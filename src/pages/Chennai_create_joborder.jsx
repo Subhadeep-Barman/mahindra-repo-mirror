@@ -3798,7 +3798,15 @@ export default function CreateJobOrder() {
                 </tr>
               </thead>
               <tbody>
-                {(allTestOrders[location.state?.originalJobOrderId] || []).slice().reverse().map((to, index) => (
+                {(allTestOrders[location.state?.originalJobOrderId] || [])
+                  .sort((a, b) => {
+                    // Extract test numbers from test_order_id (e.g., "JO123/1" -> 1)
+                    const testNumA = parseInt(a.test_order_id.split('/').pop()) || 0;
+                    const testNumB = parseInt(b.test_order_id.split('/').pop()) || 0;
+                    // Sort in descending order (newest test numbers first)
+                    return testNumB - testNumA;
+                  })
+                  .map((to, index) => (
                   <tr key={to.test_order_id}>
                     <td className="border px-2 py-1">{to.test_order_id.split('/').pop() || (index + 1)}</td>
                     <td className="border px-2 py-1">{to.test_order_id}</td>
