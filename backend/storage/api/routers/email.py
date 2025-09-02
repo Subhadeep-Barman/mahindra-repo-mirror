@@ -819,7 +819,7 @@ async def send_email_endpoint(
                 to_emails = get_all_emails_by_role(db, role)
                 vtc_logger.debug(f"Using role-based emails for TO: {to_emails}")
                 
-        elif caseid in ["3", "4", "6", "9"]:  # Test Re-edit, Rejection, Completion, Document Upload
+        elif caseid in ["3", "4", "6", "9","1.1"]:  # Test Re-edit, Rejection, Completion, Document Upload
             # TO: Test order creator (person who created that test)
             if test_order_id:
                 test_order = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
@@ -1177,7 +1177,7 @@ async def debug_email_routing(
                 # Fallback to role-based emails if no job order
                 to_emails = get_all_emails_by_role(db, role)
 
-        elif caseid in ["3", "4", "6", "9"]:  # Test Re-edit, Rejection, Completion, Document Upload
+        elif caseid in ["3", "4", "6", "9","1.1"]:  # Test Re-edit, Rejection, Completion, Document Upload
             # TO: Test order creator (person who created that test)
             if test_order_id:
                 test_order = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
