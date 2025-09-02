@@ -134,7 +134,7 @@ export default function CreateJobOrder() {
         fuelType: "",
         preferredDate: "",
         emissionCheckDate: "",
-        emissionCheckAttachment: "",
+        emission_check_attachment: "",
         dataset_attachment: "",
         a2l_attachment: "",
         experiment_attachment: "",
@@ -204,7 +204,7 @@ export default function CreateJobOrder() {
         specificInstruction: testOrderData.specific_instruction || "",
 
         // copy all attachments as well
-        emissionCheckAttachment: testOrderData.emission_check_attachment || [],
+        emission_check_attachment: testOrderData.emission_check_attachment || [],
         dataset_attachment: testOrderData.dataset_attachment || [],
         a2l_attachment: testOrderData.a2l_attachment || [],
         experiment_attachment: testOrderData.experiment_attachment || [],
@@ -1065,7 +1065,7 @@ export default function CreateJobOrder() {
     // Require Dataset, Experiment, Emission Check, and A2L attachments
     const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
     const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
-    const hasEmissionCheck = Array.isArray(test.emission_check_attachment || test.emissionCheckAttachment) && (test.emission_check_attachment || test.emissionCheckAttachment).length > 0;
+    const hasEmissionCheck = Array.isArray(test.emission_check_attachment || test.emission_check_attachment) && (test.emission_check_attachment || test.emission_check_attachment).length > 0;
     const hasA2L = Array.isArray(test.A2L || test.a2l_attachment) && (test.A2L || test.a2l_attachment).length > 0;
 
     if (!hasDataset || !hasExperiment || !hasEmissionCheck || !hasA2L) {
@@ -1177,7 +1177,7 @@ export default function CreateJobOrder() {
       id_of_updater: "",
       name_of_updater: "",
       updated_on: formattedISTTime,
-      emission_check_attachment: test.Emission_check || test.emissionCheckAttachment || [],
+      emission_check_attachment: test.Emission_check || test.emission_check_attachment || [],
       dataset_attachment: test.Dataset_attachment || test.dataset_attachment || [],
       a2l_attachment: test.A2L || test.a2l_attachment || [],
       experiment_attachment: test.Experiment_attachment || test.experiment_attachment || [],
@@ -1434,7 +1434,7 @@ export default function CreateJobOrder() {
         preferredDate: testOrder.preferred_date || "",
         emissionCheckDate: testOrder.emission_check_date || "",
         // Only one set of each attachment field, parsed
-        emissionCheckAttachment: parseAttachment(testOrder.emission_check_attachment),
+        emission_check_attachment: parseAttachment(testOrder.emission_check_attachment),
         dataset_attachment: parseAttachment(testOrder.dataset_attachment),
         a2l_attachment: parseAttachment(testOrder.a2l_attachment),
         experiment_attachment: parseAttachment(testOrder.experiment_attachment),
@@ -1485,7 +1485,7 @@ export default function CreateJobOrder() {
 
     // Check if only attachments are updated
     const attachmentFields = [
-      "emissionCheckAttachment",
+      "emission_check_attachment",
       "dataset_attachment",
       "a2l_attachment",
       "experiment_attachment",
@@ -1543,7 +1543,7 @@ export default function CreateJobOrder() {
       name_of_updater: userName || "",
       updated_on: formattedISTTime,
       // Attachment fields
-      emission_check_attachment: JSON.stringify(test.emissionCheckAttachment || []),
+      emission_check_attachment: JSON.stringify(test.emission_check_attachment || []),
       dataset_attachment: JSON.stringify(test.dataset_attachment || []),
       a2l_attachment: JSON.stringify(test.a2l_attachment || []),
       experiment_attachment: JSON.stringify(test.experiment_attachment || []),
@@ -1821,7 +1821,7 @@ export default function CreateJobOrder() {
     // Require attachments
     const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
     const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
-    const hasEmissionCheck = Array.isArray(test.emission_check_attachment || test.emissionCheckAttachment) && (test.emission_check_attachment || test.emissionCheckAttachment).length > 0;
+    const hasEmissionCheck = Array.isArray(test.emission_check_attachment || test.emission_check_attachment) && (test.emission_check_attachment || test.emission_check_attachment).length > 0;
     const hasA2L = Array.isArray(test.A2L || test.a2l_attachment) && (test.A2L || test.a2l_attachment).length > 0;
     if (!hasDataset || !hasExperiment || !hasEmissionCheck || !hasA2L) return false;
 
@@ -3798,7 +3798,13 @@ export default function CreateJobOrder() {
                 </tr>
               </thead>
               <tbody>
-                {(allTestOrders[location.state?.originalJobOrderId] || []).slice().reverse().map((to, index) => (
+                {(allTestOrders[location.state?.originalJobOrderId] || []).sort((a, b) => {
+                    // Extract test numbers from test_order_id (e.g., "JO123/1" -> 1)
+                    const testNumA = parseInt(a.test_order_id.split('/').pop()) || 0;
+                    const testNumB = parseInt(b.test_order_id.split('/').pop()) || 0;
+                    // Sort in descending order (newest test numbers first)
+                    return testNumB - testNumA;
+                  }).map((to, index) => (
                   <tr key={to.test_order_id}>
                     <td className="border px-2 py-1">{to.test_order_id.split('/').pop() || (index + 1)}</td>
                     <td className="border px-2 py-1">{to.test_order_id}</td>

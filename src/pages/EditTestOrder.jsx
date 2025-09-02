@@ -100,7 +100,7 @@ export default function EditTestOrder() {
     fuelType: testOrder?.fuel_type || "",
     preferredDate: testOrder?.preferred_date || "",
     emissionCheckDate: testOrder?.emission_check_date || "",
-    emissionCheckAttachment: Array.isArray(testOrder?.emission_check_attachment)
+    emission_check_attachment: Array.isArray(testOrder?.emission_check_attachment)
       ? testOrder?.emission_check_attachment
       : testOrder?.emission_check_attachment
         ? testOrder?.emission_check_attachment
@@ -336,10 +336,10 @@ export default function EditTestOrder() {
     preferred_date: test.preferredDate || null,
     emission_check_date: test.emissionCheckDate || null,
     emission_check_attachment:
-      Array.isArray(test.emissionCheckAttachment)
-        ? test.emissionCheckAttachment
-        : test.emissionCheckAttachment
-          ? test.emissionCheckAttachment
+      Array.isArray(test.emission_check_attachment)
+        ? test.emission_check_attachment
+        : test.emission_check_attachment
+          ? test.emission_check_attachment
           : [],
     dataset_attachment: test.dataset_attachment || "",
     a2l_attachment: test.a2l_attachment || "",
@@ -1274,9 +1274,19 @@ export default function EditTestOrder() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label className="dark:text-white">Emission Checklist Attachment</Label>
+                <Label className="dark:text-white">
+                  {(returnPath && returnPath.includes('rde')) || (jobOrderId && jobOrderId.includes('RDE'))
+                    ? "Emission Checklist Attachment / Type-1 Report"
+                    : "Emission Checklist Attachment"
+                  }
+                </Label>
                 <DropzoneFileList
-                  buttonText="Emission Checklist Attachment"
-                  name="emmission_check_attachment"
+                  buttonText={
+                    (returnPath && returnPath.includes('rde')) || (jobOrderId && jobOrderId.includes('RDE'))
+                      ? "Emission Checklist Attachment / Type-1 Report"
+                      : "Emission Checklist Attachment"
+                  }
+                  name="emission_check_attachment"
                   maxFiles={5}
                   formData={{
                     ...test,
