@@ -137,7 +137,8 @@ export default function VTCChennaiPage() {
   // Filtering logic moved to a function
   const applySearch = () => {
     let filtered = jobOrders;
-    
+    let filteredTestOrders = [];
+
     // First apply standard filtering criteria
     filtered = filtered.filter((order) => {
       return (
@@ -212,68 +213,46 @@ export default function VTCChennaiPage() {
       );
     });
     
-    // If test objective filter is applied, further filter the results
+    // If test objective filter is applied, show test orders directly and filter by job order department
     if (search.objective && search.objective.trim() !== "") {
-      // Log all test orders for debugging
-      console.log("All Test Orders:", testOrders);
-      
-      try {
-        // Find test orders that match the objective
-        const matchingTestOrders = testOrders.filter(testOrder => {
-          // Check for objective in different possible field names
-          const objective = testOrder.objective || testOrder.test_objective || 
-                          (testOrder.test_details ? testOrder.test_details.objective : null);
-          
-          return objective && 
-                 objective.toLowerCase().includes(search.objective.toLowerCase());
-        });
-        console.log("Test Orders with Matching Objective:", matchingTestOrders);
-        
-        // Extract the job_order_ids from matching test orders - check for different field names
-        const jobOrdersWithMatchingObjective = matchingTestOrders.map(testOrder => {
-          // Check different possible field names for job order ID
-          return testOrder.job_order_id || testOrder.jobOrderId || testOrder.job_id || 
-                 testOrder.orderId || testOrder.order_id || 
-                 (testOrder.job_order ? testOrder.job_order.id : null);
-        }).filter(id => id); // Filter out undefined/null values
-        
-        console.log("Job Order IDs with Matching Objective:", jobOrdersWithMatchingObjective);
-        
-        // Keep only job orders that have test orders with matching objectives
-        filtered = filtered.filter(order => {
-          // Get job order ID, checking multiple possible field names
-          const orderId = order.job_order_id || order.jobOrderId || order.job_id || 
-                         order.orderId || order.order_id || order.id;
-          
-          // Convert both to strings for comparison to avoid type mismatches
-          return jobOrdersWithMatchingObjective.some(id => 
-            String(id) === String(orderId)
-          );
-        });
-      } catch (error) {
-        console.error("Error in objective filtering:", error);
-      }
-      
-      // Check if we have any filtered job orders
-      if (filtered.length === 0) {
-        console.log("No job orders match the filtered test orders");
-        // Examine some job orders to check their structure
-        if (jobOrders.length > 0) {
-          console.log("Sample job order structure:", jobOrders[0]);
-        }
-      }
+      // Get job order IDs for this department
+      const validJobOrderIds = jobOrders
+        .filter(order => order.department === "VTC_JO Chennai")
+        .map(order => order.job_order_id);
+
+      filteredTestOrders = testOrders.filter(testOrder => {
+        const objective = testOrder.objective || testOrder.test_objective ||
+          (testOrder.test_details ? testOrder.test_details.objective : null);
+        // Only include test orders whose job_order_id is in validJobOrderIds
+        return (
+          objective &&
+          objective.toLowerCase().includes(search.objective.toLowerCase()) &&
+          validJobOrderIds.includes(testOrder.job_order_id)
+        );
+      });
+
+      setFilteredJobOrders([]);
+      setFilteredTestOrders(filteredTestOrders);
+      setCurrentPage(1);
+      return;
     }
-    console.log("Filtered Job Orders:", filtered);
-    console.log("Search objective:", search.objective);
-    
+
     setFilteredJobOrders(filtered);
+    setFilteredTestOrders([]); // Clear test orders if not searching by objective
     setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil(filteredJobOrders.length / rowsPerPage);
+  // New state for filtered test orders
+  const [filteredTestOrders, setFilteredTestOrders] = useState([]);
+
+  const totalPages = filteredTestOrders.length > 0
+    ? Math.ceil(filteredTestOrders.length / rowsPerPage)
+    : Math.ceil(filteredJobOrders.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
-  const currentRows = filteredJobOrders.slice(startIndex, endIndex);
+  const currentRows = filteredTestOrders.length > 0
+    ? filteredTestOrders.slice(startIndex, endIndex)
+    : filteredJobOrders.slice(startIndex, endIndex);
   
   // Handle pagination
   const handlePageChange = (page) => {
@@ -357,6 +336,54 @@ export default function VTCChennaiPage() {
 
   // Excel Download handler
   const handleDownload = () => {
+    if (filteredTestOrders.length > 0) {
+      // Download filtered test orders
+      const headers = [
+        "Test Order ID",
+        "Job Order ID",
+        "Objective",
+        "Test Status",
+        "Created by",
+        "Created on",
+        "Updated by",
+        "Updated on"
+      ];
+      const rows = filteredTestOrders.map((testOrder) => [
+        testOrder.test_order_id || testOrder.id || "N/A",
+        testOrder.job_order_id || testOrder.jobOrderId || "N/A",
+        testOrder.objective || testOrder.test_objective || (testOrder.test_details ? testOrder.test_details.objective : "N/A"),
+        testOrder.test_status || "N/A",
+        testOrder.name_of_creator || "N/A",
+        testOrder.created_on
+          ? new Date(testOrder.created_on).toLocaleString("en-IN", {
+              timeZone: "Asia/Kolkata",
+              hour12: true,
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "",
+        testOrder.name_of_updater || "N/A",
+        testOrder.updated_on
+          ? new Date(testOrder.updated_on).toLocaleString("en-IN", {
+              timeZone: "Asia/Kolkata",
+              hour12: true,
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "N/A"
+      ]);
+      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Test Orders");
+      XLSX.writeFile(workbook, "test_orders.xlsx");
+      return;
+    }
     if (!filteredJobOrders.length) return;
     const headers = [
       "Job Order ID",
@@ -519,6 +546,7 @@ export default function VTCChennaiPage() {
                     objective: "",
                   });
                   setFilteredJobOrders(jobOrders);
+                  setFilteredTestOrders([]); // <-- Add this line to clear test order filter
                   setCurrentPage(1);
                 }}
                 className="bg-red-500 text-white hover:bg-red-600"
@@ -565,100 +593,169 @@ export default function VTCChennaiPage() {
               <Table className="min-w-full border-collapse border border-gray-200">
                 <TableHeader>
                   <TableRow className="bg-gray-100">
-                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Job Order Number
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Project
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Vehicle Number
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Body No
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Engine Number
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Domain
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Test Orders
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Completed Tests
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Created by
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Created on
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Last Updated by
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
-                      Last Updated on
-                    </TableHead>
+                    {filteredTestOrders.length > 0 ? (
+                      <>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Test Order ID
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Job Order ID
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Objective
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Test Status
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Created by
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Created on
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Updated by
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Updated on
+                        </TableHead>
+                      </>
+                    ) : (
+                      <>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Job Order Number
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Project
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Vehicle Number
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Body No
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Engine Number
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Domain
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Test Orders
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Completed Tests
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Created by
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Created on
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Last Updated by
+                        </TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-xs px-4 py-2">
+                          Last Updated on
+                        </TableHead>
+                      </>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {currentRows.map((order, index) => (
-                    <TableRow
-                      key={order.job_order_id || index}
-                      className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                        } hover:bg-gray-100`}
-                    >
-                      <TableCell
-                        className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400"
-                        onClick={() => handleJobOrderClick(order.job_order_id)}
+                  {filteredTestOrders.length > 0 ? (
+                    currentRows.map((testOrder, index) => (
+                      <TableRow
+                        key={testOrder.test_order_id || testOrder.id || index}
+                        className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-gray-100`}
                       >
-                        {order.job_order_id}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-900 px-4 py-2">
-                        {order.project_code}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-900 px-4 py-2">
-                        {order.vehicle_serial_number}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-600 px-4 py-2">
-                        {order.vehicle_body_number}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-600 px-4 py-2">
-                        {order.engine_serial_number || "N/A"}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-900 px-4 py-2">
-                        {order.domain}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-900 px-4 py-2">
-                        {order.test_status}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-900 px-4 py-2">
-                        {order.completed_test_count == 0
-                          ? "0"
-                          : `${order.completed_test_count}/${order.test_status}`}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-600 px-4 py-2">
-                        {order.name_of_creator}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-600 px-4 py-2">
-                        {new Date(order.created_on).toLocaleString("en-IN", {
-                          timeZone: "Asia/Kolkata",
-                          hour12: true,
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-600 px-4 py-2">
-                        {order.name_of_updater}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-600 px-4 py-2">
-                        {order.updated_on
-                          ? new Date(order.updated_on).toLocaleString("en-IN", {
+                        <TableCell className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400">
+                          {testOrder.test_order_id || testOrder.id}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-900 px-4 py-2">
+                          {testOrder.job_order_id || testOrder.jobOrderId}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-900 px-4 py-2">
+                          {testOrder.objective || testOrder.test_objective || (testOrder.test_details ? testOrder.test_details.objective : "")}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-900 px-4 py-2">
+                          {testOrder.test_status}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600 px-4 py-2">
+                          {testOrder.name_of_creator}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600 px-4 py-2">
+                          {testOrder.created_on
+                            ? new Date(testOrder.created_on).toLocaleString("en-IN", {
+                                timeZone: "Asia/Kolkata",
+                                hour12: true,
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : ""}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600 px-4 py-2">
+                          {testOrder.name_of_updater}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600 px-4 py-2">
+                          {testOrder.updated_on
+                            ? new Date(testOrder.updated_on).toLocaleString("en-IN", {
+                                timeZone: "Asia/Kolkata",
+                                hour12: true,
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "N/A"}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    currentRows.map((order, index) => (
+                      <TableRow
+                        key={order.job_order_id || index}
+                        className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                          } hover:bg-gray-100`}
+                      >
+                        <TableCell
+                          className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400"
+                          onClick={() => handleJobOrderClick(order.job_order_id)}
+                        >
+                          {order.job_order_id}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-900 px-4 py-2">
+                          {order.project_code}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-900 px-4 py-2">
+                          {order.vehicle_serial_number}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600 px-4 py-2">
+                          {order.vehicle_body_number}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600 px-4 py-2">
+                          {order.engine_serial_number || "N/A"}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-900 px-4 py-2">
+                          {order.domain}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-900 px-4 py-2">
+                          {order.test_status}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-900 px-4 py-2">
+                          {order.completed_test_count == 0
+                            ? "0"
+                            : `${order.completed_test_count}/${order.test_status}`}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600 px-4 py-2">
+                          {order.name_of_creator}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600 px-4 py-2">
+                          {new Date(order.created_on).toLocaleString("en-IN", {
                             timeZone: "Asia/Kolkata",
                             hour12: true,
                             year: "numeric",
@@ -666,11 +763,27 @@ export default function VTCChennaiPage() {
                             day: "numeric",
                             hour: "2-digit",
                             minute: "2-digit",
-                          })
-                          : "N/A"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          })}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600 px-4 py-2">
+                          {order.name_of_updater}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600 px-4 py-2">
+                          {order.updated_on
+                            ? new Date(order.updated_on).toLocaleString("en-IN", {
+                              timeZone: "Asia/Kolkata",
+                              hour12: true,
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                            : "N/A"}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -679,8 +792,8 @@ export default function VTCChennaiPage() {
           {/* Pagination Footer */}
           <div className="flex items-center justify-between mt-4">
             <div className="text-sm text-gray-600 dark:text-white">
-              Showing {startIndex + 1} to {Math.min(endIndex, filteredJobOrders.length)}{" "}
-              of {filteredJobOrders.length}
+              Showing {startIndex + 1} to {Math.min(endIndex, filteredTestOrders.length > 0 ? filteredTestOrders.length : filteredJobOrders.length)}{" "}
+              of {filteredTestOrders.length > 0 ? filteredTestOrders.length : filteredJobOrders.length}
             </div>
             <div className="flex items-center space-x-2">
               <Button

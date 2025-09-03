@@ -100,7 +100,7 @@ export default function EditTestOrder() {
     fuelType: testOrder?.fuel_type || "",
     preferredDate: testOrder?.preferred_date || "",
     emissionCheckDate: testOrder?.emission_check_date || "",
-    emissionCheckAttachment: Array.isArray(testOrder?.emission_check_attachment)
+    emission_check_attachment: Array.isArray(testOrder?.emission_check_attachment)
       ? testOrder?.emission_check_attachment
       : testOrder?.emission_check_attachment
         ? testOrder?.emission_check_attachment
@@ -336,10 +336,10 @@ export default function EditTestOrder() {
     preferred_date: test.preferredDate || null,
     emission_check_date: test.emissionCheckDate || null,
     emission_check_attachment:
-      Array.isArray(test.emissionCheckAttachment)
-        ? test.emissionCheckAttachment
-        : test.emissionCheckAttachment
-          ? test.emissionCheckAttachment
+      Array.isArray(test.emission_check_attachment)
+        ? test.emission_check_attachment
+        : test.emission_check_attachment
+          ? test.emission_check_attachment
           : [],
     dataset_attachment: test.dataset_attachment || "",
     a2l_attachment: test.a2l_attachment || "",
