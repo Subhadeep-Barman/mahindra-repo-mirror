@@ -1273,7 +1273,7 @@ export default function EditTestOrder() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label className="dark:text-white">Emission Checklist Attachment</Label>
+                {/* <Label className="dark:text-white">Emission Checklist Attachment</Label> */}
                 <Label className="dark:text-white">
                   {(returnPath && returnPath.includes('rde')) || (jobOrderId && jobOrderId.includes('RDE'))
                     ? "Emission Checklist Attachment / Type-1 Report"
