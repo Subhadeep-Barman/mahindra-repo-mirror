@@ -108,6 +108,12 @@ export default function CreateJobOrder() {
   const [cloneDropdownOpen, setCloneDropdownOpen] = useState(false);
   const [selectedTestOrderForClone, setSelectedTestOrderForClone] = useState("");
 
+  // Add state for tracking missing fields for each test
+  const [testMissingFields, setTestMissingFields] = useState({});
+  // Modal state to display missing fields when user attempts to create a test
+  const [missingFieldsModalOpen, setMissingFieldsModalOpen] = useState(false);
+  const [missingFieldsForModal, setMissingFieldsForModal] = useState([]);
+
   const handleAddTest = () => {
     const existingTestOrdersCount = (allTestOrders[location.state?.originalJobOrderId] || []).length;
     const currentTestsCount = tests.length;
@@ -251,9 +257,14 @@ export default function CreateJobOrder() {
   };
   // Handler to update a test
   const handleTestChange = (idx, field, value) => {
-    setTests((prev) =>
-      prev.map((test, i) => (i === idx ? { ...test, [field]: value } : test))
-    );
+    setTests((prev) => {
+      const updated = prev.map((test, i) => (i === idx ? { ...test, [field]: value } : test));
+      // Trigger validation for the updated test after state update
+      setTimeout(() => {
+        validateTestFields(updated[idx], idx);
+      }, 0);
+      return updated;
+    });
   };
 
   // Handler to delete a test
@@ -1014,84 +1025,14 @@ export default function CreateJobOrder() {
       return;
     }
 
-    // Validate required fields (matching RDE implementation)
-    const requiredFields = [
-      { key: 'testType', label: 'Test Type' },
-      { key: 'objective', label: 'Objective of the Test' },
-      { key: 'vehicleLocation', label: 'Vehicle Location' },
-      { key: 'cycleGearShift', label: 'Cycle Gear Shift' },
-      { key: 'inertiaClass', label: 'Inertia Class' },
-      { key: 'datasetName', label: 'Dataset Name' },
-      { key: 'mode', label: 'Mode' },
-      { key: 'shift', label: 'Shift' },
-      { key: 'fuelType', label: 'Fuel Type' },
-      { key: 'hardwareChange', label: 'Hardware Change' },
-      { key: 'equipmentRequired', label: 'Equipment Required' },
-      { key: 'dpf', label: 'DPF' },
-      { key: 'ess', label: 'ESS' },
-      { key: 'preferredDate', label: 'Preferred Date' },
-      { key: 'emissionCheckDate', label: 'Emission Checklist Date' },
-      { key: 'specificInstruction', label: 'Specific Instruction' }
-    ];
+    // Use centralized validator to get missing fields; if any, open modal listing them
+    const missing = validateTestFields(test, testIndex);
 
-    const missing = requiredFields.filter(f => {
-      const val = test[f.key];
-      return val === undefined || val === null || (typeof val === 'string' && val.trim() === '');
-    }).map(f => f.label);
-
-    // Special-case: dataset flashed
-    const datasetFlashedVal = (test.datasetflashed || '').toString().trim();
-    if (!datasetFlashedVal) {
-      missing.push('Dataset flashed');
-    }
-
-    if (missing.length > 0) {
-      showSnackbar(
-        `Please fill in required fields before creating test order: ${[...new Set(missing)].join(', ')}`,
-        'warning'
-      );
+    if (missing && missing.length > 0) {
+      // Populate modal and open
+      setMissingFieldsForModal(missing);
+      setMissingFieldsModalOpen(true);
       return;
-    }
-
-    // If DPF is Yes, require DPF Regen Occurs (g)
-    if (test.dpf === 'Yes') {
-      const regen = test.dpfRegenOccurs;
-      if (regen === undefined || regen === null || (typeof regen === 'string' && regen.trim() === '')) {
-        showSnackbar('DPF Regen Occurs (g) is required when DPF is Yes.', 'warning');
-        return;
-      }
-    }
-
-    // Require Dataset, Experiment, Emission Check, and A2L attachments
-    const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
-    const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
-    const hasEmissionCheck = Array.isArray(test.emission_check_attachment || test.emission_check_attachment) && (test.emission_check_attachment || test.emission_check_attachment).length > 0;
-    const hasA2L = Array.isArray(test.A2L || test.a2l_attachment) && (test.A2L || test.a2l_attachment).length > 0;
-
-    if (!hasDataset || !hasExperiment || !hasEmissionCheck || !hasA2L) {
-      const missingAttachments = [];
-      if (!hasDataset) missingAttachments.push('Dataset Attachment');
-      if (!hasExperiment) missingAttachments.push('Experiment Attachment');
-      if (!hasEmissionCheck) missingAttachments.push('Emission Checklist Attachment');
-      if (!hasA2L) missingAttachments.push('A2L Attachment');
-      
-      showSnackbar(
-        `Required attachments are missing: ${missingAttachments.join(', ')}`,
-        'error'
-      );
-      return;
-    }
-
-    // Validate Coast Down Data if inertia class is Coastdown Loading
-    if (test.inertiaClass === "Coastdown Loading") {
-      const missingFields = validateCoastDownData(test);
-      if (missingFields.length > 0) {
-        showSnackbar(
-          `Coast Down Data is required for Coastdown Loading. Please fill in the following fields: ${missingFields.join(', ')}`,
-          "error"
-        );
-        return;
-      }
     }
     // const test_order_id = "TO" + Date.now();
     const job_order_id = location.state?.jobOrder?.job_order_id || location.state?.originalJobOrderId || "";
@@ -1777,6 +1718,87 @@ export default function CreateJobOrder() {
     }
 
     return missingFields;
+  };
+
+  // Function to validate test fields and return missing fields
+  const validateTestFields = (test, testIndex) => {
+    const requiredFields = [
+      { key: 'testType', label: 'Test Type' },
+      { key: 'objective', label: 'Objective of the Test' },
+      { key: 'vehicleLocation', label: 'Vehicle Location' },
+      { key: 'cycleGearShift', label: 'Cycle Gear Shift' },
+      { key: 'inertiaClass', label: 'Inertia Class' },
+      { key: 'datasetName', label: 'Dataset Name' },
+      { key: 'mode', label: 'Mode' },
+      { key: 'shift', label: 'Shift' },
+      { key: 'fuelType', label: 'Fuel Type' },
+      { key: 'hardwareChange', label: 'Hardware Change' },
+      { key: 'equipmentRequired', label: 'Equipment Required' },
+      { key: 'dpf', label: 'DPF' },
+      { key: 'ess', label: 'ESS' },
+      { key: 'preferredDate', label: 'Preferred Date' },
+      { key: 'emissionCheckDate', label: 'Emission Checklist Date' },
+      { key: 'specificInstruction', label: 'Specific Instruction' }
+    ];
+
+    const missing = [];
+
+    // Check required fields
+    requiredFields.forEach(f => {
+      const value = test[f.key];
+      if (!value || (typeof value === 'string' && value.trim() === '')) {
+        missing.push(f.label);
+      }
+    });
+
+    // Special-case: dataset flashed
+    const datasetFlashedVal = (test.datasetflashed || '').toString().trim();
+    if (!datasetFlashedVal) {
+      missing.push('Dataset flashed');
+    }
+
+    // If DPF is Yes, require DPF Regen Occurs
+    const dpfRegenVal = (test.dpfRegenOccurs || '').toString().trim();
+    if (test.dpf === 'Yes' && !dpfRegenVal) {
+      missing.push('DPF Regen Occurs (g)');
+    }
+
+    // Check attachments
+    const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
+    const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
+    const hasEmissionCheck = Array.isArray(test.emission_check_attachment || test.emissionCheckAttachment) && (test.emission_check_attachment || test.emissionCheckAttachment).length > 0;
+    const hasA2L = Array.isArray(test.A2L || test.a2l_attachment) && (test.A2L || test.a2l_attachment).length > 0;
+
+    if (!hasDataset) missing.push('Dataset Attachment');
+    if (!hasExperiment) missing.push('Experiment Attachment');
+    if (!hasEmissionCheck) missing.push('Emission Check Attachment');
+    if (!hasA2L) missing.push('A2L Attachment');
+
+    // Validate Coast Down Data if inertia class is Coastdown Loading
+    if (test.inertiaClass === "Coastdown Loading") {
+      const missingCoastDown = validateCoastDownData(test);
+      missing.push(...missingCoastDown);
+    }
+
+    // Update the missing fields state
+    setTestMissingFields(prev => ({
+      ...prev,
+      [testIndex]: missing
+    }));
+
+    return missing;
+  };
+
+  // Helper function for DropzoneFileList setFormData callback
+  const handleAttachmentUpdate = (idx) => (updatedTest) => {
+    setTests((prev) => {
+      const updated = prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t));
+      // Trigger validation for attachment update
+      setTimeout(() => {
+        validateTestFields(updated[idx], idx);
+      }, 0);
+      return updated;
+    });
   };
 
   // Helper function to validate if test is ready for submission
@@ -3226,11 +3248,7 @@ export default function CreateJobOrder() {
                           test_order_id: test.testOrderId || "",
                           originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
                           }}
-                          setFormData={(updatedTest) => {
-                          setTests((prev) =>
-                            prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                          );
-                          }}
+                          setFormData={handleAttachmentUpdate(idx)}
                           id={`test${idx}`}
                           submitted={false}
                           setSubmitted={() => { }}
@@ -3273,11 +3291,7 @@ export default function CreateJobOrder() {
                           ...test,
                           originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
                           }}
-                          setFormData={(updatedTest) => {
-                          setTests((prev) =>
-                            prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                          );
-                          }}
+                          setFormData={handleAttachmentUpdate(idx)}
                           id={`test${idx}`}
                           submitted={false}
                           setSubmitted={() => { }}
@@ -3321,11 +3335,7 @@ export default function CreateJobOrder() {
                           ...test,
                           originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
                           }}
-                          setFormData={(updatedTest) => {
-                          setTests((prev) =>
-                            prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                          );
-                          }}
+                          setFormData={handleAttachmentUpdate(idx)}
                       id={`test${idx}`}
                       submitted={false}
                       setSubmitted={() => { }}
@@ -3366,11 +3376,7 @@ export default function CreateJobOrder() {
                         ...test,
                         originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
                       }}
-                      setFormData={(updatedTest) => {
-                        setTests((prev) =>
-                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                        );
-                      }}
+                      setFormData={handleAttachmentUpdate(idx)}
                       id={`test${idx}`}
                       submitted={false}
                       setSubmitted={() => { }}
@@ -3412,11 +3418,7 @@ export default function CreateJobOrder() {
                         ...test,
                         originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
                       }}
-                      setFormData={(updatedTest) => {
-                        setTests((prev) =>
-                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                        );
-                      }}
+                      setFormData={handleAttachmentUpdate(idx)}
                       id={`test${idx}`}
                       submitted={false}
                       setSubmitted={() => { }}
@@ -3458,11 +3460,7 @@ export default function CreateJobOrder() {
                         ...test,
                         originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
                       }}
-                      setFormData={(updatedTest) => {
-                        setTests((prev) =>
-                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                        );
-                      }}
+                      setFormData={handleAttachmentUpdate(idx)}
                       id={`test${idx}`}
                       submitted={false}
                       setSubmitted={() => { }}
@@ -3505,11 +3503,7 @@ export default function CreateJobOrder() {
                         ...test,
                         originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
                       }}
-                      setFormData={(updatedTest) => {
-                        setTests((prev) =>
-                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                        );
-                      }}
+                      setFormData={handleAttachmentUpdate(idx)}
                       id={`test${idx}`}
                       submitted={false}
                       setSubmitted={() => { }}
@@ -3545,11 +3539,7 @@ export default function CreateJobOrder() {
                         ...test,
                         originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
                       }}
-                      setFormData={(updatedTest) => {
-                        setTests((prev) =>
-                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                        );
-                      }}
+                      setFormData={handleAttachmentUpdate(idx)}
                       id={`test${idx}`}
                       submitted={false}
                       setSubmitted={() => { }}
@@ -3585,11 +3575,7 @@ export default function CreateJobOrder() {
                         ...test,
                         originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
                       }}
-                      setFormData={(updatedTest) => {
-                        setTests((prev) =>
-                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                        );
-                      }}
+                      setFormData={handleAttachmentUpdate(idx)}
                       id={`test${idx}`}
                       submitted={false}
                       setSubmitted={() => { }}
@@ -3625,11 +3611,7 @@ export default function CreateJobOrder() {
                         ...test,
                         originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
                       }}
-                      setFormData={(updatedTest) => {
-                        setTests((prev) =>
-                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
-                        );
-                      }}
+                      setFormData={handleAttachmentUpdate(idx)}
                       id={`test${idx}`}
                       submitted={false}
                       setSubmitted={() => { }}
@@ -3660,7 +3642,7 @@ export default function CreateJobOrder() {
                 <Button
                   className="bg-red-600 text-white text-xs px-6 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
                   onClick={() => handleCreateTestOrder(idx)}
-                  disabled={!!test.testOrderId || test.disabled || !isTestValid(test)}
+                  disabled={!!test.testOrderId || test.disabled}
                 >
                   {test.testOrderId ? " TEST ORDER CREATED" : " CREATE TEST ORDER"}
                 </Button>
@@ -3909,6 +3891,33 @@ export default function CreateJobOrder() {
         value={remarkInput}
         setValue={setRemarkInput}
       />
+
+      {/* Missing Fields Modal */}
+      {missingFieldsModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded shadow-lg p-6 w-96">
+            <div className="font-semibold mb-2">Required Fields Missing</div>
+            <div className="text-sm mb-4">
+              Please fill the following required fields before creating the test order:
+            </div>
+            <ul className="list-disc list-inside mb-4 text-sm">
+              {missingFieldsForModal.map((m, i) => (
+                <li key={i}>{m}</li>
+              ))}
+            </ul>
+            <div className="flex justify-end gap-2">
+              <Button
+                className="bg-gray-300 text-black px-4 py-1 rounded"
+                type="button"
+                onClick={() => setMissingFieldsModalOpen(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
     </>
   );
 }
