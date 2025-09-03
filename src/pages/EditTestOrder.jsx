@@ -2136,6 +2136,9 @@ export default function EditTestOrder() {
                     setShowUnsavedWarning(false);
                     if (pendingNavigation) {
                       pendingNavigation();
+                    } else {
+                      // If no pending navigation, go back to previous page
+                      navigate(-1);
                     }
                     setPendingNavigation(null);
                   }}
@@ -2148,6 +2151,12 @@ export default function EditTestOrder() {
                   onClick={async () => {
                     setShowUnsavedWarning(false);
                     await handleSaveUpdates();
+                    if (pendingNavigation) {
+                      pendingNavigation();
+                    } else {
+                      // If no pending navigation, go back to previous page
+                      navigate(-1);
+                    }
                     setPendingNavigation(null);
                   }}
                 >
