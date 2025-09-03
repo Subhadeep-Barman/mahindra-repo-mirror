@@ -198,8 +198,29 @@ export default function EditTestOrder() {
   const [selectedValidation, setSelectedValidation] = useState(null); // 'valid' or 'invalid'
   const [validationConfirmModal, setValidationConfirmModal] = useState(false);
 
+  // State for tracking unsaved changes in test engineer attachments
+  const [hasUnsavedAttachments, setHasUnsavedAttachments] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
+
   const handleBack = () => {
+    // Check if there are unsaved attachment changes for test engineers
+    if (isTestEngineer && test.status === "Completed" && hasUnsavedAttachments) {
+      setPendingNavigation(() => () => navigate(-1));
+      setShowUnsavedWarning(true);
+      return;
+    }
     navigate(-1);
+  };
+
+  // Custom navigation handler that checks for unsaved changes
+  const handleNavigation = (path) => {
+    if (isTestEngineer && test.status === "Completed" && hasUnsavedAttachments) {
+      setPendingNavigation(() => () => navigate(path));
+      setShowUnsavedWarning(true);
+      return;
+    }
+    navigate(path);
   };
 
   // Handle form field changes
@@ -288,6 +309,46 @@ export default function EditTestOrder() {
     // Fetch engine numbers
   // Removed fetchEngineNumbers and its usage
   }, []);
+
+  // Add browser navigation warning for unsaved attachments
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isTestEngineer && test.status === "Completed" && hasUnsavedAttachments) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasUnsavedAttachments, isTestEngineer, test.status]);
+
+  // Add browser back button navigation warning for unsaved attachments
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (isTestEngineer && test.status === "Completed" && hasUnsavedAttachments) {
+        e.preventDefault();
+        window.history.pushState(null, "", window.location.href);
+        setShowUnsavedWarning(true);
+        setPendingNavigation(() => () => {
+          setHasUnsavedAttachments(false);
+          window.history.back();
+        });
+      }
+    };
+
+    if (isTestEngineer && test.status === "Completed" && hasUnsavedAttachments) {
+      window.history.pushState(null, "", window.location.href);
+      window.addEventListener("popstate", handlePopState);
+    }
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [hasUnsavedAttachments, isTestEngineer, test.status]);
 
   // Format date for display in IST
   const formatDate = (dateString) => {
@@ -608,6 +669,7 @@ export default function EditTestOrder() {
       const testOrderPayload = getTestOrderPayload(test.status);
       await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       showSnackbar("Test order updated successfully!", "success");
+      setHasUnsavedAttachments(false); // Reset unsaved changes flag
       await handleSendMail("9", jobOrderId, test.testOrderId); // Send mail with case ID 9
       navigate(-1);
     } catch (err) {
@@ -617,7 +679,7 @@ export default function EditTestOrder() {
 
   return (
     <>
-      <Navbar1 />
+      <Navbar1 onHomeClick={handleNavigation} />
       <div className="bg-white dark:bg-black min-h-screen">
         {/* Header Row */}
         <div className="flex items-center justify-between px-8 pt-6">
@@ -1445,6 +1507,10 @@ export default function EditTestOrder() {
                   }}
                   setFormData={(updatedData) => {
                     setTest(prev => ({ ...prev, ...updatedData }));
+                    // Track unsaved changes for test engineer attachments when test is completed
+                    if (isTestEngineer && test.status === "Completed") {
+                      setHasUnsavedAttachments(true);
+                    }
                   }}
                   id="test-edit"
                   submitted={false}
@@ -1469,6 +1535,10 @@ export default function EditTestOrder() {
                   }}
                   setFormData={(updatedData) => {
                     setTest(prev => ({ ...prev, ...updatedData }));
+                    // Track unsaved changes for test engineer attachments when test is completed
+                    if (isTestEngineer && test.status === "Completed") {
+                      setHasUnsavedAttachments(true);
+                    }
                   }}
                   id="test-edit"
                   submitted={false}
@@ -1493,6 +1563,10 @@ export default function EditTestOrder() {
                   }}
                   setFormData={(updatedData) => {
                     setTest(prev => ({ ...prev, ...updatedData }));
+                    // Track unsaved changes for test engineer attachments when test is completed
+                    if (isTestEngineer && test.status === "Completed") {
+                      setHasUnsavedAttachments(true);
+                    }
                   }}
                   id="test-edit"
                   submitted={false}
@@ -1517,6 +1591,10 @@ export default function EditTestOrder() {
                   }}
                   setFormData={(updatedData) => {
                     setTest(prev => ({ ...prev, ...updatedData }));
+                    // Track unsaved changes for test engineer attachments when test is completed
+                    if (isTestEngineer && test.status === "Completed") {
+                      setHasUnsavedAttachments(true);
+                    }
                   }}
                   id="test-edit"
                   submitted={false}
@@ -2019,6 +2097,61 @@ export default function EditTestOrder() {
                   disabled={rating === 0}
                 >
                   Submit Rating
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Unsaved Changes Warning Modal */}
+        {showUnsavedWarning && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
+            <div className="bg-white dark:bg-gray-800 rounded shadow-lg p-4 w-full max-w-sm md:max-w-md">
+              <div className="font-semibold mb-3 dark:text-white text-lg">
+                Unsaved Changes
+              </div>
+              <div className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+                You have uploaded new files in the Test Engineers Attachments section but haven't saved them yet.
+                These changes will be lost if you navigate away.
+              </div>
+              <div className="mb-4 text-sm text-red-600 dark:text-red-400 font-medium">
+                Would you like to save your changes before leaving?
+              </div>
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <Button
+                  className="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded w-full md:w-auto"
+                  type="button"
+                  onClick={() => {
+                    setShowUnsavedWarning(false);
+                    setPendingNavigation(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded w-full md:w-auto"
+                  type="button"
+                  onClick={() => {
+                    setHasUnsavedAttachments(false);
+                    setShowUnsavedWarning(false);
+                    if (pendingNavigation) {
+                      pendingNavigation();
+                    }
+                    setPendingNavigation(null);
+                  }}
+                >
+                  Leave Without Saving
+                </Button>
+                <Button
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full md:w-auto"
+                  type="button"
+                  onClick={async () => {
+                    setShowUnsavedWarning(false);
+                    await handleSaveUpdates();
+                    setPendingNavigation(null);
+                  }}
+                >
+                  Save & Leave
                 </Button>
               </div>
             </div>
