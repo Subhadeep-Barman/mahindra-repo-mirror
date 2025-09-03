@@ -129,25 +129,43 @@ def generate_job_order_id(department: str, db: Session) -> str:
     - For Chennai: JO VTC-<year>-<count>
     - For Nashik:  JO VTC_N-<year>-<count>
     - For others:  JO VTC-<year>-<count>
-    The counter is separate for each department.
+    The counter is separate for each department and ensures no duplicates.
     """
     current_year = datetime.utcnow().year % 100
+    
+    # Define prefix based on department
     if department == "VTC_JO Chennai":
-        count = db.query(JobOrder).filter(JobOrder.department == "VTC_JO Chennai").count() + 1
-        count_str = f"{count:04d}"
-        return f"JO VTC-{current_year}-{count_str}"
+        prefix = f"JO VTC-{current_year}-"
     elif department == "VTC_JO Nashik":
-        count = db.query(JobOrder).filter(JobOrder.department == "VTC_JO Nashik").count() + 1
-        count_str = f"{count:04d}"
-        return f"JO VTC_N-{current_year}-{count_str}"
+        prefix = f"JO VTC_N-{current_year}-"
     elif department == "PDCD_JO Chennai":
-        count = db.query(JobOrder).filter(JobOrder.department == "PDCD_JO Chennai").count() + 1
-        count_str = f"{count:04d}"
-        return f"JO PDCD-{current_year}-{count_str}"
+        prefix = f"JO PDCD-{current_year}-"
     else:
-        count = db.query(JobOrder).filter(JobOrder.department == department).count() + 1
-        count_str = f"{count:04d}"
-        return f"JO VTC-{current_year}-{count_str}"
+        prefix = f"JO VTC-{current_year}-"
+    
+    # Find the max job order number for the given prefix
+    # We'll query all job orders with this prefix and extract the highest number
+    job_orders = db.query(JobOrder).filter(
+        JobOrder.job_order_id.like(f"{prefix}%")
+    ).all()
+    
+    max_number = 0
+    for job in job_orders:
+        try:
+            # Extract the number part from the job_order_id
+            number_part = job.job_order_id.split('-')[-1]
+            number = int(number_part)
+            if number > max_number:
+                max_number = number
+        except (ValueError, IndexError):
+            # Skip if we can't parse the number
+            continue
+    
+    # Next number is max + 1, or 1 if no jobs exist
+    next_number = max_number + 1
+    count_str = f"{next_number:04d}"
+    
+    return f"{prefix}{count_str}"
 
 @router.post("/joborders", response_model=JobOrderSchema)
 def create_joborder_api(
