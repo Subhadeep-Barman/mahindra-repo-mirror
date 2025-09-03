@@ -1763,16 +1763,18 @@ export default function CreateJobOrder() {
       missing.push('DPF Regen Occurs (g)');
     }
 
-    // Check attachments
-    const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
-    const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
-    const hasEmissionCheck = Array.isArray(test.emission_check_attachment || test.emissionCheckAttachment) && (test.emission_check_attachment || test.emissionCheckAttachment).length > 0;
-    const hasA2L = Array.isArray(test.A2L || test.a2l_attachment) && (test.A2L || test.a2l_attachment).length > 0;
+    // Check attachments - Skip for PDCD Chennai department
+    if (form.department !== "PDCD_JO Chennai") {
+      const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
+      const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
+      const hasEmissionCheck = Array.isArray(test.emission_check_attachment || test.emissionCheckAttachment) && (test.emission_check_attachment || test.emissionCheckAttachment).length > 0;
+      const hasA2L = Array.isArray(test.A2L || test.a2l_attachment) && (test.A2L || test.a2l_attachment).length > 0;
 
-    if (!hasDataset) missing.push('Dataset Attachment');
-    if (!hasExperiment) missing.push('Experiment Attachment');
-    if (!hasEmissionCheck) missing.push('Emission Check Attachment');
-    if (!hasA2L) missing.push('A2L Attachment');
+      if (!hasDataset) missing.push('Dataset Attachment');
+      if (!hasExperiment) missing.push('Experiment Attachment');
+      if (!hasEmissionCheck) missing.push('Emission Check Attachment');
+      if (!hasA2L) missing.push('A2L Attachment');
+    }
 
     // Validate Coast Down Data if inertia class is Coastdown Loading
     if (test.inertiaClass === "Coastdown Loading") {
