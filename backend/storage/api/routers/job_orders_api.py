@@ -223,10 +223,8 @@ def read_joborders(
     # Otherwise, filter by creator or cft_members
     filtered_joborders = []
     for j in joborders:
-        if j.id_of_creator == user_id:
-            filtered_joborders.append(j)
-            continue
-        if is_user_in_cft_members(j.cft_members, user_id):
+        # Job order is visible only if user is BOTH the creator AND in CFT members
+        if j.id_of_creator == user_id and is_user_in_cft_members(j.cft_members, user_id):
             filtered_joborders.append(j)
     return [joborder_to_dict(j, db) for j in filtered_joborders]
 
