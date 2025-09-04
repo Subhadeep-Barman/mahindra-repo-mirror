@@ -653,12 +653,63 @@ export default function PDCDCreateJobOrder() {
   };
 
   // Handler for creating job order
+  // Function to check if user has reached the limit of 5 job orders without providing ratings
+  const checkJobOrderLimit = async () => {
+    try {
+      const department = form.department || "PDCD_JO Chennai";
+      const response = await axios.get(`${apiURL}/joborders`, { params: { department, user_id: userId, role: userRole } });
+      const userJobOrders = response.data.filter(order => order.id_of_creator === userId);
+      
+      // If user has less than 5 job orders, they can create more
+      if (userJobOrders.length < 5) {
+        return { limitReached: false };
+      }
+      
+      // Check if any completed job orders are missing ratings
+      const unratedCompletedOrders = [];
+      for (const jobOrder of userJobOrders) {
+        // Get test orders for this job order
+        const testOrdersResponse = await axios.get(`${apiURL}/testorders`, { 
+          params: { job_order_id: jobOrder.job_order_id } 
+        });
+        const testOrders = testOrdersResponse.data || [];
+        
+        // Find completed test orders without ratings
+        const unratedOrders = testOrders.filter(order => 
+          order.status === "Completed" && !order.rating
+        );
+        
+        if (unratedOrders.length > 0) {
+          unratedCompletedOrders.push(...unratedOrders);
+        }
+      }
+      
+      return { 
+        limitReached: unratedCompletedOrders.length > 0,
+        unratedOrders: unratedCompletedOrders
+      };
+    } catch (error) {
+      console.error("Error checking job order limit:", error);
+      return { limitReached: false }; // Default to allowing creation if check fails
+    }
+  };
+
   const handleCreateJobOrder = async (e) => {
     e.preventDefault();
 
     // Require at least one CFT member
     if (!cftMembers || cftMembers.length === 0) {
       showSnackbar("Please add at least one CFT member before creating a job order.", "error");
+      return;
+    }
+    
+    // Check if user has reached the limit of 5 job orders without providing ratings
+    const { limitReached, unratedOrders } = await checkJobOrderLimit();
+    if (limitReached) {
+      showSnackbar(
+        `You have reached the maximum limit of 5 job orders. Please provide ratings for your completed test orders before creating a new job order. Unrated test order ID(s): ${unratedOrders.map(o => o.test_order_id).join(', ')}`,
+        "error"
+      );
       return;
     }
     
