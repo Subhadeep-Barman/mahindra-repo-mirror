@@ -198,8 +198,30 @@ export default function EditTestOrder() {
   const [selectedValidation, setSelectedValidation] = useState(null); // 'valid' or 'invalid'
   const [validationConfirmModal, setValidationConfirmModal] = useState(false);
 
+   // State for tracking unsaved changes in test engineer attachments
+  const [hasUnsavedAttachments, setHasUnsavedAttachments] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
+
   const handleBack = () => {
+    // Check if there are unsaved attachment changes for test engineers
+    if (isTestEngineer && test.status === "Completed" && hasUnsavedAttachments) {
+      setPendingNavigation(() => () => navigate(-1));
+      setShowUnsavedWarning(true);
+      return;
+    }
     navigate(-1);
+  };
+
+
+   // Custom navigation handler that checks for unsaved changes
+  const handleNavigation = (path) => {
+    if (isTestEngineer && test.status === "Completed" && hasUnsavedAttachments) {
+      setPendingNavigation(() => () => navigate(path));
+      setShowUnsavedWarning(true);
+      return;
+    }
+    navigate(path);
   };
 
   // Handle form field changes
@@ -288,6 +310,46 @@ export default function EditTestOrder() {
     // Fetch engine numbers
   // Removed fetchEngineNumbers and its usage
   }, []);
+
+  // Add browser navigation warning for unsaved attachments
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isTestEngineer && test.status === "Completed" && hasUnsavedAttachments) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasUnsavedAttachments, isTestEngineer, test.status]);
+
+  // Add browser back button navigation warning for unsaved attachments
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (isTestEngineer && test.status === "Completed" && hasUnsavedAttachments) {
+        e.preventDefault();
+        window.history.pushState(null, "", window.location.href);
+        setShowUnsavedWarning(true);
+        setPendingNavigation(() => () => {
+          setHasUnsavedAttachments(false);
+          window.history.back();
+        });
+      }
+    };
+
+    if (isTestEngineer && test.status === "Completed" && hasUnsavedAttachments) {
+      window.history.pushState(null, "", window.location.href);
+      window.addEventListener("popstate", handlePopState);
+    }
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [hasUnsavedAttachments, isTestEngineer, test.status]);
 
   // Format date for display in IST
   const formatDate = (dateString) => {
@@ -608,6 +670,7 @@ export default function EditTestOrder() {
       const testOrderPayload = getTestOrderPayload(test.status);
       await axios.put(`${apiURL}/testorders-update?test_order_id=${encodeURIComponent(test.testOrderId)}`, testOrderPayload);
       showSnackbar("Test order updated successfully!", "success");
+      setHasUnsavedAttachments(false); // Reset unsaved changes flag
       await handleSendMail("9", jobOrderId, test.testOrderId); // Send mail with case ID 9
       navigate(-1);
     } catch (err) {
@@ -617,7 +680,7 @@ export default function EditTestOrder() {
 
   return (
     <>
-      <Navbar1 />
+      <Navbar1 onHomeClick={handleNavigation} />
       <div className="bg-white dark:bg-black min-h-screen">
         {/* Header Row */}
         <div className="flex items-center justify-between px-8 pt-6">
@@ -1151,120 +1214,122 @@ export default function EditTestOrder() {
           </div>
 
           {/* Coast Down Data Section */}
-          <div className="mt-6 border rounded shadow px-4 py-3 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600">
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-semibold text-sm text-blue-700 dark:text-blue-300">
-                Coast Down Data
+          {test.inertiaClass === "Coastdown Loading" && (
+          <div className="mt-6 border rounded shadow-lg shadow-gray-300/40 px-4 py-3 bg-blue-50 dark:bg-inherit transition-all duration-200 hover:shadow-xl hover:shadow-gray-400/40 hover:-translate-y-1 cursor-pointer">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="font-semibold text-sm text-blue-700">
+                Coast Down Data (CD) - Required for Coastdown Loading
               </span>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">
-                  {console.log("Coast Down Section Render - showCoastDownData:", test.showCoastDownData)}
-                  Debug: {test.showCoastDownData ? "Visible" : "Hidden"}
-                </span>
-                <Switch
-                  checked={test.showCoastDownData}
-                  onCheckedChange={(checked) => {
-                    console.log("Switch toggled to:", checked);
-                    setTest(prev => ({ ...prev, showCoastDownData: checked }));
-                  }}
-                  className="data-[state=checked]:bg-red-500"
+            </div>
+            <div>
+              <div className="mb-3">
+                <Label className="text-xs">
+                  Coast Down Test Report Reference <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  value={test.cdReportRef || form.cdReportRef}
+                  onChange={(e) =>
+                    handleTestChange(idx, "cdReportRef", e.target.value)
+                  }
+                  placeholder="Enter Coast Test Report Ref."
+                  className="mt-1"
+                    disabled={!areFieldsEditable()}
                 />
               </div>
-            </div>
-            {test.showCoastDownData && (
-              <div>
-                <div className="mb-3">
-                  <Label className="text-xs dark:text-white">
-                    Coast Down Test Report Reference
+              <div className="mb-2 font-semibold text-xs">CD Values</div>
+              <div className="grid grid-cols-4 gap-3 text-xs">
+                <div>
+                  <Label className="text-xs">
+                    Vehicle Reference mass (Kg) <span className="text-red-500">*</span>
                   </Label>
                   <Input
-                    value={test.cdReportRef}
-                    onChange={(e) => handleTestChange("cdReportRef", e.target.value)}
-                    placeholder="Enter Coast Test Report Ref."
+                    value={test.vehicleRefMass || form.vehicleRefMass}
+                    onChange={(e) =>
+                      handleTestChange(idx, "vehicleRefMass", e.target.value)
+                    }
+                    placeholder="Enter Vehicle Reference mass"
                     className="mt-1"
-                    disabled={!areFieldsEditable()}
+                      disabled={!areFieldsEditable()}
                   />
                 </div>
-                <div className="mb-2 font-semibold text-xs dark:text-white">CD Values</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                  <div>
-                    <Label className="text-xs dark:text-white">
-                      Vehicle Reference mass (Kg)
-                    </Label>
-                    <Input
-                      value={test.vehicleRefMass}
-                      onChange={(e) => handleTestChange("vehicleRefMass", e.target.value)}
-                      placeholder="Enter Vehicle Reference mass"
-                      className="mt-1"
+                <div>
+                  <Label className="text-xs">A (N) <span className="text-red-500">*</span></Label>
+                  <Input
+                    value={test.aN || form.aN}
+                    onChange={(e) =>
+                      handleTestChange(idx, "aN", e.target.value)
+                    }
+                    placeholder="Enter A (N)"
+                    className="mt-1"
                       disabled={!areFieldsEditable()}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs dark:text-white">A (N)</Label>
-                    <Input
-                      value={test.aN}
-                      onChange={(e) => handleTestChange("aN", e.target.value)}
-                      placeholder="Enter A (N)"
-                      className="mt-1"
-                      disabled={!areFieldsEditable()}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs dark:text-white">B (N/kmph)</Label>
-                    <Input
-                      value={test.bNkmph}
-                      onChange={(e) => handleTestChange("bNkmph", e.target.value)}
-                      placeholder="Enter B (N/kmph)"
-                      className="mt-1"
-                      disabled={!areFieldsEditable()}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs dark:text-white">C (N/kmph^2)</Label>
-                    <Input
-                      value={test.cNkmph2}
-                      onChange={(e) => handleTestChange("cNkmph2", e.target.value)}
-                      placeholder="Enter C (N/kmph^2)"
-                      className="mt-1"
-                      disabled={!areFieldsEditable()}
-                    />
-                  </div>
+                  />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mt-3">
-                  <div>
-                    <Label className="text-xs dark:text-white">F0 (N)</Label>
-                    <Input
-                      value={test.f0N}
-                      onChange={(e) => handleTestChange("f0N", e.target.value)}
-                      placeholder="Enter F0 (N)"
-                      className="mt-1"
+                <div>
+                  <Label className="text-xs">B (N/kmph) <span className="text-red-500">*</span></Label>
+                  <Input
+                    value={test.bNkmph || form.bNkmph}
+                    onChange={(e) =>
+                      handleTestChange(idx, "bNkmph", e.target.value)
+                    }
+                    placeholder="Enter B (N/kmph)"
+                    className="mt-1"
                       disabled={!areFieldsEditable()}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs dark:text-white">F1 (N/kmph)</Label>
-                    <Input
-                      value={test.f1Nkmph}
-                      onChange={(e) => handleTestChange("f1Nkmph", e.target.value)}
-                      placeholder="Enter F1 (N/kmph)"
-                      className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">C (N/kmph^2) <span className="text-red-500">*</span></Label>
+                  <Input
+                    value={test.cNkmph2 || form.cNkmph2}
+                    onChange={(e) =>
+                      handleTestChange(idx, "cNkmph2", e.target.value)
+                    }
+                    placeholder="Enter C (N/kmph^2)"
+                    className="mt-1"
                       disabled={!areFieldsEditable()}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs dark:text-white">F2 (N/kmph^2)</Label>
-                    <Input
-                      value={test.f2Nkmph2}
-                      onChange={(e) => handleTestChange("f2Nkmph2", e.target.value)}
-                      placeholder="Enter F2 (N/kmph^2)"
-                      className="mt-1"
-                      disabled={!areFieldsEditable()}
-                    />
-                  </div>
+                  />
                 </div>
               </div>
-            )}
+              <div className="grid grid-cols-3 gap-3 text-xs mt-3">
+                <div>
+                  <Label className="text-xs">F0 (N) <span className="text-red-500">*</span></Label>
+                  <Input
+                    value={test.f0N || form.f0N}
+                    onChange={(e) =>
+                      handleTestChange(idx, "f0N", e.target.value)
+                    }
+                    placeholder="Enter F0 (N)"
+                    className="mt-1"
+                      disabled={!areFieldsEditable()}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">F1 (N/kmph) <span className="text-red-500">*</span></Label>
+                  <Input
+                    value={test.f1Nkmph || form.f1Nkmph}
+                    onChange={(e) =>
+                      handleTestChange(idx, "f1Nkmph", e.target.value)
+                    }
+                    placeholder="Enter F1 (N/kmph)"
+                    className="mt-1"
+                      disabled={!areFieldsEditable()}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">F2 (N/kmph^2) <span className="text-red-500">*</span></Label>
+                  <Input
+                    value={test.f2Nkmph2 || form.f2Nkmph2}
+                    onChange={(e) =>
+                      handleTestChange(idx, "f2Nkmph2", e.target.value)
+                    }
+                    placeholder="Enter F2 (N/kmph^2)"
+                    className="mt-1"
+                      disabled={!areFieldsEditable()}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
+          )}
 
           {/* Attachments Section */}
           <div className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-4 mt-4 mb-2 shadow-inner">
@@ -1275,14 +1340,13 @@ export default function EditTestOrder() {
               <div>
                 {/* <Label className="dark:text-white">Emission Checklist Attachment</Label> */}
                 <Label className="dark:text-white">
-                  {(returnPath && returnPath.includes('rde')) || (jobOrderId && jobOrderId.includes('RDE'))
-                    ? "Emission Checklist Attachment / Type-1 Report"
-                    : "Emission Checklist Attachment"
-                  }
+                  {/* if role is TestEngineer and department is RDE JO then show type-1 report */}
+                  {/* i have department in returnstate underjoborder so have to check if department is RDE JO */}
+                  {(isTestEngineer || isAdmin) && returnState?.jobOrder?.department === 'RDE JO' ? "Emission Checklist Attachment/Type-1 Report" : "Emission Checklist Attachment"}
                 </Label>
                 <DropzoneFileList
                   buttonText={
-                    (returnPath && returnPath.includes('rde')) || (jobOrderId && jobOrderId.includes('RDE'))
+                    (returnState && returnState?.jobOrder?.department === 'RDE JO') || (jobOrderId && jobOrderId.includes('RDE JO'))
                       ? "Emission Checklist Attachment / Type-1 Report"
                       : "Emission Checklist Attachment"
                   }
@@ -1446,6 +1510,10 @@ export default function EditTestOrder() {
                   }}
                   setFormData={(updatedData) => {
                     setTest(prev => ({ ...prev, ...updatedData }));
+                    // Track unsaved changes for test engineer attachments when test is completed
+                    if (isTestEngineer && test.status === "Completed") {
+                      setHasUnsavedAttachments(true);
+                    }
                   }}
                   id="test-edit"
                   submitted={false}
@@ -1470,6 +1538,10 @@ export default function EditTestOrder() {
                   }}
                   setFormData={(updatedData) => {
                     setTest(prev => ({ ...prev, ...updatedData }));
+                    // Track unsaved changes for test engineer attachments when test is completed
+                    if (isTestEngineer && test.status === "Completed") {
+                      setHasUnsavedAttachments(true);
+                    }
                   }}
                   id="test-edit"
                   submitted={false}
@@ -1494,6 +1566,10 @@ export default function EditTestOrder() {
                   }}
                   setFormData={(updatedData) => {
                     setTest(prev => ({ ...prev, ...updatedData }));
+                     // Track unsaved changes for test engineer attachments when test is completed
+                    if (isTestEngineer && test.status === "Completed") {
+                      setHasUnsavedAttachments(true);
+                    }
                   }}
                   id="test-edit"
                   submitted={false}
@@ -1518,6 +1594,10 @@ export default function EditTestOrder() {
                   }}
                   setFormData={(updatedData) => {
                     setTest(prev => ({ ...prev, ...updatedData }));
+                    // Track unsaved changes for test engineer attachments when test is completed
+                    if (isTestEngineer && test.status === "Completed") {
+                      setHasUnsavedAttachments(true);
+                    }
                   }}
                   id="test-edit"
                   submitted={false}
@@ -2020,6 +2100,70 @@ export default function EditTestOrder() {
                   disabled={rating === 0}
                 >
                   Submit Rating
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Unsaved Changes Warning Modal */}
+        {showUnsavedWarning && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
+            <div className="bg-white dark:bg-gray-800 rounded shadow-lg p-4 w-full max-w-sm md:max-w-md">
+              <div className="font-semibold mb-3 dark:text-white text-lg">
+                Unsaved Changes
+              </div>
+              <div className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+                You have uploaded new files in the Test Engineers Attachments section but haven't saved them yet.
+                These changes will be lost if you navigate away.
+              </div>
+              <div className="mb-4 text-sm text-red-600 dark:text-red-400 font-medium">
+                Would you like to save your changes before leaving?
+              </div>
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <Button
+                  className="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded w-full md:w-auto"
+                  type="button"
+                  onClick={() => {
+                    setShowUnsavedWarning(false);
+                    setPendingNavigation(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded w-full md:w-auto"
+                  type="button"
+                  onClick={() => {
+                    setHasUnsavedAttachments(false);
+                    setShowUnsavedWarning(false);
+                    if (pendingNavigation) {
+                      pendingNavigation();
+                       } else {
+                      // If no pending navigation, go back to previous page
+                      navigate(-1);
+                    }
+                    setPendingNavigation(null);
+                  }}
+                >
+                  Leave Without Saving
+                </Button>
+                <Button
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full md:w-auto"
+                  type="button"
+                  onClick={async () => {
+                    setShowUnsavedWarning(false);
+                    await handleSaveUpdates();
+                     if (pendingNavigation) {
+                      pendingNavigation();
+                    } else {
+                      // If no pending navigation, go back to previous page
+                      navigate(-1);
+                    }
+                    setPendingNavigation(null);
+                  }}
+                >
+                  Save & Leave
                 </Button>
               </div>
             </div>

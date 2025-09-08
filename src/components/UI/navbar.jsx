@@ -24,7 +24,7 @@ import showSnackbar from "@/utils/showSnackbar";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
-export default function Navbar() {
+export default function Navbar({ onHomeClick }) {
   const isDarkMode = useStore((s) => s.isDarkMode);
   const setIsDarkMode = useStore((s) => s.setIsDarkMode);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -217,7 +217,7 @@ export default function Navbar() {
 
           <button
             className="p-2.5 text-red-600 dark:text-red-400 rounded-xl hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 dark:hover:from-red-900/30 dark:hover:to-red-800/30 hover:text-red-700 dark:hover:text-red-300 transition-all duration-300 hover:scale-105"
-            onClick={() => navigate("/home")}
+             onClick={() => onHomeClick ? onHomeClick("/home") : navigate("/home")}
           >
             <Home className="h-5 w-5" />
           </button>

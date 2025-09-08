@@ -589,7 +589,7 @@ const Dropzone = ({
       }
 
       const response = await axios.get(
-        `${apiURL}/testorders/download_job_order_id/`,
+        `${apiURL}/download_job_order_id/`,
         {
           params,
           responseType: "blob",

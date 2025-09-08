@@ -615,18 +615,19 @@ export default function PDCDCreateJobOrder() {
   };
 
   // Function to check if job order with same vehicle body number and engine serial number exists
-  const checkForDuplicateJobOrder = async (vehicleBodyNumber, engineSerialNumber) => {
+  const checkForDuplicateJobOrder = async (vehicleBodyNumber, engineSerialNumber, domain) => {
     try {
       // job order read api call
       const department = form.department || "PDCD_JO Chennai"; // Default to Chennai if not set
       const response = await axios.get(`${apiURL}/joborders`, { params: { department, user_id: userId, role: userRole } });
       const jobOrders = response.data;
       
-      // Find if there's already a job order with same vehicle body number and engine serial number
+      // Find if there's already a job order with same vehicle body number, engine serial number, AND domain
       const duplicate = jobOrders.find(
         (jobOrder) => 
           jobOrder.vehicle_body_number === vehicleBodyNumber && 
-          jobOrder.engine_serial_number === engineSerialNumber
+          jobOrder.engine_serial_number === engineSerialNumber &&
+          jobOrder.domain === domain
       );
       
       return duplicate;
@@ -652,6 +653,47 @@ export default function PDCDCreateJobOrder() {
     }
   };
 
+  // Function to check if user has reached the limit of 5 job orders without providing ratings
+  const checkJobOrderLimit = async () => {
+    try {
+      const department = form.department || "PDCD_JO Chennai";
+      const response = await axios.get(`${apiURL}/joborders`, { params: { department, user_id: userId, role: userRole } });
+      const userJobOrders = response.data.filter(order => order.id_of_creator === userId);
+      
+      // If user has less than 5 job orders, they can create more
+      if (userJobOrders.length < 5) {
+        return { limitReached: false };
+      }
+      
+      // Check if any completed job orders are missing ratings
+      const unratedCompletedOrders = [];
+      for (const jobOrder of userJobOrders) {
+        // Get test orders for this job order
+        const testOrdersResponse = await axios.get(`${apiURL}/testorders`, { 
+          params: { job_order_id: jobOrder.job_order_id } 
+        });
+        const testOrders = testOrdersResponse.data || [];
+        
+        // Find completed test orders without ratings
+        const unratedOrders = testOrders.filter(order => 
+          order.status === "Completed" && !order.rating
+        );
+        
+        if (unratedOrders.length > 0) {
+          unratedCompletedOrders.push(...unratedOrders);
+        }
+      }
+      
+      return { 
+        limitReached: unratedCompletedOrders.length > 0,
+        unratedOrders: unratedCompletedOrders
+      };
+    } catch (error) {
+      console.error("Error checking job order limit:", error);
+      return { limitReached: false }; // Default to allowing creation if check fails
+    }
+  };
+
   // Handler for creating job order
   const handleCreateJobOrder = async (e) => {
     e.preventDefault();
@@ -662,13 +704,23 @@ export default function PDCDCreateJobOrder() {
       return;
     }
     
+    // Check if user has reached the limit of 5 job orders without providing ratings
+    const { limitReached, unratedOrders } = await checkJobOrderLimit();
+    if (limitReached) {
+      showSnackbar(
+        `You have reached the maximum limit of 5 job orders. Please provide ratings for your completed test orders before creating a new job order. Unrated test order ID(s): ${unratedOrders.map(o => o.test_order_id).join(', ')}`,
+        "error"
+      );
+      return;
+    }
+
     // Check for duplicate job orders with the same vehicle body number and engine serial number
-    const duplicate = await checkForDuplicateJobOrder(form.vehicleBodyNumber, form.engineSerialNumber);
+    const duplicate = await checkForDuplicateJobOrder(form.vehicleBodyNumber, form.engineSerialNumber, form.domain);
     
     if (duplicate) {
       const suggestedNumber = suggestNewVehicleBodyNumber(form.vehicleBodyNumber);
       showSnackbar(
-        `A job order already exists with the same combination of body number (${form.vehicleBodyNumber}) and engine number (${form.engineSerialNumber}). Please create a new vehicle with a different body number, suggested format: "${suggestedNumber}"`, 
+        `A job order already exists with the same combination of body number (${form.vehicleBodyNumber}), engine number (${form.engineSerialNumber}), and domain (${form.domain}). Please create a new vehicle with a different body number, suggested format: "${suggestedNumber}", or choose a different domain.`, 
         "error"
       );
       return;
