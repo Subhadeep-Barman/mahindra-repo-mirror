@@ -145,9 +145,13 @@ def read_rde_joborders(
 ):
     query = db.query(RDEJobOrder)
     rde_joborders = query.all()
+    # If role is TestEngineer or Admin, return job orders with at least one test order
     if role in ["TestEngineer", "Admin"]:
-        # If the user is a Test Engineer or Admin, return all job orders
-        return [rde_joborder_to_dict(r, db) for r in rde_joborders]
+        return [
+            rde_joborder_to_dict(r, db)
+            for r in rde_joborders
+            if db.query(TestOrder).filter(TestOrder.job_order_id == r.job_order_id).count() > 0
+        ]
     if user_id:
         filtered = []
         for r in rde_joborders:

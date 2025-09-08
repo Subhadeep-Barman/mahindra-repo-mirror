@@ -224,9 +224,13 @@ def read_joborders(
     if department:
         query = query.filter(JobOrder.department == department)
     joborders = query.all()
-    # If role is TestEngineer or Admin, return all job orders
+    # If role is TestEngineer or Admin, return job orders with at least one test order
     if role in ["TestEngineer", "Admin"]:
-        return [joborder_to_dict(j, db) for j in joborders]
+        return [
+            joborder_to_dict(j, db)
+            for j in joborders
+            if db.query(TestOrder).filter(TestOrder.job_order_id == j.job_order_id).count() > 0
+        ]
     # Otherwise, filter by creator or cft_members
     filtered_joborders = []
     for j in joborders:
