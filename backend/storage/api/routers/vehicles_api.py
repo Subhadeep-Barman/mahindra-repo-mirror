@@ -2,7 +2,7 @@ from backend.storage.api.api_utils import get_db
 from fastapi import APIRouter, HTTPException, Depends, Body
 from pathlib import Path
 import json
-from backend.storage.models.models import Vehicle, Engine  # Add Engine import
+from backend.storage.models.models import Vehicle, Engine
 from sqlalchemy.orm import Session
 from typing import List, Optional, Union
 from datetime import datetime
