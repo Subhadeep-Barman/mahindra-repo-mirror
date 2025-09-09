@@ -44,7 +44,7 @@ async def log_interaction(log_request: LogRequest):
         vtc_logger.debug(f"Logged interaction: Employee {employee_id} - {interaction}")
     except Exception as e:
         vtc_logger.error("Error logging interaction.")
-        vtc_logger.debug(f"Error details: {e}", exc_info=True)
+        vtc_logger.debug("Error details:", exc_info=True)
         raise HTTPException(
             status_code=500, detail=f"Error logging interaction: please try again later"
         )
@@ -65,7 +65,7 @@ async def get_logs():
         vtc_logger.debug("Log file read successfully.")
     except Exception as e:
         vtc_logger.error("Error retrieving logs.")
-        vtc_logger.debug(f"Error details: {e}", exc_info=True)
+        vtc_logger.debug("Error details:", exc_info=True)
         raise HTTPException(
             status_code=500, detail=f"Error retrieving logs: please try again later"
         )

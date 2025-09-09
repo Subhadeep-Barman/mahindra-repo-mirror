@@ -48,8 +48,9 @@ def get_employee_email_by_role(db: Session, job_order_id: str, role: str) -> lis
             return []
         return [user.email]
     except Exception as e:
-        vtc_logger.error(f"Error in get_employee_email_by_role: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        vtc_logger.error(f"Error in get_employee_email_by_role:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
+        raise HTTPException(status_code=500, detail="Please try again later")
 
 
 def get_role_for_caseid(caseid: str) -> str:
@@ -79,8 +80,9 @@ def get_role_for_caseid(caseid: str) -> str:
         vtc_logger.debug(f"Role for caseid {caseid}: {role}")
         return role
     except Exception as e:
-        vtc_logger.error(f"Error in get_role_for_caseid: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        vtc_logger.error(f"Error in get_role_for_caseid:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
+        raise HTTPException(status_code=500, detail="Please try again later")
 
 
 def get_all_emails_by_role(db: Session, role: str) -> list:
@@ -100,8 +102,9 @@ def get_all_emails_by_role(db: Session, role: str) -> list:
         vtc_logger.info(f"Found {len(emails)} emails for role {role}")
         return emails
     except Exception as e:
-        vtc_logger.error(f"Error in get_all_emails_by_role: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        vtc_logger.error(f"Error in get_all_emails_by_role:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
+        raise HTTPException(status_code=500, detail="Please try again later")
 
 
 def load_email_template(caseid: str) -> tuple:
@@ -131,8 +134,9 @@ def load_email_template(caseid: str) -> tuple:
         vtc_logger.debug(f"Template loaded for caseid {caseid}. Subject: {subject[:30]}...")
         return subject, message
     except Exception as e:
-        vtc_logger.error(f"Error in load_email_template: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        vtc_logger.error(f"Error in load_email_template:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
+        raise HTTPException(status_code=500, detail="Please try again later")
 
 
 def get_cft_member_emails(job_order, db: Session) -> list:
@@ -167,7 +171,8 @@ def get_cft_member_emails(job_order, db: Session) -> list:
                     email = member_dict.get("email")
                     vtc_logger.debug(f"CFT member string parsed: code={code}, email={email}")
                 except Exception as e:
-                    vtc_logger.error(f"Error parsing CFT member string: {e}")
+                    vtc_logger.error(f"Error parsing CFT member string:")
+                    vtc_logger.debug(f"Error details:", exc_info=True)
                     code = None
                     email = None
             # If email is not present, try to fetch from User table
@@ -235,7 +240,8 @@ def send_email(to_emails: list, subject: str, body: str, cc_emails: list = None)
             vtc_logger.debug("Email sent successfully")
         vtc_logger.info(f"Email sent to: {to_emails} with CC: {cc_emails} and subject: {subject}")
     except Exception as e:
-        vtc_logger.error(f"Error sending email: {e}")
+        vtc_logger.error(f"Error sending email:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to send email")
 
 
@@ -256,7 +262,8 @@ def get_group_email_for_caseid(caseid: str) -> str:
         vtc_logger.debug(f"Group email for caseid {caseid}: {group_email}")
         return group_email
     except Exception as e:
-        vtc_logger.error(f"Error in get_group_email_for_caseid: {e}")
+        vtc_logger.error(f"Error in get_group_email_for_caseid:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
         return None
 
 
@@ -267,7 +274,8 @@ def get_total_tests_for_job(db: Session, job_order_id: str) -> int:
     try:
         return db.query(TestOrder).filter(TestOrder.job_order_id == job_order_id).count()
     except Exception as e:
-        vtc_logger.error(f"Error in get_total_tests_for_job: {e}")
+        vtc_logger.error(f"Error in get_total_tests_for_job:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
         return 0
 
 
@@ -286,7 +294,8 @@ def get_job_creator_info(db: Session, job_order) -> dict:
             "created_at": created_at
         }
     except Exception as e:
-        vtc_logger.error(f"Error in get_job_creator_info: {e}")
+        vtc_logger.error(f"Error in get_job_creator_info:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
         return {
             "creator_name": creator_name,
             "creator_id": creator_id,
@@ -320,7 +329,8 @@ def get_test_order_remarks(db: Session, test_order_id: str) -> dict:
         vtc_logger.debug(f"Remarks for test_order_id {test_order_id}: {remarks}")
         return remarks
     except Exception as e:
-        vtc_logger.error(f"Error in get_test_order_remarks: {e}")
+        vtc_logger.error(f"Error in get_test_order_remarks:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
         return {
             "remark": "",
             "rejection_remarks": "",
@@ -337,7 +347,8 @@ def get_job_order_test_status(db: Session, job_order_id: str) -> str:
         job_order = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
         return job_order.test_status if job_order and hasattr(job_order, "test_status") else ""
     except Exception as e:
-        vtc_logger.error(f"Error in get_job_order_test_status: {e}")
+        vtc_logger.error(f"Error in get_job_order_test_status:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
         return ""
 
 
@@ -349,7 +360,8 @@ def get_job_order_completed_test_count(db: Session, job_order_id: str) -> int:
         job_order = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
         return job_order.completed_test_count if job_order and hasattr(job_order, "completed_test_count") else 0
     except Exception as e:
-        vtc_logger.error(f"Error in get_job_order_completed_test_count: {e}")
+        vtc_logger.error(f"Error in get_job_order_completed_test_count:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
         return 0
 
 
@@ -382,7 +394,8 @@ def get_test_order_type_and_objective(db: Session, test_order_id: str) -> dict:
             "test_created_at": test_created_at
         }
     except Exception as e:
-        vtc_logger.error(f"Error in get_test_order_type_and_objective: {e}")
+        vtc_logger.error(f"Error in get_test_order_type_and_objective:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
         return {
             "test_type": "",
             "test_objective": "",
@@ -399,7 +412,8 @@ def get_test_order_id(db: Session, test_order_id: str) -> str:
         test_order = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
         return test_order.test_order_id if test_order and hasattr(test_order, "test_order_id") else ""
     except Exception as e:
-        vtc_logger.error(f"Error in get_test_order_id: {e}")
+        vtc_logger.error(f"Error in get_test_order_id:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
         return ""
 
 
@@ -436,7 +450,8 @@ def get_notify_data(db: Session) -> dict:
             "notify_values": notify_values
         }
     except Exception as e:
-        vtc_logger.error(f"Error in get_notify_data: {e}")
+        vtc_logger.error(f"Error in get_notify_data:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
         return {
             "notify_fields": [],
             "notify_values": {}
@@ -688,7 +703,8 @@ def get_department_cc_emails(job_order, db: Session) -> list:
                 department = get_job_department(rde_job_order)
                 print(f"DEBUG - Found RDE job order, department: {department}")
         except Exception as e:
-            vtc_logger.error(f"Error getting RDE job order: {e}")
+            vtc_logger.error(f"Error getting RDE job order:")
+            vtc_logger.debug(f"Error details:", exc_info=True)
     
     vtc_logger.debug(f"Department for CC emails: {department}")
     print(f"DEBUG - Department detected for CC emails: {department}")
@@ -722,7 +738,8 @@ def get_test_order_updater_name(db: Session, test_order_id: str) -> str:
             return test_order.name_of_updater
         return ""
     except Exception as e:
-        vtc_logger.error(f"Error in get_test_order_updater_name: {e}")
+        vtc_logger.error(f"Error in get_test_order_updater_name:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
         return ""
 
 
@@ -927,7 +944,8 @@ async def send_email_endpoint(
                 rating_remarks = test_order.rating_remarks if hasattr(test_order, "rating_remarks") else ""
             vtc_logger.debug(f"Case 8 - Rating: {rating}, Rating Remarks: {rating_remarks}")
     except Exception as e:
-        vtc_logger.error(f"Error preparing email data: {e}")
+        vtc_logger.error(f"Error preparing email data:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(status_code=500, detail="Error preparing email data")
 
     # Replace placeholders with actual IDs and info
@@ -1080,8 +1098,9 @@ async def add_cft_member(
         vtc_logger.info(f"Added CFT member to job_order_id: {job_order_id}")
         return job_order
     except Exception as e:
-        vtc_logger.error(f"Error in add_cft_member: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        vtc_logger.error(f"Error in add_cft_member:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
+        raise HTTPException(status_code=500, detail="Please try again later")
 
 
 @router.get("/cft_members/read")
@@ -1111,8 +1130,9 @@ async def read_cft_members(job_order_id: str, db: Session = Depends(get_db)):
         vtc_logger.info(f"Read CFT members for job_order_id: {job_order_id}")
         return job_order.cft_members
     except Exception as e:
-        vtc_logger.error(f"Error in read_cft_members: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        vtc_logger.error(f"Error in read_cft_members:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
+        raise HTTPException(status_code=500, detail="Please try again later")
 
 
 @router.put("/cft_members/update")
@@ -1154,8 +1174,9 @@ async def update_cft_member(
         vtc_logger.info(f"Updated CFT member at index {member_index} for job_order_id: {job_order_id}")
         return job_order
     except Exception as e:
-        vtc_logger.error(f"Error in update_cft_member: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        vtc_logger.error(f"Error in update_cft_member:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
+        raise HTTPException(status_code=500, detail="Please try again later")
 
 
 @router.get("/debug_email_routing")
@@ -1301,7 +1322,8 @@ async def debug_email_routing(
             "cft_members_count": len(get_cft_member_emails(job_order, db)) if job_order else 0
         }
     except Exception as e:
-        vtc_logger.error(f"Error in debug_email_routing: {e}")
+        vtc_logger.error(f"Error in debug_email_routing:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
         return {"error": str(e)}
 
 
@@ -1341,10 +1363,6 @@ async def delete_cft_member(
         vtc_logger.info(f"Deleted CFT member at index {member_index} for job_order_id: {job_order_id}")
         return job_order
     except Exception as e:
-        vtc_logger.error(f"Error in delete_cft_member: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
-        vtc_logger.info(f"Deleted CFT member at index {member_index} for job_order_id: {job_order_id}")
-        return job_order
-    except Exception as e:
-        vtc_logger.error(f"Error in delete_cft_member: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        vtc_logger.error(f"Error in delete_cft_member:")
+        vtc_logger.debug(f"Error details:", exc_info=True)
+        raise HTTPException(status_code=500, detail="Please try again later")

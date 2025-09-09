@@ -62,7 +62,8 @@ def read_json_file(file_name: str) -> list:
         with open(file_path, 'r') as f:
             return json.load(f)
     except Exception as e:
-        logger.error(f"Error reading JSON file {file_name}: {e}")
+        logger.error(f"Error reading JSON file {file_name}:")
+        logger.debug(f"Error details:", exc_info=True)
         return []
 
 def write_json_file(file_name: str, data: list) -> bool:
@@ -73,7 +74,8 @@ def write_json_file(file_name: str, data: list) -> bool:
             json.dump(data, f, indent=2)
         return True
     except Exception as e:
-        logger.error(f"Error writing to JSON file {file_name}: {e}")
+        logger.error(f"Error writing to JSON file {file_name}:")
+        logger.debug(f"Error details:", exc_info=True)
         return False
 
 
@@ -107,8 +109,8 @@ def add_project(entry: ProjectCreate):
                 detail="Error saving project data"
             )
     except Exception as e:
-        logger.error(f"Error adding project: {e}")
-        logger.debug(f"Error details: \n", exc_info=True)
+        logger.error(f"Error adding project:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Error adding project. Please try again later."
@@ -136,7 +138,8 @@ def delete_project(entry: StringValue):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting project: {e}")
+        logger.error(f"Error deleting project:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(status_code=500, detail="Error deleting project")
 
 @router.post("/engine-type", status_code=201)
@@ -173,8 +176,8 @@ def add_engine_type(entry: EngineTypeCreate):
                 detail="Error saving engine type data"
             )
     except Exception as e:
-        logger.error(f"Error adding engine type: {e}")
-        logger.debug(f"Error details: \n", exc_info=True)
+        logger.error(f"Error adding engine type:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Error adding engine type. Please try again later."
@@ -206,7 +209,8 @@ def delete_engine_type(entry: StringValue):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting engine type: {e}")
+        logger.error(f"Error deleting engine type:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(status_code=500, detail="Error deleting engine type")
 
 @router.post("/domain", status_code=201)
@@ -243,8 +247,8 @@ def add_domain(entry: DomainCreate):
                 detail="Error saving domain data"
             )
     except Exception as e:
-        logger.error(f"Error adding domain: {e}")
-        logger.debug(f"Error details: \n", exc_info=True)
+        logger.error(f"Error adding domain:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Error adding domain. Please try again later."
@@ -276,7 +280,8 @@ def delete_domain(entry: StringValue):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting domain: {e}")
+        logger.error(f"Error deleting domain:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(status_code=500, detail="Error deleting domain")
 
 @router.post("/test-type", status_code=201)
@@ -313,8 +318,8 @@ def add_test_type(entry: TestTypeCreate):
                 detail="Error saving test type data"
             )
     except Exception as e:
-        logger.error(f"Error adding test type: {e}")
-        logger.debug(f"Error details: \n", exc_info=True)
+        logger.error(f"Error adding test type:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Error adding test type. Please try again later."
@@ -346,7 +351,8 @@ def delete_test_type(entry: StringValue):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting test type: {e}")
+        logger.error(f"Error deleting test type:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(status_code=500, detail="Error deleting test type")
 
 @router.post("/inertia-class", status_code=201)
@@ -383,8 +389,8 @@ def add_inertia_class(entry: InertiaClassCreate):
                 detail="Error saving inertia class data"
             )
     except Exception as e:
-        logger.error(f"Error adding inertia class: {e}")
-        logger.debug(f"Error details: \n", exc_info=True)
+        logger.error(f"Error adding inertia class:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Error adding inertia class. Please try again later."
@@ -416,7 +422,8 @@ def delete_inertia_class(entry: StringValue):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting inertia class: {e}")
+        logger.error(f"Error deleting inertia class:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(status_code=500, detail="Error deleting inertia class")
 
 @router.post("/mode", status_code=201)
@@ -453,8 +460,8 @@ def add_mode(entry: ModeCreate):
                 detail="Error saving mode data"
             )
     except Exception as e:
-        logger.error(f"Error adding mode: {e}")
-        logger.debug(f"Error details: \n", exc_info=True)
+        logger.error(f"Error adding mode:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Error adding mode. Please try again later."
@@ -486,7 +493,8 @@ def delete_mode(entry: StringValue):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting mode: {e}")
+        logger.error(f"Error deleting mode:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(status_code=500, detail="Error deleting mode")
 
 @router.post("/shift", status_code=201)
@@ -523,8 +531,8 @@ def add_shift(entry: ShiftCreate):
                 detail="Error saving shift data"
             )
     except Exception as e:
-        logger.error(f"Error adding shift: {e}")
-        logger.debug(f"Error details: \n", exc_info=True)
+        logger.error(f"Error adding shift:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Error adding shift. Please try again later."
@@ -556,7 +564,8 @@ def delete_shift(entry: StringValue):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting shift: {e}")
+        logger.error(f"Error deleting shift:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(status_code=500, detail="Error deleting shift")
 
 @router.post("/fuel-type", status_code=201)
@@ -593,8 +602,8 @@ def add_fuel_type(entry: FuelTypeCreate):
                 detail="Error saving fuel type data"
             )
     except Exception as e:
-        logger.error(f"Error adding fuel type: {e}")
-        logger.debug(f"Error details: \n", exc_info=True)
+        logger.error(f"Error adding fuel type:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Error adding fuel type. Please try again later."
@@ -626,7 +635,8 @@ def delete_fuel_type(entry: StringValue):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting fuel type: {e}")
+        logger.error(f"Error deleting fuel type:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(status_code=500, detail="Error deleting fuel type")
 
 @router.post("/vehicle-model", status_code=201)
@@ -663,8 +673,8 @@ def add_vehicle_model(entry: VehicleModelCreate):
                 detail="Error saving vehicle model data"
             )
     except Exception as e:
-        logger.error(f"Error adding vehicle model: {e}")
-        logger.debug(f"Error details: \n", exc_info=True)
+        logger.error(f"Error adding vehicle model:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Error adding vehicle model. Please try again later."
@@ -696,5 +706,6 @@ def delete_vehicle_model(entry: StringValue):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting vehicle model: {e}")
+        logger.error(f"Error deleting vehicle model:")
+        logger.debug(f"Error details:", exc_info=True)
         raise HTTPException(status_code=500, detail="Error deleting vehicle model")
