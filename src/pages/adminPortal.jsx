@@ -165,7 +165,8 @@ export default function SystemUsersPage() {
   );
   // Calculate pagination
   const safeItemsPerPage = Math.max(1, itemsPerPage);
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / safeItemsPerPage));
+  const MAX_TOTAL_PAGES = 100; // Limit for total pages to prevent excessive iterations
+  const totalPages = Math.max(1, Math.min(MAX_TOTAL_PAGES, Math.ceil(filteredUsers.length / safeItemsPerPage)));
   const startIndex = (currentPage - 1) * safeItemsPerPage;
   const endIndex = startIndex + safeItemsPerPage;
   const currentUsers = filteredUsers.slice(startIndex, endIndex);
@@ -264,9 +265,10 @@ export default function SystemUsersPage() {
   const getPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
-
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
+    // Ensure we do not generate more than MAX_TOTAL_PAGES
+    const cappedTotalPages = Math.min(totalPages, MAX_TOTAL_PAGES);
+    if (cappedTotalPages <= maxVisiblePages) {
+      for (let i = 1; i <= cappedTotalPages; i++) {
         pages.push(i);
       }
     } else {
@@ -275,11 +277,11 @@ export default function SystemUsersPage() {
           pages.push(i);
         }
         pages.push("...");
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
+        pages.push(cappedTotalPages);
+      } else if (currentPage >= cappedTotalPages - 2) {
         pages.push(1);
         pages.push("...");
-        for (let i = totalPages - 3; i <= totalPages; i++) {
+        for (let i = cappedTotalPages - 3; i <= cappedTotalPages; i++) {
           pages.push(i);
         }
       } else {
@@ -289,7 +291,7 @@ export default function SystemUsersPage() {
           pages.push(i);
         }
         pages.push("...");
-        pages.push(totalPages);
+        pages.push(cappedTotalPages);
       }
     }
 
@@ -522,7 +524,7 @@ export default function SystemUsersPage() {
                 value={newUser.id}
                 onChange={(e) => handleInputChange("id", e.target.value)}
                 className="w-full"
-                disabled={editingUser !== null} // Disable editing User ID when editing
+                // disabled={editingUser !== null} // Disable editing User ID when editing
               />
             </div>
 

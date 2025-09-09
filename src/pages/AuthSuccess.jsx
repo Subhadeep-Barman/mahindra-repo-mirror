@@ -11,9 +11,7 @@ import CryptoJS from "crypto-js";
 // import { decode as base64urlDecode } from "base64url";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
-
-// Secret key for decryption
-const SECRET_KEY = "MySecretKey12345";
+const SECRET_KEY = import.meta.env.VITE_JWT_SECRET_KEY;
 
 // Decrypt function
 function decrypt(encryptedText, secretKey) {
@@ -129,36 +127,50 @@ export default function AuthSuccess() {
         const expirationDate = new Date();
         expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000); // 1 hour from now
 
+        // Validate JWT token format before setting cookie
+        const jwtRegex = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/;
+        if (!jwtRegex.test(jwtToken)) {
+          showSnackbar("Invalid JWT token format", "error");
+          navigate("/login");
+          return;
+        }
         Cookies.set("token", jwtToken, {
           expires: expirationDate,
           secure: true,
+          sameSite: 'Strict',
         });
 
         Cookies.set("userRole", user.role, {
           expires: expirationDate,
           secure: true,
+          sameSite: 'Strict',
         });
         Cookies.set("userId", userDetails.user, {
           expires: expirationDate,
           secure: true,
+          sameSite: 'Strict',
         });
         Cookies.set("userName", userDetails.displayname, {
           expires: expirationDate,
           secure: true,
+          sameSite: 'Strict',
         });
         Cookies.set("userEmail", userDetails.emailaddress, {
           expires: expirationDate,
           secure: true,
+          sameSite: 'Strict',
         });
         Cookies.set("LoggedIn", "true", {
           expires: expirationDate,
           secure: true,
+          sameSite: 'Strict',
         });
         // Add team to cookies if present
         if (user.team) {
           Cookies.set("userTeam", user.team, {
             expires: expirationDate,
             secure: true,
+            sameSite: 'Strict',
           });
         }
 
