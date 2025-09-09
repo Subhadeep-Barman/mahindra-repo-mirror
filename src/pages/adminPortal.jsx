@@ -72,7 +72,25 @@ export default function SystemUsersPage() {
     setLoading(true);
     try {
       const response = await axios.get(`${apiURL}/api/users/read_all_users`);
-      setUsers(response.data);
+      
+      // Validate and sanitize user data from API response
+      const rawUsers = response.data || [];
+      const validatedUsers = Array.isArray(rawUsers) ? rawUsers.filter(user => {
+        // Ensure user object has required fields and is not malicious
+        return user && 
+               typeof user === 'object' &&
+               typeof user.id === 'string' &&
+               typeof user.email === 'string' &&
+               typeof user.username === 'string' &&
+               typeof user.role === 'string' &&
+               user.id.length <= 100 &&  // Limit field lengths to prevent excessive memory usage
+               user.email.length <= 255 &&
+               user.username.length <= 100 &&
+               user.role.length <= 50 &&
+               (!user.team || (typeof user.team === 'string' && user.team.length <= 50));
+      }).slice(0, 10000) : []; // Limit total number of users to prevent excessive processing
+      
+      setUsers(validatedUsers);
     } catch (error) {
       if (error.response?.status === 404) {
         setUsers([]); // No users found
@@ -154,15 +172,28 @@ export default function SystemUsersPage() {
     }
   };
 
-  // Filter users by search term (include team)
+  // Filter users by search term (include team) with input validation
+  const sanitizedSearchTerm = typeof searchTerm === 'string' ? searchTerm.slice(0, 100) : ''; // Limit search term length
   const filteredUsers = users.filter(
-    (user) =>
-      user.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.team || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    (user) => {
+      // Ensure user object is valid before processing
+      if (!user || typeof user !== 'object') return false;
+      
+      try {
+        return (
+          (user.id && user.id.toString().toLowerCase().includes(sanitizedSearchTerm.toLowerCase())) ||
+          (user.email && user.email.toLowerCase().includes(sanitizedSearchTerm.toLowerCase())) ||
+          (user.username && user.username.toLowerCase().includes(sanitizedSearchTerm.toLowerCase())) ||
+          (user.role && user.role.toLowerCase().includes(sanitizedSearchTerm.toLowerCase())) ||
+          (user.team && user.team.toLowerCase().includes(sanitizedSearchTerm.toLowerCase()))
+        );
+      } catch (e) {
+        // If any error occurs during filtering, exclude this user
+        console.warn('Error filtering user:', e);
+        return false;
+      }
+    }
+  ).slice(0, 10000); // Limit filtered results to prevent excessive processing
   // Calculate pagination with additional safeguards
   const safeItemsPerPage = Math.max(1, itemsPerPage); // Ensure at least 1 item per page
   const MAX_TOTAL_PAGES = 100; // Limit for total pages to prevent excessive iterations
@@ -287,9 +318,19 @@ export default function SystemUsersPage() {
     const pages = [];
     const maxVisiblePages = 5;
     
+    // Additional validation to ensure totalPages is safe
+    if (typeof totalPages !== 'number' || totalPages < 1 || totalPages > 10000) {
+      return [1]; // Fallback to single page if totalPages is invalid
+    }
+    
     // Ensure we do not generate more than MAX_TOTAL_PAGES
     // Additional validation to ensure cappedTotalPages is a positive number
-    const cappedTotalPages = Math.max(1, Math.min(totalPages, MAX_TOTAL_PAGES));
+    const cappedTotalPages = Math.max(1, Math.min(totalPages, MAX_TOTAL_PAGES, 100)); // Triple limit
+    
+    // Validate cappedTotalPages is a safe integer
+    if (!Number.isInteger(cappedTotalPages) || cappedTotalPages < 1 || cappedTotalPages > 100) {
+      return [1]; // Fallback if cappedTotalPages is invalid
+    }
     
     // Safeguard against malicious inputs - no pagination needed if only 1 page
     if (cappedTotalPages <= 1) {
@@ -297,40 +338,133 @@ export default function SystemUsersPage() {
     }
     
     if (cappedTotalPages <= maxVisiblePages) {
-      // Additional safeguard to limit iterations
-      const iterationLimit = Math.min(cappedTotalPages, 100);
-      for (let i = 1; i <= iterationLimit; i++) {
-        pages.push(i);
+      // Additional safeguard to limit iterations with type checking
+      const iterationLimit = Math.min(cappedTotalPages, maxVisiblePages, 5); // Triple limit
+      if (typeof iterationLimit === 'number' && 
+          Number.isInteger(iterationLimit) && 
+          iterationLimit > 0 && 
+          iterationLimit <= 5) {
+        
+        // Add absolute iteration counter
+        let iterationCount = 0;
+        const maxIterations = 5; // Absolute maximum
+        for (let i = 1; 
+             i <= iterationLimit && 
+             i <= 5 && 
+             iterationCount < maxIterations && 
+             pages.length < 10; 
+             i++) {
+          pages.push(i);
+          iterationCount++;
+        }
       }
     } else {
       if (safeCurrentPage <= 3) {
-        // Fixed iteration count (at most 4 iterations)
-        const visiblePages = Math.min(4, cappedTotalPages - 1);
-        for (let i = 1; i <= visiblePages; i++) {
-          pages.push(i);
+        // Fixed iteration count (at most 4 iterations) with additional validation
+        const baseVisiblePages = Math.max(1, Math.min(4, cappedTotalPages - 1));
+        const visiblePages = Math.min(baseVisiblePages, 4, 10); // Triple cap to prevent excessive iterations
+        
+        // Additional safeguard: ensure visiblePages is a valid positive integer
+        if (typeof visiblePages === 'number' && 
+            Number.isInteger(visiblePages) && 
+            visiblePages > 0 && 
+            visiblePages <= 4) {
+          
+          // Add absolute iteration counter for safety
+          let iterationCount = 0;
+          const maxIterations = 4; // Absolute maximum
+          for (let i = 1; 
+               i <= visiblePages && 
+               i <= 10 && 
+               iterationCount < maxIterations && 
+               pages.length < 10; 
+               i++) {
+            pages.push(i);
+            iterationCount++;
+          }
         }
-        pages.push("...");
-        pages.push(cappedTotalPages);
+        if (cappedTotalPages > visiblePages + 1) {
+          pages.push("...");
+        }
+        if (cappedTotalPages > 1) {
+          pages.push(cappedTotalPages);
+        }
       } else if (safeCurrentPage >= cappedTotalPages - 2) {
         pages.push(1);
-        pages.push("...");
+        if (cappedTotalPages > 4) {
+          pages.push("...");
+        }
         // Safeguard to ensure we don't get negative initial values
-        const startPage = Math.max(2, cappedTotalPages - 3);
-        // Limit iterations to a safe range
-        for (let i = startPage; i <= cappedTotalPages && pages.length < 10; i++) {
-          pages.push(i);
+        const startPage = Math.max(2, Math.min(cappedTotalPages - 3, cappedTotalPages - 1));
+        
+        // FIXED: Add absolute limits for endPage calculation to prevent user input influence
+        const maxAllowedRange = 5; // Absolute maximum range
+        const baseEndPage = Math.min(cappedTotalPages, startPage + maxAllowedRange);
+        const endPage = Math.max(startPage, Math.min(baseEndPage, startPage + 3)); // Limit to 3 pages max
+        
+        // Validate that our range calculations are safe
+        if (typeof startPage !== 'number' || typeof endPage !== 'number' || 
+            startPage < 1 || endPage < startPage || endPage > 100 || (endPage - startPage) > 5) {
+          // Fallback to safe minimal range
+          for (let i = Math.max(1, cappedTotalPages - 2); i <= cappedTotalPages && i <= 100 && (i - Math.max(1, cappedTotalPages - 2)) < 3; i++) {
+            pages.push(i);
+          }
+        } else {
+          // Limit iterations with multiple absolute safeguards
+          let iterationCount = 0;
+          const maxIterations = 5; // Absolute maximum iterations
+          for (let i = startPage; 
+               i <= endPage && 
+               i <= cappedTotalPages && 
+               pages.length < 10 && 
+               iterationCount < maxIterations && 
+               (i - startPage) < 3; 
+               i++) {
+            pages.push(i);
+            iterationCount++;
+          }
         }
       } else {
         pages.push(1);
         pages.push("...");
-        // Fixed window around current page (3 items at most)
-        const startPage = Math.max(2, safeCurrentPage - 1);
-        const endPage = Math.min(cappedTotalPages - 1, safeCurrentPage + 1);
-        for (let i = startPage; i <= endPage && pages.length < 10; i++) {
-          pages.push(i);
+        // Fixed window around current page (3 items at most) with validation
+        const baseStartPage = Math.max(2, Math.min(safeCurrentPage - 1, cappedTotalPages - 1));
+        
+        // FIXED: Add absolute limits for endPage calculation to prevent user input influence
+        const maxWindowSize = 3; // Absolute maximum window size
+        const baseEndPage = Math.max(baseStartPage, Math.min(cappedTotalPages - 1, safeCurrentPage + 1));
+        const startPage = Math.max(2, Math.min(baseStartPage, cappedTotalPages - 2));
+        const endPage = Math.min(baseEndPage, startPage + maxWindowSize - 1, cappedTotalPages - 1);
+        
+        // Validate that our range calculations are safe before using in loop
+        if (typeof startPage !== 'number' || typeof endPage !== 'number' || 
+            startPage < 2 || endPage < startPage || endPage > 100 || 
+            (endPage - startPage) > maxWindowSize || startPage > cappedTotalPages) {
+          // Fallback to minimal safe range around current page
+          const safePage = Math.max(2, Math.min(safeCurrentPage, cappedTotalPages - 1));
+          pages.push(safePage);
+        } else {
+          // Additional iteration safeguards with absolute limits
+          let iterationCount = 0;
+          const maxIterations = 3; // Absolute maximum iterations for window
+          for (let i = startPage; 
+               i <= endPage && 
+               i <= cappedTotalPages && 
+               pages.length < 10 && 
+               iterationCount < maxIterations && 
+               (i - startPage) < maxWindowSize; 
+               i++) {
+            pages.push(i);
+            iterationCount++;
+          }
         }
-        pages.push("...");
-        pages.push(cappedTotalPages);
+        
+        if (endPage < cappedTotalPages - 1) {
+          pages.push("...");
+        }
+        if (cappedTotalPages > endPage) {
+          pages.push(cappedTotalPages);
+        }
       }
     }
 

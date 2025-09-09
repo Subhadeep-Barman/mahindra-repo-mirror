@@ -14,8 +14,8 @@ const apiURL = import.meta.env.VITE_BACKEND_URL;
 const sec_key = import.meta.env.VITE_JWT_SECRET_KEY;
 
 // Decrypt function
-function decrypt(encryptedText, secret_key_param) {
-  const key = CryptoJS.enc.Utf8.parse(secret_key_param);
+function decrypt(encryptedText, secr_k_param) {
+  const key = CryptoJS.enc.Utf8.parse(secr_k_param);
   const decrypted = CryptoJS.AES.decrypt(encryptedText, key, {
     mode: CryptoJS.mode.ECB,
     padding: CryptoJS.pad.Pkcs7,
