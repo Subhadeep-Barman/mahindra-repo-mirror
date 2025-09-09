@@ -291,6 +291,12 @@ export default function PDCDChennaiPage() {
 
   const handleSaveJobOrder = async () => {
     if (!jobOrderEdit?.job_order_id) return;
+    
+    // Validate job_order_id to ensure it's a valid format (alphanumeric with potential dashes/underscores)
+    if (typeof jobOrderEdit.job_order_id !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(jobOrderEdit.job_order_id)) {
+      showSnackbar("Invalid job order ID format", "error");
+      return;
+    }
 
     // Get current IST time
     const currentISTTime = new Date().toLocaleString("en-US", {
@@ -309,7 +315,7 @@ export default function PDCDChennaiPage() {
     try {
       showSnackbar("Updating job order...", "info");
       await axios.put(
-        `${apiURL}/rde_joborders/${jobOrderEdit.job_order_id}`,
+        `${apiURL}/rde_joborders/${encodeURIComponent(jobOrderEdit.job_order_id)}`,
         updatedJobOrderPayload
       );
       setModalOpen(false);

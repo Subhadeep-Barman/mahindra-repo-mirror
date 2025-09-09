@@ -354,6 +354,12 @@ export default function RDEChennaiPage() {
 
   // Handler for clicking job order number
   const handleJobOrderClick = (job_order_id) => {
+    // Validate job_order_id to ensure it's a valid format (alphanumeric with potential dashes/underscores)
+    if (!job_order_id || typeof job_order_id !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(job_order_id)) {
+      showSnackbar("Invalid job order ID format", "error");
+      return;
+    }
+    
     // Fetch job order details from backend and redirect to /createJobOrder with all data
     axios
       .get(`${apiURL}/rde_joborders-single/${encodeURIComponent(job_order_id)}`)

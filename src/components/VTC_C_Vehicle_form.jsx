@@ -348,9 +348,15 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     try {
       let response;
       if (isEditMode) {
+        // Validate vehicle serial number to ensure it's a valid format
+        if (!form.vehicleSerialNumber || typeof form.vehicleSerialNumber !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(form.vehicleSerialNumber)) {
+          showSnackbar("Invalid vehicle serial number format", "error");
+          return;
+        }
+        
         // Update existing vehicle
         response = await axios.put(
-          `${apiURL}/vehicles/${form.vehicleSerialNumber}`,
+          `${apiURL}/vehicles/${encodeURIComponent(form.vehicleSerialNumber)}`,
           payload,
           {
             headers: { "Content-Type": "application/json" },

@@ -108,6 +108,12 @@ export default function VTCNashikEnginePage() {
   // FIXED: Update the handleEditClick function to fetch the SPECIFIC engine data
   const handleEditClick = async (engine) => {
     try {
+      // Validate engine_serial_number to ensure it's a valid format (alphanumeric with potential dashes/underscores)
+      if (!engine.engine_serial_number || typeof engine.engine_serial_number !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(engine.engine_serial_number)) {
+        showSnackbar("Invalid engine serial number format", "error");
+        return;
+      }
+      
       console.log("Clicking on Nashik engine:", engine.engine_serial_number); // Debug log
 
       // Fetch full engine details using the specific engine serial number

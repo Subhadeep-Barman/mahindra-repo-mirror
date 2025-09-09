@@ -1216,7 +1216,13 @@ export default function NashikCreateJobOrder() {
   // Fetch a single test order by ID
   const fetchTestOrderById = async (test_order_id) => {
     try {
-      const res = await axios.get(`${apiURL}/testorders/${test_order_id}`);
+      // Validate test_order_id to ensure it's a valid format (alphanumeric with potential dashes/underscores)
+      if (!test_order_id || typeof test_order_id !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(test_order_id)) {
+        console.error("Invalid test order ID format:", test_order_id);
+        return null;
+      }
+      
+      const res = await axios.get(`${apiURL}/testorders/${encodeURIComponent(test_order_id)}`);
       return res.data;
     } catch (err) {
       console.error("Failed to fetch test order:", err);

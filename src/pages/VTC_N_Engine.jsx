@@ -500,8 +500,14 @@ export default function EngineForm() {
       const identifier = engine_domain === "EV" ? formData.engineSerialNumber : formData.engineSerialNumber;
 
       if (isEditMode) {
+        // Validate identifier to ensure it's a valid format (alphanumeric with potential dashes/underscores)
+        if (!identifier || typeof identifier !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(identifier)) {
+          showSnackbar("Invalid engine serial number format", "error");
+          return;
+        }
+        
         response = await axios.put(
-          `${apiUrl}${endpoint}/${identifier}`,
+          `${apiUrl}${endpoint}/${encodeURIComponent(identifier)}`,
           payload
         );
         showSnackbar(`${engine_domain === "EV" ? "Motor" : "Engine"} updated successfully!`, "success");
