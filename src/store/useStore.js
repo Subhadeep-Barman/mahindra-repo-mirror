@@ -293,11 +293,29 @@ const useStore = create(
       createTestOrderClicked: false,
       setCreateTestOrderClicked: (clicked) =>
         set({ createTestOrderClicked: clicked }),
-      // New state for user cookie data instead of using Cookies
-      userCookies: {},
-      setUserCookieData: (data) => set({ userCookies: data }),
-
-      // Replace getUserCookieData to return stored userCookies
+      // State for user authentication data - using Zustand persist instead of cookies
+      userCookies: {
+        token: "",
+        userRole: "",
+        userId: "",
+        userName: "",
+        userEmail: "",
+        LoggedIn: "false",
+        userTeam: ""
+      },
+      setUserCookieData: (data) => set({ userCookies: {...get().userCookies, ...data} }),
+      clearUserCookieData: () => set({ 
+        userCookies: {
+          token: "",
+          userRole: "",
+          userId: "",
+          userName: "",
+          userEmail: "",
+          LoggedIn: "false",
+          userTeam: ""
+        } 
+      }),
+      // Get user cookie data from persistent store
       getUserCookieData: () => {
         return get().userCookies;
       },
@@ -356,8 +374,23 @@ const useStore = create(
       },
     }),
     {
-      name: "user-cookie-storage", // key in localStorage
-      partialize: (state) => ({ userCookies: state.userCookies }),
+      name: "user-auth-storage", // key in localStorage
+      partialize: (state) => ({
+        userCookies: state.userCookies 
+      }),
+      storage: {
+        getItem: (name) => {
+          const str = localStorage.getItem(name);
+          if (!str) return null;
+          return JSON.parse(str);
+        },
+        setItem: (name, value) => {
+          localStorage.setItem(name, JSON.stringify(value));
+        },
+        removeItem: (name) => {
+          localStorage.removeItem(name);
+        },
+      },
     }
   )
 );

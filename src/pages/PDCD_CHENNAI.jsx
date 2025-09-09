@@ -262,8 +262,14 @@ export default function PDCDChennaiPage() {
   const handleCreateJobOrder = () => navigate("/PDCDCreateJobOrder");
 
   const handleJobOrderClick = (job_order_id) => {
+    // Validate job_order_id to ensure it's a valid format (alphanumeric with potential dashes/underscores)
+    if (!job_order_id || typeof job_order_id !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(job_order_id)) {
+      showSnackbar("Invalid job order ID format", "error");
+      return;
+    }
+    
     axios
-      .get(`${apiURL}/joborders/${job_order_id}`)
+      .get(`${apiURL}/joborders/${encodeURIComponent(job_order_id)}`)
       .then((res) => {
         navigate("/createJobOrder", {
           state: {

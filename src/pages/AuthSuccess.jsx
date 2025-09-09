@@ -5,13 +5,13 @@ import Spinner from "../components/UI/spinner";
 import showSnackbar from "../utils/showSnackbar";
 import useStore from "../store/useStore";
 import { jwtDecode } from "jwt-decode";
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie"; // Removed cookie import
 import CryptoJS from "crypto-js";
 // import base64url from "base64url";
 // import { decode as base64urlDecode } from "base64url";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
-const SECRET_KEY = import.meta.env.VITE_JWT_SECRET_KEY;
+const sec_key = import.meta.env.VITE_JWT_SECRET_KEY;
 
 // Decrypt function
 function decrypt(encryptedText, secretKey) {
@@ -76,7 +76,7 @@ export default function AuthSuccess() {
         const encryptedJwt = decodedBytes;
 
         // 3. Decrypt (assuming your decrypt function is similar to EncryptDecrypt.decrypt)
-        const encodedJwt1 = decrypt(encryptedJwt, SECRET_KEY);
+  const encodedJwt1 = decrypt(encryptedJwt, sec_key);
 
         // 4. URL decode the result
         const jwtToken = decodeURIComponent(encodedJwt1);
@@ -124,63 +124,22 @@ export default function AuthSuccess() {
           return;
         }
 
-        const expirationDate = new Date();
-        expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000); // 1 hour from now
-
-        // Validate JWT token format before setting cookie
+        // Validate JWT token format before storing in Zustand
         const jwtRegex = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/;
         if (!jwtRegex.test(jwtToken)) {
           showSnackbar("Invalid JWT token format", "error");
           navigate("/login");
           return;
         }
-        Cookies.set("token", jwtToken, {
-          expires: expirationDate,
-          secure: true,
-          sameSite: 'Strict',
-        });
-
-        Cookies.set("userRole", user.role, {
-          expires: expirationDate,
-          secure: true,
-          sameSite: 'Strict',
-        });
-        Cookies.set("userId", userDetails.user, {
-          expires: expirationDate,
-          secure: true,
-          sameSite: 'Strict',
-        });
-        Cookies.set("userName", userDetails.displayname, {
-          expires: expirationDate,
-          secure: true,
-          sameSite: 'Strict',
-        });
-        Cookies.set("userEmail", userDetails.emailaddress, {
-          expires: expirationDate,
-          secure: true,
-          sameSite: 'Strict',
-        });
-        Cookies.set("LoggedIn", "true", {
-          expires: expirationDate,
-          secure: true,
-          sameSite: 'Strict',
-        });
-        // Add team to cookies if present
-        if (user.team) {
-          Cookies.set("userTeam", user.team, {
-            expires: expirationDate,
-            secure: true,
-            sameSite: 'Strict',
-          });
-        }
-
+        
+        // Store user data in Zustand store with persist instead of cookies
         useStore.getState().setUserCookieData({
           token: jwtToken,
           userRole: user.role,
-          LoggedIn: "true",
-          userEmail: userDetails.emailaddress,
           userId: userDetails.user,
           userName: userDetails.displayname,
+          userEmail: userDetails.emailaddress,
+          LoggedIn: "true",
           userTeam: user.team || "",
         });
 
