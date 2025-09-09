@@ -163,12 +163,28 @@ export default function SystemUsersPage() {
       user.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (user.team || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
-  // Calculate pagination
-  const safeItemsPerPage = Math.max(1, itemsPerPage);
+  // Calculate pagination with additional safeguards
+  const safeItemsPerPage = Math.max(1, itemsPerPage); // Ensure at least 1 item per page
   const MAX_TOTAL_PAGES = 100; // Limit for total pages to prevent excessive iterations
-  const totalPages = Math.max(1, Math.min(MAX_TOTAL_PAGES, Math.ceil(filteredUsers.length / safeItemsPerPage)));
-  const startIndex = (currentPage - 1) * safeItemsPerPage;
-  const endIndex = startIndex + safeItemsPerPage;
+  
+  // Ensure we have a valid filteredUsers array with a valid length
+  const safeFilteredLength = Array.isArray(filteredUsers) ? filteredUsers.length : 0;
+  
+  // Calculate totalPages with multiple safeguards:
+  // 1. Ensure division by a positive number
+  // 2. Ensure we get a positive integer
+  // 3. Cap the maximum to prevent excessive iterations
+  // 4. Ensure we have at least 1 page
+  const totalPages = Math.max(1, Math.min(MAX_TOTAL_PAGES, Math.ceil(safeFilteredLength / safeItemsPerPage)));
+  
+  // Ensure current page is within valid range
+  const safeCurrentPage = Math.max(1, Math.min(totalPages, currentPage));
+  
+  // Calculate slice indices with bounds checking
+  const startIndex = (safeCurrentPage - 1) * safeItemsPerPage;
+  const endIndex = Math.min(startIndex + safeItemsPerPage, safeFilteredLength);
+  
+  // Get current page of users with safe array bounds
   const currentUsers = filteredUsers.slice(startIndex, endIndex);
 
   const handleBack = () => {
@@ -206,15 +222,20 @@ export default function SystemUsersPage() {
   };
 
   const handlePreviousPage = () => {
+    // Ensure we don't go below page 1
     setCurrentPage((prev) => Math.max(prev - 1, 1));
   };
 
   const handleNextPage = () => {
+    // Ensure we don't exceed maximum total pages
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
 
   const handlePageClick = (page) => {
-    setCurrentPage(page);
+    // Validate page number before setting
+    if (typeof page === 'number' && page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
   const handleCloseModal = () => {
@@ -265,29 +286,47 @@ export default function SystemUsersPage() {
   const getPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
+    
     // Ensure we do not generate more than MAX_TOTAL_PAGES
-    const cappedTotalPages = Math.min(totalPages, MAX_TOTAL_PAGES);
+    // Additional validation to ensure cappedTotalPages is a positive number
+    const cappedTotalPages = Math.max(1, Math.min(totalPages, MAX_TOTAL_PAGES));
+    
+    // Safeguard against malicious inputs - no pagination needed if only 1 page
+    if (cappedTotalPages <= 1) {
+      return [1];
+    }
+    
     if (cappedTotalPages <= maxVisiblePages) {
-      for (let i = 1; i <= cappedTotalPages; i++) {
+      // Additional safeguard to limit iterations
+      const iterationLimit = Math.min(cappedTotalPages, 100);
+      for (let i = 1; i <= iterationLimit; i++) {
         pages.push(i);
       }
     } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) {
+      if (safeCurrentPage <= 3) {
+        // Fixed iteration count (at most 4 iterations)
+        const visiblePages = Math.min(4, cappedTotalPages - 1);
+        for (let i = 1; i <= visiblePages; i++) {
           pages.push(i);
         }
         pages.push("...");
         pages.push(cappedTotalPages);
-      } else if (currentPage >= cappedTotalPages - 2) {
+      } else if (safeCurrentPage >= cappedTotalPages - 2) {
         pages.push(1);
         pages.push("...");
-        for (let i = cappedTotalPages - 3; i <= cappedTotalPages; i++) {
+        // Safeguard to ensure we don't get negative initial values
+        const startPage = Math.max(2, cappedTotalPages - 3);
+        // Limit iterations to a safe range
+        for (let i = startPage; i <= cappedTotalPages && pages.length < 10; i++) {
           pages.push(i);
         }
       } else {
         pages.push(1);
         pages.push("...");
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+        // Fixed window around current page (3 items at most)
+        const startPage = Math.max(2, safeCurrentPage - 1);
+        const endPage = Math.min(cappedTotalPages - 1, safeCurrentPage + 1);
+        for (let i = startPage; i <= endPage && pages.length < 10; i++) {
           pages.push(i);
         }
         pages.push("...");
@@ -458,7 +497,7 @@ export default function SystemUsersPage() {
               variant="outline"
               size="sm"
               onClick={handlePreviousPage}
-              disabled={currentPage === 1}
+              disabled={safeCurrentPage === 1}
               className="text-gray-600 border-gray-300 hover:bg-gray-50"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -470,11 +509,11 @@ export default function SystemUsersPage() {
                   <span className="px-3 py-1 text-gray-500">...</span>
                 ) : (
                   <Button
-                    variant={currentPage === page ? "default" : "outline"}
+                    variant={safeCurrentPage === page ? "default" : "outline"}
                     size="sm"
                     onClick={() => handlePageClick(page)}
                     className={
-                      currentPage === page
+                      safeCurrentPage === page
                         ? "bg-red-500 hover:bg-red-600 text-white border-red-500"
                         : "text-gray-600 border-gray-300 hover:bg-gray-50"
                     }
@@ -489,7 +528,7 @@ export default function SystemUsersPage() {
               variant="outline"
               size="sm"
               onClick={handleNextPage}
-              disabled={currentPage === totalPages}
+              disabled={safeCurrentPage === totalPages}
               className="text-gray-600 border-gray-300 hover:bg-gray-50"
             >
               <ChevronRight className="h-4 w-4" />
