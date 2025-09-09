@@ -348,6 +348,13 @@ export default function NashikCreateJobOrder() {
     useEffect(() => {
       // When project code changes, fetch vehicles for that project
       if (form.projectCode) {
+        // Validate project code format before using in URL
+        if (typeof form.projectCode !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(form.projectCode)) {
+          console.error("Invalid project code format:", form.projectCode);
+          setProjectVehicles([]);
+          return;
+        }
+        
         axios
           .get(`${apiURL}/vehicles/by-project/${encodeURIComponent(form.projectCode)}`)
           .then((res) => {
@@ -402,6 +409,13 @@ export default function NashikCreateJobOrder() {
     setVehicleEngineNumbers(found?.engine_numbers || []);
     // Use the new API endpoint
     if (value) {
+      // Validate vehicle body number format before using in URL
+      if (typeof value !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(value)) {
+        console.error("Invalid vehicle body number format:", value);
+        setVehicleEditable(null);
+        return;
+      }
+      
       axios
         .get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(value)}`)
         .then((res) => {
@@ -456,6 +470,13 @@ export default function NashikCreateJobOrder() {
     }));
     // Use the new API endpoint
     if (value) {
+      // Validate engine serial number format before using in URL
+      if (typeof value !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(value)) {
+        console.error("Invalid engine serial number format:", value);
+        setEngineEditable(null);
+        return;
+      }
+      
       axios
         .get(`${apiURL}/engines/by-engine-number/${encodeURIComponent(value)}`)
         .then((res) => {

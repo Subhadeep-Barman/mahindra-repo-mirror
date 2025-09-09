@@ -375,6 +375,13 @@ export default function CreateJobOrder() {
       // if(!location.state?.jobOrder) {
       // When project code changes, fetch vehicles for that project
       if (form.projectCode) {
+        // Validate project code format before using in URL
+        if (typeof form.projectCode !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(form.projectCode)) {
+          console.error("Invalid project code format:", form.projectCode);
+          setProjectVehicles([]);
+          return;
+        }
+        
         axios
           .get(`${apiURL}/vehicles/by-project/${encodeURIComponent(form.projectCode)}`)
           .then((res) => {
@@ -430,6 +437,13 @@ export default function CreateJobOrder() {
   }
     // Use the new API endpoint
     if (value) {
+      // Validate vehicle body number format before using in URL
+      if (typeof value !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(value)) {
+        console.error("Invalid vehicle body number format:", value);
+        setVehicleEditable(null);
+        return;
+      }
+      
       axios
         .get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(value)}`)
         .then((res) => {
@@ -497,6 +511,13 @@ export default function CreateJobOrder() {
     }));
     // Use the new API endpoint
     if (value) {
+      // Validate engine serial number format before using in URL
+      if (typeof value !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(value)) {
+        console.error("Invalid engine serial number format:", value);
+        setEngineEditable(null);
+        return;
+      }
+      
       axios
         .get(`${apiURL}/engines/by-engine-number/${encodeURIComponent(value)}`)
         .then((res) => {
@@ -612,36 +633,41 @@ export default function CreateJobOrder() {
           
           // Fetch engine numbers associated with the vehicle body number
           if (jobOrder.vehicle_body_number) {
-            try {
-              console.log("Fetching engine numbers for vehicle body:", jobOrder.vehicle_body_number);
-              const vehicleEngineRes = await axios.get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(jobOrder.vehicle_body_number)}`);
-              
-              console.log("Vehicle engine response:", vehicleEngineRes.data);
-              
-              if (vehicleEngineRes.data && vehicleEngineRes.data.engine_numbers) {
-                setVehicleEngineNumbers(vehicleEngineRes.data.engine_numbers);
-              }
-              
-              // If the job order's engine serial number is not in the list, add it
-              if (jobOrder.engine_serial_number) {
-                console.log("Job order engine serial number:", jobOrder.engine_serial_number);
+            // Validate vehicle body number from job order before using in URL
+            if (typeof jobOrder.vehicle_body_number !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(jobOrder.vehicle_body_number)) {
+              console.error("Invalid job order vehicle body number format:", jobOrder.vehicle_body_number);
+            } else {
+              try {
+                console.log("Fetching engine numbers for vehicle body:", jobOrder.vehicle_body_number);
+                const vehicleEngineRes = await axios.get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(jobOrder.vehicle_body_number)}`);
                 
-                if (vehicleEngineRes.data && 
-                    (!vehicleEngineRes.data.engine_numbers || 
-                    !vehicleEngineRes.data.engine_numbers.includes(jobOrder.engine_serial_number))) {
-                  console.log("Adding job order engine serial number to vehicleEngineNumbers");
-                  setVehicleEngineNumbers(prev => {
-                    const updatedList = [...prev, jobOrder.engine_serial_number];
-                    console.log("Updated vehicleEngineNumbers:", updatedList);
-                    return updatedList;
-                  });
+                console.log("Vehicle engine response:", vehicleEngineRes.data);
+                
+                if (vehicleEngineRes.data && vehicleEngineRes.data.engine_numbers) {
+                  setVehicleEngineNumbers(vehicleEngineRes.data.engine_numbers);
                 }
-              }
-            } catch (error) {
-              console.error("Error fetching vehicle engine numbers:", error);
-              // If we can't get the vehicle's engine numbers, at least include the job order's engine number
-              if (jobOrder.engine_serial_number) {
-                setVehicleEngineNumbers([jobOrder.engine_serial_number]);
+                
+                // If the job order's engine serial number is not in the list, add it
+                if (jobOrder.engine_serial_number) {
+                  console.log("Job order engine serial number:", jobOrder.engine_serial_number);
+                  
+                  if (vehicleEngineRes.data && 
+                      (!vehicleEngineRes.data.engine_numbers || 
+                      !vehicleEngineRes.data.engine_numbers.includes(jobOrder.engine_serial_number))) {
+                    console.log("Adding job order engine serial number to vehicleEngineNumbers");
+                    setVehicleEngineNumbers(prev => {
+                      const updatedList = [...prev, jobOrder.engine_serial_number];
+                      console.log("Updated vehicleEngineNumbers:", updatedList);
+                      return updatedList;
+                    });
+                  }
+                }
+              } catch (error) {
+                console.error("Error fetching vehicle engine numbers:", error);
+                // If we can't get the vehicle's engine numbers, at least include the job order's engine number
+                if (jobOrder.engine_serial_number) {
+                  setVehicleEngineNumbers([jobOrder.engine_serial_number]);
+                }
               }
             }
           }
@@ -758,24 +784,36 @@ export default function CreateJobOrder() {
         if (jobOrder.vehicleDetails)
           setVehicleEditable(jobOrder.vehicleDetails);
         else if (jobOrder.vehicle_body_number) {
-          // Fetch vehicle details if not present
-          try {
-            const res = await axios.get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(jobOrder.vehicle_body_number)}`);
-            setVehicleEditable(res.data);
-          } catch (e) {
+          // Validate vehicle body number from job order before using in URL
+          if (typeof jobOrder.vehicle_body_number !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(jobOrder.vehicle_body_number)) {
+            console.error("Invalid job order vehicle body number format:", jobOrder.vehicle_body_number);
             setVehicleEditable(null);
+          } else {
+            // Fetch vehicle details if not present
+            try {
+              const res = await axios.get(`${apiURL}/vehicles/by-body-number/${encodeURIComponent(jobOrder.vehicle_body_number)}`);
+              setVehicleEditable(res.data);
+            } catch (e) {
+              setVehicleEditable(null);
+            }
           }
         }
 
         if (jobOrder.engineDetails)
           setEngineEditable(jobOrder.engineDetails);
         else if (jobOrder.engine_serial_number) {
-          // Fetch engine details if not present
-          try {
-            const res = await axios.get(`${apiURL}/engines/by-engine-number/${encodeURIComponent(jobOrder.engine_serial_number)}`);
-            setEngineEditable(res.data);
-          } catch (e) {
+          // Validate engine serial number from job order before using in URL
+          if (typeof jobOrder.engine_serial_number !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(jobOrder.engine_serial_number)) {
+            console.error("Invalid job order engine serial number format:", jobOrder.engine_serial_number);
             setEngineEditable(null);
+          } else {
+            // Fetch engine details if not present
+            try {
+              const res = await axios.get(`${apiURL}/engines/by-engine-number/${encodeURIComponent(jobOrder.engine_serial_number)}`);
+              setEngineEditable(res.data);
+            } catch (e) {
+              setEngineEditable(null);
+            }
           }
         }
 
