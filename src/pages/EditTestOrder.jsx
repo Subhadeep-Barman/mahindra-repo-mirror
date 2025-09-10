@@ -1227,7 +1227,7 @@ export default function EditTestOrder() {
                   Coast Down Test Report Reference <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  value={test.cdReportRef || form.cdReportRef}
+                  value={test.cdReportRef}
                   onChange={(e) =>
                     handleTestChange(idx, "cdReportRef", e.target.value)
                   }
@@ -1243,7 +1243,7 @@ export default function EditTestOrder() {
                     Vehicle Reference mass (Kg) <span className="text-red-500">*</span>
                   </Label>
                   <Input
-                    value={test.vehicleRefMass || form.vehicleRefMass}
+                    value={test.vehicleRefMass}
                     onChange={(e) =>
                       handleTestChange(idx, "vehicleRefMass", e.target.value)
                     }
@@ -1255,7 +1255,7 @@ export default function EditTestOrder() {
                 <div>
                   <Label className="text-xs">A (N) <span className="text-red-500">*</span></Label>
                   <Input
-                    value={test.aN || form.aN}
+                    value={test.aN}
                     onChange={(e) =>
                       handleTestChange(idx, "aN", e.target.value)
                     }
@@ -1267,7 +1267,7 @@ export default function EditTestOrder() {
                 <div>
                   <Label className="text-xs">B (N/kmph) <span className="text-red-500">*</span></Label>
                   <Input
-                    value={test.bNkmph || form.bNkmph}
+                    value={test.bNkmph}
                     onChange={(e) =>
                       handleTestChange(idx, "bNkmph", e.target.value)
                     }
@@ -1279,7 +1279,7 @@ export default function EditTestOrder() {
                 <div>
                   <Label className="text-xs">C (N/kmph^2) <span className="text-red-500">*</span></Label>
                   <Input
-                    value={test.cNkmph2 || form.cNkmph2}
+                    value={test.cNkmph2}
                     onChange={(e) =>
                       handleTestChange(idx, "cNkmph2", e.target.value)
                     }
@@ -1293,7 +1293,7 @@ export default function EditTestOrder() {
                 <div>
                   <Label className="text-xs">F0 (N) <span className="text-red-500">*</span></Label>
                   <Input
-                    value={test.f0N || form.f0N}
+                    value={test.f0N}
                     onChange={(e) =>
                       handleTestChange(idx, "f0N", e.target.value)
                     }
@@ -1305,7 +1305,7 @@ export default function EditTestOrder() {
                 <div>
                   <Label className="text-xs">F1 (N/kmph) <span className="text-red-500">*</span></Label>
                   <Input
-                    value={test.f1Nkmph || form.f1Nkmph}
+                    value={test.f1Nkmph}
                     onChange={(e) =>
                       handleTestChange(idx, "f1Nkmph", e.target.value)
                     }
@@ -1317,7 +1317,7 @@ export default function EditTestOrder() {
                 <div>
                   <Label className="text-xs">F2 (N/kmph^2) <span className="text-red-500">*</span></Label>
                   <Input
-                    value={test.f2Nkmph2 || form.f2Nkmph2}
+                    value={test.f2Nkmph2}
                     onChange={(e) =>
                       handleTestChange(idx, "f2Nkmph2", e.target.value)
                     }
@@ -1351,7 +1351,6 @@ export default function EditTestOrder() {
                       : "Emission Checklist Attachment"
                   }
                   name="emission_check_attachment"
-                  maxFiles={5}
                   formData={{
                     ...test,
                     originalJobOrderId: jobOrderId || ""
@@ -1374,7 +1373,6 @@ export default function EditTestOrder() {
                 <DropzoneFileList
                   buttonText="Dataset Attachment"
                   name="dataset_attachment"
-                  maxFiles={5}
                   formData={{
                     ...test,
                     originalJobOrderId: jobOrderId || ""
@@ -1398,7 +1396,6 @@ export default function EditTestOrder() {
                 <DropzoneFileList
                   buttonText="A2L Attachment"
                   name="a2l_attachment"
-                  maxFiles={5}
                   formData={{
                     ...test,
                     originalJobOrderId: jobOrderId || ""
@@ -1422,7 +1419,6 @@ export default function EditTestOrder() {
                 <DropzoneFileList
                   buttonText="Experiment Attachment"
                   name="experiment_attachment"
-                  maxFiles={5}
                   formData={{
                     ...test,
                     originalJobOrderId: jobOrderId || ""
@@ -1446,7 +1442,6 @@ export default function EditTestOrder() {
                 <DropzoneFileList
                   buttonText="DBC Attachment"
                   name="dbc_attachment"
-                  maxFiles={5}
                   formData={{
                     ...test,
                     originalJobOrderId: jobOrderId || ""
@@ -1470,7 +1465,6 @@ export default function EditTestOrder() {
                 <DropzoneFileList
                   buttonText="WLTP Input Sheet"
                   name="wltp_attachment"
-                  maxFiles={5}
                   formData={{
                     ...test,
                     originalJobOrderId: jobOrderId || ""
@@ -1503,7 +1497,6 @@ export default function EditTestOrder() {
                 <DropzoneFileList
                   buttonText="PDF Report"
                   name="pdf_report"
-                  maxFiles={5}
                   formData={{
                     ...test,
                     originalJobOrderId: jobOrderId || ""
@@ -1531,7 +1524,6 @@ export default function EditTestOrder() {
                 <DropzoneFileList
                   buttonText="Excel Report"
                   name="excel_report"
-                  maxFiles={5}
                   formData={{
                     ...test,
                     originalJobOrderId: jobOrderId || ""
@@ -1559,7 +1551,6 @@ export default function EditTestOrder() {
                 <DropzoneFileList
                   buttonText="DAT File Attachment"
                   name="dat_file_attachment"
-                  maxFiles={5}
                   formData={{
                     ...test,
                     originalJobOrderId: jobOrderId || ""
@@ -1587,7 +1578,6 @@ export default function EditTestOrder() {
                 <DropzoneFileList
                   buttonText="Others Attachment"
                   name="others_attachement"
-                  maxFiles={5}
                   formData={{
                     ...test,
                     originalJobOrderId: jobOrderId || ""
