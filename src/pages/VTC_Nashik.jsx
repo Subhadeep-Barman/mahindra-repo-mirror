@@ -67,10 +67,17 @@ export default function VTCNashikPage() {
     setFilteredJobOrders(jobOrders);
   }, [jobOrders]);
 
+  // Utility function to sanitize job_order_id
+  function sanitizeJobOrderId(id) {
+    if (typeof id !== 'string') return '';
+    // Only allow alphanumeric, dash, underscore
+    return id.replace(/[^a-zA-Z0-9_-]/g, '');
+  }
+
   const fetchJobOrders = () => {
-    // Get userId from localStorage or cookies (assuming it's stored after login)
-    if (!userEmployeeId) {
-      showSnackbar("User ID not found. Please login again.", "error");
+    // Validate userEmployeeId to prevent attacker-controlled input
+    if (!userEmployeeId || typeof userEmployeeId !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(userEmployeeId)) {
+      showSnackbar("User ID not found or invalid. Please login again.", "error");
       return;
     }
     const department = "VTC_JO Nashik";
@@ -410,20 +417,20 @@ export default function VTCNashikPage() {
   };
 
   const handleJobOrderClick = (job_order_id) => {
-    // Validate job_order_id to ensure it's a valid format (alphanumeric with potential dashes/underscores)
-    if (!job_order_id || typeof job_order_id !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(job_order_id)) {
+    // Sanitize job_order_id to ensure it's a valid format
+    const safeJobOrderId = sanitizeJobOrderId(job_order_id);
+    if (!safeJobOrderId) {
       showSnackbar("Invalid job order ID format", "error");
       return;
     }
-    
     axios
-      .get(`${apiURL}/joborders/${encodeURIComponent(job_order_id)}`)
+      .get(`${apiURL}/joborders/${encodeURIComponent(safeJobOrderId)}`)
       .then((res) => {
         navigate("/createJobOrder", {
           state: {
             jobOrder: res.data,
             isEdit: true,
-            originalJobOrderId: job_order_id,
+            originalJobOrderId: safeJobOrderId,
           },
         });
       })
