@@ -1024,6 +1024,23 @@ async def send_email_endpoint(
         body = body.replace("{{rating_remarks}}", rating_remarks)
         vtc_logger.debug(f"Case 8 - Added rating and rating remarks")
 
+
+          # Before sending, update the 'Regards' line in the body according to department
+    department = None
+    if job_order:
+        department = get_job_department(job_order)
+    # Default to VTC if not found
+    regards_map = {
+        "VTC_JO Chennai": "EDC-VTC Lab teams",
+        "VTC_JO Nashik": "EDC-VTC Lab teams",
+        "RDE JO": "EDC-RDE Lab teams",
+        "PDCD_JO Chennai": "EDC-PDCD Lab teams"
+    }
+    regards_text = regards_map.get(department, "EDC-VTC Lab teams")
+    # Replace the Regards line in the body
+    import re
+    body = re.sub(r"Regards,<br>.*?Lab teams", f"Regards,<br>{regards_text}", body)
+
     # Send the email
     vtc_logger.info(f"Sending email for case {caseid} - TO: {to_emails}, CC: {cc_emails}")
     send_email(to_emails, subject, body, cc_emails=cc_emails)
