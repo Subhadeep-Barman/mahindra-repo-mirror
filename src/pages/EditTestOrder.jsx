@@ -205,7 +205,7 @@ export default function EditTestOrder() {
 
   const handleBack = () => {
     // Check if there are unsaved attachment changes for test engineers
-    if (isTestEngineer && test.status === "Completed" && hasUnsavedAttachments) {
+    if ((isTestEngineer || isAdmin) && test.status === "Completed" && hasUnsavedAttachments) {
       setPendingNavigation(() => () => navigate(-1));
       setShowUnsavedWarning(true);
       return;
@@ -216,7 +216,7 @@ export default function EditTestOrder() {
 
    // Custom navigation handler that checks for unsaved changes
   const handleNavigation = (path) => {
-    if (isTestEngineer && test.status === "Completed" && hasUnsavedAttachments) {
+    if ((isTestEngineer || isAdmin) && test.status === "Completed" && hasUnsavedAttachments) {
       setPendingNavigation(() => () => navigate(path));
       setShowUnsavedWarning(true);
       return;
@@ -314,7 +314,7 @@ export default function EditTestOrder() {
   // Add browser navigation warning for unsaved attachments
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      if (isTestEngineer && test.status === "Completed" && hasUnsavedAttachments) {
+      if ((isTestEngineer || isAdmin) && test.status === "Completed" && hasUnsavedAttachments) {
         e.preventDefault();
         e.returnValue = "";
       }
@@ -325,12 +325,12 @@ export default function EditTestOrder() {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [hasUnsavedAttachments, isTestEngineer, test.status]);
+  }, [hasUnsavedAttachments, isTestEngineer, isAdmin, test.status]);
 
   // Add browser back button navigation warning for unsaved attachments
   useEffect(() => {
     const handlePopState = (e) => {
-      if (isTestEngineer && test.status === "Completed" && hasUnsavedAttachments) {
+      if ((isTestEngineer || isAdmin) && test.status === "Completed" && hasUnsavedAttachments) {
         e.preventDefault();
         window.history.pushState(null, "", window.location.href);
         setShowUnsavedWarning(true);
@@ -341,7 +341,7 @@ export default function EditTestOrder() {
       }
     };
 
-    if (isTestEngineer && test.status === "Completed" && hasUnsavedAttachments) {
+    if ((isTestEngineer || isAdmin) && test.status === "Completed" && hasUnsavedAttachments) {
       window.history.pushState(null, "", window.location.href);
       window.addEventListener("popstate", handlePopState);
     }
@@ -349,7 +349,7 @@ export default function EditTestOrder() {
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [hasUnsavedAttachments, isTestEngineer, test.status]);
+  }, [hasUnsavedAttachments, isTestEngineer, isAdmin, test.status]);
 
   // Format date for display in IST
   const formatDate = (dateString) => {
@@ -540,7 +540,7 @@ export default function EditTestOrder() {
       });
       
       // If Test Engineer provided validation status, update it
-      if (isTestEngineer && selectedValidation) {
+      if ((isTestEngineer || isAdmin) && selectedValidation) {
         const validationData = {
           validation_status: selectedValidation,
           validated_by: userName,
@@ -1504,7 +1504,7 @@ export default function EditTestOrder() {
                   setFormData={(updatedData) => {
                     setTest(prev => ({ ...prev, ...updatedData }));
                     // Track unsaved changes for test engineer attachments when test is completed
-                    if (isTestEngineer && test.status === "Completed") {
+                    if ((isTestEngineer || isAdmin) && test.status === "Completed") {
                       setHasUnsavedAttachments(true);
                     }
                   }}
@@ -1531,7 +1531,7 @@ export default function EditTestOrder() {
                   setFormData={(updatedData) => {
                     setTest(prev => ({ ...prev, ...updatedData }));
                     // Track unsaved changes for test engineer attachments when test is completed
-                    if (isTestEngineer && test.status === "Completed") {
+                    if ((isTestEngineer || isAdmin) && test.status === "Completed") {
                       setHasUnsavedAttachments(true);
                     }
                   }}
@@ -1558,7 +1558,7 @@ export default function EditTestOrder() {
                   setFormData={(updatedData) => {
                     setTest(prev => ({ ...prev, ...updatedData }));
                      // Track unsaved changes for test engineer attachments when test is completed
-                    if (isTestEngineer && test.status === "Completed") {
+                    if ((isTestEngineer || isAdmin) && test.status === "Completed") {
                       setHasUnsavedAttachments(true);
                     }
                   }}
@@ -1585,7 +1585,7 @@ export default function EditTestOrder() {
                   setFormData={(updatedData) => {
                     setTest(prev => ({ ...prev, ...updatedData }));
                     // Track unsaved changes for test engineer attachments when test is completed
-                    if (isTestEngineer && test.status === "Completed") {
+                    if ((isTestEngineer || isAdmin) && test.status === "Completed") {
                       setHasUnsavedAttachments(true);
                     }
                   }}
@@ -1600,7 +1600,7 @@ export default function EditTestOrder() {
                   viewOnly={userRole === "ProjectTeam"}
                 />
               </div>
-              {test.status === "Completed" && isTestEngineer && !test.validation_status && (
+              {test.status === "Completed" && (isTestEngineer || isAdmin) && !test.validation_status && (
                 <div className="md:col-start-3 md:col-span-1">
                   <Label className="dark:text-white">Test Validation</Label>
                   {(test.complete_remarks) && (
@@ -1757,7 +1757,7 @@ export default function EditTestOrder() {
                   type="button"
                   onClick={() => {
                     // For Test Engineers, show validation choice modal first
-                    if (isTestEngineer) {
+                    if (isTestEngineer || isAdmin) {
                       setValidationChoiceModal(true);
                     } else {
                       // For other roles, go directly to completion remarks
@@ -1791,7 +1791,7 @@ export default function EditTestOrder() {
             )}
 
             {/* Save button for Test Engineer after test order is completed */}
-            {isTestEngineer && test.status === "Completed" && (
+            {(isTestEngineer || isAdmin) && test.status === "Completed" && (
               <Button
                 className="bg-blue-600 text-white text-xs px-6 py-2 rounded"
                 onClick={handleSaveUpdates}
@@ -1803,7 +1803,7 @@ export default function EditTestOrder() {
         </div>
 
         {/* Validation Choice Modal - For Test Engineers */}
-        {validationChoiceModal && isTestEngineer && (
+        {validationChoiceModal && (isTestEngineer || isAdmin) && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-96">
               <div className="font-semibold mb-4 dark:text-white text-lg">
