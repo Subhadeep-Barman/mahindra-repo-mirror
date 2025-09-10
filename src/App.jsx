@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Snackbar, Alert } from '@mui/material';
 import useStore from '@/store/useStore';
+import { useInactivityHandler } from './hooks/useInactivityHandler';
 
 // Auth & Home
 import Login from "./pages/login";
@@ -50,6 +50,9 @@ import EditTestOrder from "./pages/EditTestOrder";
 import AddNewFields from "./pages/AddNewFields";
 
 function App() {
+  // Initialize inactivity handler
+  useInactivityHandler();
+
   // Move snackbar state to App component where Snackbar is rendered
   const {
     snackbarOpen,
