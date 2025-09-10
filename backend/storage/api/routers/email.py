@@ -861,12 +861,10 @@ async def send_email_endpoint(
                             if job_creator and job_creator.email:
                                 to_emails = [job_creator.email]
                                 vtc_logger.debug(f"Using job creator email for TO: {job_creator.email}")
-                
-            # If still no TO emails, use role-based emails as fallback
+            # If still no TO emails, send only to CC members (do not send to all role-based users)
             if not to_emails:
-                to_emails = get_all_emails_by_role(db, role)
-                vtc_logger.debug(f"Using role-based emails for TO: {to_emails}")
-            
+                vtc_logger.warning(f"No test creator found for caseid: {caseid}, sending only to CC members.")
+                to_emails = []
             # CC: Department-specific group email + CFT members
             if job_order:
                 # Add department group email to CC
@@ -875,7 +873,6 @@ async def send_email_endpoint(
                 if dept_email and dept_email not in cc_emails:
                     cc_emails.append(dept_email)
                     vtc_logger.debug(f"Added department group email to CC: {dept_email}")
-                
                 # Also add department-specific CC emails
                 dept_cc_emails = get_department_cc_emails(job_order, db)
                 print(f"DEBUG - Department CC emails: {dept_cc_emails}")
@@ -1253,9 +1250,10 @@ async def debug_email_routing(
                             if job_creator and job_creator.email:
                                 to_emails = [job_creator.email]
                 
-            # If still no TO emails, use role-based emails as fallback
+            # If still no TO emails, send only to CC members (do not send to all role-based users)
             if not to_emails:
-                to_emails = get_all_emails_by_role(db, role)
+                vtc_logger.warning(f"No test creator found for caseid: {caseid}, sending only to CC members.")
+                to_emails = []
             
             # CC: Department-specific group email + CFT members
             if job_order:

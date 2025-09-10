@@ -4,7 +4,7 @@
     "email_cases": [
         {
             "id": "1.1",
-            "receivers": "",
+            "receivers": "ProjectTeam",
             "group_email": "",
             "case": "Test Started",
             "body": {
@@ -24,7 +24,7 @@
         },
         {
             "id": "3",
-            "receivers": "",
+            "receivers": "ProjectTeam",
             "group_email": "",
             "case": "Test Re-edit Request",
             "body": {
@@ -34,7 +34,7 @@
         },
         {
             "id": "4",
-            "receivers": "",
+            "receivers": "ProjectTeam",
             "group_email": "",
             "case": "Test Order Rejection",
             "body": {
@@ -54,7 +54,7 @@
         },
         {
             "id": "6",
-            "receivers": "",
+            "receivers": "ProjectTeam",
             "group_email": "",
             "case": "Test Order Completed",
             "body": {
@@ -74,7 +74,7 @@
         },
         {
             "id": "8",
-            "receivers": "",
+            "receivers": "ProjectTeam",
             "group_email": "",
             "case": "Rating submitted",
             "body": {
@@ -84,7 +84,7 @@
         },
         {
             "id": "9",
-            "receivers": "",
+            "receivers": "ProjectTeam",
             "group_email": "",
             "case": "Document Uploaded After Test Order Completion",
             "body": {
