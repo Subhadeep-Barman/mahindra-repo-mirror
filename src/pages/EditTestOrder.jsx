@@ -411,7 +411,7 @@ export default function EditTestOrder() {
     pdf_report: test.pdf_report || "",
     excel_report: test.excel_report || "",
     dat_file_attachment: test.dat_file_attachment || "",
-    others_attachment: test.others_attachement || "",
+    others_attachement: test.others_attachement || "",
     specific_instruction: test.specificInstruction || "",
     status: overrideStatus ?? test.status,
     complete_remarks: test.complete_remarks || "", // Add complete_remarks to payload

@@ -2747,7 +2747,7 @@ export default function NashikCreateJobOrder() {
                   <Label>Others Attachment</Label>
                   <DropzoneFileList
                     buttonText="Others Attachment"
-                    name="Others_attachment"
+                    name="others_attachement"
                     maxFiles={5}
                     formData={{
                       ...test,

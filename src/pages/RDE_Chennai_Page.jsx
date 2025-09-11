@@ -409,6 +409,23 @@ export default function RDEChennaiPage() {
     }
   };
 
+  // Helper function to convert date to IST
+  function formatToIST(dateString) {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    // Get UTC time and add 5.5 hours (19800000 ms)
+    const istDate = new Date(date.getTime() + (5.5 * 60 * 60 * 1000));
+    return istDate.toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      hour12: true,
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
   return (
     <>
       <Navbar1 />
@@ -557,7 +574,7 @@ export default function RDEChennaiPage() {
                       </>
                     ) : (
                       <>
-                        <TableHead className="font-semibold text-gray-700 text-xs">
+                        <TableHead className="font-semibold text-gray-700 text-xs" style={{ minWidth: 140 }}>
                           Job Order Number
                         </TableHead>
                         <TableHead className="font-semibold text-gray-700 text-xs">
@@ -617,33 +634,13 @@ export default function RDEChennaiPage() {
                           {testOrder.name_of_creator}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600">
-                          {testOrder.created_on
-                            ? new Date(testOrder.created_on).toLocaleString("en-IN", {
-                                timeZone: "Asia/Kolkata",
-                                hour12: true,
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : ""}
+                          {formatToIST(testOrder.created_on)}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600">
                           {testOrder.name_of_updater}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600">
-                          {testOrder.updated_on
-                            ? new Date(testOrder.updated_on).toLocaleString("en-IN", {
-                                timeZone: "Asia/Kolkata",
-                                hour12: true,
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "N/A"}
+                          {formatToIST(testOrder.updated_on)}
                         </TableCell>
                       </TableRow>
                     ))
@@ -653,7 +650,7 @@ export default function RDEChennaiPage() {
                         key={order.job_order_id || index}
                         className={index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
                       >
-                        <TableCell className="text-xs">
+                        <TableCell className="text-xs" style={{ minWidth: 140 }}>
                           <span
                             className="text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400"
                             onClick={() => handleJobOrderClick(order.job_order_id)}
@@ -689,15 +686,7 @@ export default function RDEChennaiPage() {
                           {order.name_of_creator}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600 px-4 py-2">
-                          {new Date(order.created_on).toLocaleString("en-IN", {
-                            timeZone: "Asia/Kolkata",
-                            hour12: true,
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {formatToIST(order.created_on)}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600">
                           {order.last_updated_by}

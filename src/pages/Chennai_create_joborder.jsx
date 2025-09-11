@@ -149,7 +149,7 @@ export default function CreateJobOrder() {
         pdf_report: "",
         excel_report: "",
         dat_file_attachment: "",
-        others_attachment: "",
+        others_attachement: "",
         specificInstruction: "",
         uploadDocuments: null,
         testOrderId: null,
@@ -219,7 +219,7 @@ export default function CreateJobOrder() {
         pdf_report: [],
         excel_report: [],
         dat_file_attachment: [],
-        others_attachment: [],
+        others_attachement: [],
 
         // Reset fields for new test order
         testOrderId: null,
@@ -1192,7 +1192,7 @@ export default function CreateJobOrder() {
       pdf_report: test.PDF_report || test.pdf_report || [],
       excel_report: test.Excel_report || test.excel_report || [],
       dat_file_attachment: test.DAT_file_attachment || test.dat_file_attachment || [],
-      others_attachement: test.Others_attachment || test.others_attachement || [],
+      others_attachement: test.others_attachement || test.others_attachement || [],
       // Include coast down data in the payload
       coast_down_data: testCoastDownPayload,
     };
@@ -3682,7 +3682,7 @@ export default function CreateJobOrder() {
                     <Label>Others Attachment</Label>
                     <DropzoneFileList
                       buttonText="Others Attachment"
-                      name="Others_attachment"
+                      name="others_attachement"
                       maxFiles={5}
                       formData={{
                         ...test,
@@ -3704,12 +3704,12 @@ export default function CreateJobOrder() {
                       viewOnly={userRole === "ProjectTeam"}
                       team="testTeam" // Add team prop
                       customButtonStyle={{
-                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'Others_attachment')),
-                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'Others_attachment')),
+                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'others_attachement')),
+                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'others_attachement')),
                         color: 'white'
                       }}
                       customContainerStyle={{
-                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'Others_attachment'))
+                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'others_attachement'))
                       }}
                     />
                   </div>

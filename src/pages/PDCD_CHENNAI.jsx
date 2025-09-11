@@ -637,11 +637,13 @@ export default function PDCDChennaiPage() {
                         className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"
                           } hover:bg-gray-100`}
                       >
-                        <TableCell
-                          className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400"
-                          onClick={() => handleJobOrderClick(order.job_order_id)}
-                        >
-                          {order.job_order_id}
+                        <TableCell className="text-xs" style={{ minWidth: 160 }}>
+                          <span
+                            className="text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400"
+                            onClick={() => handleJobOrderClick(order.job_order_id)}
+                          >
+                            {order.job_order_id}
+                          </span>
                         </TableCell>
                         <TableCell className="text-xs text-gray-900 px-4 py-2">
                           {order.project_code}

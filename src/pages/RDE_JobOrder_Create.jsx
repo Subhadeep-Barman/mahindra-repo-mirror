@@ -289,7 +289,7 @@ export default function RDECreateJobOrder() {
         PDF_report: [],
         Excel_report: [],
         DAT_file_attachment: [],
-        Others_attachment: [],
+        others_attachement: [],
       },
     ]);
   };
@@ -3177,7 +3177,7 @@ export default function RDECreateJobOrder() {
                   <Label className="mb-2">Others Attachment</Label>
                   <DropzoneFileList
                     buttonText="Others Attachment"
-                    name="Others_attachment"
+                    name="others_attachement"
                     maxFiles={5}
                     formData={{
                       ...test,
