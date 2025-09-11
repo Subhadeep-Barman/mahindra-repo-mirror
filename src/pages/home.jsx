@@ -83,7 +83,11 @@ const servicesBase = [
 
 // Change the export to default and rename the component
 export default function HomePage() {
-  const { userRole, userId, userName, userTeam } = useAuth();
+  const userCookies = useStore.getState().getUserCookieData();
+  const userRole = userCookies.userRole;
+  const userTeam = userCookies.userTeam;
+  const userName = userCookies.userName;
+  const userId = userCookies.userId;
 
   // Always show all labs
   const services = servicesBase;
@@ -126,6 +130,7 @@ export default function HomePage() {
   return (
     <>
       <Navbar />
+      {console.log("user ka rolee", userRole)}
       <div className="min-h-screen flex flex-col bg-white dark:bg-black overflow-hidden relative">
         {/* Slant Line with Logo */}
         <div className="fixed left-0 top-[15rem]">
