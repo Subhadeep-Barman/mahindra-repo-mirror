@@ -85,6 +85,20 @@ export default function PDCDCreateJobOrder() {
 
   // Test state
   const [tests, setTests] = useState([]);
+  // Compute mandatory field validity for job order creation (PDCD)
+  const requiredFields = [
+    "projectCode",
+    "vehicleBodyNumber",
+    "vehicleSerialNumber",
+    "engineSerialNumber",
+    "engineType",
+    "domain",
+    "department",
+  ];
+  const isFormValid = requiredFields.every((key) => {
+    const value = form[key];
+    return value !== undefined && value !== null && String(value).trim() !== "";
+  });
 
   // State to track existing CoastDownData_id for updates
   const [existingCoastDownId, setExistingCoastDownId] = useState(null);
@@ -1649,7 +1663,7 @@ export default function PDCDCreateJobOrder() {
             <Button
               className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
               onClick={handleCreateJobOrder}
-              disabled={isTestEngineer || (location.state?.isEdit && isProjectTeam)}
+              disabled={isTestEngineer || (location.state?.isEdit && isProjectTeam) || !isFormValid}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
@@ -1868,7 +1882,7 @@ export default function PDCDCreateJobOrder() {
             <Button
               className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
               onClick={handleCreateJobOrder}
-              disabled={isTestEngineer}
+              disabled={isTestEngineer || !isFormValid}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
