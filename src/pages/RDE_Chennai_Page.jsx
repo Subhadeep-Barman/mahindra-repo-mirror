@@ -408,9 +408,24 @@ export default function RDEChennaiPage() {
 
   // Handler for editing fields in the modal
   const handleEditChange = (field, value) => {
+    // Sanitize value to prevent URL injection
+    let sanitizedValue = value;
+    if (typeof value === 'string') {
+      // Remove URL patterns
+      const urlPattern = /https?:\/\/|ftp:\/\/|file:\/\/|data:/i;
+      if (urlPattern.test(value)) {
+        showSnackbar(`Invalid input: URLs are not allowed in ${field}`, "error");
+        return;
+      }
+      // For job_order_id specifically, also sanitize format
+      if (field === 'job_order_id') {
+        sanitizedValue = value.replace(/[^a-zA-Z0-9_-]/g, '');
+      }
+    }
+    
     setJobOrderEdit((prev) => ({
       ...prev,
-      [field]: value,
+      [field]: sanitizedValue,
     }));
   };
 

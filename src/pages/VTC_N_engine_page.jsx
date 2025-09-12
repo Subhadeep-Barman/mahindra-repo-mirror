@@ -58,16 +58,23 @@ export default function VTCNashikEnginePage() {
               : []);
 
         // Only keep necessary fields for each engine
-        const minimalEngines = enginesData.map((e) => ({
-          engine_serial_number: e.engine_serial_number || "",
-          engine_build_level: e.engine_build_level || "",
-          engine_capacity: e.engine_capacity || "",
-          engine_type: e.engine_type || "",
-          id_of_creator: e.id_of_creator || "",
-          created_on: e.created_on,
-          id_of_updater: e.id_of_updater,
-          updated_on: e.updated_on,
-        }));
+        const minimalEngines = enginesData.map((e) => {
+          // Sanitize engine_serial_number to prevent injection
+          const sanitizedSerialNumber = e.engine_serial_number && typeof e.engine_serial_number === 'string' 
+            ? e.engine_serial_number.replace(/[^a-zA-Z0-9_-]/g, '') 
+            : "";
+          
+          return {
+            engine_serial_number: sanitizedSerialNumber,
+            engine_build_level: e.engine_build_level || "",
+            engine_capacity: e.engine_capacity || "",
+            engine_type: e.engine_type || "",
+            id_of_creator: e.id_of_creator || "",
+            created_on: e.created_on,
+            id_of_updater: e.id_of_updater,
+            updated_on: e.updated_on,
+          };
+        });
         setEngines(minimalEngines);
       } catch (err) {
         console.error("Error fetching engines:", err);
