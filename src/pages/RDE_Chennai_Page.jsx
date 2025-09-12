@@ -25,7 +25,7 @@ import * as XLSX from "xlsx";
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
 // Utility function to sanitize and validate job order IDs for API calls
-const createSafeJobOrderApiUrl = (baseUrl, jobOrderId) => {
+const createSafeJobOrderApiUrl = (baseUrl, jobOrderId, endpoint = 'rde_joborders') => {
   if (!jobOrderId || typeof jobOrderId !== 'string') {
     throw new Error('Invalid job order ID');
   }
@@ -33,7 +33,7 @@ const createSafeJobOrderApiUrl = (baseUrl, jobOrderId) => {
   if (!sanitized || sanitized.length === 0) {
     throw new Error('Job order ID contains no valid characters');
   }
-  return `${baseUrl}/rde_joborders/${encodeURIComponent(sanitized)}`;
+  return `${baseUrl}/${endpoint}/${encodeURIComponent(sanitized)}`;
 };
 
 export default function RDEChennaiPage() {
@@ -392,9 +392,18 @@ export default function RDEChennaiPage() {
       return;
     }
     
+    // Use safe URL construction to prevent SSRF
+    let safeApiUrl;
+    try {
+      safeApiUrl = createSafeJobOrderApiUrl(apiURL, job_order_id, 'rde_joborders-single');
+    } catch (error) {
+      showSnackbar("Invalid job order ID for API call", "error");
+      return;
+    }
+    
     // Fetch job order details from backend and redirect to /createJobOrder with all data
     axios
-      .get(`${apiURL}/rde_joborders-single/${encodeURIComponent(job_order_id)}`)
+      .get(safeApiUrl)
       .then((res) => {
         // Defensive normalization to satisfy SAST
         const rawData = res && typeof res === 'object' ? res.data : null;
@@ -466,7 +475,7 @@ export default function RDEChennaiPage() {
       // Use safe URL construction to prevent SSRF
       let safeApiUrl;
       try {
-        safeApiUrl = createSafeJobOrderApiUrl(apiURL, jobOrderEdit.job_order_id);
+        safeApiUrl = createSafeJobOrderApiUrl(apiURL, jobOrderEdit.job_order_id, 'rde_joborders');
       } catch (error) {
         showSnackbar("Invalid job order ID for API call", "error");
         return;
