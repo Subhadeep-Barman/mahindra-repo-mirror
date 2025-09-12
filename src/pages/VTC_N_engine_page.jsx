@@ -21,6 +21,18 @@ import showSnackbar from "@/utils/showSnackbar";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
+// Utility function to sanitize and validate engine serial numbers for API calls
+const createSafeEngineApiUrl = (baseUrl, serialNumber) => {
+  if (!serialNumber || typeof serialNumber !== 'string') {
+    throw new Error('Invalid serial number');
+  }
+  const sanitized = serialNumber.replace(/[^a-zA-Z0-9_-]/g, '');
+  if (!sanitized || sanitized.length === 0) {
+    throw new Error('Serial number contains no valid characters');
+  }
+  return `${baseUrl}/engines?engine_serial_number=${encodeURIComponent(sanitized)}`;
+};
+
 export default function VTCNashikEnginePage() {
   const [engines, setEngines] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -131,17 +143,17 @@ export default function VTCNashikEnginePage() {
       
       console.log("Clicking on Nashik engine:", engine.engine_serial_number); // Debug log
 
-      // Validate engine serial number format before using in API call
-      if (!engine.engine_serial_number || typeof engine.engine_serial_number !== 'string' || 
-          !/^[a-zA-Z0-9_-]+$/.test(engine.engine_serial_number)) {
+      // Use safe URL construction to prevent SSRF
+      let safeApiUrl;
+      try {
+        safeApiUrl = createSafeEngineApiUrl(apiURL, engine.engine_serial_number);
+      } catch (error) {
         showSnackbar("Invalid engine serial number format", "error");
         return;
       }
 
       // Fetch full engine details using the specific engine serial number
-      const response = await axios.get(
-        `${apiURL}/engines?engine_serial_number=${encodeURIComponent(engine.engine_serial_number)}`
-      );
+      const response = await axios.get(safeApiUrl);
 
       console.log("Nashik Engine API Response:", response.data); // Debug log
 

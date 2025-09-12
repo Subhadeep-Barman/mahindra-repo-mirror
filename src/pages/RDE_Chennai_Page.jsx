@@ -24,6 +24,18 @@ import * as XLSX from "xlsx";
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
+// Utility function to sanitize and validate job order IDs for API calls
+const createSafeJobOrderApiUrl = (baseUrl, jobOrderId) => {
+  if (!jobOrderId || typeof jobOrderId !== 'string') {
+    throw new Error('Invalid job order ID');
+  }
+  const sanitized = jobOrderId.replace(/[^a-zA-Z0-9_-]/g, '');
+  if (!sanitized || sanitized.length === 0) {
+    throw new Error('Job order ID contains no valid characters');
+  }
+  return `${baseUrl}/rde_joborders/${encodeURIComponent(sanitized)}`;
+};
+
 export default function RDEChennaiPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("Job Order");
@@ -451,10 +463,16 @@ export default function RDEChennaiPage() {
     try {
       showSnackbar("Updating job order...", "info");
 
-      await axios.put(
-        `${apiURL}/rde_joborders/${encodeURIComponent(jobOrderEdit.job_order_id)}`,
-        jobOrderEdit
-      );
+      // Use safe URL construction to prevent SSRF
+      let safeApiUrl;
+      try {
+        safeApiUrl = createSafeJobOrderApiUrl(apiURL, jobOrderEdit.job_order_id);
+      } catch (error) {
+        showSnackbar("Invalid job order ID for API call", "error");
+        return;
+      }
+
+      await axios.put(safeApiUrl, jobOrderEdit);
 
       setModalOpen(false);
       fetchJobOrders();
