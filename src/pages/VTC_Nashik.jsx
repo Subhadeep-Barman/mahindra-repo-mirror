@@ -70,8 +70,8 @@ export default function VTCNashikPage() {
   // Utility function to sanitize job_order_id
   function sanitizeJobOrderId(id) {
     if (typeof id !== 'string') return '';
-    // Only allow alphanumeric, dash, underscore
-    return id.replace(/[^a-zA-Z0-9_-]/g, '');
+    // More permissive sanitization: remove only dangerous characters
+    return id.replace(/[<>"|\\{}^`\[\]]/g, '').trim();
   }
 
   const fetchJobOrders = () => {

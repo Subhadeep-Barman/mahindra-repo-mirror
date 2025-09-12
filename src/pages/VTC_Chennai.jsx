@@ -296,14 +296,21 @@ export default function VTCChennaiPage() {
   const handleCreateJobOrder = () => navigate("/createJobOrder");
 
   const handleJobOrderClick = (job_order_id) => {
-    // Validate job_order_id to ensure it's a valid format (alphanumeric with potential dashes/underscores)
-    if (!job_order_id || typeof job_order_id !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(job_order_id)) {
+    // Basic validation for job_order_id presence
+    if (!job_order_id || typeof job_order_id !== 'string') {
+      showSnackbar("Invalid job order ID", "error");
+      return;
+    }
+    
+    // Sanitize job_order_id by removing only dangerous characters
+    const sanitized = job_order_id.replace(/[<>"|\\{}^`\[\]]/g, '').trim();
+    if (!sanitized || sanitized.length === 0) {
       showSnackbar("Invalid job order ID format", "error");
       return;
     }
     
     axios
-      .get(`${apiURL}/joborders/${encodeURIComponent(job_order_id)}`)
+      .get(`${apiURL}/joborders/${encodeURIComponent(sanitized)}`)
       .then((res) => {
         // Defensive normalization to satisfy SAST
         const rawData = res && typeof res === 'object' ? res.data : null;
@@ -314,7 +321,7 @@ export default function VTCChennaiPage() {
           state: {
             jobOrder: jobOrderData,
             isEdit: true, // Flag to indicate this is for editing/creating test orders
-            originalJobOrderId: job_order_id, // Keep reference to original job order
+            originalJobOrderId: sanitized, // Keep reference to original job order
           },
         });
       })

@@ -29,7 +29,9 @@ const createSafeJobOrderApiUrl = (baseUrl, jobOrderId, endpoint = 'rde_joborders
   if (!jobOrderId || typeof jobOrderId !== 'string') {
     throw new Error('Invalid job order ID');
   }
-  const sanitized = jobOrderId.replace(/[^a-zA-Z0-9_-]/g, '');
+  // More permissive sanitization: allow alphanumeric, dots, dashes, underscores, and common symbols
+  // Remove only dangerous characters that could be used for URL manipulation
+  const sanitized = jobOrderId.replace(/[<>"|\\{}^`\[\]]/g, '').trim();
   if (!sanitized || sanitized.length === 0) {
     throw new Error('Job order ID contains no valid characters');
   }
@@ -386,18 +388,18 @@ export default function RDEChennaiPage() {
 
   // Handler for clicking job order number
   const handleJobOrderClick = (job_order_id) => {
-    // Validate job_order_id to ensure it's a valid format (alphanumeric with potential dashes/underscores)
-    if (!job_order_id || typeof job_order_id !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(job_order_id)) {
-      showSnackbar("Invalid job order ID format", "error");
+    // Basic validation for job_order_id presence
+    if (!job_order_id || typeof job_order_id !== 'string') {
+      showSnackbar("Invalid job order ID", "error");
       return;
     }
     
-    // Use safe URL construction to prevent SSRF
+    // Use safe URL construction to prevent SSRF (this function will sanitize internally)
     let safeApiUrl;
     try {
       safeApiUrl = createSafeJobOrderApiUrl(apiURL, job_order_id, 'rde_joborders-single');
     } catch (error) {
-      showSnackbar("Invalid job order ID for API call", "error");
+      showSnackbar("Invalid job order ID format", "error");
       return;
     }
     
