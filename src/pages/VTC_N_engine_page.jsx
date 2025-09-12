@@ -124,6 +124,13 @@ export default function VTCNashikEnginePage() {
       
       console.log("Clicking on Nashik engine:", engine.engine_serial_number); // Debug log
 
+      // Validate engine serial number format before using in API call
+      if (!engine.engine_serial_number || typeof engine.engine_serial_number !== 'string' || 
+          !/^[a-zA-Z0-9_-]+$/.test(engine.engine_serial_number)) {
+        showSnackbar("Invalid engine serial number format", "error");
+        return;
+      }
+
       // Fetch full engine details using the specific engine serial number
       const response = await axios.get(
         `${apiURL}/engines?engine_serial_number=${encodeURIComponent(engine.engine_serial_number)}`

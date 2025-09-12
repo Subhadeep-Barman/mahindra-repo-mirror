@@ -417,11 +417,27 @@ export default function RDEChennaiPage() {
   // Handler for saving the updated job order
   const handleSaveJobOrder = async () => {
     if (!jobOrderEdit?.job_order_id) return;
+    
+    // Validate job_order_id to ensure it's a valid format (alphanumeric with potential dashes/underscores)
+    if (typeof jobOrderEdit.job_order_id !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(jobOrderEdit.job_order_id)) {
+      showSnackbar("Invalid job order ID format", "error");
+      return;
+    }
+
+    // New: Validate all fields in jobOrderEdit to prevent URL injection
+    const urlPattern = /https?:\/\/|ftp:\/\/|file:\/\/|data:/i; // Regex for common URL schemes
+    for (const [key, value] of Object.entries(jobOrderEdit)) {
+      if (typeof value === 'string' && urlPattern.test(value)) {
+        showSnackbar(`Invalid input in field "${key}": URLs are not allowed`, "error");
+        return;
+      }
+    }
+    
     try {
       showSnackbar("Updating job order...", "info");
 
       await axios.put(
-        `${apiURL}/rde_joborders/${jobOrderEdit.job_order_id}`,
+        `${apiURL}/rde_joborders/${encodeURIComponent(jobOrderEdit.job_order_id)}`,
         jobOrderEdit
       );
 
