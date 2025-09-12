@@ -94,7 +94,15 @@ export default function PDCDChennaiPage() {
     axios
       .get(`${apiURL}/joborders`, { params: { department, user_id: userEmployeeId, role: userRole } })
       .then((res) => {
-        let jobOrdersData = res.data || [];
+        // Defensive normalization to satisfy SAST: ensure we only accept arrays of plain objects
+        const raw = res && typeof res === 'object' ? res.data : [];
+        let jobOrdersData = Array.isArray(raw)
+          ? raw.filter((item) => item && typeof item === 'object' && !Array.isArray(item))
+          : (raw && typeof raw === 'object' && raw.data && Array.isArray(raw.data)
+              ? raw.data.filter((item) => item && typeof item === 'object' && !Array.isArray(item))
+              : []);
+        // Prevent prototype pollution / unexpected keys by shallow cloning
+        jobOrdersData = jobOrdersData.map(o => ({ ...o }));
         jobOrdersData = jobOrdersData.slice().sort((a, b) => {
           const aTime = a.created_on ? new Date(a.created_on).getTime() : null;
           const bTime = b.created_on ? new Date(b.created_on).getTime() : null;
