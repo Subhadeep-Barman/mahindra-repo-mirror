@@ -49,8 +49,16 @@ export default function VTCNashikEnginePage() {
 
         console.log("Fetched all engines:", response.data); // Debug log
 
+        // Defensive normalization to satisfy SAST: ensure we only accept arrays of plain objects
+        const raw = response && typeof response === 'object' ? response.data : [];
+        const enginesData = Array.isArray(raw)
+          ? raw.filter((item) => item && typeof item === 'object' && !Array.isArray(item))
+          : (raw && typeof raw === 'object' && raw.data && Array.isArray(raw.data)
+              ? raw.data.filter((item) => item && typeof item === 'object' && !Array.isArray(item))
+              : []);
+
         // Only keep necessary fields for each engine
-        const minimalEngines = (response.data || []).map((e) => ({
+        const minimalEngines = enginesData.map((e) => ({
           engine_serial_number: e.engine_serial_number || "",
           engine_build_level: e.engine_build_level || "",
           engine_capacity: e.engine_capacity || "",
@@ -123,9 +131,13 @@ export default function VTCNashikEnginePage() {
 
       console.log("Nashik Engine API Response:", response.data); // Debug log
 
-      if (response.data && response.data.length > 0) {
+      // Defensive normalization to satisfy SAST
+      const rawData = response && typeof response === 'object' ? response.data : [];
+      const enginesList = Array.isArray(rawData) ? rawData : [];
+      
+      if (enginesList.length > 0) {
         // Find the exact engine that matches the clicked serial number
-        const engineData = response.data.find(e =>
+        const engineData = enginesList.find(e =>
           e.engine_serial_number === engine.engine_serial_number
         );
 

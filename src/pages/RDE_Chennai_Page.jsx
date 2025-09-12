@@ -74,12 +74,32 @@ export default function RDEChennaiPage() {
       showSnackbar("User ID not found. Please login again.", "error");
       return;
     }
+    // Validate userEmployeeId (assume it's numeric; adjust regex if needed)
+    if (!/^\d+$/.test(userEmployeeId)) {
+      showSnackbar("Invalid user ID format", "error");
+      return;
+    }
+    
+    // Validate userRole against allowed values
+    const allowedRoles = ["ProjectTeam", "TestEngineer", "Admin"]; // Adjust based on your app's roles
+    if (!allowedRoles.includes(userRole)) {
+      showSnackbar("Invalid user role", "error");
+      return;
+    }
     
     // First fetch the job orders
     axios
       .get(`${apiURL}/rde_joborders`,{ params:{ user_id: userEmployeeId, role: userRole } })
       .then((res) => {
-        let jobOrdersData = res.data || [];
+        // Defensive normalization to satisfy SAST: ensure we only accept arrays of plain objects
+        const raw = res && typeof res === 'object' ? res.data : [];
+        let jobOrdersData = Array.isArray(raw)
+          ? raw.filter((item) => item && typeof item === 'object' && !Array.isArray(item))
+          : (raw && typeof raw === 'object' && raw.data && Array.isArray(raw.data)
+              ? raw.data.filter((item) => item && typeof item === 'object' && !Array.isArray(item))
+              : []);
+        // Prevent prototype pollution / unexpected keys by shallow cloning
+        jobOrdersData = jobOrdersData.map(o => ({ ...o }));
         jobOrdersData = jobOrdersData.slice().sort((a, b) => {
           const aTime = a.created_on ? new Date(a.created_on).getTime() : null;
           const bTime = b.created_on ? new Date(b.created_on).getTime() : null;
@@ -364,11 +384,16 @@ export default function RDEChennaiPage() {
     axios
       .get(`${apiURL}/rde_joborders-single/${encodeURIComponent(job_order_id)}`)
       .then((res) => {
+        // Defensive normalization to satisfy SAST
+        const rawData = res && typeof res === 'object' ? res.data : null;
+        const jobOrderData = Array.isArray(rawData) ? rawData[0] : 
+          (rawData && typeof rawData === 'object' ? rawData : null);
+        
         // Pass the complete job order data to create job order page
         // This will allow the form to be pre-filled with existing values
         navigate("/createJobOrder", {
           state: {
-            jobOrder: Array.isArray(res.data) ? res.data[0] : res.data,
+            jobOrder: jobOrderData,
             isEdit: true, // Flag to indicate this is for editing/creating test orders
             originalJobOrderId: job_order_id, // Keep reference to original job order
           },

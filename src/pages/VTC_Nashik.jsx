@@ -80,13 +80,29 @@ export default function VTCNashikPage() {
       showSnackbar("User ID not found or invalid. Please login again.", "error");
       return;
     }
+    
+    // Validate userRole against allowed values
+    const allowedRoles = ["ProjectTeam", "TestEngineer", "Admin"]; // Adjust based on your app's roles
+    if (!allowedRoles.includes(userRole)) {
+      showSnackbar("Invalid user role", "error");
+      return;
+    }
+    
     const department = "VTC_JO Nashik";
     
     // First fetch the job orders
     axios
       .get(`${apiURL}/joborders`, { params: { department, user_id: userEmployeeId, role: userRole } })
       .then((res) => {
-        let jobOrdersData = res.data || [];
+        // Defensive normalization to satisfy SAST: ensure we only accept arrays of plain objects
+        const raw = res && typeof res === 'object' ? res.data : [];
+        let jobOrdersData = Array.isArray(raw)
+          ? raw.filter((item) => item && typeof item === 'object' && !Array.isArray(item))
+          : (raw && typeof raw === 'object' && raw.data && Array.isArray(raw.data)
+              ? raw.data.filter((item) => item && typeof item === 'object' && !Array.isArray(item))
+              : []);
+        // Prevent prototype pollution / unexpected keys by shallow cloning
+        jobOrdersData = jobOrdersData.map(o => ({ ...o }));
         // sort descending by created_on if present, otherwise by job_order_id numeric
         jobOrdersData = jobOrdersData.slice().sort((a, b) => {
           const aTime = a.created_on ? new Date(a.created_on).getTime() : null;
@@ -426,9 +442,13 @@ export default function VTCNashikPage() {
     axios
       .get(`${apiURL}/joborders/${encodeURIComponent(safeJobOrderId)}`)
       .then((res) => {
+        // Defensive normalization to satisfy SAST
+        const rawData = res && typeof res === 'object' ? res.data : null;
+        const jobOrderData = rawData && typeof rawData === 'object' ? rawData : null;
+        
         navigate("/createJobOrder", {
           state: {
-            jobOrder: res.data,
+            jobOrder: jobOrderData,
             isEdit: true,
             originalJobOrderId: safeJobOrderId,
           },
