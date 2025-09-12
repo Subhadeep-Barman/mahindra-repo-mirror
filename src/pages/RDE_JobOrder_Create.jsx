@@ -85,6 +85,28 @@ export default function RDECreateJobOrder() {
 
   // Test state
   const [tests, setTests] = useState([]);
+  // Compute mandatory field validity for job order creation (RDE)
+  const requiredFields = [
+    "projectCode",
+    "vehicleBodyNumber",
+    "vehicleSerialNumber",
+    "engineNumber",
+    "engineType",
+    "domain",
+    "department",
+    "wbsCode",
+    "vehicleGVW",
+    "vehicleKerbWeight",
+    "vehicleTestPayloadCriteria",
+    "idleExhaustMassFlow",
+  ];
+  const baseValid = requiredFields.every((key) => {
+    const value = form[key];
+    return value !== undefined && value !== null && String(value).trim() !== "";
+  });
+  const needsRequestedPayload = form.vehicleTestPayloadCriteria === "Manual Entry" || form.vehicleTestPayloadCriteria === "Customized";
+  const requestedPayloadValid = !needsRequestedPayload || (form.requestedPayloadKg !== undefined && form.requestedPayloadKg !== null && String(form.requestedPayloadKg).trim() !== "");
+  const isFormValid = baseValid && requestedPayloadValid;
 
   // State to track job order ID after creation
   const [jobOrderId, setJobOrderId] = useState();
@@ -2349,6 +2371,7 @@ export default function RDECreateJobOrder() {
             <Button
               className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
               onClick={handleRDECreateJobOrder}
+              disabled={!isFormValid}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
@@ -2406,7 +2429,7 @@ export default function RDECreateJobOrder() {
             <Button
               className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
               onClick={handleRDECreateJobOrder}
-              disabled={isTestEngineer || (location.state?.isEdit && isProjectTeam)}
+              disabled={isTestEngineer || (location.state?.isEdit && isProjectTeam) || !isFormValid}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>

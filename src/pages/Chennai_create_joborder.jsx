@@ -102,6 +102,20 @@ export default function CreateJobOrder() {
   const [inertiaClasses, setInertiaClasses] = useState([]);
   const [modes, setModes] = useState([]);
   const [fuelTypes, setFuelTypes] = useState([]);
+  // Compute mandatory field validity for job order creation
+  const requiredFields = [
+    "projectCode",
+    "vehicleBodyNumber",
+    "vehicleSerialNumber",
+    "engineSerialNumber",
+    "engineType",
+    "domain",
+    "department",
+  ];
+  const isFormValid = requiredFields.every((key) => {
+    const value = form[key];
+    return value !== undefined && value !== null && String(value).trim() !== "";
+  });
 
   // Add state for clone modal
   const [cloneModalOpen, setCloneModalOpen] = useState(false);
@@ -2589,7 +2603,7 @@ export default function CreateJobOrder() {
             <Button
               className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
               onClick={handleCreateJobOrder}
-              disabled={isTestEngineer || isAdmin || (location.state?.isEdit && isProjectTeam)}
+              disabled={isTestEngineer || isAdmin || (location.state?.isEdit && isProjectTeam) || !isFormValid}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
