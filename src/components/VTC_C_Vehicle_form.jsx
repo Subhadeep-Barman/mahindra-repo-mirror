@@ -88,6 +88,13 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
     awdRwdFwd: "",
   });
 
+  // State for real-time validation
+  const [serialNumberValidation, setSerialNumberValidation] = useState({
+    isChecking: false,
+    isAvailable: true,
+    message: ""
+  });
+
   // Populate form with existing vehicle data when editing
   useEffect(() => {
     if (isEditMode && vehicleData) {
@@ -156,6 +163,92 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       ...form,
       [field]: { ...form[field], [part]: e.target.value },
     });
+  };
+
+  // Debounced function to check vehicle serial number availability
+  const checkSerialNumberAvailability = async (serialNumber) => {
+    if (!serialNumber || serialNumber.trim() === "" || isEditMode) {
+      setSerialNumberValidation({
+        isChecking: false,
+        isAvailable: true,
+        message: ""
+      });
+      return;
+    }
+
+    setSerialNumberValidation({
+      isChecking: true,
+      isAvailable: true,
+      message: "Checking availability..."
+    });
+
+    try {
+      const checkResponse = await axios.get(
+        `${apiURL}/vehicles?vehicle_serial_number=${encodeURIComponent(serialNumber.trim())}`
+      );
+      
+      const exists = Array.isArray(checkResponse.data) && checkResponse.data.some(
+        v =>
+          (v.vehicle_serial_number || "").trim().toLowerCase() ===
+          serialNumber.trim().toLowerCase()
+      );
+
+      if (exists) {
+        setSerialNumberValidation({
+          isChecking: false,
+          isAvailable: false,
+          message: "VSN already exists across all teams"
+        });
+      } else {
+        setSerialNumberValidation({
+          isChecking: false,
+          isAvailable: true,
+          message: "VSN is available (verified just now)"
+        });
+      }
+    } catch (err) {
+      console.error("Error checking serial number:", err);
+      setSerialNumberValidation({
+        isChecking: false,
+        isAvailable: true,
+        message: "Unable to verify availability"
+      });
+    }
+  };
+
+  // Effect to check serial number with debouncing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      checkSerialNumberAvailability(form.vehicleSerialNumber);
+    }, 800); // 800ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [form.vehicleSerialNumber, isEditMode]);
+
+  // Periodic re-validation to catch race conditions (every 10 seconds)
+  useEffect(() => {
+    if (!isEditMode && form.vehicleSerialNumber && form.vehicleSerialNumber.trim() !== "") {
+      const intervalId = setInterval(() => {
+        checkSerialNumberAvailability(form.vehicleSerialNumber);
+      }, 10000); // Check every 10 seconds
+
+      return () => clearInterval(intervalId);
+    }
+  }, [form.vehicleSerialNumber, isEditMode]);
+
+  // Enhanced handleChange for vehicle serial number
+  const handleSerialNumberChange = (e) => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    
+    // Reset validation state when user starts typing
+    if (name === "vehicleSerialNumber") {
+      setSerialNumberValidation({
+        isChecking: false,
+        isAvailable: true,
+        message: ""
+      });
+    }
   };
 
   // Convert current time to IST and format as ISO 8601
@@ -235,6 +328,15 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Check if vehicle serial number is available (for new vehicles only)
+    if (!isEditMode && !serialNumberValidation.isAvailable) {
+      showSnackbar(
+        "VSN is already taken. Please use a unique serial number.",
+        "error"
+      );
+      return;
+    }
 
     // Field validation logic (same as before)
     const fieldNames = {
@@ -319,27 +421,47 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       return;
     }
 
-    // Check for duplicate vehicle body number before creating
+    // Check for duplicate vehicle body number and vehicle serial number before creating
     if (!isEditMode) {
       try {
-        const checkResponse = await axios.get(
+        // Check for duplicate vehicle body number
+        const checkBodyResponse = await axios.get(
           `${apiURL}/vehicles?vehicle_body_number=${encodeURIComponent(form.vehicleBodyNumber)}`
         );
         // Only show error if an exact match exists (case-insensitive, trimmed)
-        const exists = Array.isArray(checkResponse.data) && checkResponse.data.some(
+        const bodyExists = Array.isArray(checkBodyResponse.data) && checkBodyResponse.data.some(
           v =>
             (v.vehicle_body_number || "").trim().toLowerCase() ===
             (form.vehicleBodyNumber || "").trim().toLowerCase()
         );
-        if (exists) {
+        if (bodyExists) {
           showSnackbar(
             "Vehicle Body Number already exists. Please create a different one.",
             "warning"
           );
           return;
         }
+
+        // Check for duplicate vehicle serial number across all teams
+        const checkSerialResponse = await axios.get(
+          `${apiURL}/vehicles?vehicle_serial_number=${encodeURIComponent(form.vehicleSerialNumber)}`
+        );
+        // Only show error if an exact match exists (case-insensitive, trimmed)
+        const serialExists = Array.isArray(checkSerialResponse.data) && checkSerialResponse.data.some(
+          v =>
+            (v.vehicle_serial_number || "").trim().toLowerCase() ===
+            (form.vehicleSerialNumber || "").trim().toLowerCase()
+        );
+        if (serialExists) {
+          showSnackbar(
+            "Vehicle Serial Number already exists across all teams. Please use a unique serial number.",
+            "error"
+          );
+          return;
+        }
       } catch (err) {
         // Optionally handle error, but allow creation if check fails (network error, etc.)
+        console.error("Error checking for duplicates:", err);
       }
     }
 
@@ -359,7 +481,35 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
         if (onSubmit) onSubmit(response.data);
         else showSnackbar("Vehicle updated successfully!", "success");
       } else {
-        // Create new vehicle
+        // Create new vehicle - Final check just before submission to handle race conditions
+        try {
+          const finalCheckResponse = await axios.get(
+            `${apiURL}/vehicles?vehicle_serial_number=${encodeURIComponent(form.vehicleSerialNumber)}`
+          );
+          const exists = Array.isArray(finalCheckResponse.data) && finalCheckResponse.data.some(
+            v =>
+              (v.vehicle_serial_number || "").trim().toLowerCase() ===
+              (form.vehicleSerialNumber || "").trim().toLowerCase()
+          );
+          
+          if (exists) {
+            // Update the validation state to reflect the current status
+            setSerialNumberValidation({
+              isChecking: false,
+              isAvailable: false,
+              message: "Vehicle Serial Number was just taken by another user"
+            });
+            showSnackbar(
+              "Vehicle Serial Number was just taken by another user. Please use a different serial number.",
+              "error"
+            );
+            return;
+          }
+        } catch (checkErr) {
+          console.error("Final check error:", checkErr);
+          // If final check fails, proceed with submission and let the server handle it
+        }
+
         response = await axios.post(`${apiURL}/vehicles`, payload, {
           headers: { "Content-Type": "application/json" },
         });
@@ -370,11 +520,38 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
       }
       navigate(-1);
     } catch (err) {
-      showSnackbar(
-        `Error ${isEditMode ? 'updating' : 'adding'} vehicle: ` +
-        (err.response?.data?.detail || err.message),
-        "error"
-      );
+      // Enhanced error handling for duplicate entries
+      const errorMessage = err.response?.data?.detail || err.message;
+      
+      // Check if error is related to duplicate serial number
+      if (errorMessage.toLowerCase().includes('duplicate') || 
+          errorMessage.toLowerCase().includes('already exists') ||
+          errorMessage.toLowerCase().includes('unique constraint') ||
+          errorMessage.toLowerCase().includes('serial number')) {
+        
+        // Update validation state to show the serial number is no longer available
+        setSerialNumberValidation({
+          isChecking: false,
+          isAvailable: false,
+          message: "VSN is already taken"
+        });
+        
+        showSnackbar(
+          "VSN is already taken by another user. Please use a different serial number.",
+          "error"
+        );
+        
+        // Re-check availability to update the UI
+        setTimeout(() => {
+          checkSerialNumberAvailability(form.vehicleSerialNumber);
+        }, 1000);
+        
+      } else {
+        showSnackbar(
+          `Error ${isEditMode ? 'updating' : 'adding'} vehicle: ` + errorMessage,
+          "error"
+        );
+      }
     }
   };
 
@@ -519,13 +696,42 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
                   <input
                     name="vehicleSerialNumber"
                     value={form.vehicleSerialNumber}
-                    onChange={handleChange}
+                    onChange={handleSerialNumberChange}
                     required
                     disabled={isEditMode}
-                    className={`border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500 ${isEditMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
-                      }`}
+                    className={`border rounded-lg px-3 py-2 w-full focus:ring-red-500 focus:border-red-500 ${
+                      isEditMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 
+                      !serialNumberValidation.isAvailable ? 'border-red-500' :
+                      serialNumberValidation.message.includes("available") ? 'border-green-500' : ''
+                    }`}
                     placeholder="Enter Vehicle Serial Number"
                   />
+                  {!isEditMode && (
+                    <div className="mt-1">
+                      {serialNumberValidation.isChecking && (
+                        <p className="text-sm text-blue-600">
+                          <span className="inline-block animate-spin mr-1">⟳</span>
+                          {serialNumberValidation.message}
+                        </p>
+                      )}
+                      {!serialNumberValidation.isChecking && !serialNumberValidation.isAvailable && (
+                        <p className="text-sm text-red-600">
+                          ✗ {serialNumberValidation.message}
+                        </p>
+                      )}
+                      {!serialNumberValidation.isChecking && serialNumberValidation.isAvailable && 
+                       serialNumberValidation.message.includes("available") && (
+                        <div>
+                          <p className="text-sm text-green-600">
+                            ✓ {serialNumberValidation.message}
+                          </p>
+                          <p className="text-xs text-amber-600 mt-1">
+                            ⚠️ May be taken soon
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
           {/* Project */}
@@ -1312,9 +1518,16 @@ export default function VehicleEngineForm({ onSubmit, onClear }) {
               <div className="flex justify-end gap-3 mt-8">
                 <Button
                   type="submit"
-                  className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-6"
+                  disabled={!isEditMode && !serialNumberValidation.isAvailable}
+                  className={`rounded-xl px-6 ${
+                    !isEditMode && !serialNumberValidation.isAvailable 
+                      ? 'bg-gray-400 cursor-not-allowed text-white' 
+                      : 'bg-red-500 hover:bg-red-600 text-white'
+                  }`}
                 >
-                  {isEditMode ? "✓ UPDATE VEHICLE" : "✓ ADD VEHICLE"}
+                  {isEditMode ? "✓ UPDATE VEHICLE" : 
+                   !serialNumberValidation.isAvailable ? "✗ SERIAL NUMBER TAKEN" :
+                   "✓ ADD VEHICLE"}
                 </Button>
                 <Button
                   type="button"
