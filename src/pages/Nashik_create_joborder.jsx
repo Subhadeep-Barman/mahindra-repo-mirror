@@ -776,6 +776,24 @@ export default function NashikCreateJobOrder() {
   const handleCreateJobOrder = async (e) => {
     e.preventDefault();
 
+    // Validate mandatory fields at click-time
+    const required = [
+      { key: "projectCode", label: "Project" },
+      { key: "vehicleBodyNumber", label: "Vehicle Body Number" },
+      { key: "vehicleSerialNumber", label: "Vehicle Serial Number" },
+      { key: "engineSerialNumber", label: "Engine Serial Number" },
+      { key: "engineType", label: "Type of Engine" },
+      { key: "domain", label: "Domain" },
+      { key: "department", label: "Department" },
+    ];
+    const missing = required
+      .filter(({ key }) => !form[key] || String(form[key]).trim() === "")
+      .map((r) => r.label);
+    if (missing.length > 0) {
+      showSnackbar(`Please fill mandatory fields: ${missing.join(", ")}`, "error");
+      return;
+    }
+
     // Require at least one CFT member
     if (!cftMembers || cftMembers.length === 0) {
       showSnackbar("Please add at least one CFT member before creating a job order.", "error");
@@ -1984,7 +2002,7 @@ export default function NashikCreateJobOrder() {
             <Button
               className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
               onClick={handleCreateJobOrder}
-              disabled={isTestEngineer || !isFormValid}
+              disabled={isTestEngineer}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
@@ -2039,7 +2057,7 @@ export default function NashikCreateJobOrder() {
             <Button
               className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
               onClick={handleCreateJobOrder}
-              disabled={isTestEngineer || (location.state?.isEdit && isProjectTeam) || !isFormValid}
+              disabled={isTestEngineer || (location.state?.isEdit && isProjectTeam)}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>

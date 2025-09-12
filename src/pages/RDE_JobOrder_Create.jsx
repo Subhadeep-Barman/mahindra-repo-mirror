@@ -879,6 +879,32 @@ export default function RDECreateJobOrder() {
   const handleRDECreateJobOrder = async (e) => {
     e.preventDefault();
 
+    // Validate mandatory fields at click-time (with conditional requested payload)
+    const baseRequired = [
+      { key: "projectCode", label: "Project" },
+      { key: "vehicleBodyNumber", label: "Vehicle Body Number" },
+      { key: "vehicleSerialNumber", label: "Vehicle Serial Number" },
+      { key: "engineNumber", label: "Engine Serial Number" },
+      { key: "engineType", label: "Type of Engine" },
+      { key: "domain", label: "Domain" },
+      { key: "department", label: "Department" },
+      { key: "wbsCode", label: "WBS Code" },
+      { key: "vehicleGVW", label: "Vehicle GVW (Kg)" },
+      { key: "vehicleKerbWeight", label: "Vehicle Kerb Weight (Kg)" },
+      { key: "vehicleTestPayloadCriteria", label: "Vehicle Test Payload Criteria (Kg)" },
+      { key: "idleExhaustMassFlow", label: "Idle Exhaust Mass Flow (Kg/hr)" },
+    ];
+    const needsRequestedPayload = form.vehicleTestPayloadCriteria === "Manual Entry" || form.vehicleTestPayloadCriteria === "Customized";
+    const conditionalRequired = needsRequestedPayload ? [{ key: "requestedPayloadKg", label: "Requested Payload (Kg)" }] : [];
+    const allRequired = [...baseRequired, ...conditionalRequired];
+    const missing = allRequired
+      .filter(({ key }) => !form[key] || String(form[key]).trim() === "")
+      .map((r) => r.label);
+    if (missing.length > 0) {
+      showSnackbar(`Please fill mandatory fields: ${missing.join(", ")}`, "error");
+      return;
+    }
+
     // Require at least one CFT member
     if (!cftMembers || cftMembers.length === 0) {
       showSnackbar("Please add at least one CFT member before creating a job order.", "error");
@@ -2344,7 +2370,6 @@ export default function RDECreateJobOrder() {
             <Button
               className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
               onClick={handleRDECreateJobOrder}
-              disabled={!isFormValid}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
@@ -2402,7 +2427,7 @@ export default function RDECreateJobOrder() {
             <Button
               className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
               onClick={handleRDECreateJobOrder}
-              disabled={isTestEngineer || (location.state?.isEdit && isProjectTeam) || !isFormValid}
+              disabled={isTestEngineer || (location.state?.isEdit && isProjectTeam)}
             >
               {location.state?.isEdit ? "UPDATE JOB ORDER" : "CREATE JOB ORDER"}
             </Button>
