@@ -2491,9 +2491,9 @@ export default function PDCDCreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>WLTP Input Sheet</Label>
+                  <Label>WLTP Input Sheet / Other Attachments</Label>
                   <DropzoneFileList
-                    buttonText="WLTP Input Sheet"
+                    buttonText="WLTP Input Sheet / Other Attachments"
                     name="WLTP_input_sheet"
                     maxFiles={5}
                     formData={{

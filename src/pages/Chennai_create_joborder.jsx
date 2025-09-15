@@ -3558,7 +3558,7 @@ export default function CreateJobOrder() {
 
                   <div>
                     <Label>
-                      WLTP Input Sheet
+                      WLTP Input Sheet / Other Attachments
                       {test.wltp_attachment && test.wltp_attachment.length > 0 && (
                         <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
                           {Array.isArray(test.wltp_attachment) ? test.wltp_attachment.length : 1}
@@ -3566,7 +3566,7 @@ export default function CreateJobOrder() {
                       )}
                     </Label>
                     <DropzoneFileList
-                      buttonText="WLTP Input Sheet"
+                      buttonText="WLTP Input Sheet / Other Attachments"
                       name="wltp_attachment"
                       maxFiles={5}
                       formData={{

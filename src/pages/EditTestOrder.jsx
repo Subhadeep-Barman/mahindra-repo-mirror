@@ -1461,9 +1461,9 @@ export default function EditTestOrder() {
                 />
               </div>
               <div>
-                <Label className="dark:text-white">WLTP Input Sheet</Label>
+                <Label className="dark:text-white">WLTP Input Sheet / Other Attachments</Label>
                 <DropzoneFileList
-                  buttonText="WLTP Input Sheet"
+                  buttonText="WLTP Input Sheet / Other Attachments"
                   name="wltp_attachment"
                   formData={{
                     ...test,
