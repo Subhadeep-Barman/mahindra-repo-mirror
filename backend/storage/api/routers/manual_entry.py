@@ -76,7 +76,7 @@ def write_json_file(file_name: str, data: list) -> bool:
         logger.error(f"Error writing to JSON file {file_name}: {e}")
         return False
 
-# Project endpoints
+
 @router.post("/project", status_code=201)
 def add_project(entry: ProjectCreate):
     """
@@ -86,10 +86,7 @@ def add_project(entry: ProjectCreate):
     @return: The created project info
     """
     try:
-        # Get existing projects
         projects = read_json_file("project_code.json")
-        
-        # Check if project already exists
         if entry.project_code in projects:
             return {
                 "message": "Project already exists"
@@ -98,7 +95,6 @@ def add_project(entry: ProjectCreate):
         # Add new project
         projects.append(entry.project_code)
         
-        # Save updated list
         if write_json_file("project_code.json", projects):
             logger.info(f"Manual project added: {entry.project_code}")
             return {
@@ -122,14 +118,10 @@ def add_project(entry: ProjectCreate):
 def delete_project(entry: StringValue):
     """Delete a project entry."""
     try:
-        # Get existing projects
         projects = read_json_file("project_code.json")
-
-        # Check if project exists
         if entry.value not in projects:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Remove project
         projects.remove(entry.value)
         
         # Save updated list
@@ -147,7 +139,6 @@ def delete_project(entry: StringValue):
         logger.error(f"Error deleting project: {e}")
         raise HTTPException(status_code=500, detail="Error deleting project")
 
-# Engine Type endpoints
 @router.post("/engine-type", status_code=201)
 def add_engine_type(entry: EngineTypeCreate):
     """
@@ -218,7 +209,6 @@ def delete_engine_type(entry: StringValue):
         logger.error(f"Error deleting engine type: {e}")
         raise HTTPException(status_code=500, detail="Error deleting engine type")
 
-# Domain endpoints
 @router.post("/domain", status_code=201)
 def add_domain(entry: DomainCreate):
     """
@@ -289,7 +279,6 @@ def delete_domain(entry: StringValue):
         logger.error(f"Error deleting domain: {e}")
         raise HTTPException(status_code=500, detail="Error deleting domain")
 
-# Test Type endpoints
 @router.post("/test-type", status_code=201)
 def add_test_type(entry: TestTypeCreate):
     """
@@ -360,7 +349,6 @@ def delete_test_type(entry: StringValue):
         logger.error(f"Error deleting test type: {e}")
         raise HTTPException(status_code=500, detail="Error deleting test type")
 
-# Inertia Class endpoints
 @router.post("/inertia-class", status_code=201)
 def add_inertia_class(entry: InertiaClassCreate):
     """
@@ -431,7 +419,6 @@ def delete_inertia_class(entry: StringValue):
         logger.error(f"Error deleting inertia class: {e}")
         raise HTTPException(status_code=500, detail="Error deleting inertia class")
 
-# Mode endpoints
 @router.post("/mode", status_code=201)
 def add_mode(entry: ModeCreate):
     """
@@ -502,7 +489,6 @@ def delete_mode(entry: StringValue):
         logger.error(f"Error deleting mode: {e}")
         raise HTTPException(status_code=500, detail="Error deleting mode")
 
-# Shift endpoints
 @router.post("/shift", status_code=201)
 def add_shift(entry: ShiftCreate):
     """
@@ -573,7 +559,6 @@ def delete_shift(entry: StringValue):
         logger.error(f"Error deleting shift: {e}")
         raise HTTPException(status_code=500, detail="Error deleting shift")
 
-# Fuel Type endpoints
 @router.post("/fuel-type", status_code=201)
 def add_fuel_type(entry: FuelTypeCreate):
     """
@@ -644,7 +629,6 @@ def delete_fuel_type(entry: StringValue):
         logger.error(f"Error deleting fuel type: {e}")
         raise HTTPException(status_code=500, detail="Error deleting fuel type")
 
-# Vehicle Model endpoints
 @router.post("/vehicle-model", status_code=201)
 def add_vehicle_model(entry: VehicleModelCreate):
     """

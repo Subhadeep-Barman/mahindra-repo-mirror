@@ -90,7 +90,6 @@ class EngineSchema(BaseModel):
 
     class Config:
         orm_mode = True
-        # Exclude unset (None) fields from the response
         exclude_unset = True
 
 @router.get("/engine-families")

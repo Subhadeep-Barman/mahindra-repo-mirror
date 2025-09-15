@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List, Optional, Union, Dict
 from pydantic import BaseModel
 from backend.storage.api.api_utils import get_db
-from backend.storage.models.models import RDEJobOrder, TestOrder  # Import TestOrder model
+from backend.storage.models.models import RDEJobOrder, TestOrder
 
 router = APIRouter()
 
@@ -33,10 +33,9 @@ class RDEJobOrderSchema(BaseModel):
     id_of_updater: Optional[str] = None
     name_of_updater: Optional[str] = None
     updated_on: Optional[datetime] = None
-    cft_members: Optional[List[Union[str, Dict]]] = None  # Accept both str and dict
+    cft_members: Optional[List[Union[str, Dict]]] = None 
 
 def normalize_cft_members(cft_members):
-    # Convert all items to dicts with at least a 'name' key
     if not cft_members:
         return []
     normalized = []
@@ -68,8 +67,8 @@ def rde_joborder_to_dict(rde_joborder: RDEJobOrder, db: Session = None):
         "type_of_engine": rde_joborder.type_of_engine,
         "department": rde_joborder.department,
         "domain": rde_joborder.domain,
-        "test_status": str(total_test_orders),  # Total number of test orders
-        "completed_test_count": str(completed_test_orders),  # Count of completed test orders
+        "test_status": str(total_test_orders), 
+        "completed_test_count": str(completed_test_orders),
         "wbs_code": rde_joborder.wbs_code,
         "vehicle_gwv": rde_joborder.vehicle_gwv,
         "vehicle_kerb_weight": rde_joborder.vehicle_kerb_weight,
@@ -121,23 +120,21 @@ def create_rde_joborder(
 
     # Always generate job_order_id
     if not rde_joborder_data.get("vehicle_body_number"):
-        print("Error: Vehicle body number is missing!")  # Debug print statement
+        print("Error: Vehicle body number is missing!")
         raise HTTPException(status_code=400, detail="Vehicle body number is required to generate job_order_id")
     rde_joborder_data["job_order_id"] = generate_job_order_id(rde_joborder_data["vehicle_body_number"], db)
-    print(f"Generated job_order_id: {rde_joborder_data['job_order_id']}")  # Debug print statement
+    print(f"Generated job_order_id: {rde_joborder_data['job_order_id']}") 
 
-    # Ensure the function is called
-    print("Proceeding to save the job order...")  # Debug print statement
+    print("Proceeding to save the job order...")
     new_rde_joborder = RDEJobOrder(**rde_joborder_data)
     db.add(new_rde_joborder)
     db.commit()
     db.refresh(new_rde_joborder)
-    print(f"Saved job order to database: {new_rde_joborder}")  # Debug print statement
+    print(f"Saved job order to database: {new_rde_joborder}")
     
-    # Include the generated job_order_id in the response
     response_data = rde_joborder_to_dict(new_rde_joborder)
     response_data["job_order_id"] = new_rde_joborder.job_order_id
-    print(f"Response data: {response_data}")  # Debug print statement
+    print(f"Response data: {response_data}")
     return response_data
 
 @router.get("/rde_joborders", response_model=List[RDEJobOrderSchema])
@@ -148,9 +145,13 @@ def read_rde_joborders(
 ):
     query = db.query(RDEJobOrder)
     rde_joborders = query.all()
+    # If role is TestEngineer or Admin, return job orders with at least one test order
     if role in ["TestEngineer", "Admin"]:
-        # If the user is a Test Engineer or Admin, return all job orders
-        return [rde_joborder_to_dict(r, db) for r in rde_joborders]
+        return [
+            rde_joborder_to_dict(r, db)
+            for r in rde_joborders
+            if db.query(TestOrder).filter(TestOrder.job_order_id == r.job_order_id).count() > 0
+        ]
     if user_id:
         filtered = []
         for r in rde_joborders:

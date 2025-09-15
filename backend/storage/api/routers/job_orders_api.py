@@ -6,7 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.storage.api.api_utils import get_db
-from backend.storage.models.models import JobOrder, TestOrder, User, Vehicle  # Add Vehicle import
+from backend.storage.models.models import JobOrder, TestOrder, User, Vehicle 
 
 router = APIRouter()
 
@@ -39,7 +39,6 @@ def get_vehicle_serial_numbers(db: Session = Depends(get_db)):
     Returns all vehicle serial numbers from the Vehicle table.
     """
     results = db.query(Vehicle.vehicle_serial_number).all()
-    # Return list of serial numbers, filtering out None values
     return [sn for (sn,) in results if sn is not None]
 
 class JobOrderSchema(BaseModel):
@@ -52,8 +51,8 @@ class JobOrderSchema(BaseModel):
     type_of_engine: Optional[str] = None
     department: Optional[str] = None
     domain: Optional[str] = None
-    test_status: Optional[str] = None  # Total number of test orders as string
-    completed_test_count: Optional[str] = None  # Count of completed test orders as string
+    test_status: Optional[str] = None  
+    completed_test_count: Optional[str] = None  
     job_order_status: Optional[str] = None
     id_of_creator: Optional[str] = None
     name_of_creator: Optional[str] = None
@@ -61,7 +60,7 @@ class JobOrderSchema(BaseModel):
     id_of_updater: Optional[str] = None
     name_of_updater: Optional[str] = None
     updated_on: Optional[datetime] = None
-    cft_members: Optional[List[Dict[str, Any]]] = None  # <-- Accept list of objects
+    cft_members: Optional[List[Dict[str, Any]]] = None  
 
     class Config:
         orm_mode = True
@@ -86,8 +85,6 @@ def joborder_to_dict(joborder: JobOrder, db: Session = None):
             TestOrder.status == "Completed" 
         ).count()
 
-        # print(f"Total test orders for {joborder.job_order_id}: {total_test_orders}")
-        # print(f"Completed test orders for {joborder.job_order_id}: {completed_test_orders}")
     
     return {
         "job_order_id": joborder.job_order_id,
@@ -99,8 +96,8 @@ def joborder_to_dict(joborder: JobOrder, db: Session = None):
         "type_of_engine": joborder.type_of_engine,
         "department": joborder.department,
         "domain": joborder.domain,
-        "test_status": str(total_test_orders),  # Total number of test orders
-        "completed_test_count": str(completed_test_orders),  # Count of completed test orders
+        "test_status": str(total_test_orders), 
+        "completed_test_count": str(completed_test_orders),  
         "job_order_status": joborder.job_order_status,
         "id_of_creator": joborder.id_of_creator,
         "name_of_creator": joborder.name_of_creator,
@@ -112,7 +109,6 @@ def joborder_to_dict(joborder: JobOrder, db: Session = None):
     }
 
 def normalize_cft_members(cft_members):
-    # Convert all items to dicts with at least a 'name' key
     if not cft_members:
         return []
     normalized = []
@@ -129,25 +125,39 @@ def generate_job_order_id(department: str, db: Session) -> str:
     - For Chennai: JO VTC-<year>-<count>
     - For Nashik:  JO VTC_N-<year>-<count>
     - For others:  JO VTC-<year>-<count>
-    The counter is separate for each department.
+    The counter is separate for each department and ensures no duplicates.
     """
     current_year = datetime.utcnow().year % 100
+    
+    # Define prefix based on department
     if department == "VTC_JO Chennai":
-        count = db.query(JobOrder).filter(JobOrder.department == "VTC_JO Chennai").count() + 1
-        count_str = f"{count:04d}"
-        return f"JO VTC-{current_year}-{count_str}"
+        prefix = f"JO VTC-{current_year}-"
     elif department == "VTC_JO Nashik":
-        count = db.query(JobOrder).filter(JobOrder.department == "VTC_JO Nashik").count() + 1
-        count_str = f"{count:04d}"
-        return f"JO VTC_N-{current_year}-{count_str}"
+        prefix = f"JO VTC_N-{current_year}-"
     elif department == "PDCD_JO Chennai":
-        count = db.query(JobOrder).filter(JobOrder.department == "PDCD_JO Chennai").count() + 1
-        count_str = f"{count:04d}"
-        return f"JO PDCD-{current_year}-{count_str}"
+        prefix = f"JO PDCD-{current_year}-"
     else:
-        count = db.query(JobOrder).filter(JobOrder.department == department).count() + 1
-        count_str = f"{count:04d}"
-        return f"JO VTC-{current_year}-{count_str}"
+        prefix = f"JO VTC-{current_year}-"
+    
+    job_orders = db.query(JobOrder).filter(
+        JobOrder.job_order_id.like(f"{prefix}%")
+    ).all()
+    
+    max_number = 0
+    for job in job_orders:
+        try:
+            number_part = job.job_order_id.split('-')[-1]
+            number = int(number_part)
+            if number > max_number:
+                max_number = number
+        except (ValueError, IndexError):
+            continue
+    
+    # Next number is max + 1, or 1 if no jobs exist
+    next_number = max_number + 1
+    count_str = f"{next_number:04d}"
+    
+    return f"{prefix}{count_str}"
 
 @router.post("/joborders", response_model=JobOrderSchema)
 def create_joborder_api(
@@ -158,25 +168,22 @@ def create_joborder_api(
     if "cft_members" in joborder_data:
         joborder_data["cft_members"] = normalize_cft_members(joborder_data["cft_members"])
 
-    # Always generate job_order_id
     if not joborder_data.get("department"):
-        print("Error: Department is missing!")  # Debug print statement
+        print("Error: Department is missing!")  
         raise HTTPException(status_code=400, detail="Department is required to generate job_order_id")
     joborder_data["job_order_id"] = generate_job_order_id(joborder_data["department"], db)
-    print(f"Generated job_order_id: {joborder_data['job_order_id']}")  # Debug print statement
+    print(f"Generated job_order_id: {joborder_data['job_order_id']}")
 
-    # Ensure the function is called
-    print("Proceeding to save the job order...")  # Debug print statement
+    print("Proceeding to save the job order...")
     new_joborder = JobOrder(**joborder_data)
     db.add(new_joborder)
     db.commit()
     db.refresh(new_joborder)
-    print(f"Saved job order to database: {new_joborder}")  # Debug print statement
-    print(f"Response data: {new_joborder}")  # Debug print statement
-    # Include the generated job_order_id in the response
+    print(f"Saved job order to database: {new_joborder}")
+    print(f"Response data: {new_joborder}")
     response_data = joborder_to_dict(new_joborder)
     response_data["job_order_id"] = new_joborder.job_order_id
-    print(f"Response data: {response_data}")  # Debug print statement
+    print(f"Response data: {response_data}")
     return response_data
     
 @router.get("/departments")
@@ -217,9 +224,13 @@ def read_joborders(
     if department:
         query = query.filter(JobOrder.department == department)
     joborders = query.all()
-    # If role is TestEngineer or Admin, return all job orders
+    # If role is TestEngineer or Admin, return job orders with at least one test order
     if role in ["TestEngineer", "Admin"]:
-        return [joborder_to_dict(j, db) for j in joborders]
+        return [
+            joborder_to_dict(j, db)
+            for j in joborders
+            if db.query(TestOrder).filter(TestOrder.job_order_id == j.job_order_id).count() > 0
+        ]
     # Otherwise, filter by creator or cft_members
     filtered_joborders = []
     for j in joborders:

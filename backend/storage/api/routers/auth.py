@@ -18,8 +18,6 @@ router = APIRouter(prefix="/api")
 # Load the .env file
 load_dotenv()
 SECRET_KEY = "8649277f5ed8258114805af6cf7a3c521739019adeda1d464281080af01af040"
-# Access the environment variables
-# OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
@@ -116,7 +114,6 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestFormSimple = De
     @return:
     dict: A dictionary containing the access token and its type.
     """
-    # try:
     user = authenticate_user(
         form_data.username, form_data.password
     )
@@ -136,14 +133,6 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestFormSimple = De
     )
 
     return {"access_token": access_token, "token_type": "bearer"}
-    # except Exception as e:
-    #     # dbmrs_logger.error(f"Error during login:")
-    #     # dbmrs_logger.debug("Error details:", exc_info=True)
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         detail="An unexpected error occurred during login. Please try again later.",
-    #         headers={"WWW-Authenticate": "Bearer"},
-    #     )
 
 
 async def check_access_token(

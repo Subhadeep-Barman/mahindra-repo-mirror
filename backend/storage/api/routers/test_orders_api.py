@@ -72,7 +72,7 @@ class TestOrderSchema(BaseModel):
     test_order_id: Optional[str] = None
     job_order_id: Optional[str] = None
     CoastDownData_id: Optional[str] = None
-    coast_down_data: Optional[dict] = None  # New field for CoastDownData as dict
+    coast_down_data: Optional[dict] = None
     engine_number: Optional[str] = None
     test_type: Optional[str] = None
     test_objective: Optional[str] = None
@@ -123,28 +123,23 @@ class TestOrderSchema(BaseModel):
 
 def extract_filename(value):
     if isinstance(value, list):
-        # If list of dicts, extract all 'path' values and join with comma
         return ",".join([v["path"] for v in value if isinstance(v, dict) and "path" in v])
     if isinstance(value, dict) and "path" in value:
         return value["path"]
     return value
 
 def extract_attachment_list(value):
-    # Normalize to a list of dicts or None
     if value is None:
         return None
     if isinstance(value, list):
-        # Only keep dicts
         return [v for v in value if isinstance(v, dict)]
     if isinstance(value, dict):
         return [value]
-    # If it's a string, wrap as dict with 'path'
     if isinstance(value, str):
         return [{"path": value}]
     return None
 
 def testorder_to_dict(testorder: TestOrder):
-    # List of attachment fields that should always be lists in the response
     attachment_fields = [
         "dataset_attachment", "a2l_attachment", "experiment_attachment", "dbc_attachment",
         "wltp_attachment", "pdf_report", "excel_report", "dat_file_attachment", "others_attachement"
@@ -202,7 +197,6 @@ def testorder_to_dict(testorder: TestOrder):
         "rated_by": testorder.rated_by,
         "rated_on": testorder.rated_on,
     }
-    # Ensure all attachment fields are lists (never empty string or None)
     for key in attachment_fields:
         val = result.get(key)
         if val == "" or val is None:
@@ -211,24 +205,20 @@ def testorder_to_dict(testorder: TestOrder):
 
 @router.post("/testorders", response_model=TestOrderSchema)
 def create_testorder_api(
-    testorder: dict = Body(...),  # Accept as dict to preprocess
+    testorder: dict = Body(...),
     db: Session = Depends(get_db)
 ):
-    # List of attachment fields that should always be lists
     attachment_fields = [
         "dataset_attachment", "a2l_attachment", "experiment_attachment", "dbc_attachment",
         "wltp_attachment", "pdf_report", "excel_report", "dat_file_attachment", "others_attachement"
     ]
-    # Convert empty string values to empty lists for attachment fields
     for key in attachment_fields:
         if key in testorder and testorder[key] == "":
             testorder[key] = []
-    # Fix: emission_check_attachment should be a string or None, not a list
     if "emission_check_attachment" in testorder and (
         testorder["emission_check_attachment"] == "" or testorder["emission_check_attachment"] == []
     ):
         testorder["emission_check_attachment"] = None
-    # Now parse with Pydantic
     testorder_obj = TestOrderSchema(**testorder)
     testorder_data = testorder_obj.dict(exclude_unset=True)
     # Normalize all attachment fields to list of dicts
@@ -240,34 +230,23 @@ def create_testorder_api(
     db.commit()
     db.refresh(new_testorder)
 
-    # --- Debug and always check for any GCP folders with a "temporary" test_order_id and rename them ---
     print("DEBUG: Entering GCP folder rename logic after test order creation")
-    # Add all likely temp IDs (test0, test1, test2, ..., test9) and the one sent by frontend
-    possible_temp_ids = set()
-    # Add the test_order_id sent in the request, if any (could be a temp or real)
-    if testorder.get("test_order_id"):
-        possible_temp_ids.add(str(testorder.get("test_order_id")))
-    # Add common temp IDs used by frontend (test0, test1, ..., test9)
-    for i in range(10):
-        possible_temp_ids.add(f"test{i}")
-    # Optionally, add more logic if your frontend uses other temp IDs
-    print(f"DEBUG: Possible temp IDs to check for renaming: {list(possible_temp_ids)}")
+    temp_id = "test0"
+    print(f"DEBUG: Possible temp ID to check for renaming: {temp_id}")
 
     new_test_order_id = str(getattr(new_testorder, "test_order_id", ""))
     job_order_id = str(getattr(new_testorder, "job_order_id", ""))
     print(f"DEBUG: New test_order_id: {new_test_order_id}, job_order_id: {job_order_id}")
 
-    for temp_id in possible_temp_ids:
-        # Only rename if temp_id is not empty and not already the new id
-        if temp_id and temp_id != new_test_order_id:
-            print(f"DEBUG: Attempting to rename GCP folder from {temp_id} to {new_test_order_id}")
-            try:
-                rename_gcp_test_order_id(temp_id, new_test_order_id, job_order_id)
-                print(f"DEBUG: Rename function called for {temp_id} -> {new_test_order_id}")
-            except Exception as e:
-                print(f"DEBUG: Exception during GCP folder rename: {e}")
-                # Don't block creation if rename fails
-                pass
+    # Only rename if temp_id is not empty and not already the new id
+    if temp_id and temp_id != new_test_order_id:
+        print(f"DEBUG: Attempting to rename GCP folder from {temp_id} to {new_test_order_id}")
+        try:
+            rename_gcp_test_order_id(temp_id, new_test_order_id, job_order_id)
+            print(f"DEBUG: Rename function called for {temp_id} -> {new_test_order_id}")
+        except Exception as e:
+            print(f"DEBUG: Exception during GCP folder rename: {e}")
+            pass
 
     return testorder_to_dict(new_testorder)
 
@@ -317,7 +296,7 @@ def delete_testorder(test_order_id: str, db: Session = Depends(get_db)):
     return {"detail": "TestOrder deleted successfully"}
 
 
-MAX_FILE_SIZE = 4 * 1024 * 1024 * 1024  # maximum files size upto 4GB only
+MAX_FILE_SIZE = 4 * 1024 * 1024 * 1024
 UPLOAD_TIMEOUT = 300
 chunk_storage = {}
 
@@ -824,4 +803,38 @@ def rate_test_order(
     db.refresh(testorder)
 
     return testorder_to_dict(testorder)
+
+@router.post("/clone-testorder-files")
+def clone_testorder_files(
+    job_order_id: str = Body(...),
+    source_test_order_id: str = Body(...),
+    target_test_order_id: str = Body(...),
+):
+    """
+    Clone all files from source_test_order_id to target_test_order_id for a given job_order_id.
+    This is useful when cloning a test order form so that all previously uploaded files are visible in the new form.
+    """
+    try:
+        client = storage.Client.from_service_account_json(CREDENTIALS_PATH)
+        bucket = client.bucket(BUCKET_NAME)
+        # List all attachment types under the source test order folder
+        source_prefix = f"{UPLOAD_PATH}/{job_order_id}/{source_test_order_id}/"
+        blobs = list(bucket.list_blobs(prefix=source_prefix))
+        if not blobs:
+            return {"status": False, "message": "No files found to clone."}
+        for blob in blobs:
+            # Compute new blob name for target test order
+            new_blob_name = blob.name.replace(
+                f"/{source_test_order_id}/", f"/{target_test_order_id}/"
+            )
+            # Only copy if not already present (avoid duplicates)
+            target_blob = bucket.blob(new_blob_name)
+            if not target_blob.exists():
+                target_blob.rewrite(blob)
+        return {"status": True, "message": "Files cloned successfully."}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error cloning files: {str(e)}"
+        )
 

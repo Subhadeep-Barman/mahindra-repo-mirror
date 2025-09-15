@@ -712,6 +712,34 @@ def get_department_cc_emails(job_order, db: Session) -> list:
     return cc_emails
 
 
+def get_test_order_updater_name(db: Session, test_order_id: str) -> str:
+    """
+    Fetch name_of_updater from TestOrder.
+    """
+    try:
+        test_order = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
+        if test_order and hasattr(test_order, "name_of_updater") and test_order.name_of_updater:
+            return test_order.name_of_updater
+        return ""
+    except Exception as e:
+        vtc_logger.error(f"Error in get_test_order_updater_name: {e}")
+        return ""
+
+
+def get_regards_by_department(job_order) -> str:
+    """
+    Returns the correct 'Regards' line for the email body based on department/team.
+    """
+    department = get_job_department(job_order)
+    if department == "RDE JO":
+        return "EDC-RDE Lab Team"
+    elif department == "PDCD_JO Chennai":
+        return "EDC-PDCD Lab Team"
+    elif department == "VTC_JO Nashik" or department == "VTC_JO Chennai":
+        return "EDC-VTC Lab Team"
+    return "EDC-VTC Lab Team"  # Default fallback
+
+
 @router.post("/send")
 async def send_email_endpoint(
     job_order_id: str = Body(...),
@@ -786,6 +814,18 @@ async def send_email_endpoint(
             except:
                 print("DEBUG - Could not print job_order.__dict__")
 
+
+        # Fetch vehicle_body_number from job_order (handle both JobOrder and RDEJobOrder)
+        vehicle_body_number = ""
+        if job_order:
+            # Try common attribute names
+            for attr in ["vehicle_body_number", "vehicleBodyNumber", "body_number", "bodyNumber"]:
+                if hasattr(job_order, attr):
+                    value = getattr(job_order, attr)
+                    if value:
+                        vehicle_body_number = str(value)
+                        break
+
         # Initialize to_emails and cc_emails
         to_emails = []
         cc_emails = []
@@ -800,7 +840,7 @@ async def send_email_endpoint(
             vtc_logger.debug(f"Added CFT members to CC: {cft_emails}")
         
         # Case-specific recipient logic
-        if caseid in ["2", "5"]:  # Test Order Created, Test Order Updated
+        if caseid in ["2", "5","8"]:  # Test Order Created, Test Order Updated
             # TO: Department-specific group email
             if job_order:
                 # Get department email with improved detection
@@ -819,7 +859,7 @@ async def send_email_endpoint(
                 to_emails = get_all_emails_by_role(db, role)
                 vtc_logger.debug(f"Using role-based emails for TO: {to_emails}")
                 
-        elif caseid in ["3", "4", "6", "9"]:  # Test Re-edit, Rejection, Completion, Document Upload
+        elif caseid in ["3", "4", "6", "9","1.1"]:  # Test Re-edit, Rejection, Completion, Document Upload
             # TO: Test order creator (person who created that test)
             if test_order_id:
                 test_order = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
@@ -835,12 +875,10 @@ async def send_email_endpoint(
                             if job_creator and job_creator.email:
                                 to_emails = [job_creator.email]
                                 vtc_logger.debug(f"Using job creator email for TO: {job_creator.email}")
-                
-            # If still no TO emails, use role-based emails as fallback
+            # If still no TO emails, send only to CC members (do not send to all role-based users)
             if not to_emails:
-                to_emails = get_all_emails_by_role(db, role)
-                vtc_logger.debug(f"Using role-based emails for TO: {to_emails}")
-            
+                vtc_logger.warning(f"No test creator found for caseid: {caseid}, sending only to CC members.")
+                to_emails = []
             # CC: Department-specific group email + CFT members
             if job_order:
                 # Add department group email to CC
@@ -849,7 +887,6 @@ async def send_email_endpoint(
                 if dept_email and dept_email not in cc_emails:
                     cc_emails.append(dept_email)
                     vtc_logger.debug(f"Added department group email to CC: {dept_email}")
-                
                 # Also add department-specific CC emails
                 dept_cc_emails = get_department_cc_emails(job_order, db)
                 print(f"DEBUG - Department CC emails: {dept_cc_emails}")
@@ -900,92 +937,115 @@ async def send_email_endpoint(
                 rating = str(test_order.rating) if hasattr(test_order, "rating") and test_order.rating is not None else ""
                 rating_remarks = test_order.rating_remarks if hasattr(test_order, "rating_remarks") else ""
             vtc_logger.debug(f"Case 8 - Rating: {rating}, Rating Remarks: {rating_remarks}")
-
-        # Replace placeholders with actual IDs and info
-        subject = subject.replace("{{job_order_id}}", str(job_order_id))
-        subject = subject.replace("{{test_order_id}}", str(test_order_id) if test_order_id else "")
-
-        body = body.replace("{{job_order_id}}", str(job_order_id))
-        body = body.replace("{{test_order_id}}", str(test_order_id) if test_order_id else "")
-        body = body.replace("{{total_tests}}", str(total_tests))
-        body = body.replace("{{creator_name}}", creator_info.get("creator_name", ""))
-        body = body.replace("{{creator_id}}", creator_info.get("creator_id", ""))
-        body = body.replace("{{created_at}}", creator_info.get("created_at", ""))
-        
-        # Replace notify_fields placeholder with actual field names
-        if "{{notify_fields}}" in body:
-            fields_str = ", ".join(notify_fields) if notify_fields else ""
-            body = body.replace("{{notify_fields}}", fields_str)
-            vtc_logger.debug(f"Replaced {{notify_fields}} with: {fields_str}")
-        
-        # Replace notify_values placeholder with formatted values
-        if "{{notify_values}}" in body:
-            # Format notify_values as a readable string
-            values_parts = []
-            if notify_values:
-                for field, values in notify_values.items():
-                    value_str = ", ".join(values) if values else ""
-                    values_parts.append(f"{field}: {value_str}")
-            values_str = "; ".join(values_parts)
-            body = body.replace("{{notify_values}}", values_str)
-            vtc_logger.debug(f"Replaced {{notify_values}} with: {values_str}")
-        
-        vtc_logger.debug(f"Processed subject: {subject}")
-        vtc_logger.debug(f"Processed body length: {len(body)} characters")
-
-        # For caseid-specific replacements
-        if caseid == "1.1":
-            body = body.replace("{{test_objective}}", test_order_type_obj.get("test_objective", ""))
-            vtc_logger.debug(f"Case 1.1 - Added test objective: {test_order_type_obj.get('test_objective', '')}")
-        elif caseid == "2":
-            body = body.replace("{{test_creator}}", test_order_type_obj.get("test_creator", ""))
-            body = body.replace("{{test_created_at}}", test_order_type_obj.get("test_created_at", ""))
-            vtc_logger.debug(f"Case 2 - Using job_order_id: {job_order_id}")
-        elif caseid == "3":
-            body = body.replace("{{test_objective}}", test_order_type_obj.get("test_objective", ""))
-            body = body.replace("{{remark}}", test_order_remarks.get("remark", ""))
-            vtc_logger.debug(f"Case 3 - Added test objective and remarks")
-        elif caseid == "4":
-            body = body.replace("{{test_objective}}", test_order_type_obj.get("test_objective", ""))
-            body = body.replace("{{rejection_remarks}}", test_order_remarks.get("rejection_remarks", ""))
-            vtc_logger.debug(f"Case 4 - Added test objective and rejection remarks")
-        elif caseid == "5":
-            body = body.replace("{{total_tests_created}}", str(total_tests))
-            body = body.replace("{{total_tests_completed}}", str(job_completed_test_count))
-            vtc_logger.debug(f"Case 5 - Added total tests created and completed")
-        elif caseid == "6":
-            body = body.replace("{{test_objective}}", test_order_type_obj.get("test_objective", ""))
-            body = body.replace("{{complete_remarks}}", test_order_remarks.get("complete_remarks", ""))
-            vtc_logger.debug(f"Case 6 - Added test objective and complete remarks")
-        elif caseid == "7":
-            # Format notify fields and values for email body
-            fields_str = ", ".join(notify_fields) if notify_fields else ""
-            
-            values_parts = []
-            if notify_values:
-                for field, values in notify_values.items():
-                    value_str = ", ".join(values) if values else ""
-                    values_parts.append(f"{field}: {value_str}")
-            values_str = "; ".join(values_parts)
-            
-            body = body.replace("{{notify_fields}}", fields_str)
-            body = body.replace("{{notify_values}}", values_str)
-            vtc_logger.debug(f"Case 7 - Added notify fields: {fields_str} and values: {values_str}")
-        elif caseid == "8":
-            body = body.replace("{{rating}}", rating)
-            body = body.replace("{{rating_remarks}}", rating_remarks)
-            vtc_logger.debug(f"Case 8 - Added rating and rating remarks")
-
-        # Send the email
-        vtc_logger.info(f"Sending email for case {caseid} - TO: {to_emails}, CC: {cc_emails}")
-        send_email(to_emails, subject, body, cc_emails=cc_emails)
-        vtc_logger.info(f"Email sent successfully for caseid {caseid}")
-        return {"detail": f"Email sent successfully for case {caseid}"}
-    except HTTPException as he:
-        raise he
     except Exception as e:
-        vtc_logger.error(f"Error in send_email_endpoint: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        vtc_logger.error(f"Error preparing email data: {e}")
+        raise HTTPException(status_code=500, detail="Error preparing email data")
+
+    # Replace placeholders with actual IDs and info
+    # Compose subject as: JOBID->TESTID [VEHICLEBODYNUMBER]
+    # expected except and finally blocks
+    
+    subject_jobid = str(job_order_id)
+    subject_testid = str(test_order_id) if test_order_id else ""
+    subject_vehicle = f"{vehicle_body_number}" if vehicle_body_number else ""
+    subject = f"{subject_testid}/{subject_vehicle}"
+
+    # If you want to keep the original template subject as well, you can append it:
+    # subject = f"{subject_jobid}->{subject_testid} {subject_vehicle} | {subject}"
+
+    body = body.replace("{{job_order_id}}", str(job_order_id))
+    body = body.replace("{{test_order_id}}", str(test_order_id) if test_order_id else "")
+    body = body.replace("{{vehicle_body_number}}", vehicle_body_number)
+    body = body.replace("{{total_tests}}", str(total_tests))
+    body = body.replace("{{creator_name}}", creator_info.get("creator_name", ""))
+    body = body.replace("{{creator_id}}", creator_info.get("creator_id", ""))
+    body = body.replace("{{created_at}}", creator_info.get("created_at", ""))
+
+    # Replace notify_fields placeholder with actual field names
+    if "{{notify_fields}}" in body:
+        fields_str = ", ".join(notify_fields) if notify_fields else ""
+        body = body.replace("{{notify_fields}}", fields_str)
+        vtc_logger.debug(f"Replaced {{notify_fields}} with: {fields_str}")
+    
+    # Replace notify_values placeholder with formatted values
+    if "{{notify_values}}" in body:
+        # Format notify_values as a readable string
+        values_parts = []
+        if notify_values:
+            for field, values in notify_values.items():
+                value_str = ", ".join(values) if values else ""
+                values_parts.append(f"{field}: {value_str}")
+        values_str = "; ".join(values_parts)
+        body = body.replace("{{notify_values}}", values_str)
+        vtc_logger.debug(f"Replaced {{notify_values}} with: {values_str}")
+    
+    vtc_logger.debug(f"Processed subject: {subject}")
+    vtc_logger.debug(f"Processed body length: {len(body)} characters")
+
+    # Fetch updater name for test started/completed cases
+    test_started_by = ""
+    test_completed_by = ""
+    if caseid == "1.1" and test_order_id:
+        test_started_by = get_test_order_updater_name(db, test_order_id)
+    if caseid == "6" and test_order_id:
+        test_completed_by = get_test_order_updater_name(db, test_order_id)
+
+    # For caseid-specific replacements
+    if caseid == "1.1":
+        body = body.replace("{{test_objective}}", test_order_type_obj.get("test_objective", ""))
+        body = body.replace("{{test_started_by}}", test_started_by)
+        vtc_logger.debug(f"Case 1.1 - Added test objective and started by: {test_order_type_obj.get('test_objective', '')}, {test_started_by}")
+    elif caseid == "2":
+        body = body.replace("{{test_creator}}", test_order_type_obj.get("test_creator", ""))
+        body = body.replace("{{test_created_at}}", test_order_type_obj.get("test_created_at", ""))
+        vtc_logger.debug(f"Case 2 - Using job_order_id: {job_order_id}")
+    elif caseid == "3":
+        body = body.replace("{{test_objective}}", test_order_type_obj.get("test_objective", ""))
+        body = body.replace("{{remark}}", test_order_remarks.get("remark", ""))
+        vtc_logger.debug(f"Case 3 - Added test objective and remarks")
+    elif caseid == "4":
+        body = body.replace("{{test_objective}}", test_order_type_obj.get("test_objective", ""))
+        body = body.replace("{{rejection_remarks}}", test_order_remarks.get("rejection_remarks", ""))
+        vtc_logger.debug(f"Case 4 - Added test objective and rejection remarks")
+    elif caseid == "5":
+        body = body.replace("{{total_tests_created}}", str(total_tests))
+        body = body.replace("{{total_tests_completed}}", str(job_completed_test_count))
+        vtc_logger.debug(f"Case 5 - Added total tests created and completed")
+    elif caseid == "6":
+        body = body.replace("{{test_objective}}", test_order_type_obj.get("test_objective", ""))
+        body = body.replace("{{complete_remarks}}", test_order_remarks.get("complete_remarks", ""))
+        body = body.replace("{{test_completed_by}}", test_completed_by)
+        vtc_logger.debug(f"Case 6 - Added test objective, complete remarks, and completed by: {test_order_type_obj.get('test_objective', '')}, {test_completed_by}")
+    elif caseid == "7":
+        # Format notify fields and values for email body
+        fields_str = ", ".join(notify_fields) if notify_fields else ""
+        
+        values_parts = []
+        if notify_values:
+            for field, values in notify_values.items():
+                value_str = ", ".join(values) if values else ""
+                values_parts.append(f"{field}: {value_str}")
+            values_str = "; ".join(values_parts)
+        
+        body = body.replace("{{notify_fields}}", fields_str)
+        body = body.replace("{{notify_values}}", values_str)
+        vtc_logger.debug(f"Case 7 - Added notify fields: {fields_str} and values: {values_str}")
+    elif caseid == "8":
+        body = body.replace("{{rating}}", rating)
+        body = body.replace("{{rating_remarks}}", rating_remarks)
+        vtc_logger.debug(f"Case 8 - Added rating and rating remarks")
+
+    # Replace Regards line dynamically
+    regards_text = get_regards_by_department(job_order)
+    import re
+    body = re.sub(r"Regards,<br>.*?Lab Team", f"Regards,<br>{regards_text}", body)
+
+    # Send the email
+    vtc_logger.info(f"Sending email for case {caseid} - TO: {to_emails}, CC: {cc_emails}")
+    send_email(to_emails, subject, body, cc_emails=cc_emails)
+    vtc_logger.info(f"Email sent successfully for caseid {caseid}")
+    return {"detail": f"Email sent successfully for case {caseid}"}
+    
 
 
 @router.post("/cft_members/add")
@@ -1164,7 +1224,7 @@ async def debug_email_routing(
             cc_emails.extend(cft_emails)
         
         # Case-specific recipient logic
-        if caseid in ["2", "5"]:  # Test Order Created, Test Order Updated
+        if caseid in ["2", "5","8"]:  # Test Order Created, Test Order Updated
             # TO: Department-specific group email
             if job_order:
                 dept_email = get_department_group_email(job_order, caseid)
@@ -1177,7 +1237,7 @@ async def debug_email_routing(
                 # Fallback to role-based emails if no job order
                 to_emails = get_all_emails_by_role(db, role)
 
-        elif caseid in ["3", "4", "6", "9"]:  # Test Re-edit, Rejection, Completion, Document Upload
+        elif caseid in ["3", "4", "6", "9","1.1"]:  # Test Re-edit, Rejection, Completion, Document Upload
             # TO: Test order creator (person who created that test)
             if test_order_id:
                 test_order = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
@@ -1192,9 +1252,10 @@ async def debug_email_routing(
                             if job_creator and job_creator.email:
                                 to_emails = [job_creator.email]
                 
-            # If still no TO emails, use role-based emails as fallback
+            # If still no TO emails, send only to CC members (do not send to all role-based users)
             if not to_emails:
-                to_emails = get_all_emails_by_role(db, role)
+                vtc_logger.warning(f"No test creator found for caseid: {caseid}, sending only to CC members.")
+                to_emails = []
             
             # CC: Department-specific group email + CFT members
             if job_order:
