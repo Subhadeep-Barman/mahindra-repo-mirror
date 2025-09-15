@@ -726,6 +726,20 @@ def get_test_order_updater_name(db: Session, test_order_id: str) -> str:
         return ""
 
 
+def get_regards_by_department(job_order) -> str:
+    """
+    Returns the correct 'Regards' line for the email body based on department/team.
+    """
+    department = get_job_department(job_order)
+    if department == "RDE JO":
+        return "EDC-RDE Lab Team"
+    elif department == "PDCD_JO Chennai":
+        return "EDC-PDCD Lab Team"
+    elif department == "VTC_JO Nashik" or department == "VTC_JO Chennai":
+        return "EDC-VTC Lab Team"
+    return "EDC-VTC Lab Team"  # Default fallback
+
+
 @router.post("/send")
 async def send_email_endpoint(
     job_order_id: str = Body(...),
@@ -1021,22 +1035,10 @@ async def send_email_endpoint(
         body = body.replace("{{rating_remarks}}", rating_remarks)
         vtc_logger.debug(f"Case 8 - Added rating and rating remarks")
 
-
-          # Before sending, update the 'Regards' line in the body according to department
-    department = None
-    if job_order:
-        department = get_job_department(job_order)
-    # Default to VTC if not found
-    regards_map = {
-        "VTC_JO Chennai": "EDC-VTC Lab teams",
-        "VTC_JO Nashik": "EDC-VTC Lab teams",
-        "RDE JO": "EDC-RDE Lab teams",
-        "PDCD_JO Chennai": "EDC-PDCD Lab teams"
-    }
-    regards_text = regards_map.get(department, "EDC-VTC Lab teams")
-    # Replace the Regards line in the body
+    # Replace Regards line dynamically
+    regards_text = get_regards_by_department(job_order)
     import re
-    body = re.sub(r"Regards,<br>.*?Lab teams", f"Regards,<br>{regards_text}", body)
+    body = re.sub(r"Regards,<br>.*?Lab Team", f"Regards,<br>{regards_text}", body)
 
     # Send the email
     vtc_logger.info(f"Sending email for case {caseid} - TO: {to_emails}, CC: {cc_emails}")
