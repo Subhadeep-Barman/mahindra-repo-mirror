@@ -102,6 +102,20 @@ export default function CreateJobOrder() {
   const [inertiaClasses, setInertiaClasses] = useState([]);
   const [modes, setModes] = useState([]);
   const [fuelTypes, setFuelTypes] = useState([]);
+  // Compute mandatory field validity for job order creation
+  const requiredFields = [
+    "projectCode",
+    "vehicleBodyNumber",
+    "vehicleSerialNumber",
+    "engineSerialNumber",
+    "engineType",
+    "domain",
+    "department",
+  ];
+  const isFormValid = requiredFields.every((key) => {
+    const value = form[key];
+    return value !== undefined && value !== null && String(value).trim() !== "";
+  });
 
   // Add state for clone modal
   const [cloneModalOpen, setCloneModalOpen] = useState(false);
@@ -149,7 +163,7 @@ export default function CreateJobOrder() {
         pdf_report: "",
         excel_report: "",
         dat_file_attachment: "",
-        others_attachment: "",
+        others_attachement: "",
         specificInstruction: "",
         uploadDocuments: null,
         testOrderId: null,
@@ -165,6 +179,21 @@ export default function CreateJobOrder() {
         f2Nkmph2: "",
       },
     ]);
+  };
+  // Helper: validate mandatory top-level JO fields at submit time
+  const getMissingRequiredFields = () => {
+    const required = [
+      { key: "projectCode", label: "Project" },
+      { key: "vehicleBodyNumber", label: "Vehicle Body Number" },
+      { key: "vehicleSerialNumber", label: "Vehicle Serial Number" },
+      { key: "engineSerialNumber", label: "Engine Serial Number" },
+      { key: "engineType", label: "Type of Engine" },
+      { key: "domain", label: "Domain" },
+      { key: "department", label: "Department" },
+    ];
+    return required
+      .filter(({ key }) => !form[key] || String(form[key]).trim() === "")
+      .map((r) => r.label);
   };
 
   const handleCloneTest = async () => {
@@ -216,10 +245,10 @@ export default function CreateJobOrder() {
         experiment_attachment: testOrderData.experiment_attachment || [],
         dbc_attachment: testOrderData.dbc_attachment || [],
         wltp_attachment: testOrderData.wltp_attachment || [],
-        pdf_report: testOrderData.pdf_report || [],
-        excel_report: testOrderData.excel_report || [],
-        dat_file_attachment: testOrderData.dat_file_attachment || [],
-        others_attachment: testOrderData.others_attachment || [],
+        pdf_report: [],
+        excel_report: [],
+        dat_file_attachment: [],
+        others_attachement: [],
 
         // Reset fields for new test order
         testOrderId: null,
@@ -239,6 +268,20 @@ export default function CreateJobOrder() {
 
       // Add the cloned test to the tests array
       setTests((prev) => [...prev, clonedTest]);
+
+      const job_order_id = location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || "";
+      const target_test_order_id = `test0`; 
+      console.log("Cloning files from test order:", testOrderId, "to new test order:", target_test_order_id);
+      try {
+        await axios.post(`${apiURL}/clone-testorder-files`, {
+          job_order_id,
+          source_test_order_id: testOrderId,
+          target_test_order_id,
+        });
+        showSnackbar(`Files cloned successfully from Test Order: ${testOrderId}`, "success");
+      } catch (err) {
+        showSnackbar("Failed to clone files: " + (err.response?.data?.detail || err.message), "error");
+      }
 
       // Close the modal and reset selection
       setCloneModalOpen(false);
@@ -842,19 +885,20 @@ export default function CreateJobOrder() {
     }
   };
 
-  // Function to check if job order with same vehicle body number and engine serial number exists
-  const checkForDuplicateJobOrder = async (vehicleBodyNumber, engineSerialNumber) => {
+  // Function to check if job order with same vehicle body number, engine serial number and domain exists
+  const checkForDuplicateJobOrder = async (vehicleBodyNumber, engineSerialNumber, domain) => {
     try {
       // job order read api call
       const department = form.department || "VTC_JO Chennai"; // Default to Chennai if not set
       const response = await axios.get(`${apiURL}/joborders`, { params: { department, user_id: userId, role: userRole } });
       const jobOrders = response.data;
       
-      // Find if there's already a job order with same vehicle body number and engine serial number
+      // Find if there's already a job order with same vehicle body number, engine serial number, and domain
       const duplicate = jobOrders.find(
         (jobOrder) => 
           jobOrder.vehicle_body_number === vehicleBodyNumber && 
-          jobOrder.engine_serial_number === engineSerialNumber
+          jobOrder.engine_serial_number === engineSerialNumber &&
+          jobOrder.domain === domain
       );
       
       return duplicate;
@@ -880,8 +924,7 @@ export default function CreateJobOrder() {
     }
   };
 
-  // Handler for creating job order
-  // Function to check if user has reached the limit of 5 job orders without providing ratings
+
   const checkJobOrderLimit = async () => {
     try {
       const department = form.department || "VTC_JO Chennai";
@@ -921,17 +964,24 @@ export default function CreateJobOrder() {
       return { limitReached: false }; // Default to allowing creation if check fails
     }
   };
-
+  // Handler for creating job order
   const handleCreateJobOrder = async (e) => {
     e.preventDefault();
+
+    // Block submit with a popup if mandatory fields are missing
+    const missing = getMissingRequiredFields();
+    if (missing.length > 0) {
+      showSnackbar(`Please fill mandatory fields: ${missing.join(", ")}`, "error");
+      return;
+    }
 
     // Require at least one CFT member
     if (!cftMembers || cftMembers.length === 0) {
       showSnackbar("Please add at least one CFT member before creating a job order.", "error");
       return;
     }
-    
-    // Check if user has reached the limit of 5 job orders without providing ratings
+
+     // Check if user has reached the limit of 5 job orders without providing ratings
     const { limitReached, unratedOrders } = await checkJobOrderLimit();
     if (limitReached) {
       showSnackbar(
@@ -941,13 +991,13 @@ export default function CreateJobOrder() {
       return;
     }
     
-    // Check for duplicate job orders with the same vehicle body number and engine serial number
-    const duplicate = await checkForDuplicateJobOrder(form.vehicleBodyNumber, form.engineSerialNumber);
+    // Check for duplicate job orders with the same vehicle body number, engine serial number, and domain
+    const duplicate = await checkForDuplicateJobOrder(form.vehicleBodyNumber, form.engineSerialNumber, form.domain);
     
     if (duplicate) {
       const suggestedNumber = suggestNewVehicleBodyNumber(form.vehicleBodyNumber);
       showSnackbar(
-        `A job order already exists with the same combination of body number (${form.vehicleBodyNumber}) and engine number (${form.engineSerialNumber}). Please create a new vehicle with a different body number, suggested format: "${suggestedNumber}"`, 
+        `A job order already exists with the same combination of body number (${form.vehicleBodyNumber}), engine number (${form.engineSerialNumber}), and domain (${form.domain}). `, 
         "error"
       );
       return;
@@ -1063,14 +1113,14 @@ export default function CreateJobOrder() {
 
     // Check if there are any existing test orders for the same job order
     const existingTestOrders = allTestOrders[jobOrderId] || [];
-    const incompleteTestOrder = existingTestOrders.find(
+    const unratedTestOrders = existingTestOrders.filter(
       (order) => order.status !== "Completed" || !order.rating
     );
 
-    // Enforce the 5 Test Order condition
-    if (existingTestOrders.length >= 5 && incompleteTestOrder) {
+    // Enforce the 5 unrated Test Order condition
+    if (unratedTestOrders.length >= 5) {
       showSnackbar(
-        `Cannot create a new test order. Please complete and rate the existing test order (ID: ${incompleteTestOrder.test_order_id}) first.`,
+        `Cannot create a new test order. Please complete and rate at least one of the existing test orders before creating more.`,
         "error"
       );
       return;
@@ -1178,7 +1228,7 @@ export default function CreateJobOrder() {
       pdf_report: test.PDF_report || test.pdf_report || [],
       excel_report: test.Excel_report || test.excel_report || [],
       dat_file_attachment: test.DAT_file_attachment || test.dat_file_attachment || [],
-      others_attachement: test.Others_attachment || test.others_attachement || [],
+      others_attachement: test.others_attachement || test.others_attachement || [],
       // Include coast down data in the payload
       coast_down_data: testCoastDownPayload,
     };
@@ -1340,6 +1390,7 @@ export default function CreateJobOrder() {
       const res = await axios.get(`${apiURL}/testorders-single`, {
         params: { test_order_id }
       });
+      console.log("Fetched test order:", res.data);
       // If your API returns an array, return the first item; else return as is
       return Array.isArray(res.data) ? res.data[0] : res.data;
     } catch (err) {
@@ -1352,6 +1403,7 @@ export default function CreateJobOrder() {
     try {
       const resp = await fetch(`${apiURL}/testorders-single?test_order_id=${encodeURIComponent(testOrderId)}`);
       if (!resp.ok) throw new Error('Failed to fetch test order');
+      console.log("Response from testorders-single:", resp);
       const data = await resp.json();
       navigate('/editTestOrder', {
         state: {
@@ -1361,6 +1413,7 @@ export default function CreateJobOrder() {
           returnState: location.state,
         }
       });
+      console.log("Navigated to editTestOrder with data:", data);
     } catch (err) {
       console.error('Error fetching testorder-single:', err);
       showSnackbar('Failed to load test order details', 'error');
@@ -1814,13 +1867,15 @@ export default function CreateJobOrder() {
       missing.push('DPF Regen Occurs (g)');
     }
 
-    // Check attachments - Skip for PDCD Chennai department
-    if (form.department !== "PDCD_JO Chennai") {
-      const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
-      const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
-      const hasEmissionCheck = Array.isArray(test.emission_check_attachment || test.emissionCheckAttachment) && (test.emission_check_attachment || test.emissionCheckAttachment).length > 0;
-      const hasA2L = Array.isArray(test.A2L || test.a2l_attachment) && (test.A2L || test.a2l_attachment).length > 0;
+    // Check attachments
+    // if department is PDCD_JO Chennai then don't make attachments mandatory
+    const hasDataset = Array.isArray(test.Dataset_attachment || test.dataset_attachment) && (test.Dataset_attachment || test.dataset_attachment).length > 0;
+    const hasExperiment = Array.isArray(test.Experiment_attachment || test.experiment_attachment) && (test.Experiment_attachment || test.experiment_attachment).length > 0;
+    const hasEmissionCheck = Array.isArray(test.emission_check_attachment || test.emissionCheckAttachment) && (test.emission_check_attachment || test.emissionCheckAttachment).length > 0;
+    const hasA2L = Array.isArray(test.A2L || test.a2l_attachment) && (test.A2L || test.a2l_attachment).length > 0;
 
+    const dept = form.department || (location.state?.jobOrder?.department) || "";
+    if (dept !== "PDCD_JO Chennai") {
       if (!hasDataset) missing.push('Dataset Attachment');
       if (!hasExperiment) missing.push('Experiment Attachment');
       if (!hasEmissionCheck) missing.push('Emission Check Attachment');
@@ -1914,6 +1969,7 @@ export default function CreateJobOrder() {
       ];
 
       for (const field of coastDownFields) {
+
         const testValue = test[field];
         const formValue = form[field];
         const value = testValue || formValue;
@@ -3471,7 +3527,11 @@ export default function CreateJobOrder() {
                         ...test,
                         originalJobOrderId: location.state?.originalJobOrderId || location.state?.jobOrder?.job_order_id || ""
                       }}
-                      setFormData={handleAttachmentUpdate(idx)}
+                      setFormData={(updatedTest) => {
+                        setTests((prev) =>
+                          prev.map((t, i) => (i === idx ? { ...t, ...updatedTest } : t))
+                        );
+                      }}
                       id={`test${idx}`}
                       submitted={false}
                       setSubmitted={() => { }}
@@ -3498,7 +3558,7 @@ export default function CreateJobOrder() {
 
                   <div>
                     <Label>
-                      WLTP Input Sheet
+                      WLTP Input Sheet / Other Attachments
                       {test.wltp_attachment && test.wltp_attachment.length > 0 && (
                         <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
                           {Array.isArray(test.wltp_attachment) ? test.wltp_attachment.length : 1}
@@ -3506,7 +3566,7 @@ export default function CreateJobOrder() {
                       )}
                     </Label>
                     <DropzoneFileList
-                      buttonText="WLTP Input Sheet"
+                      buttonText="WLTP Input Sheet / Other Attachments"
                       name="wltp_attachment"
                       maxFiles={5}
                       formData={{
@@ -3658,7 +3718,7 @@ export default function CreateJobOrder() {
                     <Label>Others Attachment</Label>
                     <DropzoneFileList
                       buttonText="Others Attachment"
-                      name="Others_attachment"
+                      name="others_attachement"
                       maxFiles={5}
                       formData={{
                         ...test,
@@ -3680,12 +3740,12 @@ export default function CreateJobOrder() {
                       viewOnly={userRole === "ProjectTeam"}
                       team="testTeam" // Add team prop
                       customButtonStyle={{
-                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'Others_attachment')),
-                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'Others_attachment')),
+                        backgroundColor: getAttachmentColor(getAttachmentFileCount(test, 'others_attachement')),
+                        borderColor: getAttachmentColor(getAttachmentFileCount(test, 'others_attachement')),
                         color: 'white'
                       }}
                       customContainerStyle={{
-                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'Others_attachment'))
+                        backgroundColor: getAttachmentBackgroundColor(getAttachmentFileCount(test, 'others_attachement'))
                       }}
                     />
                   </div>

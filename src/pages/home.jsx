@@ -33,7 +33,7 @@ import brandLogo from "@/assets/brandlogo.png";
 const servicesBase = [
   {
     id: 1,
-    title: "VTC MRV LAB",
+    title: "MRV - VTC LAB",
     description: "Vehicle Test Cell Laboratory",
   icon: MessageSquare,
   img: otherIcon,
@@ -45,7 +45,7 @@ const servicesBase = [
   },
   {
     id: 2,
-    title: "VTC Nashik LAB",
+    title: "Nashik - VTC LAB",
     description: "Vehicle Test Cell Laboratory",
   icon: Flag,
   img: nashik,
@@ -57,7 +57,7 @@ const servicesBase = [
   },
     {
     id: 3,
-    title: "RDE MRV LAB",
+    title: "MRV - RDE LAB",
     description: "Real Driving Emissions Laboratory",
   icon: Code,
   img: rdeIcon,
@@ -69,7 +69,7 @@ const servicesBase = [
   },
   {
     id: 4,
-    title: "PDCD MRV LAB",
+    title: "MRV - PDCD LAB",
     description: "Powertrain Durability Chassis Dyno Laboratory",
   icon: Zap,
   img: pdcdlogo,
@@ -83,7 +83,11 @@ const servicesBase = [
 
 // Change the export to default and rename the component
 export default function HomePage() {
-  const { userRole, userId, userName, userTeam } = useAuth();
+  const userCookies = useStore.getState().getUserCookieData();
+  const userRole = userCookies.userRole;
+  const userTeam = userCookies.userTeam;
+  const userName = userCookies.userName;
+  const userId = userCookies.userId;
 
   // Always show all labs
   const services = servicesBase;
@@ -91,10 +95,10 @@ export default function HomePage() {
   // Determine which lab titles are accessible for TestEngineer/Admin
   let allowedLabTitles = [];
   if (userRole === "TestEngineer" || userRole === "Admin") {
-    if (userTeam === "vtc") allowedLabTitles = ["VTC MRV LAB"];
-    else if (userTeam === "vtc_n") allowedLabTitles = ["VTC Nashik LAB"];
-    else if (userTeam === "rde") allowedLabTitles = ["RDE MRV LAB"];
-    else if (userTeam === "pdcd") allowedLabTitles = ["PDCD MRV LAB"];
+    if (userTeam === "vtc") allowedLabTitles = ["MRV - VTC LAB"];
+    else if (userTeam === "vtc_n") allowedLabTitles = ["Nashik - VTC LAB"];
+    else if (userTeam === "rde") allowedLabTitles = ["MRV - RDE LAB"];
+    else if (userTeam === "pdcd") allowedLabTitles = ["MRV - PDCD LAB"];
   }
 
   // Always use 4 columns for grid
@@ -111,22 +115,35 @@ export default function HomePage() {
     fetchVehicleModels();
   }, [fetchProjects, fetchDomains, fetchVehicleModels]);
 
+  React.useEffect(() => {
+    // Disable vertical scrolling on the entire page
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      // Re-enable scrolling when the component is unmounted
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   return (
     <>
       <Navbar />
+      {console.log("user ka rolee", userRole)}
       <div className="min-h-screen flex flex-col bg-white dark:bg-black overflow-hidden relative">
         {/* Slant Line with Logo */}
-        <div className="absolute left-0 top-[calc(50%-200px)]">
+        <div className="fixed left-0 top-[15rem]">
           <img
             src={brandLogo}
             alt="Mahindra Rise Logo"
             className="absolute right-[-120px] top-[-70px] w-48"
           />
-          <div className="w-64 h-1 bg-red-600 transform -rotate-12" />
+          <div className="w-48 h-1 bg-red-600 transform -rotate-12" />
         </div>
 
-        {/* Main Content Area - takes remaining space */}
-        <div className="flex-1 flex flex-col overflow-y-auto">
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
           {/* Hero Section */}
           <div className="relative overflow-hidden mt-8">
             {/* Background Pattern */}

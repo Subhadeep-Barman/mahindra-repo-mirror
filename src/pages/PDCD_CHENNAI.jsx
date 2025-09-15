@@ -410,6 +410,26 @@ export default function PDCDChennaiPage() {
     XLSX.writeFile(workbook, "job_orders.xlsx");
   };
 
+  // Helper function to convert any date string to IST
+  function formatToIST(dateString) {
+    if (!dateString) return "";
+    // Parse as UTC, then convert to IST
+    const utcDate = new Date(dateString);
+    // Get IST offset in minutes (5:30 = 330)
+    const istOffset = 330;
+    // Convert to IST by adding offset
+    const istDate = new Date(utcDate.getTime() + istOffset * 60000);
+    return istDate.toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      hour12: true,
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
   return (
     <>
       <Navbar1 />
@@ -600,33 +620,13 @@ export default function PDCDChennaiPage() {
                           {testOrder.name_of_creator}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600 px-4 py-2">
-                          {testOrder.created_on
-                            ? new Date(testOrder.created_on).toLocaleString("en-IN", {
-                                timeZone: "Asia/Kolkata",
-                                hour12: true,
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : ""}
+                          {formatToIST(testOrder.created_on)}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600 px-4 py-2">
                           {testOrder.name_of_updater}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600 px-4 py-2">
-                          {testOrder.updated_on
-                            ? new Date(testOrder.updated_on).toLocaleString("en-IN", {
-                                timeZone: "Asia/Kolkata",
-                                hour12: true,
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "N/A"}
+                          {formatToIST(testOrder.updated_on)}
                         </TableCell>
                       </TableRow>
                     ))
@@ -637,11 +637,13 @@ export default function PDCDChennaiPage() {
                         className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"
                           } hover:bg-gray-100`}
                       >
-                        <TableCell
-                          className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400"
-                          onClick={() => handleJobOrderClick(order.job_order_id)}
-                        >
-                          {order.job_order_id}
+                        <TableCell className="text-xs" style={{ minWidth: 160 }}>
+                          <span
+                            className="text-blue-600 hover:text-blue-800 cursor-pointer underline dark:text-green-500 dark:hover:text-green-400"
+                            onClick={() => handleJobOrderClick(order.job_order_id)}
+                          >
+                            {order.job_order_id}
+                          </span>
                         </TableCell>
                         <TableCell className="text-xs text-gray-900 px-4 py-2">
                           {order.project_code}
@@ -670,31 +672,13 @@ export default function PDCDChennaiPage() {
                           {order.name_of_creator}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600 px-4 py-2">
-                          {new Date(order.created_on).toLocaleString("en-IN", {
-                            timeZone: "Asia/Kolkata",
-                            hour12: true,
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {formatToIST(order.created_on)}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600 px-4 py-2">
                           {order.name_of_updater}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600 px-4 py-2">
-                          {order.updated_on
-                            ? new Date(order.updated_on).toLocaleString("en-IN", {
-                              timeZone: "Asia/Kolkata",
-                              hour12: true,
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                            : "N/A"}
+                          {formatToIST(order.updated_on)}
                         </TableCell>
                       </TableRow>
                   ))

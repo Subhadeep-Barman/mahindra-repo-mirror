@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Snackbar, Alert } from '@mui/material';
 import useStore from '@/store/useStore';
+import { useInactivityHandler } from './hooks/useInactivityHandler';
 
 // Auth & Home
 import Login from "./pages/login";
@@ -49,7 +49,11 @@ import EditTestOrder from "./pages/EditTestOrder";
 // Import AddNewFields component
 import AddNewFields from "./pages/AddNewFields";
 
-function App() {
+// Component that uses the inactivity handler inside Router context
+function AppWithInactivity() {
+  // Initialize inactivity handler (now inside Router context)
+  useInactivityHandler();
+
   // Move snackbar state to App component where Snackbar is rendered
   const {
     snackbarOpen,
@@ -60,69 +64,75 @@ function App() {
   } = useStore();
 
   return (
-    <Router>
-      <div className="px-4">
-        <Routes>
-          {/* Auth & Home */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/default-login" element={<DefaultLogin />} />
+    <div className="px-4">
+      <Routes>
+        {/* Auth & Home */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/home" element={<HomePage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/default-login" element={<DefaultLogin />} />
 
-          {/* Admin */}
-          <Route path="/admin-portal" element={<AdminPortal />} />
+        {/* Admin */}
+        <Route path="/admin-portal" element={<AdminPortal />} />
 
-          {/* VTC Chennai */}
-          <Route path="/vtc-chennai" element={<VTCChennaiPage />} />
-          <Route path="/vtccvehicle" element={<VTCCVehiclePage />} />
-          <Route path="/vtcChennaiEngine" element={<VTCEnginePage />} />
-          <Route path="/engineform" element={<EngineForm />} />
-          <Route path="/vtcvehicle/new" element={<VehicleForm />} />
-          <Route path="/chennai/engine/new" element={<VTCCEngineForm />} />
+        {/* VTC Chennai */}
+        <Route path="/vtc-chennai" element={<VTCChennaiPage />} />
+        <Route path="/vtccvehicle" element={<VTCCVehiclePage />} />
+        <Route path="/vtcChennaiEngine" element={<VTCEnginePage />} />
+        <Route path="/engineform" element={<EngineForm />} />
+        <Route path="/vtcvehicle/new" element={<VehicleForm />} />
+        <Route path="/chennai/engine/new" element={<VTCCEngineForm />} />
 
-          {/* PDCD Chennai */}
-          <Route path="/pdcd-lab" element={<PDCDChennaiPage />} />
-          <Route path="/PDCDCreateJobOrder" element={<PDCDCreateJobOrder />} />
-          <Route path="/pdcd/vehicle" element={<PDCDVehicle />} />
-          <Route path="/pdcd/engine" element={<PDCDEnginePage />} />
-          <Route path="/pdcd/engine/new" element={<VTCCEngineForm />} />
+        {/* PDCD Chennai */}
+        <Route path="/pdcd-lab" element={<PDCDChennaiPage />} />
+        <Route path="/PDCDCreateJobOrder" element={<PDCDCreateJobOrder />} />
+        <Route path="/pdcd/vehicle" element={<PDCDVehicle />} />
+        <Route path="/pdcd/engine" element={<PDCDEnginePage />} />
+        <Route path="/pdcd/engine/new" element={<VTCCEngineForm />} />
 
-          {/* VTC Nashik */}
-          <Route path="/vtc-nashik" element={<VTCNashikPage />} />
-          <Route path="/NashikCreateJobOrder" element={<NashikJobOrder />} />
-          <Route path="/nashik/vehicle" element={<VTCNashikVehicle />} />
-          <Route path="/nashik/engine" element={<RDEnginePage />} />
-          <Route path="/nashik/engine/new" element={<NEngine />} />
+        {/* VTC Nashik */}
+        <Route path="/vtc-nashik" element={<VTCNashikPage />} />
+        <Route path="/NashikCreateJobOrder" element={<NashikJobOrder />} />
+        <Route path="/nashik/vehicle" element={<VTCNashikVehicle />} />
+        <Route path="/nashik/engine" element={<RDEnginePage />} />
+        <Route path="/nashik/engine/new" element={<NEngine />} />
 
-          {/* RDE */}
-          <Route path="/rde-chennai" element={<RDEChennaiPage />} />
-          <Route path="/rde/vehicle" element={<RDEVehicle />} />
-          <Route path="/rde/engine" element={<RDEEngine />} />
-          <Route path="/rde/engine/new" element={<NEngine />} />
+        {/* RDE */}
+        <Route path="/rde-chennai" element={<RDEChennaiPage />} />
+        <Route path="/rde/vehicle" element={<RDEVehicle />} />
+        <Route path="/rde/engine" element={<RDEEngine />} />
+        <Route path="/rde/engine/new" element={<NEngine />} />
 
-          {/* Misc */}
-          <Route path="/RDECreateJobOrder" element={<RDE_JobOrder_Create />} />
-          <Route path="/createJobOrder" element={<CreateJobOrder />} />
-          <Route path="/editTestOrder" element={<EditTestOrder />} />
-          <Route path="/authSuccess" element={<AuthSuccess />} />
-          <Route path="/admin/dropdown-options" element={<AddNewFields />} />
-        </Routes>
+        {/* Misc */}
+        <Route path="/RDECreateJobOrder" element={<RDE_JobOrder_Create />} />
+        <Route path="/createJobOrder" element={<CreateJobOrder />} />
+        <Route path="/editTestOrder" element={<EditTestOrder />} />
+        <Route path="/authSuccess" element={<AuthSuccess />} />
+        <Route path="/admin/dropdown-options" element={<AddNewFields />} />
+      </Routes>
 
-        <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={snackbarDuration}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={snackbarDuration}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
           onClose={() => setSnackbarOpen(false)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
         >
-          <Alert
-            onClose={() => setSnackbarOpen(false)}
-            severity={snackbarSeverity}
-            sx={{ width: '100%' }}
-          >
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
-      </div>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppWithInactivity />
     </Router>
   );
 }

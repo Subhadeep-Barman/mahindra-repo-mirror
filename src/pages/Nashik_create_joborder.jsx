@@ -106,6 +106,20 @@ export default function NashikCreateJobOrder() {
   const [experimentModals, setExperimentModals] = useState({});
   const [dbcModals, setDBCModals] = useState({});
   const [wltpModals, setWLTPModals] = useState({});
+  // Compute mandatory field validity for job order creation (Nashik)
+  const requiredFields = [
+    "projectCode",
+    "vehicleBodyNumber",
+    "vehicleSerialNumber",
+    "engineSerialNumber",
+    "engineType",
+    "domain",
+    "department",
+  ];
+  const isFormValid = requiredFields.every((key) => {
+    const value = form[key];
+    return value !== undefined && value !== null && String(value).trim() !== "";
+  });
 
   const [pdfReportModals, setpdfReportModals] = useState({});
   const [excelReportModals, setexcelReportModals] = useState({});
@@ -678,19 +692,20 @@ export default function NashikCreateJobOrder() {
     }));
   };
 
- // Function to check if job order with same vehicle body number and engine serial number exists
-  const checkForDuplicateJobOrder = async (vehicleBodyNumber, engineSerialNumber) => {
+ // Function to check if job order with same vehicle body number, engine serial number and domain exists
+  const checkForDuplicateJobOrder = async (vehicleBodyNumber, engineSerialNumber, domain) => {
     try {
       // job order read api call
       const department = form.department || "VTC_JO Nashik";
       const response = await axios.get(`${apiURL}/joborders`, { params: { department, user_id: userId, role: userRole } });
       const jobOrders = response.data;
       
-      // Find if there's already a job order with same vehicle body number and engine serial number
+      // Find if there's already a job order with same vehicle body number, engine serial number, and domain
       const duplicate = jobOrders.find(
         (jobOrder) => 
           jobOrder.vehicle_body_number === vehicleBodyNumber && 
-          jobOrder.engine_serial_number === engineSerialNumber
+          jobOrder.engine_serial_number === engineSerialNumber &&
+          jobOrder.domain === domain
       );
       
       return duplicate;
@@ -716,7 +731,6 @@ export default function NashikCreateJobOrder() {
     }
   };
 
-  // Handler for creating job order
   // Function to check if user has reached the limit of 5 job orders without providing ratings
   const checkJobOrderLimit = async () => {
     try {
@@ -758,16 +772,35 @@ export default function NashikCreateJobOrder() {
     }
   };
 
+  // Handler for creating job order
   const handleCreateJobOrder = async (e) => {
     e.preventDefault();
+
+    // Validate mandatory fields at click-time
+    const required = [
+      { key: "projectCode", label: "Project" },
+      { key: "vehicleBodyNumber", label: "Vehicle Body Number" },
+      { key: "vehicleSerialNumber", label: "Vehicle Serial Number" },
+      { key: "engineSerialNumber", label: "Engine Serial Number" },
+      { key: "engineType", label: "Type of Engine" },
+      { key: "domain", label: "Domain" },
+      { key: "department", label: "Department" },
+    ];
+    const missing = required
+      .filter(({ key }) => !form[key] || String(form[key]).trim() === "")
+      .map((r) => r.label);
+    if (missing.length > 0) {
+      showSnackbar(`Please fill mandatory fields: ${missing.join(", ")}`, "error");
+      return;
+    }
 
     // Require at least one CFT member
     if (!cftMembers || cftMembers.length === 0) {
       showSnackbar("Please add at least one CFT member before creating a job order.", "error");
       return;
     }
-    
-    // Check if user has reached the limit of 5 job orders without providing ratings
+
+     // Check if user has reached the limit of 5 job orders without providing ratings
     const { limitReached, unratedOrders } = await checkJobOrderLimit();
     if (limitReached) {
       showSnackbar(
@@ -777,13 +810,13 @@ export default function NashikCreateJobOrder() {
       return;
     }
     
-    // Check for duplicate job orders with the same vehicle body number and engine serial number
-    const duplicate = await checkForDuplicateJobOrder(form.vehicleBodyNumber, form.engineSerialNumber);
+    // Check for duplicate job orders with the same vehicle body number, engine serial number, and domain
+    const duplicate = await checkForDuplicateJobOrder(form.vehicleBodyNumber, form.engineSerialNumber, form.domain);
     
     if (duplicate) {
       const suggestedNumber = suggestNewVehicleBodyNumber(form.vehicleBodyNumber);
       showSnackbar(
-        `A job order already exists with the same combination of body number (${form.vehicleBodyNumber}) and engine number (${form.engineSerialNumber}). Please create a new vehicle with a different body number, suggested format: "${suggestedNumber}"`, 
+        `A job order already exists with the same combination of body number (${form.vehicleBodyNumber}), engine number (${form.engineSerialNumber}), and domain (${form.domain}). Please either select a different domain or change the vehicle body number (suggested format: "${suggestedNumber}") or engine number.`, 
         "error"
       );
       return;
@@ -2618,9 +2651,9 @@ export default function NashikCreateJobOrder() {
                   />
                 </div>
                 <div>
-                  <Label>WLTP input sheet</Label>
+                  <Label>WLTP Input Sheet / Other Attachments</Label>
                   <DropzoneFileList
-                    buttonText="WLTP input sheet"
+                    buttonText="WLTP Input Sheet / Other Attachments"
                     name="WLTP_input_sheet"
                     maxFiles={5}
                     formData={{
@@ -2746,7 +2779,7 @@ export default function NashikCreateJobOrder() {
                   <Label>Others Attachment</Label>
                   <DropzoneFileList
                     buttonText="Others Attachment"
-                    name="Others_attachment"
+                    name="others_attachement"
                     maxFiles={5}
                     formData={{
                       ...test,
