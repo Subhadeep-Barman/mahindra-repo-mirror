@@ -1697,8 +1697,15 @@ export default function RDECreateJobOrder() {
     );
   };
 
-  const { apiUserRole: userRole } = useAuth();
-  const { userId, userName } = useAuth();
+  // const { apiUserRole: userRole } = useAuth();
+  // const { userId, userName } = useAuth();
+
+  const userCookies = useStore.getState().getUserCookieData();
+  const userRole = userCookies.userRole;
+  const userTeam = userCookies.userTeam;
+  const userName = userCookies.userName;
+  const userId = userCookies.userId;
+  
   const isTestEngineer = userRole === "TestEngineer";
   const isProjectTeam = userRole === "ProjectTeam";
   const isAdmin = userRole == "Admin";

@@ -86,7 +86,7 @@ export default function CreateJobOrder() {
   const [engineList, setEngineList] = useState([]);
   const [vehicleBodyNumbers, setVehicleBodyNumbers] = useState([]);
   const [engineNumbers, setEngineNumbers] = useState([]);
-  const { userRole, userId, userName } = useAuth();
+  // const { userRole, userId, userName } = useAuth();
   const [isPreFilling, setIsPreFilling] = useState(false);
   const [vehicleAccordionOpen, setVehicleAccordionOpen] = useState(false);
   const [vehicleEditable, setVehicleEditable] = useState(null);
@@ -127,6 +127,12 @@ export default function CreateJobOrder() {
   // Modal state to display missing fields when user attempts to create a test
   const [missingFieldsModalOpen, setMissingFieldsModalOpen] = useState(false);
   const [missingFieldsForModal, setMissingFieldsForModal] = useState([]);
+
+  const userCookies = useStore.getState().getUserCookieData();
+  const userRole = userCookies.userRole;
+  const userTeam = userCookies.userTeam;
+  const userName = userCookies.userName;
+  const userId = userCookies.userId;
 
   const handleAddTest = () => {
     const existingTestOrdersCount = (allTestOrders[location.state?.originalJobOrderId] || []).length;
@@ -2155,6 +2161,7 @@ export default function CreateJobOrder() {
               onValueChange={(value) => handleChange("projectCode", value)}
               required
               disabled={formDisabled || isTestEngineer || isAdmin}
+              searchable
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -2182,6 +2189,7 @@ export default function CreateJobOrder() {
               onValueChange={handleVehicleBodyChange}
               required
               disabled={formDisabled || isTestEngineer || isAdmin || !form.projectCode}
+              searchable
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -2236,6 +2244,7 @@ export default function CreateJobOrder() {
                 !!(location.state?.originalJobOrderId &&
                   (allTestOrders[location.state?.originalJobOrderId] || []).length > 0 || !form.vehicleBodyNumber)
               }
+              searchable
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -2277,6 +2286,7 @@ export default function CreateJobOrder() {
               onValueChange={(value) => handleChange("engineType", value)}
               required
               disabled={formDisabled || isTestEngineer || isAdmin}
+              searchable
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -2304,6 +2314,7 @@ export default function CreateJobOrder() {
               onValueChange={(value) => handleChange("domain", value)}
               required
               disabled={formDisabled || isTestEngineer || isAdmin}
+              searchable
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -2331,6 +2342,7 @@ export default function CreateJobOrder() {
               onValueChange={(value) => handleChange("department", value)}
               required
               disabled={true} // Always disabled for Chennai
+              searchable
             >
               <SelectTrigger className="w-full h-10 border-gray-300">
                 <SelectValue placeholder="Select" />
@@ -2435,6 +2447,7 @@ export default function CreateJobOrder() {
                 }}
                 required
                 disabled={formDisabled}
+                searchable
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select" />
@@ -2857,6 +2870,7 @@ export default function CreateJobOrder() {
                     value={test.testType}
                     onValueChange={(v) => handleTestChange(idx, "testType", v)}
                     disabled={!areTestFieldsEditable(test, idx)}
+                    searchable
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select" />
@@ -2934,6 +2948,7 @@ export default function CreateJobOrder() {
                       });
                     }}
                     disabled={!areTestFieldsEditable(test, idx)}
+                    searchable
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select" />
@@ -3085,6 +3100,7 @@ export default function CreateJobOrder() {
                     value={test.mode}
                     onValueChange={(v) => handleTestChange(idx, "mode", v)}
                     disabled={!areTestFieldsEditable(test, idx)}
+                    searchable
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select" />
@@ -3115,6 +3131,7 @@ export default function CreateJobOrder() {
                     value={test.shift}
                     onValueChange={(v) => handleTestChange(idx, "shift", v)}
                     disabled={!areTestFieldsEditable(test, idx)}
+                    searchable
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select" />
@@ -3133,6 +3150,7 @@ export default function CreateJobOrder() {
                     value={test.fuelType}
                     onValueChange={(v) => handleTestChange(idx, "fuelType", v)}
                     disabled={!areTestFieldsEditable(test, idx)}
+                    searchable
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select" />

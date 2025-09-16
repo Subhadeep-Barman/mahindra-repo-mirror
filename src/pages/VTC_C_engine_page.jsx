@@ -24,7 +24,14 @@ export default function VTCEnginePage() {
   const [engines, setEngines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { apiUserRole, userId, userName } = useAuth();
+  // const { apiUserRole, userId, userName } = useAuth();
+
+  const userCookies = useStore.getState().getUserCookieData();
+  const userRole = userCookies.userRole;
+  const userTeam = userCookies.userTeam;
+  const userName = userCookies.userName;
+  const userId = userCookies.userId;
+  
   const navigate = useNavigate();
   const location = useLocation();
 

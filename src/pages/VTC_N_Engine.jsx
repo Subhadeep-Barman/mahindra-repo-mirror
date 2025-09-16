@@ -38,7 +38,12 @@ export default function EngineForm() {
   const engineData = location.state?.engineData;
   const originalEngineData = location.state?.originalEngineData;
 
-  const { apiUserRole, userId, userName } = useAuth();
+  // const { apiUserRole, userId, userName } = useAuth();
+  const userCookies = useStore.getState().getUserCookieData();
+  const userRole = userCookies.userRole;
+  const userTeam = userCookies.userTeam;
+  const userName = userCookies.userName;
+  const userId = userCookies.userId;
 
   // Add engine_domain state
   const [engine_domain, setengine_domain] = useState(() => {
