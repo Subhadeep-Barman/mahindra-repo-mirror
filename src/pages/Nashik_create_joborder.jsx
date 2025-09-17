@@ -164,6 +164,14 @@ export default function NashikCreateJobOrder() {
     ]);
   };
 
+
+  const userCookies = useStore.getState().getUserCookieData();
+  const userRole = userCookies.userRole;
+  const userTeam = userCookies.userTeam;
+  const userName = userCookies.userName;
+  const userId = userCookies.userId;
+
+
   // Handler to update a test
   const handleTestChange = (idx, field, value) => {
     setTests((prev) =>
@@ -1460,12 +1468,6 @@ export default function NashikCreateJobOrder() {
   const isTestEngineer = userRole === "TestEngineer";
   const isProjectTeam = userRole === "ProjectTeam";
   const isAdmin = userRole === "Admin";
-
-  const userCookies = useStore.getState().getUserCookieData();
-  const userRole = userCookies.userRole;
-  const userTeam = userCookies.userTeam;
-  const userName = userCookies.userName;
-  const userId = userCookies.userId;
 
   // Helper function to determine if test fields should be editable
   const areTestFieldsEditable = (test, idx) => {

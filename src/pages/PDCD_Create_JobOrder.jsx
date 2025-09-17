@@ -628,6 +628,13 @@ export default function PDCDCreateJobOrder() {
     }));
   };
 
+  const userCookies = useStore.getState().getUserCookieData();
+  const userRole = userCookies.userRole;
+  const userTeam = userCookies.userTeam;
+  const userName = userCookies.userName;
+  const userId = userCookies.userId;
+  
+
   // Function to check if job order with same vehicle body number and engine serial number exists
   const checkForDuplicateJobOrder = async (vehicleBodyNumber, engineSerialNumber, domain) => {
     try {
@@ -1319,11 +1326,6 @@ export default function PDCDCreateJobOrder() {
   const isProjectTeam = userRole === "ProjectTeam";
   const isAdmin = userRole == "Admin";
 
-  const userCookies = useStore.getState().getUserCookieData();
-  const userRole = userCookies.userRole;
-  const userTeam = userCookies.userTeam;
-  const userName = userCookies.userName;
-  const userId = userCookies.userId;
 
   // Helper function to determine if test fields should be editable
   const areTestFieldsEditable = (test, idx) => {
