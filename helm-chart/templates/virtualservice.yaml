@@ -19,6 +19,12 @@ spec:
             response:
               set:
                 Strict-Transport-Security: max-age=31536000; includeSubDomains
+                X-Content-Type-Options: nosniff
+                X-Frame-Options: DENY
+                X-XSS-Protection: "1; mode=block"
+                Content-Security-Policy: frame-ancestors 'none'
+                Permissions-Policy: accelerometer=(), camera=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), geolocation=(), fullscreen=(self), autoplay=(self), clipboard-write=(self), encrypted-media=(self)
+                X-Permitted-Cross-Domain-Policies: none
       match:
         - uri:
             prefix: {{ .Values.virtualservice.prefix }}

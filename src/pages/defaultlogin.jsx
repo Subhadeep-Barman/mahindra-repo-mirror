@@ -8,6 +8,7 @@ import showSnackbar from "../utils/showSnackbar";
 import generateEmployeeCode from "../utils/employeeToken";
 import DOMPurify from "dompurify";
 import { jwtDecode } from "jwt-decode";
+import useStore from "../store/useStore"; // Add this import
 
 const apiURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -22,6 +23,7 @@ export default function DefaultLogin() {
   const auth = useAuth();
   const login = auth?.login;
   const navigate = useNavigate();
+  const clearUserCookieData = useStore((state) => state.clearUserCookieData); // Add this line
 
   // Show error if AuthContext is not available
   if (!auth) {
@@ -40,6 +42,8 @@ export default function DefaultLogin() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    // Clear any persisted userCookies/auth state before login
+    clearUserCookieData();
     if (validateForm()) {
       setLoading(true);
       try {

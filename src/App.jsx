@@ -49,6 +49,54 @@ import EditTestOrder from "./pages/EditTestOrder";
 // Import AddNewFields component
 import AddNewFields from "./pages/AddNewFields";
 
+// Define which roles can access which routes
+const routePermissions = {
+  "/home": ["Admin", "ProjectTeam", "TestEngineer"],
+  "/admin-portal": ["Admin"],
+  "/vtc-chennai": ["Admin", "ProjectTeam", "TestEngineer"], // example: admin not allowed
+  "/vtccvehicle": ["ProjectTeam"],
+  "/vtcChennaiEngine": ["ProjectTeam"],
+  "/engineform": ["ProjectTeam"],
+  "/vtcvehicle/new": ["ProjectTeam"],
+  "/chennai/engine/new": ["ProjectTeam"],
+  "/pdcd-lab": ["Admin", "ProjectTeam", "TestEngineer"],
+  "/PDCDCreateJobOrder": ["ProjectTeam"],
+  "/pdcd/vehicle": ["ProjectTeam"],
+  "/pdcd/engine": ["ProjectTeam"],
+  "/pdcd/engine/new": ["ProjectTeam"],
+  "/vtc-nashik": ["Admin", "ProjectTeam", "TestEngineer"],
+  "/NashikCreateJobOrder": ["ProjectTeam"],
+  "/nashik/vehicle": ["ProjectTeam",],
+  "/nashik/engine": ["ProjectTeam"],
+  "/nashik/engine/new": [ "ProjectTeam"],
+  "/rde-chennai": ["Admin", "ProjectTeam", "TestEngineer"],
+  "/rde/vehicle": ["ProjectTeam"],
+  "/rde/engine": ["ProjectTeam"],
+  "/rde/engine/new": ["ProjectTeam"],
+  "/RDECreateJobOrder": ["ProjectTeam"],
+  "/createJobOrder": ["Admin","ProjectTeam","TestEngineer"],
+  "/editTestOrder": ["Admin","ProjectTeam","TestEngineer"],
+  "/admin/dropdown-options": ["Admin"],
+};
+
+// ProtectedRoute component
+const ProtectedRoute = ({ element, path }) => {
+  const userCookies = useStore.getState().getUserCookieData?.();
+  const userRole = userCookies?.userRole;
+
+  // If not logged in, redirect to login
+  if (!userRole) return <Navigate to="/login" replace />;
+
+  // If route has permissions defined, check if userRole is allowed
+  if (path && routePermissions[path] && !routePermissions[path].includes(userRole)) {
+    console.log(`User with role ${userRole} is not allowed to access ${path}`);
+    return <Navigate to="/home" replace />;
+  }
+
+  // Otherwise, allow access
+  return element;
+};
+
 // Component that uses the inactivity handler inside Router context
 function AppWithInactivity() {
   // Initialize inactivity handler (now inside Router context)
@@ -72,43 +120,43 @@ function AppWithInactivity() {
         <Route path="/login" element={<Login />} />
         <Route path="/default-login" element={<DefaultLogin />} />
 
-        {/* Admin */}
-        <Route path="/admin-portal" element={<AdminPortal />} />
+        {/* Protected Routes */}
+        <Route path="/home" element={<ProtectedRoute element={<HomePage />} path="/home" />} />
+        <Route path="/admin-portal" element={<ProtectedRoute element={<AdminPortal />} path="/admin-portal" />} />
 
         {/* VTC Chennai */}
-        <Route path="/vtc-chennai" element={<VTCChennaiPage />} />
-        <Route path="/vtccvehicle" element={<VTCCVehiclePage />} />
-        <Route path="/vtcChennaiEngine" element={<VTCEnginePage />} />
-        <Route path="/engineform" element={<EngineForm />} />
-        <Route path="/vtcvehicle/new" element={<VehicleForm />} />
-        <Route path="/chennai/engine/new" element={<VTCCEngineForm />} />
+        <Route path="/vtc-chennai" element={<ProtectedRoute element={<VTCChennaiPage />} path="/vtc-chennai" />} />
+        <Route path="/vtccvehicle" element={<ProtectedRoute element={<VTCCVehiclePage />} path="/vtccvehicle" />} />
+        <Route path="/vtcChennaiEngine" element={<ProtectedRoute element={<VTCEnginePage />} path="/vtcChennaiEngine" />} />
+        <Route path="/engineform" element={<ProtectedRoute element={<EngineForm />} path="/engineform" />} />
+        <Route path="/vtcvehicle/new" element={<ProtectedRoute element={<VehicleForm />} path="/vtcvehicle/new" />} />
+        <Route path="/chennai/engine/new" element={<ProtectedRoute element={<VTCCEngineForm />} path="/chennai/engine/new" />} />
 
         {/* PDCD Chennai */}
-        <Route path="/pdcd-lab" element={<PDCDChennaiPage />} />
-        <Route path="/PDCDCreateJobOrder" element={<PDCDCreateJobOrder />} />
-        <Route path="/pdcd/vehicle" element={<PDCDVehicle />} />
-        <Route path="/pdcd/engine" element={<PDCDEnginePage />} />
-        <Route path="/pdcd/engine/new" element={<VTCCEngineForm />} />
+        <Route path="/pdcd-lab" element={<ProtectedRoute element={<PDCDChennaiPage />} path="/pdcd-lab" />} />
+        <Route path="/PDCDCreateJobOrder" element={<ProtectedRoute element={<PDCDCreateJobOrder />} path="/PDCDCreateJobOrder" />} />
+        <Route path="/pdcd/vehicle" element={<ProtectedRoute element={<PDCDVehicle />} path="/pdcd/vehicle" />} />
+        <Route path="/pdcd/engine" element={<ProtectedRoute element={<PDCDEnginePage />} path="/pdcd/engine" />} />
+        <Route path="/pdcd/engine/new" element={<ProtectedRoute element={<VTCCEngineForm />} path="/pdcd/engine/new" />} />
 
         {/* VTC Nashik */}
-        <Route path="/vtc-nashik" element={<VTCNashikPage />} />
-        <Route path="/NashikCreateJobOrder" element={<NashikJobOrder />} />
-        <Route path="/nashik/vehicle" element={<VTCNashikVehicle />} />
-        <Route path="/nashik/engine" element={<RDEnginePage />} />
-        <Route path="/nashik/engine/new" element={<NEngine />} />
+        <Route path="/vtc-nashik" element={<ProtectedRoute element={<VTCNashikPage />} path="/vtc-nashik" />} />
+        <Route path="/NashikCreateJobOrder" element={<ProtectedRoute element={<NashikJobOrder />} path="/NashikCreateJobOrder" />} />
+        <Route path="/nashik/vehicle" element={<ProtectedRoute element={<VTCNashikVehicle />} path="/nashik/vehicle" />} />
+        <Route path="/nashik/engine" element={<ProtectedRoute element={<RDEnginePage />} path="/nashik/engine" />} />
+        <Route path="/nashik/engine/new" element={<ProtectedRoute element={<NEngine />} path="/nashik/engine/new" />} />
 
         {/* RDE */}
-        <Route path="/rde-chennai" element={<RDEChennaiPage />} />
-        <Route path="/rde/vehicle" element={<RDEVehicle />} />
-        <Route path="/rde/engine" element={<RDEEngine />} />
-        <Route path="/rde/engine/new" element={<NEngine />} />
+        <Route path="/rde-chennai" element={<ProtectedRoute element={<RDEChennaiPage />} path="/rde-chennai" />} />
+        <Route path="/rde/vehicle" element={<ProtectedRoute element={<RDEVehicle />} path="/rde/vehicle" />} />
+        <Route path="/rde/engine" element={<ProtectedRoute element={<RDEEngine />} path="/rde/engine" />} />
+        <Route path="/rde/engine/new" element={<ProtectedRoute element={<NEngine />} path="/rde/engine/new" />} />
 
         {/* Misc */}
-        <Route path="/RDECreateJobOrder" element={<RDE_JobOrder_Create />} />
-        <Route path="/createJobOrder" element={<CreateJobOrder />} />
-        <Route path="/editTestOrder" element={<EditTestOrder />} />
-        <Route path="/authSuccess" element={<AuthSuccess />} />
-        <Route path="/admin/dropdown-options" element={<AddNewFields />} />
+        <Route path="/RDECreateJobOrder" element={<ProtectedRoute element={<RDE_JobOrder_Create />} path="/RDECreateJobOrder" />} />
+        <Route path="/createJobOrder" element={<ProtectedRoute element={<CreateJobOrder />} path="/createJobOrder" />} />
+        <Route path="/editTestOrder" element={<ProtectedRoute element={<EditTestOrder />} path="/editTestOrder" />} />
+        <Route path="/admin/dropdown-options" element={<ProtectedRoute element={<AddNewFields />} path="/admin/dropdown-options" />} />
       </Routes>
 
       <Snackbar

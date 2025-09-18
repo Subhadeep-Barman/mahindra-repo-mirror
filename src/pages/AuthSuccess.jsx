@@ -52,6 +52,17 @@ const validateUserData = (data) => {
   );
 };
 
+// Helper to check if JWT token is expired
+function isTokenExpired(token) {
+  try {
+    const decoded = jwtDecode(token);
+    if (!decoded.exp) return false; // If no exp, treat as not expired (legacy tokens)
+    return Date.now() >= decoded.exp * 1000;
+  } catch (e) {
+    return true;
+  }
+}
+
 export default function AuthSuccess() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -85,6 +96,13 @@ export default function AuthSuccess() {
 
         if (!jwtToken) {
           showSnackbar("Invalid authentication token", "error");
+          navigate("/login");
+          return;
+        }
+
+        // Check token expiry before proceeding
+        if (isTokenExpired(jwtToken)) {
+          showSnackbar("Authentication token expired. Please log in again.", "error");
           navigate("/login");
           return;
         }

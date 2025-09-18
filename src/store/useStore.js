@@ -2,6 +2,34 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import axios from "axios";
+import CryptoJS from "crypto-js"; // Add this import
+
+// --- Security Notes ---
+// 1. For local storage on Android, use Device Administration API's setStorageEncryption (not applicable in web).
+// 2. For SD Card storage, use javax.crypto (not applicable in web).
+// 3. Ensure shared preferences are not MODE_WORLD_READABLE (not applicable in web).
+// 4. Avoid hardcoded encryption keys; use env or user/session-based keys.
+
+// AES encryption key (should be set in environment variable, not hardcoded)
+const USER_COOKIE_ENCRYPTION_KEY = import.meta.env.VITE_USER_COOKIE_ENCRYPTION_KEY || "default_key_change_me";
+
+// Helper functions for encryption/decryption
+function encryptData(data) {
+  try {
+    return CryptoJS.AES.encrypt(JSON.stringify(data), USER_COOKIE_ENCRYPTION_KEY).toString();
+  } catch (e) {
+    return "";
+  }
+}
+function decryptData(ciphertext) {
+  try {
+    const bytes = CryptoJS.AES.decrypt(ciphertext, USER_COOKIE_ENCRYPTION_KEY);
+    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    return JSON.parse(decrypted);
+  } catch (e) {
+    return {};
+  }
+}
 
 // Define initial default values for jobOrderFormData
 const initialJobOrderFormData = {
@@ -296,11 +324,10 @@ const useStore = create(
       // New state for user cookie data instead of using Cookies
       userCookies: {},
       setUserCookieData: (data) => set({ userCookies: data }),
-
-      // Replace getUserCookieData to return stored userCookies
       getUserCookieData: () => {
         return get().userCookies;
       },
+      clearUserCookieData: () => set({ userCookies: {} }), // Add this function
 
       // DataGrid filter models for persistence across tab switches
       userFilterModel: { items: [] },
@@ -357,7 +384,22 @@ const useStore = create(
     }),
     {
       name: "user-cookie-storage", // key in localStorage
-      partialize: (state) => ({ userCookies: state.userCookies }),
+      // Only persist userCookies, not any authentication state
+      partialize: (state) => {
+        // Only encrypt userCookies
+        return { userCookies: encryptData(state.userCookies) };
+      },
+      merge: (persistedState, currentState) => {
+        let decryptedCookies = {};
+        if (persistedState && persistedState.userCookies) {
+          decryptedCookies = decryptData(persistedState.userCookies);
+        }
+        return {
+          ...currentState,
+          ...persistedState,
+          userCookies: decryptedCookies,
+        };
+      },
     }
   )
 );
