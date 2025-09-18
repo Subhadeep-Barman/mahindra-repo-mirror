@@ -30,7 +30,7 @@ app = FastAPI()
 # Add CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://dbmrs-vtc.m-devsecops.com", "http://localhost:5173"],
+    allow_origins=["https://dbmrs-vtc-test.m-devsecops.com", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
