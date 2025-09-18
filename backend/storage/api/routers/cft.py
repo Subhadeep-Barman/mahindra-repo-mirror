@@ -1,14 +1,14 @@
 from backend.storage.models.models import User
-from backend.storage.api.api_utils import get_db
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi import Depends, HTTPException
+from backend.storage.api.api_utils import get_db, limiter
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/api/cft")
 
 #api to list down all the users who have the role of 'projectteam' form users table email's of all the users will be shown
 @router.get("/projectteam_users")
-def get_projectteam_users(db: Session = Depends(get_db)):
+@limiter.limit("50/minute")
+def get_projectteam_users(request: Request, db: Session = Depends(get_db)):
     """
     List all users with role 'ProjectTeam'.
     """

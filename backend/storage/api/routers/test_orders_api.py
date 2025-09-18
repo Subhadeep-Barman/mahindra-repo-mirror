@@ -11,7 +11,7 @@ from fastapi import Query
 from datetime import datetime, date
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from backend.storage.api.api_utils import get_db
+from backend.storage.api.api_utils import get_db, limiter
 from backend.storage.models.models import TestOrder, JobOrder
 from google.cloud import storage
 import tempfile
@@ -29,7 +29,8 @@ else:
 
 
 @router.get("/test-types")
-def get_test_types():
+@limiter.limit("50/minute")
+def get_test_types(request: Request):
     base_path = Path(__file__).parent.parent.parent / "json_data"
     try:
         with open(base_path / "test_type.json") as f:
@@ -39,7 +40,8 @@ def get_test_types():
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/inertia-classes")
-def get_inertia_classes():
+@limiter.limit("50/minute")
+def get_inertia_classes(request: Request):
     base_path = Path(__file__).parent.parent.parent / "json_data"
     try:
         with open(base_path / "inertia_class.json") as f:
@@ -49,7 +51,8 @@ def get_inertia_classes():
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/modes")
-def get_modes():
+@limiter.limit("50/minute")
+def get_modes(request: Request):
     base_path = Path(__file__).parent.parent.parent / "json_data"
     try:
         with open(base_path / "mode.json") as f:
@@ -59,7 +62,8 @@ def get_modes():
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/fuel-types")
-def get_fuel_types():
+@limiter.limit("50/minute")
+def get_fuel_types(request: Request):
     base_path = Path(__file__).parent.parent.parent / "json_data"
     try:
         with open(base_path / "fuel_type.json") as f:
@@ -204,7 +208,9 @@ def testorder_to_dict(testorder: TestOrder):
     return result
 
 @router.post("/testorders", response_model=TestOrderSchema)
+@limiter.limit("50/minute")
 def create_testorder_api(
+    request: Request,
     testorder: dict = Body(...),
     db: Session = Depends(get_db)
 ):
@@ -251,12 +257,14 @@ def create_testorder_api(
     return testorder_to_dict(new_testorder)
 
 @router.get("/testorders", response_model=List[TestOrderSchema])
-def read_testorders(db: Session = Depends(get_db)):
+@limiter.limit("50/minute")
+def read_testorders(request: Request, db: Session = Depends(get_db)):
     testorders = db.query(TestOrder).all()
     return [testorder_to_dict(t) for t in testorders]
 
 @router.get("/testorders-single", response_model=TestOrderSchema)
-def read_testorder(test_order_id: str, db: Session = Depends(get_db)):
+@limiter.limit("50/minute")
+def read_testorder(request: Request, test_order_id: str, db: Session = Depends(get_db)):
     print(test_order_id)
     testorder = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
     if not testorder:
@@ -264,7 +272,9 @@ def read_testorder(test_order_id: str, db: Session = Depends(get_db)):
     return testorder_to_dict(testorder)
 
 @router.put("/testorders-update", response_model=TestOrderSchema)
+@limiter.limit("50/minute")
 def update_testorder(
+    request: Request,
     test_order_id: str,
     testorder_update: TestOrderSchema = Body(...),
     db: Session = Depends(get_db)
@@ -287,7 +297,8 @@ def update_testorder(
     return testorder_to_dict(testorder)
 
 @router.delete("/testorders/{test_order_id}")
-def delete_testorder(test_order_id: str, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def delete_testorder(request: Request, test_order_id: str, db: Session = Depends(get_db)):
     testorder = db.query(TestOrder).filter(TestOrder.test_order_id == test_order_id).first()
     if not testorder:
         raise HTTPException(status_code=404, detail="TestOrder not found")
@@ -308,7 +319,9 @@ CREDENTIALS_PATH = os.path.join(
 )
 
 @router.post("/upload_chunk")
+@limiter.limit("50/minute")
 async def upload_chunk(
+    request: Request,
     chunk: UploadFile = File(...),
     file_name: str = Form(...),
     chunk_index: int = Form(...),
@@ -318,7 +331,6 @@ async def upload_chunk(
     test_order_id: str = Form(None),
     attachment_type: str = Form(...),
     user: str = Form(...),
-    request: Request = None,
 ):
     """
     Upload a chunk of a file to the server in a resumable upload process.
@@ -509,6 +521,7 @@ def build_prefix(job_order_id: str, test_order_id: str = None, attachment_type: 
     return prefix
 
 @router.get("/check_files_GCP")
+@limiter.limit("50/minute")
 def check_files_GCP(
     request: Request,
     job_order_id: str = Query(...),
@@ -548,39 +561,8 @@ def check_files_GCP(
             detail=f"Error checking files in GCP: please try again later",
         )
 
-def rename_gcp_test_order_id(
-    old_test_order_id: str, new_test_order_id: str, job_order_id: str
-):
-    """
-    Function to rename a test order ID in Google Cloud Storage.
-
-    @param old_test_order_id: The old test order ID to be replaced.
-    @param new_test_order_id: The new test order ID to be used.
-    @param job_order_id: The job order ID associated with the test order.
-
-    @return: None (renames the test order ID in GCP storage with new nomenclature name)
-    """
-    try:
-        client = storage.Client.from_service_account_json(CREDENTIALS_PATH)
-        bucket = client.bucket(BUCKET_NAME)
-
-        old_prefix = f"{UPLOAD_PATH}/{job_order_id}/{old_test_order_id}/"
-        blobs = bucket.list_blobs(prefix=old_prefix)
-        # Move all blobs to the new prefix
-        for blob in blobs:
-            new_blob_name = blob.name.replace(
-                f"{old_test_order_id}/", f"{new_test_order_id}/"
-            )
-            new_blob = bucket.blob(new_blob_name)
-            new_blob.rewrite(blob)
-            blob.delete()
-    except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail="Error renaming test order ID. Please try again later.",
-        )
-
 @router.get("/download_job_order_id/")
+@limiter.limit("50/minute")
 async def download_files_as_zip_or_single(
     request: Request,
     response: Response,
@@ -691,6 +673,7 @@ async def serve_single_file(blob: Blob) -> StreamingResponse:
         )
 
 @router.delete("/delete-file")
+@limiter.limit("10/minute")
 async def delete_file(
     request: Request,
     job_order_id: str = Form(...),
@@ -738,7 +721,9 @@ async def delete_file(
 
 # api to check the validation status of a test order
 @router.post("/testorders/validation")
+@limiter.limit("50/minute")
 def validate_test_order(
+    request: Request,
     data: dict = Body(...),
     db: Session = Depends(get_db)
 ):
@@ -771,7 +756,9 @@ def validate_test_order(
 
 
 @router.post("/testorders/rating")
+@limiter.limit("50/minute")
 def rate_test_order(
+    request: Request,
     data: dict = Body(...),
     db: Session = Depends(get_db)
 ):
@@ -805,7 +792,9 @@ def rate_test_order(
     return testorder_to_dict(testorder)
 
 @router.post("/clone-testorder-files")
+@limiter.limit("10/minute")
 def clone_testorder_files(
+    request: Request,
     job_order_id: str = Body(...),
     source_test_order_id: str = Body(...),
     target_test_order_id: str = Body(...),

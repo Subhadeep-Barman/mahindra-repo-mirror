@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional, List
@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 
-from backend.storage.api.api_utils import get_db
+from backend.storage.api.api_utils import get_db, limiter
 from backend.storage.logging_config import vtc_logger as logger
 
 # Create router with prefix
@@ -78,7 +78,8 @@ def write_json_file(file_name: str, data: list) -> bool:
 
 
 @router.post("/project", status_code=201)
-def add_project(entry: ProjectCreate):
+@limiter.limit("50/minute")
+def add_project(request: Request, entry: ProjectCreate):
     """
     Add a new project to the JSON data.
     
@@ -115,7 +116,8 @@ def add_project(entry: ProjectCreate):
         )
 
 @router.delete("/project")
-def delete_project(entry: StringValue):
+@limiter.limit("10/minute")
+def delete_project(request: Request, entry: StringValue):
     """Delete a project entry."""
     try:
         projects = read_json_file("project_code.json")
@@ -140,7 +142,8 @@ def delete_project(entry: StringValue):
         raise HTTPException(status_code=500, detail="Error deleting project")
 
 @router.post("/engine-type", status_code=201)
-def add_engine_type(entry: EngineTypeCreate):
+@limiter.limit("50/minute")
+def add_engine_type(request: Request, entry: EngineTypeCreate):
     """
     Add a new engine type to the JSON data.
     
@@ -181,7 +184,8 @@ def add_engine_type(entry: EngineTypeCreate):
         )
 
 @router.delete("/engine-type")
-def delete_engine_type(entry: StringValue):
+@limiter.limit("10/minute")
+def delete_engine_type(request: Request, entry: StringValue):
     """Delete an engine type entry."""
     try:
         # Get existing engine types
@@ -210,7 +214,8 @@ def delete_engine_type(entry: StringValue):
         raise HTTPException(status_code=500, detail="Error deleting engine type")
 
 @router.post("/domain", status_code=201)
-def add_domain(entry: DomainCreate):
+@limiter.limit("50/minute")
+def add_domain(request: Request, entry: DomainCreate):
     """
     Add a new domain to the JSON data.
     
@@ -251,7 +256,8 @@ def add_domain(entry: DomainCreate):
         )
 
 @router.delete("/domain")
-def delete_domain(entry: StringValue):
+@limiter.limit("10/minute")
+def delete_domain(request: Request, entry: StringValue):
     """Delete a domain entry."""
     try:
         # Get existing domains
@@ -280,7 +286,8 @@ def delete_domain(entry: StringValue):
         raise HTTPException(status_code=500, detail="Error deleting domain")
 
 @router.post("/test-type", status_code=201)
-def add_test_type(entry: TestTypeCreate):
+@limiter.limit("50/minute")
+def add_test_type(request: Request, entry: TestTypeCreate):
     """
     Add a new test type to the JSON data.
     
@@ -321,7 +328,8 @@ def add_test_type(entry: TestTypeCreate):
         )
 
 @router.delete("/test-type")
-def delete_test_type(entry: StringValue):
+@limiter.limit("10/minute")
+def delete_test_type(request: Request, entry: StringValue):
     """Delete a test type entry."""
     try:
         # Get existing test types
@@ -350,7 +358,8 @@ def delete_test_type(entry: StringValue):
         raise HTTPException(status_code=500, detail="Error deleting test type")
 
 @router.post("/inertia-class", status_code=201)
-def add_inertia_class(entry: InertiaClassCreate):
+@limiter.limit("50/minute")
+def add_inertia_class(request: Request, entry: InertiaClassCreate):
     """
     Add a new inertia class to the JSON data.
     
@@ -391,7 +400,8 @@ def add_inertia_class(entry: InertiaClassCreate):
         )
 
 @router.delete("/inertia-class")
-def delete_inertia_class(entry: StringValue):
+@limiter.limit("10/minute")
+def delete_inertia_class(request: Request, entry: StringValue):
     """Delete an inertia class entry."""
     try:
         # Get existing inertia classes
@@ -420,7 +430,8 @@ def delete_inertia_class(entry: StringValue):
         raise HTTPException(status_code=500, detail="Error deleting inertia class")
 
 @router.post("/mode", status_code=201)
-def add_mode(entry: ModeCreate):
+@limiter.limit("50/minute")
+def add_mode(request: Request, entry: ModeCreate):
     """
     Add a new mode to the JSON data.
     
@@ -461,7 +472,8 @@ def add_mode(entry: ModeCreate):
         )
 
 @router.delete("/mode")
-def delete_mode(entry: StringValue):
+@limiter.limit("10/minute")
+def delete_mode(request: Request, entry: StringValue):
     """Delete a mode entry."""
     try:
         # Get existing modes
@@ -490,7 +502,8 @@ def delete_mode(entry: StringValue):
         raise HTTPException(status_code=500, detail="Error deleting mode")
 
 @router.post("/shift", status_code=201)
-def add_shift(entry: ShiftCreate):
+@limiter.limit("50/minute")
+def add_shift(request: Request, entry: ShiftCreate):
     """
     Add a new shift to the JSON data.
     
@@ -531,7 +544,8 @@ def add_shift(entry: ShiftCreate):
         )
 
 @router.delete("/shift")
-def delete_shift(entry: StringValue):
+@limiter.limit("10/minute")
+def delete_shift(request: Request, entry: StringValue):
     """Delete a shift entry."""
     try:
         # Get existing shifts
@@ -560,7 +574,8 @@ def delete_shift(entry: StringValue):
         raise HTTPException(status_code=500, detail="Error deleting shift")
 
 @router.post("/fuel-type", status_code=201)
-def add_fuel_type(entry: FuelTypeCreate):
+@limiter.limit("50/minute")
+def add_fuel_type(request: Request, entry: FuelTypeCreate):
     """
     Add a new fuel type to the JSON data.
     
@@ -601,7 +616,8 @@ def add_fuel_type(entry: FuelTypeCreate):
         )
 
 @router.delete("/fuel-type")
-def delete_fuel_type(entry: StringValue):
+@limiter.limit("10/minute")
+def delete_fuel_type(request: Request, entry: StringValue):
     """Delete a fuel type entry."""
     try:
         # Get existing fuel types
@@ -630,7 +646,8 @@ def delete_fuel_type(entry: StringValue):
         raise HTTPException(status_code=500, detail="Error deleting fuel type")
 
 @router.post("/vehicle-model", status_code=201)
-def add_vehicle_model(entry: VehicleModelCreate):
+@limiter.limit("50/minute")
+def add_vehicle_model(request: Request, entry: VehicleModelCreate):
     """
     Add a new vehicle model to the JSON data.
     
@@ -671,7 +688,8 @@ def add_vehicle_model(entry: VehicleModelCreate):
         )
 
 @router.delete("/vehicle-model")
-def delete_vehicle_model(entry: StringValue):
+@limiter.limit("10/minute")
+def delete_vehicle_model(request: Request, entry: StringValue):
     """Delete a vehicle model entry."""
     try:
         # Get existing vehicle models

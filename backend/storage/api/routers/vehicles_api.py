@@ -1,5 +1,5 @@
-from backend.storage.api.api_utils import get_db
-from fastapi import APIRouter, HTTPException, Depends, Body
+from backend.storage.api.api_utils import get_db, limiter
+from fastapi import APIRouter, HTTPException, Depends, Body, Request
 from pathlib import Path
 import json
 from backend.storage.models.models import Vehicle, Engine
@@ -59,7 +59,8 @@ class VehicleSchema(BaseModel):
         orm_mode = True
 
 @router.get("/project-codes")
-def get_project_codes():
+@limiter.limit("50/minute")
+def get_project_codes(request: Request):
     base_path = Path(__file__).parent.parent.parent / "json_data"
     try:
         with open(base_path / "project_code.json", encoding="utf-8") as f:
@@ -69,7 +70,8 @@ def get_project_codes():
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/vehicle-models")
-def get_vehicle_models():
+@limiter.limit("50/minute")
+def get_vehicle_models(request: Request):
     base_path = Path(__file__).parent.parent.parent / "json_data"
     try:
         with open(base_path / "vehicle_models.json", encoding="utf-8") as f:
@@ -79,7 +81,9 @@ def get_vehicle_models():
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/vehicles", response_model=VehicleSchema)
+@limiter.limit("50/minute")
 def create_vehicle_api(
+    request: Request,
     vehicle: VehicleSchema = Body(...),
     db: Session = Depends(get_db)
 ):
@@ -88,7 +92,9 @@ def create_vehicle_api(
     return vehicle_to_dict(new_vehicle)
 
 @router.get("/vehicles", response_model=List[VehicleSchema])
+@limiter.limit("50/minute")
 def read_vehicles(
+    request: Request,
     db: Session = Depends(get_db),
     department: Optional[str] = None
 ):
@@ -99,15 +105,18 @@ def read_vehicles(
     return [vehicle_to_dict(v) for v in vehicles]
 
 @router.get("/vehicles/{vehicle_serial_number}", response_model=VehicleSchema)
-def read_vehicle(vehicle_serial_number: str, db: Session = Depends(get_db)):
+@limiter.limit("50/minute")
+def read_vehicle(vehicle_serial_number: str, request: Request, db: Session = Depends(get_db)):
     vehicle = db.query(Vehicle).filter(Vehicle.vehicle_serial_number == vehicle_serial_number).first()
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehicle not found")
     return vehicle_to_dict(vehicle)
 
 @router.put("/vehicles/{vehicle_serial_number}", response_model=VehicleSchema)
+@limiter.limit("50/minute")
 def update_vehicle(
     vehicle_serial_number: str,
+    request: Request,
     vehicle_update: VehicleSchema = Body(...),
     db: Session = Depends(get_db)
 ):
@@ -124,7 +133,8 @@ def update_vehicle(
     return vehicle_to_dict(vehicle)
 
 @router.delete("/vehicles/{vehicle_serial_number}")
-def delete_vehicle(vehicle_serial_number: str, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def delete_vehicle(vehicle_serial_number: str, request: Request, db: Session = Depends(get_db)):
     vehicle = db.query(Vehicle).filter(Vehicle.vehicle_serial_number == vehicle_serial_number).first()
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehicle not found")
@@ -133,7 +143,9 @@ def delete_vehicle(vehicle_serial_number: str, db: Session = Depends(get_db)):
     return {"detail": "Vehicle deleted successfully"}
 
 @router.get("/vehicle-body-numbers")
+@limiter.limit("50/minute")
 def get_vehicle_body_numbers(
+    request: Request,
     db: Session = Depends(get_db),
     department: Optional[str] = None
 ):
@@ -148,15 +160,18 @@ def get_vehicle_body_numbers(
     ]
 
 @router.get("/vehicles/by-body-number/{vehicle_body_number}", response_model=VehicleSchema)
-def get_vehicle_by_body_number(vehicle_body_number: str, db: Session = Depends(get_db)):
+@limiter.limit("50/minute")
+def get_vehicle_by_body_number(vehicle_body_number: str, request: Request, db: Session = Depends(get_db)):
     vehicle = db.query(Vehicle).filter(Vehicle.vehicle_body_number == vehicle_body_number).first()
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehicle not found for the given body number")
     return vehicle_to_dict(vehicle)
 
 @router.get("/vehicles/by-project/{project_code}")
+@limiter.limit("50/minute")
 def get_vehicles_by_project(
     project_code: str, 
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """

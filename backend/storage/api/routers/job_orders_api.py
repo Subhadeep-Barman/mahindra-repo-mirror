@@ -1,17 +1,18 @@
-from fastapi import APIRouter, HTTPException, Depends, Body
+from fastapi import APIRouter, HTTPException, Depends, Body, Request
 from pathlib import Path
 import json
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from backend.storage.api.api_utils import get_db
+from backend.storage.api.api_utils import get_db, limiter
 from backend.storage.models.models import JobOrder, TestOrder, User, Vehicle 
 
 router = APIRouter()
 
 @router.get("/domains")
-def get_domains():
+@limiter.limit("50/minute")
+def get_domains(request: Request):
     base_path = Path(__file__).parent.parent.parent / "json_data"
     try:
         with open(base_path / "domain.json", encoding="utf-8") as f:
@@ -21,7 +22,8 @@ def get_domains():
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/body_numbers")
-def get_body_numbers():
+@limiter.limit("50/minute")
+def get_body_numbers(request: Request):
     """
     Returns the complete body_number.json content.
     """
@@ -34,7 +36,8 @@ def get_body_numbers():
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/vehicle_serial_numbers")
-def get_vehicle_serial_numbers(db: Session = Depends(get_db)):
+@limiter.limit("50/minute")
+def get_vehicle_serial_numbers(request: Request, db: Session = Depends(get_db)):
     """
     Returns all vehicle serial numbers from the Vehicle table.
     """
@@ -160,7 +163,9 @@ def generate_job_order_id(department: str, db: Session) -> str:
     return f"{prefix}{count_str}"
 
 @router.post("/joborders", response_model=JobOrderSchema)
+@limiter.limit("50/minute")
 def create_joborder_api(
+    request: Request,
     joborder: JobOrderSchema = Body(...),
     db: Session = Depends(get_db)
 ):
@@ -187,7 +192,8 @@ def create_joborder_api(
     return response_data
     
 @router.get("/departments")
-def get_departments(db: Session = Depends(get_db)):
+@limiter.limit("50/minute")
+def get_departments(request: Request, db: Session = Depends(get_db)):
     """
     Get all unique departments from job orders
     """
@@ -208,7 +214,9 @@ def is_user_in_cft_members(cft_members, user_id):
     return False
 
 @router.get("/joborders", response_model=List[JobOrderSchema])
+@limiter.limit("50/minute")
 def read_joborders(
+    request: Request,
     department: str = None,
     user_id: str = None,
     role: str = None,
@@ -242,15 +250,18 @@ def read_joborders(
     return [joborder_to_dict(j, db) for j in filtered_joborders]
 
 @router.get("/joborders/{job_order_id}", response_model=JobOrderSchema)
-def read_joborder(job_order_id: str, db: Session = Depends(get_db)):
+@limiter.limit("50/minute")
+def read_joborder(job_order_id: str, request: Request, db: Session = Depends(get_db)):
     joborder = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
     if not joborder:
         raise HTTPException(status_code=404, detail="JobOrder not found")
     return joborder_to_dict(joborder, db)
 
 @router.put("/joborders/{job_order_id}", response_model=JobOrderSchema)
+@limiter.limit("50/minute")
 def update_joborder(
     job_order_id: str,
+    request: Request,
     joborder_update: JobOrderSchema = Body(...),
     db: Session = Depends(get_db)
 ):
@@ -270,7 +281,8 @@ def update_joborder(
     return joborder_to_dict(joborder, db)
 
 @router.delete("/joborders/{job_order_id}")
-def delete_joborder(job_order_id: str, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def delete_joborder(job_order_id: str, request: Request, db: Session = Depends(get_db)):
     joborder = db.query(JobOrder).filter(JobOrder.job_order_id == job_order_id).first()
     if not joborder:
         raise HTTPException(status_code=404, detail="JobOrder not found")
@@ -279,7 +291,9 @@ def delete_joborder(job_order_id: str, db: Session = Depends(get_db)):
     return {"detail": "JobOrder deleted successfully"}
 
 @router.post("/testorders/status")
+@limiter.limit("50/minute")
 def update_testorder_status(
+    request: Request,
     payload: TestOrderStatusUpdateSchema = Body(...),
     db: Session = Depends(get_db)
 ):
@@ -304,6 +318,7 @@ def update_testorder_status(
     }
 
 @router.get("/joborders/{job_order_id}/testorders/count")
-def get_testorder_count(job_order_id: str, db: Session = Depends(get_db)):
+@limiter.limit("50/minute")
+def get_testorder_count(job_order_id: str, request: Request, db: Session = Depends(get_db)):
     count = db.query(TestOrder).filter(TestOrder.job_order_id == job_order_id).count()
     return count

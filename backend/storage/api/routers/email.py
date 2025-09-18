@@ -1,10 +1,10 @@
 from http.client import HTTPException
 from typing import List, Dict
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Request
 from backend.storage.models.models import JobOrder, TestOrder, User, AddFields # adjust import as per your models
 from backend.storage.models.models import RDEJobOrder
 from sqlalchemy.orm import Session
-from backend.storage.api.api_utils import get_db
+from backend.storage.api.api_utils import get_db, limiter
 import os
 import json
 import smtplib
@@ -1049,7 +1049,9 @@ async def send_email_endpoint(
 
 
 @router.post("/cft_members/add")
+@limiter.limit("50/minute")
 async def add_cft_member(
+    request: Request,
     job_order_id: str, member: dict, db: Session = Depends(get_db)
 ):
     """
@@ -1085,7 +1087,8 @@ async def add_cft_member(
 
 
 @router.get("/cft_members/read")
-async def read_cft_members(job_order_id: str, db: Session = Depends(get_db)):
+@limiter.limit("50/minute")
+async def read_cft_members(request: Request, job_order_id: str, db: Session = Depends(get_db)):
     """
     Read all CFT members for a job order.
 
@@ -1116,7 +1119,9 @@ async def read_cft_members(job_order_id: str, db: Session = Depends(get_db)):
 
 
 @router.put("/cft_members/update")
+@limiter.limit("50/minute")
 async def update_cft_member(
+    request: Request,
     job_order_id: str,
     member_index: int,
     updated_member: dict,
@@ -1159,7 +1164,9 @@ async def update_cft_member(
 
 
 @router.get("/debug_email_routing")
+@limiter.limit("50/minute")
 async def debug_email_routing(
+    request: Request,
     job_order_id: str,
     caseid: str,
     test_order_id: str = None,
@@ -1307,7 +1314,9 @@ async def debug_email_routing(
 
 
 @router.delete("/cft_members/delete")
+@limiter.limit("10/minute")
 async def delete_cft_member(
+    request: Request,
     job_order_id: str, member_index: int, db: Session = Depends(get_db)
 ):
     """

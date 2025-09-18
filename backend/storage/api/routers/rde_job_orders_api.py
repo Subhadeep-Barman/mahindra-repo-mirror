@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends, Body
+from fastapi import APIRouter, HTTPException, Depends, Body, Request
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import List, Optional, Union, Dict
 from pydantic import BaseModel
-from backend.storage.api.api_utils import get_db
+from backend.storage.api.api_utils import get_db, limiter
 from backend.storage.models.models import RDEJobOrder, TestOrder
 
 router = APIRouter()
@@ -110,7 +110,9 @@ def is_user_in_cft_members(cft_members, user_id):
     return False
 
 @router.post("/rde_joborders", response_model=RDEJobOrderSchema)
+@limiter.limit("50/minute")
 def create_rde_joborder(
+    request: Request,
     rde_joborder: RDEJobOrderSchema = Body(...),
     db: Session = Depends(get_db)
 ):
@@ -138,7 +140,9 @@ def create_rde_joborder(
     return response_data
 
 @router.get("/rde_joborders", response_model=List[RDEJobOrderSchema])
+@limiter.limit("50/minute")
 def read_rde_joborders(
+    request: Request,
     user_id: Optional[str] = None,
     role: Optional[str] = None,
     db: Session = Depends(get_db)
@@ -161,15 +165,18 @@ def read_rde_joborders(
     return [rde_joborder_to_dict(r, db) for r in rde_joborders]
 
 @router.get("/rde_joborders-single/{job_order_id}", response_model=RDEJobOrderSchema)
-def read_rde_joborder(job_order_id: str, db: Session = Depends(get_db)):
+@limiter.limit("50/minute")
+def read_rde_joborder(job_order_id: str, request: Request, db: Session = Depends(get_db)):
     rde_joborder = db.query(RDEJobOrder).filter(RDEJobOrder.job_order_id == job_order_id).first()
     if not rde_joborder:
         raise HTTPException(status_code=404, detail="RDEJobOrder not found")
     return rde_joborder_to_dict(rde_joborder, db)
 
 @router.put("/rde_joborders/{job_order_id}", response_model=RDEJobOrderSchema)
+@limiter.limit("50/minute")
 def update_rde_joborder(
     job_order_id: str,
+    request: Request,
     rde_joborder_update: RDEJobOrderSchema = Body(...),
     db: Session = Depends(get_db)
 ):
@@ -188,7 +195,8 @@ def update_rde_joborder(
     return rde_joborder_to_dict(rde_joborder)
 
 @router.delete("/rde_joborders/{job_order_id}")
-def delete_rde_joborder(job_order_id: str, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def delete_rde_joborder(job_order_id: str, request: Request, db: Session = Depends(get_db)):
     rde_joborder = db.query(RDEJobOrder).filter(RDEJobOrder.job_order_id == job_order_id).first()
     if not rde_joborder:
         raise HTTPException(status_code=404, detail="RDEJobOrder not found")

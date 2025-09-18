@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Body
+from fastapi import APIRouter, HTTPException, Depends, Body, Request
 from pathlib import Path
 import json
 from typing import List, Optional
@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from backend.storage.api.api_utils import get_db
+from backend.storage.api.api_utils import get_db, limiter
 from backend.storage.models.models import Engine
 from backend.storage.crud.create_engine import create_engine as crud_create_engine, engine_to_dict
 
@@ -93,7 +93,8 @@ class EngineSchema(BaseModel):
         exclude_unset = True
 
 @router.get("/engine-families")
-def get_engine_families():
+@limiter.limit("50/minute")
+def get_engine_families(request: Request):
     base_path = Path(__file__).parent.parent.parent / "json_data"
     try:
         with open(base_path / "engine_family.json", encoding="utf-8") as f:
@@ -103,7 +104,9 @@ def get_engine_families():
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/engines", response_model=EngineSchema)
+@limiter.limit("50/minute")
 def create_engine_api(
+    request: Request,
     engine: EngineSchema = Body(...),
     db: Session = Depends(get_db)
 ):
@@ -122,7 +125,9 @@ def create_engine_api(
         raise HTTPException(status_code=500, detail="Failed to create engine: " + str(e))
 
 @router.get("/engines", response_model=List[EngineSchema])
+@limiter.limit("50/minute")
 def read_engines(
+    request: Request,
     db: Session = Depends(get_db),
     department: Optional[str] = None
 ):
@@ -136,7 +141,8 @@ def read_engines(
         raise HTTPException(status_code=500, detail="Failed to fetch engines: " + str(e))
 
 @router.get("/engines/{engine_serial_number}", response_model=EngineSchema)
-def read_engine(engine_serial_number: str, db: Session = Depends(get_db)):
+@limiter.limit("50/minute")
+def read_engine(engine_serial_number: str, request: Request, db: Session = Depends(get_db)):
     try:
         engine = db.query(Engine).filter(Engine.engine_serial_number == engine_serial_number).first()
         if not engine:
@@ -146,8 +152,10 @@ def read_engine(engine_serial_number: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Failed to fetch engine: " + str(e))
 
 @router.put("/engines/{engine_serial_number}", response_model=EngineSchema)
+@limiter.limit("50/minute")
 def update_engine(
     engine_serial_number: str,
+    request: Request,
     engine_update: EngineSchema = Body(...),
     db: Session = Depends(get_db)
 ):
@@ -171,7 +179,8 @@ def update_engine(
         raise HTTPException(status_code=500, detail="Failed to update engine: " + str(e))
 
 @router.delete("/engines/{engine_serial_number}")
-def delete_engine(engine_serial_number: str, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def delete_engine(engine_serial_number: str, request: Request, db: Session = Depends(get_db)):
     try:
         engine = db.query(Engine).filter(Engine.engine_serial_number == engine_serial_number).first()
         if not engine:
@@ -184,7 +193,9 @@ def delete_engine(engine_serial_number: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Failed to delete engine: " + str(e))
 
 @router.get("/engine-numbers")
+@limiter.limit("50/minute")
 def get_engine_serial_numbers(
+    request: Request,
     db: Session = Depends(get_db),
     department: Optional[str] = None
 ):
@@ -196,7 +207,8 @@ def get_engine_serial_numbers(
     return [en[0] for en in engine_serial_numbers if en[0] is not None]
 
 @router.get("/engines/by-engine-number/{engine_serial_number}", response_model=EngineSchema)
-def get_engine_by_engine_serial_number(engine_serial_number: str, db: Session = Depends(get_db)):
+@limiter.limit("50/minute")
+def get_engine_by_engine_serial_number(engine_serial_number: str, request: Request, db: Session = Depends(get_db)):
     engine = db.query(Engine).filter(Engine.engine_serial_number == engine_serial_number).first()
     if not engine:
         raise HTTPException(status_code=404, detail="Engine not found for the given engine number")
