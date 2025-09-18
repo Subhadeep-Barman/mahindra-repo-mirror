@@ -1,5 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Snackbar, Alert } from '@mui/material';
 import useStore from '@/store/useStore';
 import { useInactivityHandler } from './hooks/useInactivityHandler';
@@ -116,9 +115,9 @@ function AppWithInactivity() {
       <Routes>
         {/* Auth & Home */}
         <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/home" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/default-login" element={<DefaultLogin />} />
+        <Route path="/authSuccess" element={<AuthSuccess />} />
 
         {/* Protected Routes */}
         <Route path="/home" element={<ProtectedRoute element={<HomePage />} path="/home" />} />

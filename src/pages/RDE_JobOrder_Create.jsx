@@ -85,6 +85,28 @@ export default function RDECreateJobOrder() {
 
   // Test state
   const [tests, setTests] = useState([]);
+  // Compute mandatory field validity for job order creation (RDE)
+  const requiredFields = [
+    "projectCode",
+    "vehicleBodyNumber",
+    "vehicleSerialNumber",
+    "engineNumber",
+    "engineType",
+    "domain",
+    "department",
+    "wbsCode",
+    "vehicleGVW",
+    "vehicleKerbWeight",
+    "vehicleTestPayloadCriteria",
+    "idleExhaustMassFlow",
+  ];
+  const baseValid = requiredFields.every((key) => {
+    const value = form[key];
+    return value !== undefined && value !== null && String(value).trim() !== "";
+  });
+  const needsRequestedPayload = form.vehicleTestPayloadCriteria === "Manual Entry" || form.vehicleTestPayloadCriteria === "Customized";
+  const requestedPayloadValid = !needsRequestedPayload || (form.requestedPayloadKg !== undefined && form.requestedPayloadKg !== null && String(form.requestedPayloadKg).trim() !== "");
+  const isFormValid = baseValid && requestedPayloadValid;
 
   // State to track job order ID after creation
   const [jobOrderId, setJobOrderId] = useState();
@@ -853,50 +875,35 @@ export default function RDECreateJobOrder() {
     }
   };
 
-  // Handler for creating job order
-  // Function to check if user has reached the limit of 5 job orders without providing ratings
-  const checkJobOrderLimit = async () => {
-    try {
-      const department = form.department || "RDE JO";
-      const response = await axios.get(`${apiURL}/joborders`, { params: { department, user_id: userId, role: userRole } });
-      const userJobOrders = response.data.filter(order => order.id_of_creator === userId);
-      
-      // If user has less than 5 job orders, they can create more
-      if (userJobOrders.length < 5) {
-        return { limitReached: false };
-      }
-      
-      // Check if any completed job orders are missing ratings
-      const unratedCompletedOrders = [];
-      for (const jobOrder of userJobOrders) {
-        // Get test orders for this job order
-        const testOrdersResponse = await axios.get(`${apiURL}/testorders`, { 
-          params: { job_order_id: jobOrder.job_order_id } 
-        });
-        const testOrders = testOrdersResponse.data || [];
-        
-        // Find completed test orders without ratings
-        const unratedOrders = testOrders.filter(order => 
-          order.status === "Completed" && !order.rating
-        );
-        
-        if (unratedOrders.length > 0) {
-          unratedCompletedOrders.push(...unratedOrders);
-        }
-      }
-      
-      return { 
-        limitReached: unratedCompletedOrders.length > 0,
-        unratedOrders: unratedCompletedOrders
-      };
-    } catch (error) {
-      console.error("Error checking job order limit:", error);
-      return { limitReached: false }; // Default to allowing creation if check fails
-    }
-  };
 
   const handleRDECreateJobOrder = async (e) => {
     e.preventDefault();
+
+    // Validate mandatory fields at click-time (with conditional requested payload)
+    const baseRequired = [
+      { key: "projectCode", label: "Project" },
+      { key: "vehicleBodyNumber", label: "Vehicle Body Number" },
+      { key: "vehicleSerialNumber", label: "Vehicle Serial Number" },
+      { key: "engineNumber", label: "Engine Serial Number" },
+      { key: "engineType", label: "Type of Engine" },
+      { key: "domain", label: "Domain" },
+      { key: "department", label: "Department" },
+      { key: "wbsCode", label: "WBS Code" },
+      { key: "vehicleGVW", label: "Vehicle GVW (Kg)" },
+      { key: "vehicleKerbWeight", label: "Vehicle Kerb Weight (Kg)" },
+      { key: "vehicleTestPayloadCriteria", label: "Vehicle Test Payload Criteria (Kg)" },
+      { key: "idleExhaustMassFlow", label: "Idle Exhaust Mass Flow (Kg/hr)" },
+    ];
+    const needsRequestedPayload = form.vehicleTestPayloadCriteria === "Manual Entry" || form.vehicleTestPayloadCriteria === "Customized";
+    const conditionalRequired = needsRequestedPayload ? [{ key: "requestedPayloadKg", label: "Requested Payload (Kg)" }] : [];
+    const allRequired = [...baseRequired, ...conditionalRequired];
+    const missing = allRequired
+      .filter(({ key }) => !form[key] || String(form[key]).trim() === "")
+      .map((r) => r.label);
+    if (missing.length > 0) {
+      showSnackbar(`Please fill mandatory fields: ${missing.join(", ")}`, "error");
+      return;
+    }
 
     // Require at least one CFT member
     if (!cftMembers || cftMembers.length === 0) {
@@ -905,16 +912,6 @@ export default function RDECreateJobOrder() {
     }
     
     // Check if user has reached the limit of 5 job orders without providing ratings
-    const { limitReached, unratedOrders } = await checkJobOrderLimit();
-    if (limitReached) {
-      showSnackbar(
-        `You have reached the maximum limit of 5 job orders. Please provide ratings for your completed test orders before creating a new job order. Unrated test order ID(s): ${unratedOrders.map(o => o.test_order_id).join(', ')}`,
-        "error"
-      );
-      return;
-    }
-
-     // Check if user has reached the limit of 5 job orders without providing ratings
     const { limitReached, unratedOrders } = await checkJobOrderLimit();
     if (limitReached) {
       showSnackbar(
@@ -1700,8 +1697,15 @@ export default function RDECreateJobOrder() {
     );
   };
 
-  const { apiUserRole: userRole } = useAuth();
-  const { userId, userName } = useAuth();
+  // const { apiUserRole: userRole } = useAuth();
+  // const { userId, userName } = useAuth();
+
+  const userCookies = useStore.getState().getUserCookieData();
+  const userRole = userCookies.userRole;
+  const userTeam = userCookies.userTeam;
+  const userName = userCookies.userName;
+  const userId = userCookies.userId;
+  
   const isTestEngineer = userRole === "TestEngineer";
   const isProjectTeam = userRole === "ProjectTeam";
   const isAdmin = userRole == "Admin";
@@ -3055,9 +3059,9 @@ export default function RDECreateJobOrder() {
                 </div>
 
                 <div className="flex flex-col">
-                  <Label className="mb-2">WLTP Input Sheet</Label>
+                  <Label className="mb-2">WLTP Input Sheet / Other Attachments</Label>
                   <DropzoneFileList
-                    buttonText="WLTP Input Sheet"
+                    buttonText="WLTP Input Sheet / Other Attachments"
                     name="WLTP_input_sheet"
                     maxFiles={5}
                     formData={{
