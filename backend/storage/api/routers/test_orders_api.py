@@ -8,7 +8,7 @@ import aiofiles
 from fastapi import APIRouter, HTTPException, Depends, Body, UploadFile, File, Form
 from typing import List, Optional, Union
 from fastapi import Query
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.storage.api.api_utils import get_db
@@ -120,6 +120,12 @@ class TestOrderSchema(BaseModel):
     rating_remarks: Optional[str] = None
     rated_by: Optional[str] = None
     rated_on: Optional[datetime] = None
+
+class FilePreviewRequest(BaseModel):
+    job_order_id: str
+    test_order_id: str = None
+    attachment_type: str
+    file_name: str
 
 def extract_filename(value):
     if isinstance(value, list):
@@ -600,13 +606,11 @@ async def download_files_as_zip_or_single(
     - filename (str): The name of the file to download.
 
     Returns:
-    - StreamingResponse: A downloadable zip file or a single file.
+    - StreamingResponse or dict: A downloadable zip file or a signed URL for direct download.
     """
-    # try:
     client = storage.Client.from_service_account_json(CREDENTIALS_PATH)
     bucket = client.bucket(BUCKET_NAME)
 
-    # Use prefix to narrow down the files to download
     prefix = build_prefix(job_order_id, test_order_id, attachment_type, filename)
     blobs = list(bucket.list_blobs(prefix=prefix))
 
@@ -615,23 +619,26 @@ async def download_files_as_zip_or_single(
             status_code=404, detail="No files found with the given prefix."
         )
 
-    # If there is only one file in GCP blob then download it directly, otherwise create a zip file
-    # If filename is passed then download the file directly
+    # If there is only one file in GCP blob then return signed URL for direct download
     if (attachment_type and len(blobs) == 1) or (
         attachment_type and filename and len(blobs) == 1
     ):
-        file_response = await serve_single_file(blobs[0])
-        response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
-        return file_response
+        blob = blobs[0]
+        if not blob.exists():
+            raise HTTPException(status_code=404, detail="File not found in GCS")
+        signed_url = blob.generate_signed_url(
+            version="v4",
+            expiration=timedelta(minutes=5),
+            method="GET",
+            response_disposition='attachment'
+        )
+        # Return the signed URL for direct download
+        return {"signed_url": signed_url}
 
+    # If multiple files, zip and stream as before
     zip_response = await serve_zip_file(blobs, job_order_id)
     response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
     return zip_response
-    # except Exception as e:
-    #     raise HTTPException(
-    #         status_code=500,
-    #         detail=f"Error downloading files from GCP: please try again later",
-    #     )
 
 async def serve_zip_file(blobs: List[Blob], job_order_id: str) -> StreamingResponse:
     """
@@ -837,4 +844,31 @@ def clone_testorder_files(
             status_code=500,
             detail=f"Error cloning files: {str(e)}"
         )
+
+def file_previewer(file_path: str):
+    client = storage.Client.from_service_account_json(CREDENTIALS_PATH)
+    bucket = client.bucket(BUCKET_NAME)
+    blob = bucket.blob(file_path)
+    if not blob.exists():
+        raise HTTPException(status_code=404, detail="File not found in GCS")
+    signed_url = blob.generate_signed_url(
+        version="v4",
+        expiration=timedelta(minutes=5),
+        method="GET",
+        response_disposition='attachment'
+    )
+    return signed_url
+
+@router.post("/file-preview")
+def file_preview(payload: FilePreviewRequest):
+    """
+    Returns a signed URL for direct file download from GCS.
+    """
+    # Compose the GCS path
+    if payload.test_order_id:
+        file_path = f"{UPLOAD_PATH}/{payload.job_order_id}/{payload.test_order_id}/{payload.attachment_type}/{payload.file_name}"
+    else:
+        file_path = f"{UPLOAD_PATH}/{payload.job_order_id}/{payload.attachment_type}/{payload.file_name}"
+    signed_url = file_previewer(file_path)
+    return signed_url
 
