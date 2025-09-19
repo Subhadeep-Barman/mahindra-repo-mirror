@@ -592,41 +592,67 @@ const Dropzone = ({
         `${apiURL}/download_job_order_id/`,
         {
           params,
-          responseType: "blob",
         }
       );
 
-      const disposition = response.headers["content-disposition"];
-      const downloadedFileName = disposition
-        ? disposition.split("filename=")[1].replace(/"/g, "")
-        : "downloaded_file";
-
-      // Create blob URL safely
-      const blob = new Blob([response.data], {
-        type: response.headers["content-type"] || "application/octet-stream",
-      });
-
-      // Use more secure download method
-      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-        // For IE
-        window.navigator.msSaveOrOpenBlob(blob, downloadedFileName);
-      } else {
-        // For modern browsers
-        const blobUrl = URL.createObjectURL(blob);
+      // Check if the response contains a signed URL (for single file downloads)
+      if (response.data && response.data.signed_url) {
+        // Use the signed URL for direct download
         const downloadLink = document.createElement("a");
-
-        // Set link properties
-        downloadLink.href = blobUrl;
-        downloadLink.download = downloadedFileName;
+        downloadLink.href = response.data.signed_url;
+        downloadLink.target = "_blank"; // Open in new tab to trigger download from signed URL
         downloadLink.style.display = "none";
-
-        // Download file and cleanup
+        
         try {
-          // Use click() directly without appendChild
+          document.body.appendChild(downloadLink);
           downloadLink.click();
         } finally {
-          // Cleanup
-          URL.revokeObjectURL(blobUrl);
+          document.body.removeChild(downloadLink);
+        }
+        
+        showSnackbar("Download started!", "success");
+      } else {
+        // For multiple files or legacy response format (zip file)
+        const response = await axios.get(
+          `${apiURL}/download_job_order_id/`,
+          {
+            params,
+            responseType: "blob",
+          }
+        );
+
+        const disposition = response.headers["content-disposition"];
+        const downloadedFileName = disposition
+          ? disposition.split("filename=")[1].replace(/"/g, "")
+          : "downloaded_file";
+
+        // Create blob URL safely
+        const blob = new Blob([response.data], {
+          type: response.headers["content-type"] || "application/octet-stream",
+        });
+
+        // Use more secure download method
+        if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+          // For IE
+          window.navigator.msSaveOrOpenBlob(blob, downloadedFileName);
+        } else {
+          // For modern browsers
+          const blobUrl = URL.createObjectURL(blob);
+          const downloadLink = document.createElement("a");
+
+          // Set link properties
+          downloadLink.href = blobUrl;
+          downloadLink.download = downloadedFileName;
+          downloadLink.style.display = "none";
+
+          // Download file and cleanup
+          try {
+            // Use click() directly without appendChild
+            downloadLink.click();
+          } finally {
+            // Cleanup
+            URL.revokeObjectURL(blobUrl);
+          }
         }
       }
 

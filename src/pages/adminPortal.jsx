@@ -239,6 +239,18 @@ export default function SystemUsersPage() {
       return;
     }
 
+    // Case-insensitive duplicate check for user ID
+    const newIdLower = newUser.id.trim().toLowerCase();
+    const isDuplicate = users.some(
+      (u) =>
+        u.id.trim().toLowerCase() === newIdLower &&
+        (!editingUser || u.id !== editingUser.id)
+    );
+    if (isDuplicate) {
+      showSnackbar("User ID already exists (case-insensitive match)", "error");
+      return;
+    }
+
     let success = false;
     if (editingUser) {
       // Update existing user
@@ -522,7 +534,7 @@ export default function SystemUsersPage() {
                 value={newUser.id}
                 onChange={(e) => handleInputChange("id", e.target.value)}
                 className="w-full"
-                disabled={editingUser !== null} // Disable editing User ID when editing
+                // disabled={editingUser !== null} // Disable editing User ID when editing
               />
             </div>
 
