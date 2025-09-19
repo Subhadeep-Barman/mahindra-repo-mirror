@@ -649,10 +649,10 @@ def get_department_group_email(job_order, caseid=None) -> str:
         # Ensure department exists and map it to the correct email
         if department:
             department_email_map = {
-                "VTC_JO Chennai": "VTCLAB@mahindra.com",
-                "VTC_JO Nashik": "vtclab_nsk@mahindra.com",
-                "RDE JO": "RDELAB@mahindra.com",
-                "PDCD_JO Chennai": "TEAMPDCD1@mahindra.com"
+                "VTC_JO Chennai": "exampleVTCLAB@mahindra.com",
+                "VTC_JO Nashik": "examplevtclab_nsk@mahindra.com",
+                "RDE JO": "exampleRDELAB@mahindra.com",
+                "PDCD_JO Chennai": "exampleTEAMPDCD1@mahindra.com"
             }
             
             # Add more debugging
@@ -696,8 +696,8 @@ def get_department_cc_emails(job_order, db: Session) -> list:
     
     # Map department to CC email addresses
     cc_map = {
-        "VTC_JO Chennai": ["VTCLAB@mahindra.com"],
-        "RDE JO": ["RDELAB@mahindra.com"],
+        "VTC_JO Chennai": ["exampleVTCLAB@mahindra.com"],
+        "RDE JO": ["exampleRDELAB@mahindra.com"],
         "VTC_JO Nashik": [],
         "PDCD_JO Chennai": []
     }
