@@ -82,7 +82,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
           - name: test-app-data
-            mountPath: /app/backend/storage/json_data
+            mountPath: /app/json_data
           - name: env          
             mountPath: /app/.env
             subPath: ".env"
