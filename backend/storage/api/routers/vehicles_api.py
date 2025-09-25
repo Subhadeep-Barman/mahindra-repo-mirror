@@ -154,7 +154,7 @@ def get_vehicle_by_body_number(vehicle_body_number: str, db: Session = Depends(g
         raise HTTPException(status_code=404, detail="Vehicle not found for the given body number")
     return vehicle_to_dict(vehicle)
 
-@router.get("/vehicles/by-project/{project_code}")
+@router.get("/vehicles/by-project/{project_code:path}")
 def get_vehicles_by_project(
     project_code: str, 
     db: Session = Depends(get_db)
