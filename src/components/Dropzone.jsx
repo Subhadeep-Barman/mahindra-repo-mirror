@@ -265,11 +265,12 @@ const Dropzone = ({
     const validFiles = [];
     const invalidFiles = [];
 
-    // Check if adding new files would exceed maxFiles limit
-    if (maxFiles && files.length + newfiles.length + (formData[name]?.length || 0) > maxFiles) {
-      showSnackbar(`Maximum ${maxFiles} files allowed`, "warning");
-      return;
-    }
+    // Remove maxFiles limit check
+    // // Check if adding new files would exceed maxFiles limit
+    // if (maxFiles && files.length + newfiles.length + (formData[name]?.length || 0) > maxFiles) {
+    //   showSnackbar(`Maximum ${maxFiles} files allowed`, "warning");
+    //   return;
+    // }
 
     // Validate each file
     for (const file of files) {
