@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Search, Plus, Trash2, AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -166,48 +166,80 @@ const AddNewFields = ({ onClose }) => {
     "Vehicle Models": "/api/manual-entry/vehicle-model",
   };
 
+  const didFetchRef = useRef(false);
+
   // Load all data initially
   useEffect(() => {
+    if (didFetchRef.current) return;
+    didFetchRef.current = true;
+
     const loadAllData = async () => {
       setIsLoading(true);
+      // Fetch each dropdown independently so one failure doesn't block others
       try {
-        const [
-          projectsData,
-          engineTypesData,
-          domainsData,
-          testTypesData,
-          inertiaClassesData,
-          modesData,
-        //   shiftsData,
-          fuelTypesData,
-          vehicleModelsData
-        ] = await Promise.all([
-          fetchProjects(),
-          fetchEngineTypes(),
-          fetchDomains(),
-          fetchTestTypes(),
-          fetchInertiaClasses(),
-          fetchModes(),
-        //   fetchShifts(),
-          fetchFuelTypes(),
-          fetchVehicleModels()
-        ]);
-        
+        const projectsData = await fetchProjects();
         setProjects(projectsData);
+      } catch (error) {
+        setProjects([]);
+        showSnackbar("Error loading Projects", "error");
+      }
+      try {
+        const engineTypesData = await fetchEngineTypes();
         setEngineTypes(engineTypesData);
+      } catch (error) {
+        setEngineTypes([]);
+        showSnackbar("Error loading Engine Types", "error");
+      }
+      try {
+        const domainsData = await fetchDomains();
         setDomains(domainsData);
+      } catch (error) {
+        setDomains([]);
+        showSnackbar("Error loading Domains", "error");
+      }
+      try {
+        const testTypesData = await fetchTestTypes();
         setTestTypes(testTypesData);
+      } catch (error) {
+        setTestTypes([]);
+        showSnackbar("Error loading Test Types", "error");
+      }
+      try {
+        const inertiaClassesData = await fetchInertiaClasses();
         setInertiaClasses(inertiaClassesData);
+      } catch (error) {
+        setInertiaClasses([]);
+        showSnackbar("Error loading Inertia Classes", "error");
+      }
+      try {
+        const modesData = await fetchModes();
         setModes(modesData);
-        // setShifts(shiftsData);
+      } catch (error) {
+        setModes([]);
+        showSnackbar("Error loading Modes", "error");
+      }
+      // try {
+      //   const shiftsData = await fetchShifts();
+      //   setShifts(shiftsData);
+      // } catch (error) {
+      //   setShifts([]);
+      //   showSnackbar("Error loading Shifts", "error");
+      // }
+      try {
+        const fuelTypesData = await fetchFuelTypes();
         setFuelTypes(fuelTypesData);
+      } catch (error) {
+        setFuelTypes([]);
+        showSnackbar("Error loading Fuel Types", "error");
+      }
+      try {
+        const vehicleModelsData = await fetchVehicleModels();
         setVehicleModels(vehicleModelsData);
       } catch (error) {
-        console.error("Error loading data:", error);
-        showSnackbar("Error loading dropdown options", "error");
-      } finally {
-        setIsLoading(false);
+        setVehicleModels([]);
+        showSnackbar("Error loading Vehicle Models", "error");
       }
+      setIsLoading(false);
     };
     
     loadAllData();
@@ -372,7 +404,7 @@ const AddNewFields = ({ onClose }) => {
   
   // Render a field card
   const renderFieldCard = (title, values, fieldKey) => {
-    const filteredValues = values.filter((value) =>
+    const filteredValues = values?.filter((value) =>
       String(value).toLowerCase().includes((searchTerm[fieldKey] || "").toLowerCase())
     );
     
@@ -403,10 +435,10 @@ const AddNewFields = ({ onClose }) => {
           )}
           
           <div className="mt-2 border-t border-t-red-500 pt-2 h-[200px] overflow-y-auto">
-            {filteredValues.length === 0 ? (
+            {filteredValues?.length === 0 ? (
               <p className="text-sm text-muted-foreground p-2">No items found</p>
             ) : (
-              filteredValues.map((value, index) => (
+              filteredValues?.map((value, index) => (
                 <div
                   key={index}
                   className="flex justify-between items-center py-1 px-2 hover:bg-accent rounded-sm"
