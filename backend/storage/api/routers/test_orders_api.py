@@ -827,19 +827,33 @@ def clone_testorder_files(
         # List all attachment types under the source test order folder
         source_prefix = f"{UPLOAD_PATH}/{job_order_id}/{source_test_order_id}/"
         blobs = list(bucket.list_blobs(prefix=source_prefix))
+        print(f"Found {len(blobs)} blobs to clone from {source_prefix}")
         if not blobs:
+            print("No files found to clone.")
             return {"status": False, "message": "No files found to clone."}
+        skip_types = {"pdf_report", "excel_report", "dat_file_attachment", "others_attachement"}
         for blob in blobs:
+            # Extract attachment_type from blob path
+            parts = blob.name.split("/")
+            # UPLOAD_PATH/job_order_id/test_order_id/attachment_type/filename
+            attachment_type = parts[6] if len(parts) > 6 else None
+            if attachment_type in skip_types:
+                print(f"Skipping attachment: {attachment_type}, file: {blob.name}")
+                continue
             # Compute new blob name for target test order
             new_blob_name = blob.name.replace(
                 f"/{source_test_order_id}/", f"/{target_test_order_id}/"
             )
-            # Only copy if not already present (avoid duplicates)
+            print(f"Cloning attachment: {attachment_type}, file: {blob.name} -> {new_blob_name}")
             target_blob = bucket.blob(new_blob_name)
             if not target_blob.exists():
                 target_blob.rewrite(blob)
+            else:
+                print(f"Target blob already exists: {new_blob_name}, skipping.")
+        print("Files cloned successfully.")
         return {"status": True, "message": "Files cloned successfully."}
     except Exception as e:
+        print(f"Error cloning files: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=f"Error cloning files: {str(e)}"
